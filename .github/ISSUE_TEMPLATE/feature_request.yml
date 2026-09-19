@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement aligned with project direction
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [`ACTIVE.md`](../../ACTIVE.md) for the current work item. Large ideas may belong in the parking lot until a WI is opened.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true

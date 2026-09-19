@@ -1,0 +1,36 @@
+name: Bug report
+description: Report incorrect extension or documentation behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For **security vulnerabilities**, use [Security Advisories](SECURITY.md)—not public issues.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected vs what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. npm install && npm run compile
+        2. F5 → Extension Development Host
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code / Cursor version
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Git commit (if built from source)
+      placeholder: git rev-parse --short HEAD

@@ -7,6 +7,8 @@
 export const REQUIRED_CHINESE_PAIRS = [
   'README.md',
   'AGENTS.md',
+  'CONTRIBUTING.md',
+  'SECURITY.md',
   'docs/README.md',
   'docs/git-commit-convention.md',
   'docs/bilingual-documentation.md',

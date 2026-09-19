@@ -6,6 +6,21 @@
   "publisher": "pi-vscode-dev",
   "private": true,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hex4C59/pi-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hex4C59/pi-vscode/issues"
+  },
+  "homepage": "https://github.com/Hex4C59/pi-vscode#readme",
+  "keywords": [
+    "vscode",
+    "vscode-extension",
+    "pi",
+    "coding-agent",
+    "sidebar"
+  ],
   "engines": {
     "vscode": "^1.85.0",
     "node": ">=22"
