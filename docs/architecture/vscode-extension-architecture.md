@@ -27,17 +27,15 @@ The extension is a **presentation and orchestration layer**. It does not reimple
 | **Adapter** | pi SDK or RPC subprocess → internal domain events consumed by host + webview | `src/adapter/` (planned) |
 | **Runtime (upstream)** | Models, tools, sessions, project resources | pi packages / subprocess |
 
-```text localized
-Webview (sidebar)
-      |  postMessage (versioned, allowlisted types)
-      v
-Extension host
-      |
-      |  Adapter
-      v
-pi SDK or child-process RPC
-      v
-pi runtime
+The diagram shows the target boundaries; edge labels distinguish the current scaffold from later work. WI-001 selected subprocess RPC for the runtime probe, not end-user chat.
+
+```mermaid
+flowchart TD
+    U["User"] --> W["UI: sidebar Webview<br/>src/webview/"]
+    W <-->|"postMessage: planned for WI-002"| H["Extension host<br/>src/extension/"]
+    H <-->|"Chat integration: not yet connected"| A["Adapter<br/>src/adapter/"]
+    A <-->|"Subprocess RPC: WI-001 probe only"| P["Upstream pi runtime<br/>npm dependency, outside this repo's src/"]
+    E["Extension entry point<br/>src/extension.ts"] -->|"Registers view and command"| H
 ```
 
 ## 3. UI placement (product default)

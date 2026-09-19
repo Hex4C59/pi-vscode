@@ -32,17 +32,15 @@
 | **Adapter** | pi SDK 或 RPC 子进程 → 内部领域事件 | `src/adapter/` |
 | **Runtime（上游）** | 模型、工具、会话、项目资源 | pi 包 / 子进程 |
 
-```text localized
-侧栏 Webview
-      |  postMessage（版本化、允许列表类型）
-      v
-Extension host
-      |
-      |  Adapter
-      v
-pi SDK 或子进程 RPC
-      v
-pi runtime
+下图展示目标边界；连线标注区分现有脚手架与后续工作。WI-001 选择子进程 RPC 用于运行时探针，尚非用户聊天能力。
+
+```mermaid
+flowchart TD
+    U["用户"] --> W["UI：侧栏 Webview<br/>src/webview/"]
+    W <-->|"postMessage：计划在 WI-002 建立"| H["扩展宿主<br/>src/extension/"]
+    H <-->|"聊天集成：尚未接通"| A["适配层<br/>src/adapter/"]
+    A <-->|"子进程 RPC：仅 WI-001 探针"| P["上游 pi 运行时<br/>npm 依赖，不在本仓库 src/ 内"]
+    E["扩展入口<br/>src/extension.ts"] -->|"注册视图和命令"| H
 ```
 
 ## 3. UI 布局（产品默认）
