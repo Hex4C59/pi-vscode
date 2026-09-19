@@ -1,0 +1,65 @@
+{
+  "name": "pi-vscode",
+  "displayName": "Pi",
+  "description": "VS Code extension for the pi coding agent — sidebar chat while you code",
+  "version": "0.0.1",
+  "publisher": "pi-vscode-dev",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=22"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onView:pi-vscode.chat"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "pi-vscode",
+          "title": "Pi",
+          "icon": "media/pi.svg"
+        }
+      ]
+    },
+    "views": {
+      "pi-vscode": [
+        {
+          "type": "webview",
+          "id": "pi-vscode.chat",
+          "name": "Chat",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "pi-vscode.focusChat",
+        "title": "pi: Focus Chat",
+        "category": "pi"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "node esbuild.mjs && tsc --noEmit",
+    "watch": "node esbuild.mjs --watch",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "spike:runtime": "npm run compile && node dist/spike-runtime.js",
+    "docs:i18n:check": "node scripts/docs-i18n-check.mjs",
+    "docs:verify": "node scripts/docs-verify.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.19.1",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.85.1"
+  }
+}
