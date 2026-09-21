@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
-import { isolatedFixture, withProcess } from './project-trust-lib.mjs';
+import { isolatedFixture, withProcess } from '../spikes/project-trust-lib.mjs';
 // VSIX is a ZIP. Inspect central directory and extract to an owned temporary tree.
 const archive=await readFile(process.argv[2]??'dist/pi-vscode-validation.vsix');
 let end=archive.length-22;

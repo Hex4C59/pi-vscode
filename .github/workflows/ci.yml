@@ -27,5 +27,5 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test scripts/docs-i18n-check.test.mjs scripts/docs-verify.test.mjs scripts/docs-health.test.mjs
+      - run: node --test scripts/docs/docs-i18n-check.spec.mjs scripts/docs/docs-verify.spec.mjs scripts/docs/docs-health.spec.mjs
       - run: npm run docs:verify

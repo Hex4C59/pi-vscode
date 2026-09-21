@@ -1,14 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-
-import { getPlaceholderHtml } from "../webview/placeholderHtml.js";
-import { handleWebviewMessage, isPingMessage } from "./webviewMessages.js";
-
-test("accepts the single allowlisted ping and returns a pong", () => {
-  const ping = { version: 1, type: "ping" };
-  assert.equal(isPingMessage(ping), true);
-  assert.deepEqual(handleWebviewMessage(ping), { version: 1, type: "pong" });
-});
+import { getPlaceholderHtml } from "../placeholderHtml.js";
 
 test("placeholder uses a nonce-restricted script and contains no runtime capabilities", () => {
   const html = getPlaceholderHtml("test-nonce");
@@ -31,23 +23,4 @@ test("redesigned layout: header status dot, cards, composer with chips and icon 
   assert.match(html, /msg-user/); // right-aligned user pill style
   assert.match(html, /aria-live="polite"/);
   assert.doesNotMatch(html, /<h1>/); // no page-style headings
-});
-
-test("ignores malformed, unsupported, and expanded messages", () => {
-  const rejected: unknown[] = [
-    null,
-    [],
-    "ping",
-    1,
-    {},
-    { version: "1", type: "ping" },
-    { version: 2, type: "ping" },
-    { version: 1, type: "prompt" },
-    { version: 1, type: "ping", command: "execute" },
-    { version: 1, type: "ping", constructor: "unexpected" },
-  ];
-  for (const message of rejected) {
-    assert.equal(isPingMessage(message), false);
-    assert.equal(handleWebviewMessage(message), undefined);
-  }
 });

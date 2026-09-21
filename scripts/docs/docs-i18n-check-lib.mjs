@@ -10,7 +10,7 @@ import {
   VALID_TRANSLATION_STATUSES,
 } from './docs-i18n-config.mjs';
 
-const REPO_ROOT = path.resolve(import.meta.dirname, '..');
+const REPO_ROOT = path.resolve(import.meta.dirname, '../..');
 
 export function repoRoot() {
   return REPO_ROOT;

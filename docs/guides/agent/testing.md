@@ -13,18 +13,24 @@ Read this playbook before changing behavior, fixing a regression, adding or movi
 
 ## Ownership and file placement
 
-- Keep application tests beside their owning source: `src/extension/webviewMessages.ts` and `src/extension/webviewMessages.test.ts`. Follow the same ownership principle for adapter and webview-related tests, but verify collection before adding a new location. Do not introduce `src/__tests__/` or a repository-wide catch-all `test/` directory.
-- Keep Node script tests beside their scripts as `scripts/<subject>.test.mjs`.
-- Preserve existing subject spelling; use the module or observable behavior as the name. A test file may cover a coherent behavior across multiple modules; a one-to-one source/test mapping is not mandatory.
-- Put reusable setup in ordinary files such as `harness.ts` or `<subject>.test-support.ts`, not in another collected `*.test.ts` file. Importing a test can register and run its cases again.
+- Keep application tests in their owner's `tests/` directory: `src/extension/tests/**/*.spec.ts`, `src/adapter/tests/**/*.spec.ts` or `src/webview/tests/**/*.spec.ts`. Production source stays in place; for example, `src/extension/webviewMessages.ts` is covered by `src/extension/tests/webview-messages.spec.ts`. Do not introduce `src/__tests__/` or a repository-wide catch-all `test/` directory.
+- Keep Node script tests beside their scripts as `scripts/**/*.spec.mjs`.
+- Use kebab-case module or observable-behavior names. A test file may cover a coherent behavior across multiple modules; a one-to-one source/test mapping is not mandatory.
+- Put reusable setup in ordinary files such as `harness.ts` or `<subject>.test-support.ts`, not in another collected `*.spec.ts` file. Importing a test can register and run its cases again.
 - Keep fixture inputs and expected outputs with the owning tests (for example, an owner-local `fixtures/` or `expected/` directory when needed). Create no empty infrastructure directories. Review expected-output changes against intended behavior; do not regenerate them merely to make a test pass.
 - `dist/tests/` is generated output, not the source of tests. Do not hand-edit it or treat stale bundles as evidence that current source ran.
 
+Scripts are grouped by purpose: `scripts/docs/` owns documentation checks and their helpers/configuration; `scripts/testing/` owns the test runner and collection helpers; `scripts/spikes/` owns integration probes and project-trust helpers; `scripts/packaging/` owns VSIX verification. Keep `*.spec.mjs` beside the scripts they cover. These purpose folders do not introduce nested `src/` or `tests/` subdirectories; application tests retain the owner-local layout above.
+
 ## Naming and collection are one contract
 
-The current automated runner is `node:test`, not Vitest. Use `*.test.ts` for application tests and `*.test.mjs` for scripts. The suffix has meaning only together with the runner's actual collection rules; renaming a file alone does not create a test tier.
+The current automated runner is `node:test`, not Vitest. Use `*.spec.ts` for application tests and `*.spec.mjs` for scripts. The suffix has meaning only together with the runner's actual collection rules; renaming a file alone does not create a test tier.
 
-At adoption, `npm test` bundles `src/extension/*.test.ts` through esbuild into `dist/tests/`, then runs `dist/tests/*.test.js` and explicitly named script tests. It does not automatically collect adapter tests, nested source tests or every new script test. Read the current script rather than assuming recursive discovery.
+`npm test` invokes `scripts/testing/run-tests.mjs`, backed by the import-safe `scripts/testing/test-runner-lib.mjs`. It recursively discovers and sorts the exact application and script inventories from the owner-local paths above, skips symbolic links and directories named `fixtures` or `expected`, and fails if either inventory is empty. Helpers and other test-tier suffixes are not entries.
+
+The runner cleans only `dist/tests/`, preserving other bundles under `dist/`, then uses esbuild to bundle application specs while preserving their source-relative directories: `src/extension/tests/webview-messages.spec.ts` becomes `dist/tests/extension/tests/webview-messages.spec.js`. It passes only the exact compiled-output list and discovered script specs to `node:test`, with the repository root as cwd; stale bundles and broad output globs are not execution inputs. Build and test-process failures fail the command.
+
+The existing TypeScript and lint configuration already covers nested `src/**/*.ts`; script `.mjs` files remain outside lint scope. CI retains its existing compile/lint and explicit documentation-spec checks; this migration does not add `npm test` to CI or a new matrix.
 
 Before adding, moving or renaming a test:
 
@@ -33,17 +39,17 @@ Before adding, moving or renaming a test:
 3. If collection needs changing, include the necessary scoped runner/configuration change in the approved task; otherwise report the missing collection as a blocker, not completed coverage.
 4. Execute the relevant command and verify that the new case actually ran. Ensure removed or renamed tests cannot continue running from stale generated output.
 
-Do not rename or relocate tests without a scoped migration that updates collection and verification together. The suffix vocabulary below does not authorize that migration or a switch to Vitest. The current placement and `*.test.*` rules above remain in force until the migration is implemented.
+Keep future test moves and renames scoped, updating collection and verification together. The suffix vocabulary below does not authorize additional tiers or a switch to Vitest.
 
 ## Test suffix vocabulary and activation status
 
-Directories identify ownership; suffixes identify the kind of evidence; runner configuration determines execution. The proposed layout is module-local `src/extension/tests/`, `src/adapter/tests/` and `src/webview/tests/`, with production files left in place and script tests beside scripts. Ordinary and end-to-end tests may share an owner's directory. This layout is a proposal, not an implemented migration; do not create empty directories or assume these paths are collected.
+Directories identify ownership; suffixes identify the kind of evidence; runner configuration determines execution. The implemented layout is module-local `src/extension/tests/`, `src/adapter/tests/` and `src/webview/tests/`, with production files left in place and script tests beside scripts. A future end-to-end suite may share an owner's directory, but only ordinary specs are currently collected. Do not create empty infrastructure directories.
 
 ### Ordinary specs: `*.spec.ts` / `*.spec.mjs`
 
-The proposed replacement for `*.test.ts` / `*.test.mjs` covers module behavior and controlled multi-module compositions. Use a module or behavior name in kebab-case, for example `webview-messages.spec.ts` or `model-selection.spec.ts`. Deterministic real implementations are preferred; narrow external seams may be mocked. A spec need not test only one function.
+These replace `*.test.ts` / `*.test.mjs` and cover module behavior and controlled multi-module compositions. Use a module or behavior name in kebab-case, for example `webview-messages.spec.ts` or `model-selection.spec.ts`. Deterministic real implementations are preferred; narrow external seams may be mocked. A spec need not test only one function.
 
-After migration, `npm test` is intended to collect these files without keys or paid calls. Currently it still collects the existing `*.test.*` files. The `.spec` suffix does not require Vitest: `node:test` can execute explicitly supplied compiled spec files. Existing mock-provider and VM-based Webview script tests belong here, not in a browser e2e tier.
+`npm test` collects these files without keys or paid calls. The `.spec` suffix does not require Vitest: `node:test` executes explicitly supplied compiled spec files. Existing mock-provider and VM-based Webview script tests belong here, not in a browser e2e tier.
 
 ### End-to-end: `*.e2e.ts`
 
@@ -78,7 +84,7 @@ The reference repository uses `.bench.ts` for performance budgets/gates and `.pe
 3. Check recursive discovery, helper exclusion, overlapping suffixes, stale generated output and failure exit codes. Verify the intended case actually ran and was not registered twice.
 4. Report passed, failed, skipped and unavailable evidence separately. Define whether missing prerequisites fail a required lane or explicitly skip an optional one; an all-skipped suite is not a passed acceptance check.
 
-This documentation defines meanings and activation requirements only. It does not install `test:e2e`, expected-output, snapshot or performance commands, change CI, or migrate existing tests.
+Only the ordinary-spec tier is enabled. The other suffixes define meanings and activation requirements only: no `test:e2e`, expected-output, snapshot or performance commands are installed.
 
 ## Evidence tiers and safety
 
@@ -99,4 +105,6 @@ Do not use real user state, secrets, uncontrolled network calls or paid model AP
 
 ## Adoption scope
 
-The maintainer approved playbook plus load-map adoption on 2026-09-21. This adopts ownership, explicit collection and evidence separation from [DeepSeek Harness testing policy](https://github.com/Hex4C59/deepseek-harness/blob/master/docs/testing.md), not its monorepo layout, runner, paid-API policy, session snapshot infrastructure or per-file 100% coverage gate. Existing test locations, filenames and commands remain unchanged by this documentation adoption.
+The maintainer approved playbook plus load-map adoption on 2026-09-21. This adopts ownership, explicit collection and evidence separation from [DeepSeek Harness testing policy](https://github.com/Hex4C59/deepseek-harness/blob/master/docs/testing.md), not its monorepo layout, runner, paid-API policy, session snapshot infrastructure or per-file 100% coverage gate.
+
+Historical note: the initial documentation-only adoption retained adjacent `*.test.ts` files, `*.test.mjs` script files and the flat extension-only collection command. The subsequent approved WI-011 migration implements the owner-local `.spec` layout and recursive runner described above, retaining `node:test` and esbuild. It does not enable additional evidence tiers.

@@ -84,14 +84,14 @@
     "watch": "node esbuild.mjs --watch",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "esbuild src/extension/*.test.ts --bundle --platform=node --format=cjs --target=node22 --outdir=dist/tests && node --test dist/tests/*.test.js scripts/docs-i18n-check.test.mjs scripts/docs-verify.test.mjs scripts/docs-health.test.mjs scripts/project-trust.test.mjs",
-    "spike:offline-inference": "node scripts/spike-offline-inference.mjs",
-    "spike:approval": "npm run compile && node scripts/spike-approval.mjs",
-    "spike:project-trust": "node scripts/spike-project-trust.mjs",
+    "test": "node scripts/testing/run-tests.mjs",
+    "spike:offline-inference": "node scripts/spikes/spike-offline-inference.mjs",
+    "spike:approval": "npm run compile && node scripts/spikes/spike-approval.mjs",
+    "spike:project-trust": "node scripts/spikes/spike-project-trust.mjs",
     "spike:runtime": "npm run compile && node dist/spike-runtime.js",
-    "docs:i18n:check": "node scripts/docs-i18n-check.mjs",
-    "docs:verify": "node scripts/docs-verify.mjs",
-    "docs:health": "node scripts/docs-health.mjs"
+    "docs:i18n:check": "node scripts/docs/docs-i18n-check.mjs",
+    "docs:verify": "node scripts/docs/docs-verify.mjs",
+    "docs:health": "node scripts/docs/docs-health.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

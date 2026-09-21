@@ -18,18 +18,24 @@
 
 ## 所有权与文件位置
 
-- 应用测试放在所属源码旁：`src/extension/webviewMessages.ts` 与 `src/extension/webviewMessages.test.ts`。adapter 与 Webview 相关测试沿用相同所有权原则，但新增位置前必须确认收集范围。不要引入 `src/__tests__/` 或仓库级混杂的 `test/` 目录。
-- Node 脚本测试紧邻脚本，使用 `scripts/<subject>.test.mjs`。
-- 保留现有主题拼写，以模块或可观察行为命名。一个测试文件可以覆盖跨模块的内聚行为，不强制源码与测试一一对应。
-- 可复用初始化放在 `harness.ts` 或 `<subject>.test-support.ts` 等普通文件中，不放在另一个被收集的 `*.test.ts` 中。导入测试文件可能再次注册和执行其用例。
+- 应用测试放在所属模块的 `tests/` 目录：`src/extension/tests/**/*.spec.ts`、`src/adapter/tests/**/*.spec.ts` 或 `src/webview/tests/**/*.spec.ts`。生产源码保持原位；例如 `src/extension/webviewMessages.ts` 由 `src/extension/tests/webview-messages.spec.ts` 覆盖。不要引入 `src/__tests__/` 或仓库级混杂的 `test/` 目录。
+- Node 脚本测试紧邻脚本，使用 `scripts/**/*.spec.mjs`。
+- 使用 kebab-case 的模块或可观察行为名。一个测试文件可以覆盖跨模块的内聚行为，不强制源码与测试一一对应。
+- 可复用初始化放在 `harness.ts` 或 `<subject>.test-support.ts` 等普通文件中，不放在另一个被收集的 `*.spec.ts` 中。导入测试文件可能再次注册和执行其用例。
 - fixture 输入与预期输出放在测试所属位置（需要时使用所属区域内的 `fixtures/` 或 `expected/` 目录）。不要建立空基础设施目录。按预期行为审查预期输出变更，不能仅为让测试通过而重新生成。
 - `dist/tests/` 是生成产物，不是测试源码。不要手改，也不能将陈旧 bundle 当作当前源码已执行的证据。
 
+脚本按用途分组：`scripts/docs/` 负责文档检查及其辅助模块／配置；`scripts/testing/` 负责测试 runner 与收集辅助模块；`scripts/spikes/` 负责集成探针与项目信任辅助模块；`scripts/packaging/` 负责 VSIX 验证。`*.spec.mjs` 紧邻其覆盖的脚本。这些用途目录不再嵌套 `src/` 或 `tests/` 子目录；应用测试保留上述所属模块内布局。
+
 ## 命名与收集是一份约定
 
-当前自动化 runner 是 `node:test`，不是 Vitest。应用测试使用 `*.test.ts`，脚本测试使用 `*.test.mjs`。后缀只有结合 runner 的实际收集规则才有意义；仅重命名文件不会创建测试层级。
+当前自动化 runner 是 `node:test`，不是 Vitest。应用测试使用 `*.spec.ts`，脚本测试使用 `*.spec.mjs`。后缀只有结合 runner 的实际收集规则才有意义；仅重命名文件不会创建测试层级。
 
-采用本指南时，`npm test` 用 esbuild 将 `src/extension/*.test.ts` 打包到 `dist/tests/`，随后执行 `dist/tests/*.test.js` 和显式列名的脚本测试。它不会自动收集 adapter 测试、嵌套源码测试或每个新增脚本测试。应阅读当前脚本，而不是假设递归发现。
+`npm test` 调用 `scripts/testing/run-tests.mjs`，由可安全导入的 `scripts/testing/test-runner-lib.mjs` 提供支持。它从上述所属位置递归发现并排序确切的应用与脚本测试清单，跳过符号链接及名为 `fixtures` 或 `expected` 的目录，任一清单为空即失败。辅助文件与其他测试层级后缀不作为入口。
+
+runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuild 打包应用 spec 并保留相对于源码根目录的层级：`src/extension/tests/webview-messages.spec.ts` 输出为 `dist/tests/extension/tests/webview-messages.spec.js`。它只将确切的编译输出清单与发现的脚本 spec 传给 `node:test`，cwd 为仓库根目录；陈旧 bundle 和宽泛输出 glob 不作为执行输入。构建或测试进程失败会使命令失败。
+
+现有 TypeScript 与 lint 配置已覆盖嵌套的 `src/**/*.ts`；脚本 `.mjs` 仍不在 lint 范围内。CI 保持现有 compile／lint 与显式文档 spec 检查；本次迁移不把 `npm test` 加入 CI，也不新增矩阵。
 
 添加、移动或重命名测试之前：
 
@@ -38,17 +44,17 @@
 3. 若需修改收集规则，将必要且有界的 runner／配置变更纳入已批准任务；否则将漏收集报告为阻塞，不能宣称已经覆盖。
 4. 执行相关命令并确认新增用例确实运行。确保删除或重命名的测试不会继续从陈旧生成产物中执行。
 
-没有同时更新收集与验证的有界迁移，不要重命名或移动测试。下面的后缀分类不授权实施该迁移或切换到 Vitest。在迁移实施前，上述当前位置与 `*.test.*` 规则仍然生效。
+后续测试移动与重命名仍须限定范围，同时更新收集与验证。下面的后缀分类不授权新增层级或切换到 Vitest。
 
 ## 测试后缀分类与启用状态
 
-目录表示归属，后缀表示证据类别，runner 配置决定实际执行。拟议布局是在模块内部使用 `src/extension/tests/`、`src/adapter/tests/` 与 `src/webview/tests/`，生产文件保持原位，脚本测试仍紧邻脚本。普通测试与端到端测试可以共用所属模块的目录。该布局是提案，并非已完成迁移；不要建立空目录，也不要假定这些路径已经被收集。
+目录表示归属，后缀表示证据类别，runner 配置决定实际执行。已实现的布局是在模块内部使用 `src/extension/tests/`、`src/adapter/tests/` 与 `src/webview/tests/`，生产文件保持原位，脚本测试仍紧邻脚本。未来端到端套件可以共用所属模块的目录，但当前只收集普通 spec。不要建立空基础设施目录。
 
 ### 普通测试：`*.spec.ts` / `*.spec.mjs`
 
-拟用于替代 `*.test.ts` / `*.test.mjs`，覆盖模块行为与受控的多模块组合。使用 kebab-case 的模块或行为名，例如 `webview-messages.spec.ts` 或 `model-selection.spec.ts`。优先使用确定的真实实现，可以 mock 窄外部接口；spec 不限于只测一个函数。
+它们替代 `*.test.ts` / `*.test.mjs`，覆盖模块行为与受控的多模块组合。使用 kebab-case 的模块或行为名，例如 `webview-messages.spec.ts` 或 `model-selection.spec.ts`。优先使用确定的真实实现，可以 mock 窄外部接口；spec 不限于只测一个函数。
 
-迁移后拟由 `npm test` 收集这些文件，不需要密钥，不调用付费模型。目前仍收集现有 `*.test.*` 文件。`.spec` 后缀不要求 Vitest：`node:test` 可以执行显式传入的已编译 spec 文件。现有 mock provider 与基于 VM 的 Webview 脚本测试属于此类，而非浏览器 e2e。
+`npm test` 收集这些文件，不需要密钥，不调用付费模型。`.spec` 后缀不要求 Vitest：`node:test` 执行显式传入的已编译 spec 文件。现有 mock provider 与基于 VM 的 Webview 脚本测试属于此类，而非浏览器 e2e。
 
 ### 端到端：`*.e2e.ts`
 
@@ -83,7 +89,7 @@ DeepSeek Harness 将此后缀保留给录制会话驱动的回放，并非所有
 3. 检查递归发现、辅助文件排除、后缀重叠、陈旧生成产物与失败退出码。确认目标用例实际运行且没有重复注册。
 4. 分别报告通过、失败、跳过与不可用的证据。定义缺少前置条件时是让必需测试通道失败，还是明确跳过可选测试；全部跳过的套件不能视为验收通过。
 
-本次文档只定义含义与启用要求，不安装 `test:e2e`、预期输出、快照或性能命令，不修改 CI，不迁移现有测试。
+当前只启用普通 spec 层级。其他后缀仅定义含义与启用要求：未安装 `test:e2e`、预期输出、快照或性能命令。
 
 ## 证据层级与安全
 
@@ -104,4 +110,6 @@ Node 测试 harness 与 Webview 运行时代码保持分离：测试宿主 HTML 
 
 ## 采用范围
 
-维护者于 2026-09-21 批准 playbook 加加载地图方案。本指南借鉴 [DeepSeek Harness 测试策略](https://github.com/Hex4C59/deepseek-harness/blob/master/docs/testing.md) 的所有权、显式收集与证据分层，不迁移其 monorepo 布局、runner、付费 API 策略、会话快照基础设施或逐文件 100% 覆盖率门禁。本次文档采用不改变现有测试位置、文件名与命令。
+维护者于 2026-09-21 批准 playbook 加加载地图方案。本指南借鉴 [DeepSeek Harness 测试策略](https://github.com/Hex4C59/deepseek-harness/blob/master/docs/testing.md) 的所有权、显式收集与证据分层，不迁移其 monorepo 布局、runner、付费 API 策略、会话快照基础设施或逐文件 100% 覆盖率门禁。
+
+历史说明：最初的纯文档采用保留了紧邻源码的 `*.test.ts`、脚本 `*.test.mjs` 与仅覆盖平面 extension 测试的收集命令。随后获批的 WI-011 迁移实现了上述模块内 `.spec` 布局与递归 runner，保留 `node:test` 和 esbuild，不启用额外证据层级。

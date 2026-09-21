@@ -17,7 +17,7 @@ English | [中文](bilingual-documentation.zh.md)
 
 ## Mechanical checks
 
-Run `npm run docs:verify` (includes `docs:i18n:check`). Edit required pairs in `scripts/docs-i18n-config.mjs` when you add authoritative English docs.
+Run `npm run docs:verify` (includes `docs:i18n:check`). Edit required pairs in `scripts/docs/docs-i18n-config.mjs` when you add authoritative English docs.
 
 ## Translation lifecycle (Chinese `*.zh.md`)
 

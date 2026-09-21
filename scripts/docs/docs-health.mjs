@@ -5,7 +5,7 @@ import { formatHealthReport, runDocsHealth } from './docs-health-lib.mjs';
 
 try {
   const args = process.argv.slice(2);
-  if (args.some((arg) => arg !== '--json')) throw new Error('Usage: node scripts/docs-health.mjs [--json]');
+  if (args.some((arg) => arg !== '--json')) throw new Error('Usage: node scripts/docs/docs-health.mjs [--json]');
   const lifecycle = runDocsHealth();
   const i18n = runDocsI18nCheck();
   const verify = runDocsVerify();

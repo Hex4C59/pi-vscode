@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isolatedFixture, withProcess } from './project-trust-lib.mjs';
 
-const packageDir = fileURLToPath(new URL('../node_modules/@earendil-works/pi-coding-agent/', import.meta.url));
+const packageDir = fileURLToPath(new URL('../../node_modules/@earendil-works/pi-coding-agent/', import.meta.url));
 const metadata = JSON.parse(await readFile(path.join(packageDir, 'package.json'), 'utf8'));
 assert.equal(metadata.version, '0.85.1', 'Re-review public APIs before upgrading this spike');
 // Verify the installed public isolation contract BEFORE importing/executing pi.

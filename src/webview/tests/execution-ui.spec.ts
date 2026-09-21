@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
-import { getPlaceholderHtml } from "../webview/placeholderHtml.js";
+import { getPlaceholderHtml } from "../placeholderHtml.js";
 
 /** Scripted DOM seam, not browser/F5 rendering evidence. Collected by npm test. */
 class Element {

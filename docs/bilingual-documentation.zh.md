@@ -22,7 +22,7 @@
 
 ## 机械检查
 
-运行 `npm run docs:verify`（含 `docs:i18n:check`）。新增权威英文文档时，编辑 `scripts/docs-i18n-config.mjs` 中的必需配对列表。
+运行 `npm run docs:verify`（含 `docs:i18n:check`）。新增权威英文文档时，编辑 `scripts/docs/docs-i18n-config.mjs` 中的必需配对列表。
 
 ## 翻译生命周期（中文 `*.zh.md`）
 
