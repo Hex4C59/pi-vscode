@@ -1,4 +1,4 @@
-# 截至 WI-004 的已关闭工作项历史
+# 已关闭工作项历史 — WI-001～007 与 WI-010
 
 [English](2026-09-21-closed-wi-history.md) | 中文
 
@@ -10,7 +10,7 @@
 - 状态：Historical
 - 创建：2026-09-21
 - 权威：仅作上下文；当前工作仍以 [`ACTIVE.md`](../../ACTIVE.md) 为准
-- 归档原因：WI-001/002/003/005/006/007/004 已关闭；其长讨论稿、验收证据与旧交接不再属于当前工作入口。
+- 归档原因：WI-001/002/003/004/005/006/007/010 已关闭；其提案、验收证据与旧交接不再属于当前工作入口。WI-008／WI-009 未关闭，仍保留在 ACTIVE。
 
 > 不得按本文件直接实现。它保留历史范围、批准、证据和限制；现行需求、架构、gate、ADR 与 `ACTIVE.md` 优先。
 
@@ -73,6 +73,21 @@
 - **Build 交付（2026-09-21）：** `PiRuntimeLifecycle.prompt`／事件订阅；`pi-rpc-runtime` 长生命周期 JSONL；读取 `~/.pi/agent/settings.json` 启动 `--model`；`chatModel` 展示；`auto_retry_end`／无回复时的有界 `chatError`。
 - **验收：** 维护者 2026-09-21 声明关闭 WI-004。F5：助手文本快速逐字流式；Send → Sending… → Send；上游 503 时显示错误；在 pi 保存启动默认模型（如 gpt-5.6-luna）后扩展侧恢复正常。自动化 `npm test` 49/49、compile、lint、`docs:verify` 通过。
 - **限制：** `gate-session-streaming`、`gate-webview-trust`、`gate-project-trust` 仍 Open；无扩展内模型选择（REQ-002）、Stop、工具审批、会话历史；provider 错误可能仍含简短 JSON 片段；模型依赖 pi 启动默认而非 TUI 临时切换。
+
+<a id="wi-010"></a>
+## WI-010 — 思考展示与受控工具执行
+
+- **批准与关闭：** 2026-09-21 批准 Build 与受控配置；维护者确认下述四项 F5 后，于同日要求“进入收尾吧”。关闭的是限定 WI，不是整个 PRD 或架构 gate。决策类 `adr-after-approval`；Decision `pending-adr` 仍在 ACTIVE 跟踪。
+- **PRD 与已批准提案：** D-01／D-02 下用户可见的 REQ-004／REQ-005／REQ-006 切片。固定 pi `0.86.1` 子进程 JSONL RPC，展示真实上游 thinking／工具结果，启用受控内置工具与 Stop，不重写 Agent 循环。稳定 ID 折叠卡、累计输出替换、最终消息校正、逐项有界输出及 64 项上限内预留提示保留展开／焦点／滚动；省略展示不跳过审批。完整审批输入、授权查看／撤销、Stop 保留草稿已实现。
+- **执行前边界：** 自带异步 `tool_call` hook 经公开 `ctx.ui.confirm` 等待；版本化封装绑定 runtime／cwd、request／tool-call ID 与完整参数。gate hello 与 `get_state` 是就绪前提。文件／握手缺失阻止启动，不是可用的无工具回退；单靠 `tool_execution_start` 不构成拦截。
+- **策略与生命周期：** 仅工作区内 canonical 普通文件 `read` 自动允许；搜索／列目录、写入／编辑、shell、外部路径询问；未知工具拒绝。既有文件授权匹配工具 + canonical 路径；shell 匹配工具 + canonical cwd + 完整输入。不存在／无法解析目标仅允许一次。授权仅内存保存，同一运行会话的普通 settled／Stop 保留，替换／工作区变化清除。Stop 先使待审批失效，再 `clear_queue` + `abort`，等待 settled 或报错／关闭，不重放副作用。不回滚，不保证取消所有后代进程。
+- **受控配置：** `--no-extensions` 仅显式加载自带 gate，不受项目资源同意影响；生产强制 `PI_OFFLINE=1`／`PI_TELEMETRY=0`。保留可信用户 provider 配置、环境凭证及凭证命令。Offline 限制启动网络／缺包安装，不阻断推理 HTTP 或工具联网。规范化不消除文件替换竞态；输出过滤尽力而为；凭证命令不属于工具 gate 覆盖。不是沙箱。
+- **维护者 F5 验收（2026-09-21）：** (1) thinking／状态展示正常；(2) 文件读取与工具卡正常；(3) 拒绝写入无副作用，随后允许写入正常；(4) 长时间无害命令执行中 Stop 正常。这四项是手动收尾依据，不代表完整审批／生命周期／主题矩阵或已安装 VSIX 测试。
+- **此前报告的自动化，本次文档收尾未重跑：** `npm test` 73/73、compile／lint；九个真实 pi 审批夹具：allow、deny、timeout（含迟到回复）、stop、shell-allow、shell-deny、shell-stop、shell-running-stop、load-failure。运行中 PowerShell 输出后被 Stop，未创建后续 marker；发现／settings／本地 package 第三方扩展 marker 均未出现。Fixture provider 无真实 provider 凭证；load-failure 使用 `--no-tools`，区别于生产启动拒绝。
+- **此前报告的 offline／打包证据：** `scripts/spike-offline-inference.mjs` 使用 `--offline`，跳过缺包安装，实际一次 loopback HTTP 推理返回 `loopback-ok`；生产环境覆盖另有单元测试。完整依赖 `dist/pi-vscode-validation.vsix` 为 139.71 MB／14,080 entries。`scripts/verify-vsix.mjs` 解压到隔离目录，在脱离仓库路径下验证固定 CLI、生产依赖、自带 gate hello／`get_state`，探针不启用工具。不代表已安装 VSIX 激活／F5 验收或外部 provider 全面验证。
+- **核对及延期验收：** 授权复用／撤销／重置、改变范围及其余审批／生命周期／UI 矩阵仍无完整手动确认，不由四项检查推断。WI-008／WI-009 延后模型／thinking 选择（含审批／Stop 顺序）仍待独立 F5、保持开放。最终契约为搜索／列目录保守询问、启动失败关闭，不是广义只读自动允许或聊天回退。已安装 VSIX 验证及完整边界验证／ADR 仍在 ACTIVE 开放。
+- **范围外：** 终端模拟器、任意 Webview shell／RPC、第三方扩展全面审批、永久授权、完整自由执行、Markdown／高亮、附件、会话历史与回滚。所有权见[架构 §7](../architecture/vscode-extension-architecture.zh.md)；[消息契约](../reference/webview-messages.zh.md) 保持 Outline。架构 Proposed／Direction；`gate-project-trust`、`gate-webview-trust`、`gate-session-streaming` 仍 Open。
+- **已替代交接：** 此前实现文档记录 UI 已实现、全部 F5 待完成；现在仅以上四项观察替代该笼统 F5 缺口。此前文档会话报告 `docs:verify` 零 errors／warnings／stale notices，并消除 ACTIVE 长度警告。文档收尾未修改源码、package 或已批准计划；未获提交请求。
 
 ## 跨会话维护记录
 

@@ -9,6 +9,7 @@ export function serializeJsonLine(value: unknown): string {
 export function attachJsonlLineReader(
   stream: Readable,
   onLine: (line: string) => void,
+  onOverflow: () => void = () => undefined,
 ): () => void {
   const decoder = new StringDecoder("utf8");
   let buffer = "";
@@ -23,8 +24,10 @@ export function attachJsonlLineReader(
     while (true) {
       const newlineIndex = buffer.indexOf("\n");
       if (newlineIndex === -1) {
+        if(buffer.length>8*1024*1024){buffer='';stream.off('data',onData);onOverflow();}
         return;
       }
+      if(newlineIndex>8*1024*1024){buffer='';stream.off('data',onData);onOverflow();return;}
 
       emitLine(buffer.slice(0, newlineIndex));
       buffer = buffer.slice(newlineIndex + 1);

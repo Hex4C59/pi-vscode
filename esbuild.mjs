@@ -27,11 +27,15 @@ const spikeBuild = {
   logLevel: "info",
 };
 
+const gateBuild = { entryPoints: ["src/adapter/approvalGate.ts"], bundle: true, outfile: "dist/approval-gate.mjs", format: "esm", platform: "node", target: "node22", logLevel: "info" };
 if (watch) {
+  const gateContext = await esbuild.context(gateBuild);
+  await gateContext.watch();
   const ctx = await esbuild.context(extensionBuild);
   await ctx.watch();
   console.log("Watching extension…");
 } else {
+  await esbuild.build(gateBuild);
   await esbuild.build(extensionBuild);
   await esbuild.build(spikeBuild);
 }

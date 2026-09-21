@@ -64,11 +64,13 @@ test("normalizes provider availability errors without exposing raw JSON", () => 
   assert.ok(boundUserFacingDetail("x".repeat(1000)).length <= 300);
 });
 test("strict action allowlist rejects expanded shapes, hostile values and generations", () => {
-  for (const type of ["openFolder", "manageTrust", "chooseResources", "sendChat"]) {
+  for (const type of ["openFolder", "manageTrust", "chooseResources", "sendChat", "setThinkingLevel", "setChatModel"]) {
     const valid = {
       version: 1, type, generation: 1,
       ...(type === "chooseResources" ? { choice: "allow" } : {}),
       ...(type === "sendChat" ? { text: "hello" } : {}),
+      ...(type === "setThinkingLevel" ? { level: "high" } : {}),
+      ...(type === "setChatModel" ? { provider: "anthropic", modelId: "claude" } : {}),
     };
     assert.ok(parseWebviewMessage(valid));
     for (const generation of [-1, 1.5, Infinity, NaN, "1", Number.MAX_SAFE_INTEGER + 1]) assert.equal(parseWebviewMessage({ ...valid, generation }), undefined);
@@ -292,10 +294,10 @@ test("UI renders hostile names/paths with textContent and wires keyboard-native 
     } }, window: { addEventListener: (_name: string, callback: typeof receive) => { receive = callback; } },
   });
   const hostile = '</script><img src=x onerror="attack()"> & <';
-  receive({ data: { version: 1, type: "workspaceState", generation: 7, status: "eligible", folder: { name: hostile, path: hostile }, choice: "decline", busy: false, error: null, runtime: "not-started", runtimeDetail: null, messages: [], chatBusy: false, chatError: null, chatModel: null } });
-  assert.equal(elements.get("folder-name")?.textContent, hostile);
+  receive({ data: { version: 1, type: "workspaceState", generation: 7, status: "eligible", folder: { name: hostile, path: hostile }, choice: "decline", busy: false, error: null, runtime: "not-started", runtimeDetail: null, messages: [], chatBusy: false, chatError: null, chatModel: null, thinkingLevel: null, thinkingLevels: [], availableModels: [], modelBusy: false, modelError: null } });
+  assert.equal(elements.get("folder-name-heading")?.textContent, "Project resources — " + hostile);
   assert.equal(elements.get("folder-path")?.textContent, hostile);
-  assert.match(elements.get("runtime-status")?.textContent ?? "", /Runtime not started/);
+  assert.match(elements.get("runtime-hint")?.textContent ?? "", /Not running/);
   clicks.get("allow")?.();
   assert.equal(JSON.stringify(outgoing.at(-1)), JSON.stringify({ version: 1, type: "chooseResources", generation: 7, choice: "allow" }));
   assert.doesNotMatch(html, /innerHTML|localStorage|setState\(|getState\(/);
@@ -313,11 +315,16 @@ test("resource choice starts runtime with approve or no-approve and stops on wor
     getSession() { return 1; },
     subscribe() { return () => undefined; },
     async prompt() { return { ok: true }; },
+    async getModelProjection() {
+      return { ok: true, modelLabel: "Test / model", thinkingLevel: "medium", thinkingLevels: ["off", "medium", "high"], models: [] };
+    },
+    async setThinkingLevel() { return { ok: false, detail: "unused" }; },
+    async setModel() { return { ok: false, detail: "unused" }; },
   };
   const h = harness([folder()], true, undefined, runtime);
   const v = h.createView();
   v.action("chooseResources", { choice: "allow" });
-  await tick(); await tick();
+  await tick(); await tick(); await tick();
   assert.deepEqual(starts.at(-1), { cwd: "/project", projectTrust: "approve" });
   assert.equal(v.state().runtime, "ready");
   v.action("chooseResources", { choice: "decline" });
@@ -353,6 +360,11 @@ test("sendChat streams assistant text and rejects stale runtime events", async (
       });
       return { ok: true };
     },
+    async getModelProjection() {
+      return { ok: true, modelLabel: null, thinkingLevel: "off", thinkingLevels: ["off"], models: [] };
+    },
+    async setThinkingLevel() { return { ok: false, detail: "unused" }; },
+    async setModel() { return { ok: false, detail: "unused" }; },
   };
   const h = harness([folder()], true, undefined, runtime);
   const v = h.createView();
@@ -366,6 +378,339 @@ test("sendChat streams assistant text and rejects stale runtime events", async (
   assert.deepEqual(after.messages, [{ role: "user", text: "hi" }, { role: "assistant", text: "echo:hi" }]);
   for (const listener of listeners) listener({ kind: "text_delta", session: session - 1, delta: "stale" });
   assert.equal(v.state().messages.at(-1)?.text, "echo:hi");
+  h.provider.dispose();
+});
+
+test("setThinkingLevel and setChatModel update projection and reject stale or busy operations", async () => {
+  const calls: string[] = [];
+  const runtime: PiRuntimeLifecycle = {
+    async start() { return { ok: true, modelLabel: "A / one" }; },
+    async stop() { /* noop */ },
+    getSession() { return 3; },
+    subscribe() { return () => undefined; },
+    async prompt() { return { ok: true }; },
+    async getModelProjection() {
+      return {
+        ok: true,
+        modelLabel: "A / one",
+        thinkingLevel: "medium",
+        thinkingLevels: ["off", "medium", "high"],
+        models: [{ provider: "A", modelId: "one", label: "One" }, { provider: "B", modelId: "two", label: "Two" }],
+      };
+    },
+    async setThinkingLevel(level) {
+      calls.push(`level:${level}`);
+      return {
+        ok: true,
+        modelLabel: "A / one",
+        thinkingLevel: level,
+        thinkingLevels: ["off", "medium", "high"],
+        models: [{ provider: "A", modelId: "one", label: "One" }, { provider: "B", modelId: "two", label: "Two" }],
+      };
+    },
+    async setModel(provider, modelId) {
+      calls.push(`model:${provider}/${modelId}`);
+      return {
+        ok: true,
+        modelLabel: `${provider} / ${modelId}`,
+        thinkingLevel: "off",
+        thinkingLevels: ["off"],
+        models: [{ provider: "A", modelId: "one", label: "One" }, { provider: "B", modelId: "two", label: "Two" }],
+      };
+    },
+  };
+  const h = harness([folder()], true, undefined, runtime);
+  const v = h.createView();
+  v.action("chooseResources", { choice: "allow" });
+  await tick(); await tick(); await tick();
+  assert.equal(v.state().thinkingLevel, "medium");
+  v.action("setThinkingLevel", { level: "high" });
+  await tick();
+  assert.deepEqual(calls, ["level:high"]);
+  assert.equal(v.state().thinkingLevel, "high");
+  v.action("setChatModel", { provider: "B", modelId: "two" });
+  await tick();
+  assert.equal(v.state().chatModel, "B / two");
+  v.action("sendChat", { text: "x" });
+  v.action("setThinkingLevel", { level: "off" });
+  await tick();
+  assert.deepEqual(calls, ["level:high", "model:B/two"]);
+  h.provider.dispose();
+});
+
+function settingsRuntime() {
+  const events = new Event<import("./runtimeLifecycle.js").RuntimeEvent>();
+  const calls: string[] = [];
+  let session = 0;
+  let projection = {
+    ok: true as const, modelLabel: "A / one", thinkingLevel: "medium",
+    thinkingLevels: ["off", "medium", "high"],
+    models: [{ provider: "A", modelId: "one", label: "One" }, { provider: "B", modelId: "two", label: "Two" }],
+  };
+  const runtime: PiRuntimeLifecycle = {
+    async start() { session++; return { ok: true, modelLabel: projection.modelLabel }; },
+    async stop() { /* session is monotonic */ },
+    getSession: () => session,
+    subscribe(listener) { const sub = events.subscribe(listener); return () => sub.dispose(); },
+    async prompt() { calls.push("prompt"); return { ok: true }; },
+    async getModelProjection() { calls.push("read"); return projection; },
+    async setModel(provider, modelId) {
+      calls.push(`model:${provider}/${modelId}`);
+      projection = { ...projection, modelLabel: `${provider} / ${modelId}` };
+      return projection;
+    },
+    async setThinkingLevel(level) {
+      calls.push(`level:${level}`); projection = { ...projection, thinkingLevel: level }; return projection;
+    },
+  };
+  return { runtime, calls, events, settled: () => events.fire({ kind: "agent_settled", session }),
+    setLevels: (levels: string[]) => { projection = { ...projection, thinkingLevels: levels }; } };
+}
+
+test('Stop holds deferred settings until cancellation completes and runtime loss fails closed', async()=>{
+  const r=settingsRuntime();let finish:()=>void=()=>{};
+  r.runtime.abortTask=async()=>{r.settled();await new Promise<void>(resolve=>finish=resolve);return {ok:true};};
+  const h=harness([folder()],true,undefined,r.runtime);const v=h.createView();v.action('chooseResources',{choice:'allow'});await tick();r.calls.length=0;
+  v.action('sendChat',{text:'work'});v.action('setThinkingLevel',{level:'high'});v.action('stopChat');await tick();
+  assert.equal(v.state().execution,'stopping');assert.deepEqual(r.calls,['prompt']);
+  v.action('sendChat',{text:'blocked'});assert.deepEqual(r.calls,['prompt']);finish();await tick();assert.ok(r.calls.includes('level:high'));
+  r.events.fire({kind:'runtime_error',session:r.runtime.getSession(),detail:'Disconnected'});assert.equal(v.state().runtime,'error');assert.equal(v.state().execution,'failed');assert.equal(v.state().pendingThinkingLevel,null);h.provider.dispose();
+});
+
+async function readySettings() {
+  const r = settingsRuntime();
+  const h = harness([folder()], true, undefined, r.runtime);
+  const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
+  r.calls.length = 0;
+  return { r, h, v };
+}
+
+test("streaming selections replace pending intent without mutation; settled applies model then thinking", async () => {
+  const { r, h, v } = await readySettings();
+  v.action("sendChat", { text: "first" });
+  v.action("setChatModel", { provider: "A", modelId: "one" });
+  v.action("setThinkingLevel", { level: "medium" });
+  v.action("setChatModel", { provider: "B", modelId: "two" });
+  v.action("setThinkingLevel", { level: "high" });
+  await tick();
+  assert.deepEqual(r.calls, ["prompt"]);
+  assert.equal(v.state().chatModel, "A / one");
+  assert.equal(v.state().thinkingLevel, "medium");
+  assert.equal(v.state().pendingModel?.modelId, "two");
+  assert.equal(v.state().pendingThinkingLevel, "high");
+  r.events.fire({ kind: "agent_settled", session: -1 });
+  assert.equal(v.state().chatBusy, true);
+  r.settled(); r.settled();
+  v.action("sendChat", { text: "blocked" });
+  assert.equal(v.state().modelBusy, true);
+  await tick();
+  assert.deepEqual(r.calls, ["prompt", "model:B/two", "level:high"]);
+  assert.equal(v.state().chatModel, "B / two");
+  assert.equal(v.state().thinkingLevel, "high");
+  assert.equal(v.state().pendingModel, null);
+  assert.equal(v.state().pendingThinkingLevel, null);
+  assert.equal(v.state().modelBusy, false);
+  h.provider.dispose();
+});
+
+test("unsupported pending thinking is explicitly rejected after refreshed model capabilities", async () => {
+  const { r, h, v } = await readySettings();
+  v.action("sendChat", { text: "first" });
+  v.action("setThinkingLevel", { level: "high" });
+  v.action("setChatModel", { provider: "B", modelId: "two" });
+  r.setLevels(["off"]); r.settled(); await tick();
+  assert.deepEqual(r.calls, ["prompt", "model:B/two", "read"]);
+  assert.match(v.state().modelError ?? "", /not supported.*not applied/);
+  assert.equal(v.state().chatModel, "B / two");
+  assert.equal(v.state().pendingThinkingLevel, null);
+  h.provider.dispose();
+});
+
+test("mutation and recovery failures use fixed safe messages and always release busy", async () => {
+  for (const operation of ["model", "thinking"]) for (const failure of ["result", "throw"]) {
+    const { r, h, v } = await readySettings();
+    const fail = async () => {
+      if (failure === "throw") throw new Error("SECRET");
+      return { ok: false as const, detail: "SECRET" };
+    };
+    if (operation === "model") r.runtime.setModel = fail;
+    else r.runtime.setThinkingLevel = fail;
+    r.runtime.getModelProjection = fail;
+    v.action(operation === "model" ? "setChatModel" : "setThinkingLevel",
+      operation === "model" ? { provider: "B", modelId: "two" } : { level: "high" });
+    await tick();
+    assert.equal(v.state().modelBusy, false);
+    assert.equal(v.state().pendingModel, null);
+    assert.equal(v.state().pendingThinkingLevel, null);
+    assert.equal(v.state().chatModel, null);
+    assert.match(v.state().modelError ?? "", /Select again/);
+    assert.doesNotMatch(JSON.stringify(v.sent), /SECRET/);
+    h.provider.dispose();
+  }
+});
+
+test("pending configuration survives view recreation and ignores old page actions", async () => {
+  const { r, h, v } = await readySettings();
+  v.action("sendChat", { text: "first" });
+  v.action("setThinkingLevel", { level: "high" });
+  const generation = v.state().generation;
+  const fresh = h.createView();
+  v.send("setThinkingLevel", { generation, level: "off" });
+  assert.equal(fresh.state().pendingThinkingLevel, "high");
+  r.settled(); await tick();
+  assert.equal(fresh.state().thinkingLevel, "high");
+  assert.equal(fresh.state().modelBusy, false);
+  h.provider.dispose();
+});
+
+test("in-flight settings completion cannot overwrite replacement runtime or workspace", async () => {
+  for (const invalidation of ["workspace", "resources", "dispose", "view"]) {
+    const { r, h, v } = await readySettings();
+    let finish!: (value: Awaited<ReturnType<PiRuntimeLifecycle["setModel"]>>) => void;
+    r.runtime.setModel = () => new Promise(resolve => { finish = resolve; });
+    v.action("sendChat", { text: "first" });
+    v.action("setChatModel", { provider: "B", modelId: "two" });
+    v.action("setThinkingLevel", { level: "high" });
+    r.settled();
+    let fresh = v;
+    if (invalidation === "workspace") { h.api.workspace.workspaceFolders = [folder("/next")]; h.change.fire(); }
+    if (invalidation === "resources") v.action("chooseResources", { choice: "decline" });
+    if (invalidation === "dispose") h.provider.dispose();
+    if (invalidation === "view") fresh = h.createView();
+    await tick();
+    finish({ ok: true, modelLabel: "Late", thinkingLevel: "off", thinkingLevels: ["off", "high"], models: [] });
+    await tick();
+    if (invalidation === "view") {
+      assert.ok(r.calls.includes("level:high")); assert.equal(fresh.state().modelBusy, false);
+    } else {
+      assert.ok(!r.calls.includes("level:high"));
+      if (invalidation !== "dispose") {
+        assert.notEqual(fresh.state().chatModel, "Late");
+        assert.equal(fresh.state().pendingModel, null); assert.equal(fresh.state().modelBusy, false);
+      }
+    }
+    h.provider.dispose();
+  }
+});
+
+test("late prompt acknowledgement cannot disturb settled configuration or a newer turn", async () => {
+  const { r, h, v } = await readySettings();
+  let finish!: (value: { ok: false; detail: string }) => void;
+  r.runtime.prompt = () => new Promise(resolve => { finish = resolve; });
+  v.action("sendChat", { text: "first" });
+  v.action("setThinkingLevel", { level: "high" });
+  r.settled(); await tick();
+  r.runtime.prompt = async () => ({ ok: true });
+  v.action("sendChat", { text: "next" });
+  finish({ ok: false, detail: "late" }); await tick();
+  assert.equal(v.state().chatBusy, true);
+  assert.equal(v.state().thinkingLevel, "high");
+  assert.notEqual(v.state().chatError, "late");
+  h.provider.dispose();
+});
+
+test("UI streaming controls stage selections; pending and applied remain distinct; applying blocks send", async () => {
+  const { h, v } = await readySettings();
+  class Element {
+    textContent = ""; hidden = false; disabled = false; value = ""; max = "0";
+    children: Element[] = [];
+    attributes = new Map<string, string>();
+    listeners = new Map<string, (event: unknown) => void>();
+    style = { setProperty: (_name: string, _value: string) => undefined };
+    setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+    addEventListener(name: string, callback: (event: unknown) => void) { this.listeners.set(name, callback); }
+    replaceChildren() { this.children = []; }
+    appendChild(child: Element) { this.children.push(child); }
+    fire(name: string, event: unknown = {}) { this.listeners.get(name)?.(event); }
+  }
+  const elements = new Map<string, Element>();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, new Element());
+    return elements.get(id)!;
+  };
+  const windows = new Map<string, (event: unknown) => void>();
+  const outgoing: unknown[] = [];
+  const html = getPlaceholderHtml("ui-test");
+  const script = html.match(/<script nonce="ui-test">([\s\S]*?)<\/script>/)?.[1]; assert.ok(script);
+  runInNewContext(script, {
+    acquireVsCodeApi: () => ({ postMessage: (message: unknown) => outgoing.push(message) }),
+    document: { getElementById: element, createElement: () => new Element() },
+    window: { addEventListener: (name: string, callback: (event: unknown) => void) => {
+      const previous = windows.get(name);
+      windows.set(name, event => { previous?.(event); callback(event); });
+    } },
+  });
+  const state = { ...v.state(), chatBusy: true, pendingThinkingLevel: "high",
+    pendingModel: { provider: "B", modelId: "two", label: "Two" } };
+  const render = (patch: Partial<WorkspaceStateMessage> = {}) => windows.get("message")?.({ data: { ...state, ...patch } });
+  render();
+  assert.equal(element("model-effort-trigger").disabled, false);
+  assert.equal(element("thinking-slider").disabled, false);
+  assert.equal(element("send-chat").disabled, true);
+  assert.equal(element("model-effort-trigger").textContent, "A / one · medium");
+  assert.match(element("pending-settings").textContent, /Next turn \(pending\): B \/ Two · thinking: high/);
+  assert.match(element("thinking-level-label").textContent, /Applied: medium.*pending.*high/);
+  assert.equal(element("model-list").hidden, true);
+  element("model-effort-trigger").fire("click");
+  element("model-current").fire("click");
+  assert.equal(element("model-list").hidden, false);
+  element("model-list").children[1].fire("click");
+  assert.equal((outgoing.at(-1) as { type: string }).type, "setChatModel");
+  assert.equal(element("model-list").hidden, true);
+  element("thinking-slider").fire("change", { target: { value: "0" } });
+  assert.equal((outgoing.at(-1) as { level: string }).level, "off");
+  render({ chatBusy: false, modelBusy: true });
+  assert.equal(element("model-effort-trigger").disabled, true);
+  assert.equal(element("thinking-slider").disabled, true);
+  assert.ok(element("model-list").children.every(item => item.disabled));
+  assert.match(element("pending-settings").textContent, /Applying next turn/);
+  element("chat-input").value = "keep draft";
+  const count = outgoing.length;
+  element("chat-input").fire("keydown", { key: "Enter", preventDefault() {} });
+  assert.equal(outgoing.length, count);
+  assert.equal(element("chat-input").value, "keep draft");
+  render({ chatBusy: false, modelBusy: false, pendingModel: null, pendingThinkingLevel: null,
+    modelError: "Requested thinking level is not supported." });
+  assert.equal(element("pending-settings").hidden, true);
+  assert.equal(element("model-status-error").hidden, false);
+  assert.equal(element("send-chat").disabled, false);
+  element("model-effort-trigger").fire("click");
+  windows.get("keydown")?.({ key: "Escape", preventDefault() {} });
+  assert.equal(element("model-popover").hidden, true);
+  element("model-effort-trigger").fire("click");
+  render({ generation: state.generation + 1 });
+  assert.equal(element("model-popover").hidden, true);
+  assert.match(html, /height: 14px; border-radius: 7px/);
+  assert.match(html, /#168BFF/);
+  h.provider.dispose();
+});
+
+test("queued configuration clears before resource and workspace replacements", async () => {
+  for (const kind of ["workspace", "resources"]) {
+    const { r, h, v } = await readySettings();
+    v.action("sendChat", { text: "first" });
+    v.action("setThinkingLevel", { level: "high" });
+    if (kind === "workspace") { h.api.workspace.workspaceFolders = [folder("/new")]; h.change.fire(); }
+    else v.action("chooseResources", { choice: "decline" });
+    r.settled(); await tick();
+    assert.equal(v.state().pendingThinkingLevel, null);
+    assert.ok(!r.calls.includes("level:high"));
+    h.provider.dispose();
+  }
+});
+
+test("deferred thinking failure preserves confirmed model without exposing exception", async () => {
+  const { r, h, v } = await readySettings();
+  v.action("sendChat", { text: "first" });
+  v.action("setChatModel", { provider: "B", modelId: "two" });
+  v.action("setThinkingLevel", { level: "high" });
+  r.runtime.setThinkingLevel = async () => { throw new Error("SECRET"); };
+  r.settled(); await tick();
+  assert.equal(v.state().chatModel, "B / two");
+  assert.equal(v.state().thinkingLevel, "medium");
+  assert.equal(v.state().modelBusy, false);
+  assert.match(v.state().modelError ?? "", /Could not apply/);
+  assert.doesNotMatch(JSON.stringify(v.sent), /SECRET/);
   h.provider.dispose();
 });
 

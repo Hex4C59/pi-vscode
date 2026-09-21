@@ -25,9 +25,14 @@
     "vscode": "^1.85.0",
     "node": ">=22"
   },
-  "categories": ["Other"],
-  "activationEvents": ["onView:pi-vscode.chat"],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:pi-vscode.chat"
+  ],
   "main": "./dist/extension.js",
+  "files": ["dist/extension.js", "dist/approval-gate.mjs", "assets", "LICENSE", "node_modules/**"],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
@@ -80,6 +85,8 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "esbuild src/extension/*.test.ts --bundle --platform=node --format=cjs --target=node22 --outdir=dist/tests && node --test dist/tests/*.test.js scripts/docs-i18n-check.test.mjs scripts/docs-verify.test.mjs scripts/docs-health.test.mjs scripts/project-trust.test.mjs",
+    "spike:offline-inference": "node scripts/spike-offline-inference.mjs",
+    "spike:approval": "npm run compile && node scripts/spike-approval.mjs",
     "spike:project-trust": "node scripts/spike-project-trust.mjs",
     "spike:runtime": "npm run compile && node dist/spike-runtime.js",
     "docs:i18n:check": "node scripts/docs-i18n-check.mjs",
@@ -96,6 +103,6 @@
     "typescript-eslint": "^8.46.4"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "0.85.1"
+    "@earendil-works/pi-coding-agent": "0.86.1"
   }
 }
