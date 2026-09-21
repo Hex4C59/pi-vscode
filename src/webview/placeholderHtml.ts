@@ -30,7 +30,7 @@ export function getPlaceholderHtml(nonce: string): string {
     <p id="choice-status" role="status">Not chosen yet.</p>
     <button id="allow" type="button" aria-pressed="false">Allow project resources</button>
     <button id="decline" type="button" aria-pressed="false">Continue without project resources</button>
-    <p>You can change this memory-only choice before runtime startup. Changing workspace or reloading the extension host clears it.</p>
+    <p>After you choose, the extension host starts pi in RPC mode with your selection. Changing choice restarts runtime. Changing workspace or reloading the extension host clears the choice and stops runtime.</p>
   </section>
   <p id="connection-status" role="status">Checking connection…</p>
   <script nonce="${nonce}">
@@ -56,20 +56,30 @@ export function getPlaceholderHtml(nonce: string): string {
       window.addEventListener("message", (event) => {
         const message = event.data;
         if (!message || typeof message !== "object" || Array.isArray(message) || message.version !== 1) return;
-        if (message.type === "pong") { element("connection-status").textContent = "Connected to extension host (runtime not started)"; return; }
+        if (message.type === "pong") { element("connection-status").textContent = "Connected to extension host."; return; }
         if (message.type !== "workspaceState" || !Number.isSafeInteger(message.generation) || message.generation < 0 ||
             !Object.hasOwn(labels, message.status) || (generation !== undefined && message.generation < generation)) return;
         generation = message.generation;
+        const runtimeLabels = {
+          "not-started": "Runtime not started. Chat is not available in this slice.",
+          "starting": "Starting pi runtime (RPC)… Chat is not available in this slice.",
+          "ready": "Runtime connected (RPC). Chat is not available in this slice.",
+          "stopping": "Stopping pi runtime…",
+          "error": "Runtime failed to start. Chat is not available in this slice."
+        };
         element("folder-name").textContent = message.folder?.name ?? "No single workspace folder";
         element("folder-path").textContent = message.folder?.path ?? "";
         element("workspace-status").textContent = labels[message.status] + (message.busy ? " Native action in progress…" : "");
+        element("runtime-status").textContent = (runtimeLabels[message.runtime] ?? runtimeLabels["not-started"])
+          + (message.runtime === "error" && message.runtimeDetail ? " " + message.runtimeDetail : "");
         element("error").textContent = message.error ?? "";
         element("open-folder").hidden = message.status !== "no-folder";
         element("manage-trust").hidden = message.status !== "untrusted";
         element("resources").hidden = message.status !== "eligible";
-        for (const id of ["open-folder", "manage-trust", "allow", "decline"]) element(id).disabled = message.busy;
-        element("choice-status").textContent = message.choice === "allow" ? "Choice recorded: allow project resources. Runtime not started."
-          : message.choice === "decline" ? "Choice recorded: continue without project resources. Runtime not started." : "Not chosen yet. Runtime not started.";
+        for (const id of ["open-folder", "manage-trust", "allow", "decline"]) element(id).disabled = message.busy || message.runtime === "starting" || message.runtime === "stopping";
+        const choiceBase = message.choice === "allow" ? "Choice recorded: allow project resources."
+          : message.choice === "decline" ? "Choice recorded: continue without project resources." : "Not chosen yet.";
+        element("choice-status").textContent = choiceBase;
         element("allow").setAttribute("aria-pressed", String(message.choice === "allow"));
         element("decline").setAttribute("aria-pressed", String(message.choice === "decline"));
       });

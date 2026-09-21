@@ -1,6 +1,7 @@
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getPlaceholderHtml } from "../webview/placeholderHtml.js";
+import { noopPiRuntimeLifecycle, type PiRuntimeLifecycle } from "./runtimeLifecycle.js";
 import { parseWebviewMessage, type WorkspaceStateMessage } from "./webviewMessages.js";
 
 export const PI_CHAT_VIEW_ID = "pi-vscode.chat";
@@ -21,12 +22,16 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private identity = "";
   private operation: object | undefined;
   private workspaceUpdatePending = false;
+  private reconcileToken = 0;
   private state: WorkspaceStateMessage = {
     version: 1, type: "workspaceState", generation: 0, status: "no-folder",
-    folder: null, choice: null, busy: false, error: null, runtime: "not-started",
+    folder: null, choice: null, busy: false, error: null, runtime: "not-started", runtimeDetail: null,
   };
 
-  constructor(private readonly api: Pick<typeof vscode, "workspace" | "env" | "window" | "commands">) {
+  constructor(
+    private readonly api: Pick<typeof vscode, "workspace" | "env" | "window" | "commands">,
+    private readonly runtime: PiRuntimeLifecycle = noopPiRuntimeLifecycle,
+  ) {
     this.refresh();
     this.subscriptions = [
       api.workspace.onDidChangeWorkspaceFolders(() => { this.refresh(true); this.publish(); }),
@@ -44,12 +49,56 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.identity = identity;
     this.operation = undefined;
     this.workspaceUpdatePending = false;
+    const prevChoice = this.state.choice;
+    const prevStatus = this.state.status;
     this.state = {
       ...this.state, generation: this.state.generation + 1, choice: null, busy: false, error: null,
+      runtime: "not-started", runtimeDetail: null,
       status: remote ? "remote" : folders.length === 0 ? "no-folder" : folders.length > 1 ? "multi-root"
         : folder?.uri.scheme !== "file" ? "non-file" : !trusted ? "untrusted" : "eligible",
       folder: folder ? { name: folder.name, path: folder.uri.scheme === "file" ? folder.uri.fsPath : folder.uri.toString() } : null,
     };
+    if (prevChoice !== this.state.choice || prevStatus !== this.state.status) {
+      void this.reconcileRuntime();
+    }
+  }
+
+  private async reconcileRuntime(): Promise<void> {
+    const token = ++this.reconcileToken;
+    const folderPath = this.state.folder?.path;
+    const choice = this.state.choice;
+    const shouldRun = this.state.status === "eligible" && folderPath && choice !== null && !this.disposed;
+    if (!shouldRun) {
+      if (this.state.runtime !== "not-started") {
+        this.state = { ...this.state, runtime: "stopping", runtimeDetail: null };
+        this.publish();
+      }
+      await this.runtime.stop();
+      if (token !== this.reconcileToken || this.disposed) return;
+      this.state = { ...this.state, runtime: "not-started", runtimeDetail: null };
+      this.publish();
+      return;
+    }
+    const projectTrust = choice === "allow" ? "approve" : "no-approve";
+    this.state = { ...this.state, runtime: "starting", runtimeDetail: null };
+    this.publish();
+    const result = await this.runtime.start({ cwd: folderPath, projectTrust });
+    if (token !== this.reconcileToken || this.disposed) return;
+    this.refresh();
+    if (this.state.status !== "eligible" || this.state.choice !== choice || this.state.folder?.path !== folderPath) {
+      void this.reconcileRuntime();
+      return;
+    }
+    if (!result.ok) {
+      this.state = {
+        ...this.state,
+        runtime: "error",
+        runtimeDetail: result.detail.length > 300 ? `${result.detail.slice(0, 297)}...` : result.detail,
+      };
+    } else {
+      this.state = { ...this.state, runtime: "ready", runtimeDetail: null };
+    }
+    this.publish();
   }
 
   private publish(): void {
@@ -96,7 +145,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === "getWorkspaceState") { this.publish(); return; }
     if (message.generation !== this.state.generation || this.state.busy) { this.publish(); return; }
     if (message.type === "chooseResources") {
-      if (this.state.status === "eligible") this.state = { ...this.state, choice: message.choice, error: null };
+      if (this.state.status === "eligible") {
+        this.state = { ...this.state, choice: message.choice, error: null };
+        void this.reconcileRuntime();
+      }
       this.publish();
       return;
     }
@@ -145,6 +197,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.reconcileToken += 1;
+    void this.runtime.stop();
     this.clearView();
     for (const subscription of this.subscriptions) subscription.dispose();
   }

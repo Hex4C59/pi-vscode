@@ -43,13 +43,13 @@
 
 **范围外：** 定时调度、模型服务接入、自动修复／归档／删除、提交／PR、全库语义正确性保证、模板仓库修改。现有文档仅做只读试巡检，不借机清理历史。
 
-## 正在做（WIP=1；WI-006 Build，待 F5 验收）
+## 已完成（WI-006）
 
 | 字段 | 内容 |
 |------|------|
 | **ID** | WI-006 |
 | **标题** | 工作区与 pi 项目资源选择界面（运行时启动前置切片） |
-| **阶段** | Build（维护者于 2026-09-19 回复「我认为这个方案可以」，批准下方 WI-006 范围） |
+| **阶段** | 已完成（维护者 2026-09-21 按 F5 检查单验收完成，未报告问题） |
 | **Gate ID** | `gate-project-trust`、`gate-webview-trust`（均 Open） |
 | **Decision** | `none` |
 | **决策类** | `none`（不关闭 gate；运行时集成另行批准） |
@@ -85,6 +85,79 @@
 ### 范围外与批准边界
 
 不启动运行时、不实现真实会话、聊天、模型、工具审批或持久信任；不自动安装包；不关闭 gate、不写 Accepted ADR。本提案不能替代完整 REQ-001 或 D-03 运行时验收。维护者于 2026-09-19 回复「我认为这个方案可以」，已批准本切片 Build；不代表整份 PRD Accepted 或 gate 关闭。WI-004 流式聊天仍在停车场。
+
+**验收：** 自动化（`npm test`、compile、lint、docs:verify）已在 Build 记录；维护者 2026-09-21 确认按下文 F5 检查单完成手动验收且无问题。`gate-project-trust` 与 `gate-webview-trust` **仍为 Open**（本切片不关闭 gate）。
+
+### WI-006 F5 验收检查单（已执行，2026-09-21）
+
+维护者已认可并执行；结果：通过，未列未测项。
+
+<details>
+<summary>展开检查单（归档备查）</summary>
+
+约 10–15 分钟。执行后回复 **「WI-006 F5 验收通过」** 或 **「未测：…」**。
+
+**准备：** `npm run compile` → **Run Extension** → F5 → **Pi → Chat**；确认 runtime 未启动文案；建议独立空目录作测试工作区。
+
+**A. 单文件夹 + 受信任** — Open Folder；未选时 Not chosen yet；Allow / Continue 均显示 Choice recorded 且 Runtime not started；隐藏侧栏后 π 恢复且选择保持。
+
+**B. 无文件夹** — Open folder 可见；确认后 Explorer 与 Pi 一致；取消不伪造成功。
+
+**C. 未信任** — 资源区隐藏、Manage workspace trust；信任后 eligible 且 Not chosen yet。
+
+**D. 多根** — 不支持多根；恢复单根不沿用旧选择。
+
+**E. 重载** — 记录选择后 Reload Window → Not chosen yet（CLI 独立 user-data-dir 路径优先）。
+
+**F. 可选** — 远程阻断文案、主题、键盘、特殊字符路径。
+
+**G. 不得** — 真实聊天、改 trust.json、非法态下资源双选。
+
+</details>
+
+## 已完成（WI-007）
+
+| 字段 | 内容 |
+|------|------|
+| **ID** | WI-007 |
+| **标题** | 消费 WI-006 资源选择启动 pi RPC 子进程（无聊天 UI） |
+| **阶段** | 已完成（维护者 2026-09-21 F5 验收通过） |
+| **Gate ID** | `gate-project-trust`、`gate-webview-trust`（均 Open；本切片不关闭） |
+| **Decision** | `none` |
+| **决策类** | `none` |
+| **PRD 判定** | 用户可见：REQ-001 / D-03 的运行时加载边界切片；侧栏显示运行时阶段，不交付完整 REQ-001 或 WI-004 聊天 |
+
+### 目标与范围
+
+- 在 eligible 工作区且用户已选择 allow/decline 后，扩展宿主启动固定版本 pi `0.85.1` 子进程 RPC（`--no-session`），并传入公开 `--approve` 或 `--no-approve`，`cwd` 为当前单根本地目录。
+- 以一次 `get_state` 成功作为「就绪」证据；进程保持存活直至选择变更、工作区／资格变化或 provider dispose。
+- 侧栏 `workspaceState.runtime` 投影 `not-started` / `starting` / `ready` / `stopping` / `error`；Webview 不 spawn、不持密钥。
+- `PiChatViewProvider` 通过注入的 `PiRuntimeLifecycle` 编排；`extension.ts` 接线 `createPiRpcRuntime()`。
+
+### 不做
+
+- WI-004 聊天、流式、模型、工具审批、会话列表；不写 trust.json；不关闭 gate；不宣称 WI-003 spike 未观察类别已验证。
+
+### 验收（提案）
+
+1. 自动化：选择 allow/decline 触发对应 trust 参数；工作区切换停止运行时；provider 不静态 import adapter。
+2. F5：选择后见 Starting → Runtime connected；改选重启；换工作区／重载后停止；无聊天输入。
+3. `npm test`、compile、lint、docs:verify 通过。
+
+**验收：** 维护者 2026-09-21 声明 **WI-007 F5 验收通过**（单根本地工作区、Allow 后 **Runtime connected (RPC)**，无聊天 UI）。`gate-project-trust` 与 `gate-webview-trust` **仍为 Open**；WI-003 未观察资源类别与生产隔离限制仍适用。
+
+## 正在做（WIP=1；下一 WI Prepare，未批准）
+
+| 字段 | 内容 |
+|------|------|
+| **ID** | 待定 |
+| **标题** | 待维护者选定下一工作项 |
+| **阶段** | Prepare（未写入讨论稿） |
+| **Gate ID** | 待定 |
+| **Decision** | `none` |
+| **PRD 判定** | 待定 |
+
+**建议下一项：** 停车场 **WI-004**（`gate-session-streaming` + 首条端到端消息流）。维护者确认后 Agent 写入正式 WI 讨论稿再 Build。
 
 ## 已完成（WI-003 技术 spike）
 
@@ -185,12 +258,11 @@
 
 ---
 
-## 今天 / 当前焦点（WI-006 Build，待 F5 验收）
+## 今天 / 当前焦点（WI-007 已收尾；选定下一 WI）
 
-- [x] 完成工作区与资源选择前置 UI 提案及双语 PRD 细化
-- [x] 维护者批准 WI-006 Build（2026-09-19）
-- [x] 完成宿主状态、前置 UI、窄消息协议及自动化验证
-- [ ] 维护者 F5 验收 WI-006；原生对话框、远程宿主及辅助功能仍需手动验证
+- [x] WI-007 维护者 F5 验收（2026-09-21）
+- [ ] 维护者确认下一 WI 是否为 **WI-004**（首条流式／聊天）或其他停车场项
+- [ ] Agent 起草下一 WI 讨论稿并写入 ACTIVE，维护者确认后再 Build
 
 ### 前序验收
 
@@ -215,7 +287,30 @@
 
 ## Last session
 
-### WI-006 信任及多根手动验证（2026-09-20，最新）
+### WI-007 F5 验收通过（2026-09-21，最新）
+
+- 维护者声明 **WI-007 F5 验收通过**（`my-ts-app` 单根本地工作区；Allow 后界面显示 **Runtime connected (RPC)**、**Choice recorded: allow project resources**、无聊天输入）。
+- WI-007 记为已完成；WIP 占位为下一 WI Prepare，建议候选 **WI-004**。两个 trust gate 保持 Open；未写 ADR。
+- WI-007 收尾将运行 `npm run docs:health`；本地改动（含 WI-007 代码、`docs-health` Windows 测试修复、ACTIVE）仍可能未提交。
+
+### WI-007 Build 启动（2026-09-21）
+
+- 维护者选定运行时接入为下一 WI（「先做1吧」）。实现：选择后宿主以 `--approve`/`--no-approve` 启动 RPC 子进程、`get_state` 就绪、工作区变化停止；更新 webview 契约与 UI runtime 文案。
+- 验证：`npm test` 44/44、compile、lint、docs:verify 通过。
+
+### WI-006 F5 验收通过（2026-09-21）
+
+- 维护者确认已按 ACTIVE 内 F5 检查单完成测试，**未报告问题**；WI-006 记为已完成。`gate-project-trust` 与 `gate-webview-trust` 保持 Open；REQ-001 仍为 Draft 切片交付，非完整 REQ-001。
+- ACTIVE 更新：WI-006 移至「已完成」；检查单折叠归档于 WI-006 小节。
+- WI-006 收尾运行 `npm run docs:health`：0 错误，26 文件扫描；语义巡检未在本轮执行。`scripts/docs-health.test.mjs` Windows 路径修复仍本地未提交。
+
+### WI-006 F5 验收检查单（2026-09-21）
+
+- Agent 起草 WI-006 F5 手动验收检查单（单根 eligible、无文件夹与取消、未信任、多根、重载清空选择、远程/主题/辅助功能可选项，以及本切片不得启动运行时的边界）。
+- 维护者回复「认可这份清单」；该清单作为 WI-006 整体验收的步骤权威，执行后须显式声明「WI-006 F5 验收通过」或列出未测项。认可检查单不等同 WI-006 已验收，不关闭 `gate-project-trust` / `gate-webview-trust`。
+- 附带修复 Windows 下 `scripts/docs-health.test.mjs` CLI 路径（`fileURLToPath`）；`npm test` 43/43 通过。未提交。
+
+### WI-006 信任及多根手动验证（2026-09-20）
 
 - 维护者将独立测试工作区设为 VS Code 未信任，截图确认资源选择按钮隐藏、显示阻断说明及 Manage workspace trust 入口；恢复信任后截图确认按钮恢复且状态为 Not chosen yet. Runtime not started.。
 - 按先记录选择、添加第二根目录、观察多根阻断、移除第二根目录的步骤测试，维护者明确反馈结果均符合预期：多根时不能继续选择，恢复单根后不沿用旧选择。

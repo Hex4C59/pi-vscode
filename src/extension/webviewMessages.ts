@@ -1,5 +1,7 @@
 export const WEBVIEW_MESSAGE_VERSION = 1;
 
+import type { RuntimePhase } from "./runtimeLifecycle.js";
+
 export type ResourceChoice = "allow" | "decline";
 export type WorkspaceStatus = "no-folder" | "multi-root" | "remote" | "non-file" | "untrusted" | "eligible";
 export type PingMessage = { version: 1; type: "ping" };
@@ -17,7 +19,8 @@ export type WorkspaceStateMessage = {
   choice: ResourceChoice | null;
   busy: boolean;
   error: string | null;
-  runtime: "not-started";
+  runtime: RuntimePhase;
+  runtimeDetail: string | null;
 };
 
 export function parseWebviewMessage(value: unknown): WebviewMessage | undefined {

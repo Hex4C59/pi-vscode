@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
 
+import { createPiRpcRuntime } from "./adapter/pi-rpc-runtime.js";
 import { focusPiChat, PiChatViewProvider } from "./extension/piChatViewProvider.js";
 
 export function activate(context: vscode.ExtensionContext): void {
-  const provider = new PiChatViewProvider(vscode);
+  const runtime = createPiRpcRuntime();
+  const provider = new PiChatViewProvider(vscode, runtime);
   context.subscriptions.push(provider);
 
   context.subscriptions.push(
@@ -22,5 +24,5 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  // Runtime lifecycle is owned by adapter layers in later WIs.
+  // PiChatViewProvider.dispose stops the owned subprocess via injected lifecycle.
 }

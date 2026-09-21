@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import type * as vscode from "vscode";
 import { focusPiChat, PiChatViewProvider } from "./piChatViewProvider.js";
+import type { PiRuntimeLifecycle } from "./runtimeLifecycle.js";
 import { parseWebviewMessage, type WorkspaceStateMessage } from "./webviewMessages.js";
 import { getPlaceholderHtml } from "../webview/placeholderHtml.js";
 
@@ -19,7 +20,12 @@ const folder = (path = "/project", scheme = "file") => ({
   name: path, index: 0, uri: { scheme, fsPath: path, toString: () => `${scheme}://${path}` },
 });
 const tick = async () => { await new Promise<void>((resolve) => setImmediate(resolve)); };
-function harness(folders = [folder()], trusted = true, remoteName: string | undefined = undefined) {
+function harness(
+  folders = [folder()],
+  trusted = true,
+  remoteName: string | undefined = undefined,
+  runtime?: PiRuntimeLifecycle,
+) {
   const change = new Event<void>();
   const trust = new Event<void>();
   const commands: unknown[][] = [];
@@ -32,7 +38,7 @@ function harness(folders = [folder()], trusted = true, remoteName: string | unde
     window: { showOpenDialog: async (): Promise<ReturnType<typeof folder>["uri"][] | undefined> => { picks++; return undefined; } },
     commands: { executeCommand: async (...args: unknown[]) => { commands.push(args); } },
   };
-  const provider = new PiChatViewProvider(api as unknown as ConstructorParameters<typeof PiChatViewProvider>[0]);
+  const provider = new PiChatViewProvider(api as unknown as ConstructorParameters<typeof PiChatViewProvider>[0], runtime);
   const createView = () => {
     const receive = new Event<unknown>();
     const dispose = new Event<void>();
@@ -76,7 +82,9 @@ test("eligibility matrix blocks every action except native recovery for its stat
     v.action("manageTrust"); await tick();
     assert.equal(h.picks, expected === "no-folder" ? 1 : 0);
     assert.deepEqual(h.commands, expected === "untrusted" ? [["workbench.trust.manage"]] : []);
-    assert.equal(v.state().runtime, "not-started");
+    await tick();
+    await tick();
+    assert.equal(v.state().runtime, expected === "eligible" ? "ready" : "not-started");
     h.provider.dispose();
   }
 });
@@ -274,17 +282,39 @@ test("UI renders hostile names/paths with textContent and wires keyboard-native 
   receive({ data: { version: 1, type: "workspaceState", generation: 7, status: "eligible", folder: { name: hostile, path: hostile }, choice: "decline", busy: false, error: null } });
   assert.equal(elements.get("folder-name")?.textContent, hostile);
   assert.equal(elements.get("folder-path")?.textContent, hostile);
-  assert.match(elements.get("choice-status")?.textContent ?? "", /Runtime not started/);
+  assert.match(elements.get("runtime-status")?.textContent ?? "", /Runtime not started/);
   clicks.get("allow")?.();
   assert.equal(JSON.stringify(outgoing.at(-1)), JSON.stringify({ version: 1, type: "chooseResources", generation: 7, choice: "allow" }));
   assert.doesNotMatch(html, /innerHTML|localStorage|setState\(|getState\(/);
   assert.match(html, /:focus-visible/); assert.match(html, /role="alert"/);
 });
 
-test("product bundle has zero runtime, secret, subprocess or persistence capabilities", () => {
-  // Bundled test imports the real provider with only a mocked VS Code facade.
-  // Source invariant complements behavior tests: no unobserved runtime entry exists.
-  for (const path of ["src/extension.ts", "src/extension/piChatViewProvider.ts", "src/extension/webviewMessages.ts", "src/webview/placeholderHtml.ts"]) {
+test("resource choice starts runtime with approve or no-approve and stops on workspace change", async () => {
+  const starts: { cwd: string; projectTrust: string }[] = [];
+  const runtime: PiRuntimeLifecycle = {
+    async start(options) {
+      starts.push(options);
+      return { ok: true };
+    },
+    async stop() { /* noop */ },
+  };
+  const h = harness([folder()], true, undefined, runtime);
+  const v = h.createView();
+  v.action("chooseResources", { choice: "allow" });
+  await tick(); await tick();
+  assert.deepEqual(starts.at(-1), { cwd: "/project", projectTrust: "approve" });
+  assert.equal(v.state().runtime, "ready");
+  v.action("chooseResources", { choice: "decline" });
+  await tick(); await tick();
+  assert.deepEqual(starts.at(-1), { cwd: "/project", projectTrust: "no-approve" });
+  h.api.workspace.workspaceFolders = [folder("/other")]; h.change.fire();
+  await tick(); await tick();
+  assert.equal(v.state().runtime, "not-started");
+  h.provider.dispose();
+});
+
+test("webview provider does not import adapter; extension entry wires subprocess lifecycle", () => {
+  for (const path of ["src/extension/piChatViewProvider.ts", "src/extension/webviewMessages.ts", "src/webview/placeholderHtml.ts"]) {
     assert.doesNotMatch(readFileSync(path, "utf8"), /from\s+["'][^"']*(?:adapter|pi-coding-agent|child_process|node:fs)|SecretStorage|globalState|workspaceState\.update|trust\.json/);
   }
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));

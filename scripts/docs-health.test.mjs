@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { runDocsHealth } from './docs-health-lib.mjs';
 
@@ -78,13 +79,13 @@ test('body examples, translated metadata and unconfigured files do not create no
 });
 
 test('CLI emits parseable JSON and fails on invalid arguments', () => {
-  const cli = new URL('./docs-health.mjs', import.meta.url);
-  const result = spawnSync(process.execPath, [cli.pathname, '--json'], { encoding: 'utf8' });
+  const cli = fileURLToPath(new URL('./docs-health.mjs', import.meta.url));
+  const result = spawnSync(process.execPath, [cli, '--json'], { encoding: 'utf8' });
   const report = JSON.parse(result.stdout);
   assert.equal(report.schemaVersion, 1);
   assert.equal(report.mode, 'read-only');
   assert.equal(result.status, report.errors ? 1 : 0);
-  const invalid = spawnSync(process.execPath, [cli.pathname, '--write'], { encoding: 'utf8' });
+  const invalid = spawnSync(process.execPath, [cli, '--write'], { encoding: 'utf8' });
   assert.equal(invalid.status, 1);
   assert.match(invalid.stderr, /Usage/);
 });
