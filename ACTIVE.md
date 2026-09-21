@@ -76,6 +76,8 @@ WI-010 于 2026-09-21 获四项 F5 确认后，维护者要求“进入收尾吧
 
 ### WI-010 限定切片收尾（2026-09-21，最新）
 
+- 预览链接兼容修正（2026-09-21）：按维护者反馈，仅移除完成索引 8 个“记录”链接的章节锚点，保留相对路径与历史内容；绕过当前 Cursor 对带锚点相对链接的处理问题。实际预览点击待维护者复验，不改变 WI／gate 状态。
+
 - 按维护者四项 F5 确认及“进入收尾吧”关闭 WI-010；长提案、批准、既有自动化／打包证据和旧交接并入既有双语历史，更新归档索引与完成索引；同步双语 PRD／架构／消息契约的状态与最终范围。
 - 未将四项检查扩大为已安装 VSIX 或完整审批矩阵验收；WI-008／WI-009 延后设置待验收，基础 UI／空闲切换验收保留。PRD Draft、架构 Proposed／Direction、契约 Outline、gate Open、ADR pending 均不提升。
 - 本次仅文档，不改源码、package、已批准计划或 Git commit。语义核对覆盖 WI-010 相关文档、状态与活动 DTO／测试；仓库 README 的旧脚手架状态另记为待后续文档同步，不在本次限定归档中扩大修改。
@@ -88,13 +90,15 @@ WI-010 于 2026-09-21 获四项 F5 确认后，维护者要求“进入收尾吧
 
 ## 已完成 WI 索引
 
+为兼容当前 Cursor 预览，历史链接直接打开归档文件，不附章节锚点；打开后搜索对应 WI 编号即可定位。
+
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
-| WI-001 | 扩展壳、辅助侧栏与 RPC 探针；ADR 0001 | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-001) |
-| WI-002 | 版本化 ping/pong Webview 桥 | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-002) |
-| WI-003 | Project trust 技术 spike；gate 仍 Open | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-003) |
-| WI-004 | REQ-004 最小流式聊天；gate 仍 Open | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-004) |
-| WI-005 | 文档健康第一阶段 | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-005) |
-| WI-006 | 工作区与项目资源选择 UI | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-006) |
-| WI-007 | 根据资源选择启动 pi RPC | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-007) |
-| WI-010 | thinking／受控工具／Stop 四项 F5 已确认；限定切片关闭，ADR pending／gate Open | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-010) |
+| WI-001 | 扩展壳、辅助侧栏与 RPC 探针；ADR 0001 | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-002 | 版本化 ping/pong Webview 桥 | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-003 | Project trust 技术 spike；gate 仍 Open | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-004 | REQ-004 最小流式聊天；gate 仍 Open | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-005 | 文档健康第一阶段 | 2026-09-19 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-006 | 工作区与项目资源选择 UI | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-007 | 根据资源选择启动 pi RPC | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-010 | thinking／受控工具／Stop 四项 F5 已确认；限定切片关闭，ADR pending／gate Open | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
