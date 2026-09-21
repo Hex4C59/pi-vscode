@@ -40,7 +40,7 @@
         {
           "id": "pi-vscode",
           "title": "Pi",
-          "icon": "media/pi.svg"
+          "icon": "assets/pi.svg"
         }
       ]
     },
@@ -60,8 +60,8 @@
         "title": "pi: Focus Chat",
         "category": "pi",
         "icon": {
-          "light": "media/pi-light.svg",
-          "dark": "media/pi-dark.svg"
+          "light": "assets/pi-light.svg",
+          "dark": "assets/pi-dark.svg"
         }
       }
     ],

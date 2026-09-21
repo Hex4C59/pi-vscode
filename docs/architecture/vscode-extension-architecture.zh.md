@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[vscode-extension-architecture.md](vscode-extension-architecture.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-21
 
 - 类型：Architecture
 - 状态：Proposed
@@ -38,9 +38,9 @@
 ```mermaid
 flowchart TD
     U["用户"] --> W["UI：侧栏 Webview<br/>src/webview/"]
-    W <-->|"postMessage：计划在 WI-002 建立"| H["扩展宿主<br/>src/extension/"]
-    H <-->|"聊天集成：尚未接通"| A["适配层<br/>src/adapter/"]
-    A <-->|"子进程 RPC：仅 WI-001 探针"| P["上游 pi 运行时<br/>npm 依赖，不在本仓库 src/ 内"]
+    W <-->|"postMessage：WI-002 ping；WI-006 工作区"| H["扩展宿主<br/>src/extension/"]
+    H <-->|"聊天：WI-004 Prepare（未实现）"| A["适配层<br/>src/adapter/"]
+    A <-->|"子进程 RPC：WI-007 生命周期"| P["上游 pi 运行时<br/>npm 依赖，不在本仓库 src/ 内"]
     E["扩展入口<br/>src/extension.ts"] -->|"注册视图和命令"| H
 ```
 
@@ -70,3 +70,7 @@ flowchart TD
 ## 6. 未决事项（gate）
 
 见 [`../reference/architecture-gates.zh.md`](../reference/architecture-gates.zh.md)。
+
+## 7. 实现快照（截至 WI-007；不表示关闭 gate）
+
+WI-004 Build 起增加**最小纯文本聊天切片**：allowlist `sendChat`、宿主内存 transcript、RPC `prompt` 与 `text_delta` 投影，并在既有 WI-007 子进程路径上以 `--no-tools` 启动。此前切片仍在：侧栏 Webview 桥（WI-002）、工作区／资源选择（WI-006）、RPC 就绪（WI-007）。信任与会话流式 gate 仍 Open，见 [`architecture-gates.zh.md`](../reference/architecture-gates.zh.md)。ACTIVE 中维护者 F5 流式验收仍待完成。

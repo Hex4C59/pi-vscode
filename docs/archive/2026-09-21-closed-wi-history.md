@@ -1,4 +1,4 @@
-# Closed work-item history through WI-007
+# Closed work-item history through WI-004
 
 English | [中文](2026-09-21-closed-wi-history.zh.md)
 
@@ -60,6 +60,15 @@ English | [中文](2026-09-21-closed-wi-history.zh.md)
 - **Architecture:** the host consumed an injected `PiRuntimeLifecycle`; the extension entry wired the subprocess adapter; the webview displayed `not-started`, `starting`, `ready`, `stopping` or `error` without receiving process capability or credentials.
 - **Verification:** `npm test` passed 44/44 with compile, lint and docs checks. On 2026-09-21 the maintainer observed `Runtime connected (RPC)` and `Choice recorded: allow project resources` for a trusted local single-root workspace and declared F5 acceptance.
 - **Limits:** no chat input, streaming, model UI, tool approval or session list. Both trust gates stayed Open; WI-003's unobserved categories and isolation limits still apply.
+
+<a id="wi-004"></a>
+## WI-004 — First end-to-end chat (minimal streaming slice)
+
+- **PRD:** REQ-004 minimal Draft slice (user text + assistant `text_delta` streaming); not full REQ-002/003/005/006/008.
+- **Approved scope:** `sendChat` when `runtime === ready`; host `prompt` with `--no-tools` RPC; `text_delta` projection and `agent_settled` for busy state; in-memory transcript; bilingual [`webview-messages`](../reference/webview-messages.md) chat outline. Evidence: [WI-004 RPC (0.85.1)](../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md).
+- **Build delivery (2026-09-21):** `PiRuntimeLifecycle.prompt`/event subscription; long-lived `pi-rpc-runtime` JSONL; `--model` from `~/.pi/agent/settings.json`; `chatModel` display; bounded `chatError` on `auto_retry_end` or empty assistant reply.
+- **Acceptance:** Maintainer closed WI-004 on 2026-09-21. F5: fast character streaming; Send → Sending… → Send; provider 503 surfaced; stable after saving pi startup default model (e.g. gpt-5.6-luna). Automated `npm test` 49/49, compile, lint, `docs:verify` passed.
+- **Limits:** `gate-session-streaming`, `gate-webview-trust`, `gate-project-trust` remain Open; no in-extension model picker (REQ-002), Stop, tool approval, or session history; provider errors may include short JSON; model follows pi startup default, not ephemeral TUI selection.
 
 ## Cross-session maintenance notes
 

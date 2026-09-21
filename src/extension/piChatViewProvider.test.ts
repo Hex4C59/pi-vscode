@@ -7,6 +7,7 @@ import { focusPiChat, PiChatViewProvider } from "./piChatViewProvider.js";
 import type { PiRuntimeLifecycle } from "./runtimeLifecycle.js";
 import { parseWebviewMessage, type WorkspaceStateMessage } from "./webviewMessages.js";
 import { getPlaceholderHtml } from "../webview/placeholderHtml.js";
+import { boundUserFacingDetail, formatRuntimeError } from "./chatBounds.js";
 
 class Event<T> {
   readonly listeners = new Set<(value: T) => unknown>();
@@ -54,9 +55,21 @@ function harness(
   return { api, provider, createView, change, trust, commands, updates, get picks() { return picks; } };
 }
 
+test("normalizes provider availability errors without exposing raw JSON", () => {
+  assert.equal(formatRuntimeError('503: {"message":"Service temporarily unavailable","type":"api_error"}'),
+    "Model service is temporarily unavailable. Check the provider status or switch models, then try again.");
+  assert.equal(formatRuntimeError("429 rate limit exceeded"),
+    "Model rate limit reached. Wait a moment or switch models, then try again.");
+  assert.equal(formatRuntimeError("  generic failure  "), "generic failure");
+  assert.ok(boundUserFacingDetail("x".repeat(1000)).length <= 300);
+});
 test("strict action allowlist rejects expanded shapes, hostile values and generations", () => {
-  for (const type of ["openFolder", "manageTrust", "chooseResources"]) {
-    const valid = { version: 1, type, generation: 1, ...(type === "chooseResources" ? { choice: "allow" } : {}) };
+  for (const type of ["openFolder", "manageTrust", "chooseResources", "sendChat"]) {
+    const valid = {
+      version: 1, type, generation: 1,
+      ...(type === "chooseResources" ? { choice: "allow" } : {}),
+      ...(type === "sendChat" ? { text: "hello" } : {}),
+    };
     assert.ok(parseWebviewMessage(valid));
     for (const generation of [-1, 1.5, Infinity, NaN, "1", Number.MAX_SAFE_INTEGER + 1]) assert.equal(parseWebviewMessage({ ...valid, generation }), undefined);
     for (const extra of [{ path: "/evil" }, { command: "evil" }, { isTrusted: true }, { choice: "invalid" }]) assert.equal(parseWebviewMessage({ ...valid, ...extra }), undefined);
@@ -279,7 +292,7 @@ test("UI renders hostile names/paths with textContent and wires keyboard-native 
     } }, window: { addEventListener: (_name: string, callback: typeof receive) => { receive = callback; } },
   });
   const hostile = '</script><img src=x onerror="attack()"> & <';
-  receive({ data: { version: 1, type: "workspaceState", generation: 7, status: "eligible", folder: { name: hostile, path: hostile }, choice: "decline", busy: false, error: null } });
+  receive({ data: { version: 1, type: "workspaceState", generation: 7, status: "eligible", folder: { name: hostile, path: hostile }, choice: "decline", busy: false, error: null, runtime: "not-started", runtimeDetail: null, messages: [], chatBusy: false, chatError: null, chatModel: null } });
   assert.equal(elements.get("folder-name")?.textContent, hostile);
   assert.equal(elements.get("folder-path")?.textContent, hostile);
   assert.match(elements.get("runtime-status")?.textContent ?? "", /Runtime not started/);
@@ -294,9 +307,12 @@ test("resource choice starts runtime with approve or no-approve and stops on wor
   const runtime: PiRuntimeLifecycle = {
     async start(options) {
       starts.push(options);
-      return { ok: true };
+      return { ok: true, modelLabel: "Test / model" };
     },
     async stop() { /* noop */ },
+    getSession() { return 1; },
+    subscribe() { return () => undefined; },
+    async prompt() { return { ok: true }; },
   };
   const h = harness([folder()], true, undefined, runtime);
   const v = h.createView();
@@ -310,6 +326,46 @@ test("resource choice starts runtime with approve or no-approve and stops on wor
   h.api.workspace.workspaceFolders = [folder("/other")]; h.change.fire();
   await tick(); await tick();
   assert.equal(v.state().runtime, "not-started");
+  h.provider.dispose();
+});
+
+test("sendChat streams assistant text and rejects stale runtime events", async () => {
+  let session = 0;
+  const listeners = new Set<(event: import("./runtimeLifecycle.js").RuntimeEvent) => void>();
+  const runtime: PiRuntimeLifecycle = {
+    async start() {
+      session += 1;
+      return { ok: true, modelLabel: null };
+    },
+    async stop() { session = 0; },
+    getSession() { return session; },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    async prompt(text) {
+      const active = session;
+      queueMicrotask(() => {
+        for (const listener of listeners) {
+          listener({ kind: "text_delta", session: active, delta: `echo:${text}` });
+          listener({ kind: "agent_settled", session: active });
+        }
+      });
+      return { ok: true };
+    },
+  };
+  const h = harness([folder()], true, undefined, runtime);
+  const v = h.createView();
+  v.action("chooseResources", { choice: "allow" });
+  await tick(); await tick();
+  assert.equal(v.state().runtime, "ready");
+  v.action("sendChat", { text: "hi" });
+  await tick(); await tick();
+  const after = v.state();
+  assert.equal(after.chatBusy, false);
+  assert.deepEqual(after.messages, [{ role: "user", text: "hi" }, { role: "assistant", text: "echo:hi" }]);
+  for (const listener of listeners) listener({ kind: "text_delta", session: session - 1, delta: "stale" });
+  assert.equal(v.state().messages.at(-1)?.text, "echo:hi");
   h.provider.dispose();
 });
 

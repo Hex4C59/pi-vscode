@@ -74,6 +74,8 @@
 | [信任验证程序](../../../scripts/spike-project-trust.mjs)、[fixture／生命周期辅助模块](../../../scripts/project-trust-lib.mjs)、[测试](../../../scripts/project-trust.test.mjs)、`npm run spike:project-trust` | 固定版本下隔离的启动与跨 cwd 会话切换场景。执行前阅读程序及其限制。 |
 | [归档 WI-003 证据](../../archive/2026-09-21-closed-wi-history.zh.md#wi-003) | 已记录的六组信任场景观察，以及维护者仅对 spike 的验收。这是既有观察，不代表当前会话已重跑。 |
 | [Webview 契约](../../reference/webview-messages.zh.md)、ACTIVE 的 WI-006 | 工作区资格与内存资源选择 UI，未启动运行时。选择已记录不等于资源已加载。 |
+| [WI-007 归档](../../archive/2026-09-21-closed-wi-history.zh.md#wi-007)、[`pi-rpc-runtime`](../../../src/adapter/pi-rpc-runtime.ts) | 由宿主选择触发的长生命周期子进程 RPC；`get_state` 就绪；无聊天或流式。 |
+| [WI-004 RPC 证据（0.85.1）](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md) | Prepare 阶段与固定版本一致的 `prompt`、`text_delta`、`turn_end` 与 `--no-tools` 文档；非 WI-004 实机验证。 |
 
 ### 项目信任发现与剩余限制
 

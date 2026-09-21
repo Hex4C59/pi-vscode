@@ -69,6 +69,8 @@ Related: [TypeScript/Node playbook](typescript.md).
 | [Trust harness](../../../scripts/spike-project-trust.mjs), [fixture/lifecycle helpers](../../../scripts/project-trust-lib.mjs), [tests](../../../scripts/project-trust.test.mjs), `npm run spike:project-trust` | Isolated startup and cross-cwd session-switch scenarios for the fixed version. Read the harness and its limitations before execution. |
 | [Archived WI-003 evidence](../../archive/2026-09-21-closed-wi-history.md#wi-003) | Recorded six-scenario trust observations and maintainer acceptance of the spike only. These are prior observations, not a claim that the current session reran them. |
 | [Webview contract](../../reference/webview-messages.md), WI-006 in ACTIVE | Workspace eligibility and in-memory resource choice UI; the runtime is not started. Selection recorded does not mean resources loaded. |
+| [WI-007 archive](../../archive/2026-09-21-closed-wi-history.md#wi-007), [`pi-rpc-runtime`](../../../src/adapter/pi-rpc-runtime.ts) | Long-lived subprocess RPC from host-owned choice; `get_state` readiness; no chat or streaming. |
+| [WI-004 RPC evidence (0.85.1)](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md) | Version-matched `prompt`, `text_delta`, `turn_end` and `--no-tools` docs for Prepare; not live WI-004 verification. |
 
 ### Project trust findings and remaining limits
 

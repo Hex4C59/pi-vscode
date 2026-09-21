@@ -1,4 +1,4 @@
-# 截至 WI-007 的已关闭工作项历史
+# 截至 WI-004 的已关闭工作项历史
 
 [English](2026-09-21-closed-wi-history.md) | 中文
 
@@ -10,7 +10,7 @@
 - 状态：Historical
 - 创建：2026-09-21
 - 权威：仅作上下文；当前工作仍以 [`ACTIVE.md`](../../ACTIVE.md) 为准
-- 归档原因：WI-001/002/003/005/006/007 已关闭；其长讨论稿、验收证据与旧交接不再属于当前工作入口。
+- 归档原因：WI-001/002/003/005/006/007/004 已关闭；其长讨论稿、验收证据与旧交接不再属于当前工作入口。
 
 > 不得按本文件直接实现。它保留历史范围、批准、证据和限制；现行需求、架构、gate、ADR 与 `ACTIVE.md` 优先。
 
@@ -64,6 +64,15 @@
 - **架构：** 宿主消费注入的 `PiRuntimeLifecycle`；扩展入口连接子进程 adapter；Webview 展示 `not-started`、`starting`、`ready`、`stopping` 或 `error`，不接收进程能力或凭证。
 - **验证：** `npm test` 44/44，compile、lint、docs 检查通过。2026-09-21，维护者在受信任单根本地工作区观察到 `Runtime connected (RPC)` 与 `Choice recorded: allow project resources`，并声明 F5 验收通过。
 - **限制：** 无聊天输入、流式、模型 UI、工具审批或会话列表。两个 trust gate 保持 Open；WI-003 未观察类别与隔离限制继续适用。
+
+<a id="wi-004"></a>
+## WI-004 — 首条端到端聊天（最小流式切片）
+
+- **PRD：** REQ-004 最小 Draft 切片（用户文本 + 助手 `text_delta` 流式）；不交付 REQ-002/003/005/006/008 完整能力。
+- **批准范围：** `runtime === ready` 后 `sendChat`；宿主 `prompt` + `--no-tools` RPC；`text_delta` 投影与 `agent_settled` 结束忙碌态；内存 transcript；双语 [`webview-messages`](../reference/webview-messages.zh.md) chat Outline。证据见 [WI-004 RPC（0.85.1）](../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)。
+- **Build 交付（2026-09-21）：** `PiRuntimeLifecycle.prompt`／事件订阅；`pi-rpc-runtime` 长生命周期 JSONL；读取 `~/.pi/agent/settings.json` 启动 `--model`；`chatModel` 展示；`auto_retry_end`／无回复时的有界 `chatError`。
+- **验收：** 维护者 2026-09-21 声明关闭 WI-004。F5：助手文本快速逐字流式；Send → Sending… → Send；上游 503 时显示错误；在 pi 保存启动默认模型（如 gpt-5.6-luna）后扩展侧恢复正常。自动化 `npm test` 49/49、compile、lint、`docs:verify` 通过。
+- **限制：** `gate-session-streaming`、`gate-webview-trust`、`gate-project-trust` 仍 Open；无扩展内模型选择（REQ-002）、Stop、工具审批、会话历史；provider 错误可能仍含简短 JSON 片段；模型依赖 pi 启动默认而非 TUI 临时切换。
 
 ## 跨会话维护记录
 

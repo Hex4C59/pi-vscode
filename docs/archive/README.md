@@ -27,7 +27,7 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 
 | Record | Contents |
 |--------|----------|
-| [Closed work-item history through WI-007](2026-09-21-closed-wi-history.md) | WI-001/002/003/005/006/007 scope, acceptance evidence and retained limits |
+| [Closed work-item history through WI-004](2026-09-21-closed-wi-history.md) | WI-001–007 and WI-004 scope, acceptance evidence and retained limits |
 
 ## Agent rule
 

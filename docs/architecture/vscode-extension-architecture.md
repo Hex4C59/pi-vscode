@@ -22,9 +22,9 @@ The extension is a **presentation and orchestration layer**. It does not reimple
 
 | Layer | Responsibility | Owner (this repo) |
 |-------|----------------|-------------------|
-| **UI (Webview)** | Chat layout, streaming display, local UI state only | `src/webview/` (planned) |
-| **Extension host** | Activation, commands, configuration, `SecretStorage`, workspace trust policy, webview lifecycle, validated `postMessage` bridge | `src/extension/` (planned) |
-| **Adapter** | pi SDK or RPC subprocess → internal domain events consumed by host + webview | `src/adapter/` (planned) |
+| **UI (Webview)** | Chat layout, streaming display, local UI state only | `src/webview/` |
+| **Extension host** | Activation, commands, configuration, `SecretStorage`, workspace trust policy, webview lifecycle, validated `postMessage` bridge | `src/extension/` |
+| **Adapter** | pi SDK or RPC subprocess → internal domain events consumed by host + webview | `src/adapter/` |
 | **Runtime (upstream)** | Models, tools, sessions, project resources | pi packages / subprocess |
 
 The diagram shows the target boundaries; edge labels distinguish the current scaffold from later work. WI-001 selected subprocess RPC for the runtime probe, not end-user chat.
@@ -33,9 +33,9 @@ The diagram shows the target boundaries; edge labels distinguish the current sca
 ```mermaid
 flowchart TD
     U["User"] --> W["UI: sidebar Webview<br/>src/webview/"]
-    W <-->|"postMessage: planned for WI-002"| H["Extension host<br/>src/extension/"]
-    H <-->|"Chat integration: not yet connected"| A["Adapter<br/>src/adapter/"]
-    A <-->|"Subprocess RPC: WI-001 probe only"| P["Upstream pi runtime<br/>npm dependency, outside this repo's src/"]
+    W <-->|"postMessage: WI-002 ping; WI-006 workspace"| H["Extension host<br/>src/extension/"]
+    H <-->|"Chat: WI-004 Prepare (not built)"| A["Adapter<br/>src/adapter/"]
+    A <-->|"Subprocess RPC: WI-007 lifecycle"| P["Upstream pi runtime<br/>npm dependency, outside this repo's src/"]
     E["Extension entry point<br/>src/extension.ts"] -->|"Registers view and command"| H
 ```
 
@@ -72,3 +72,7 @@ See [`../reference/architecture-gates.md`](../reference/architecture-gates.md):
 - `gate-sidebar-chat-shell` — secondary-sidebar webview placeholder
 - `gate-webview-trust` — message schema, CSP, secret isolation (before real chat)
 - `gate-runtime-host` — pi in-process SDK vs subprocess RPC
+
+## 7. Implementation snapshot (through WI-007; not gate closure)
+
+As of WI-004 Build, the repo adds a **minimal plain-text chat slice**: allowlisted `sendChat`, host-owned in-memory transcript, RPC `prompt` with `text_delta` projection and `--no-tools` startup on the existing WI-007 subprocess path. Earlier slices remain: secondary-sidebar Webview bridge (WI-002), workspace/resource choice (WI-006), and RPC readiness (WI-007). Trust and session-streaming gates remain Open per [`architecture-gates.md`](../reference/architecture-gates.md). Maintainer F5 acceptance of streaming is still outstanding in ACTIVE.

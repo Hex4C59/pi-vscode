@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[product-requirements.md](product-requirements.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-21
 
 - 类型：产品需求
 - 状态：**Draft**
@@ -56,6 +56,14 @@ D-04 已确认边界：单个本地工作区文件夹（Git 或非 Git），每�
 ### REQ-004 — 可观察的任务执行
 
 发送文本任务并展示流式回答与工具活动。适用时区分运行、等待审批、重试、压缩、完成、停止和失败状态。展示工具名称、目标及结果，限制输出体积并保护密钥。请求被接受不等于任务完成；排队续跑或自动重试尚未结束时不得显示完成。
+
+#### WI-004 建议切片 — 首条用户文本与助手文本流式（Draft）
+
+在 WI-007 运行时就绪（`workspaceState.runtime === "ready"`）之后，允许发送**有界纯文本用户消息**，并在侧栏 webview 中展示**助手文本增量**。使用固定 pi `0.85.1` 子进程 JSONL RPC：宿主发送 `prompt`；适配器将 `message_update` 中 `assistantMessageEvent.type === "text_delta"` 映射为宿主拥有的 transcript；在 `turn_end`（或文档等价的公开事件）结束可见流式回合。`prompt` 命令的 `response` 仅表示接受／拒绝，不代表完成。
+
+在 REQ-006 审批 UI 实现前，以公开 `--no-tools` 启动运行时；UI 明示无工具模式／非完整 Agent，不声称沙箱隔离。复用既有 pi 凭证与配置；模型／凭证／provider 失败时显示有界恢复信息，不向 webview 或日志泄露密钥。工作区身份／资格变化、运行时停止或 provider dispose 时清空内存 transcript；拒绝陈旧 webview 发送与旧运行时代次的迟到事件。
+
+**本切片不交付：** 模型选择（REQ-002）、编辑器附件（REQ-003）、Stop（REQ-005）、工具审批 UI（REQ-006）、工具活动／重试／压缩状态、会话历史（REQ-008）、`abort`／`steer`、图片与扩展命令桥。详细提案、gate 与 Build 批准见 [`ACTIVE.md`](../ACTIVE.md)。固定版本的公开 RPC 证据见 [WI-004 RPC 证据（0.85.1）](discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)。
 
 ### REQ-005 — 停止与恢复
 
@@ -118,8 +126,12 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-002 | 无 — ping/pong 占位 | 见 ACTIVE；没有用户聊天 |
 | WI-003 | 纯技术信任 spike，为 REQ-001／D-03 提供证据；不交付产品功能 | 维护者于 2026-09-19 验收；六组场景通过，限制保留在 ACTIVE；gate Open |
 | WI-005 | 无 — 文档工具 | 检查通过；维护者于 2026-09-19 验收 |
-| WI-006 | REQ-001 运行时启动前的工作区／资源选择 UI 切片（Draft） | 2026-09-19 已批准 Build；实现及自动检查完成，待 F5 验收；不启动运行时 |
-| 未分配 | REQ-002 至 REQ-008 | 仅首版提案；Build 前分配已批准切片 |
+| WI-006 | REQ-001 运行时启动前的工作区／资源选择 UI 切片（Draft） | 2026-09-19 批准 Build；维护者 2026-09-21 F5 验收；不启动运行时 |
+| WI-007 | REQ-001 根据内存资源选择启动运行时切片（Draft） | 已批准 Build；维护者 2026-09-21 F5 验收；仅 `get_state` 就绪；无聊天 |
+| WI-004 | REQ-004 | 2026-09-21 关闭；最小流式切片已验收 — 见[归档](archive/2026-09-21-closed-wi-history.zh.md#wi-004) |
+| 未分配 | REQ-002、REQ-003、REQ-005–REQ-008（完整切片） | 仅首版提案；Build 前分配已批准切片 |
+
+| REQ-004 | WI-004 切片：RPC 运行时就绪后发送有界用户文本；助手文本增量展示；`--no-tools` 启动；有界错误且不泄露密钥 | WI-004 已交付最小切片；完整 REQ-004 仍延期 |
 
 ## 非目标与延期能力
 

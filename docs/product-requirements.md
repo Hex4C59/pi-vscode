@@ -52,6 +52,14 @@ Allow users to attach a workspace file or selected code with its path and line r
 
 Send a text task and render streamed responses and tool activity. Distinguish running, awaiting approval, retrying, compacting, completed, stopped and failed states when relevant. Show tool identity, target and result with bounded output and protected secrets. An accepted prompt is not a completed task; do not display completion while queued continuation or automatic retry remains.
 
+#### WI-004 proposed slice — First user text and assistant text streaming (Draft)
+
+After WI-007 runtime readiness (`workspaceState.runtime === "ready"`), allow sending **bounded plain user text** and show **incremental assistant text** in the sidebar webview. Use the pinned pi `0.85.1` subprocess JSONL RPC: host sends `prompt`; adapter maps `message_update` events where `assistantMessageEvent.type === "text_delta"` into host-owned transcript state; end the visible streaming turn on `turn_end` (or an equivalent documented event). Treat the `prompt` command `response` as acceptance/rejection only, not completion.
+
+Start the runtime with public `--no-tools` until REQ-006 approval UI exists; label the UI as no-tools / not a full agent and do not claim sandbox isolation. Reuse existing pi credentials/configuration; show bounded recovery text on model/credential/provider failure without secrets in the webview or logs. Clear in-memory transcript on workspace identity/eligibility change, runtime stop or provider dispose; reject stale webview sends and late events from a prior runtime generation.
+
+**This slice does not deliver:** model picker (REQ-002), editor attachments (REQ-003), Stop (REQ-005), tool approval UI (REQ-006), tool activity/retry/compaction states, session history (REQ-008), `abort`/`steer`, images or extension-command bridging. Detailed proposal, gates and Build approval live in [`ACTIVE.md`](../ACTIVE.md). Public RPC evidence for the pin is in [WI-004 RPC evidence (0.85.1)](discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md).
+
 ### REQ-005 — Stop and recovery
 
 Provide a stop-all action that clears queued continuation and requests cancellation of active work. Show stopping until the runtime settles or a shutdown failure is reported. Cancellation does not undo completed side effects. A disconnected/crashed runtime must leave an explicit interrupted state; preserve unsent input and do not automatically repeat a possibly side-effecting task. Restart/retry actions must be deliberate.
@@ -113,8 +121,12 @@ A release direction may span future WIs, but only one implementation WI is activ
 | WI-002 | None — ping/pong scaffold | See ACTIVE; no user chat |
 | WI-003 | Technical-only trust spike informing REQ-001 / D-03; no product delivery | Maintainer accepted 2026-09-19; six scenarios passed, limits retained in ACTIVE; gate Open |
 | WI-005 | None — documentation tooling | Checks passed; maintainer accepted 2026-09-19 |
-| WI-006 | REQ-001 pre-runtime workspace/resource-choice UI slice (Draft) | Build approved 2026-09-19; implemented with automated checks; F5 acceptance pending; no runtime startup |
-| Unassigned | REQ-002 through REQ-008 | First-release proposal only; assign approved slices before Build |
+| WI-006 | REQ-001 pre-runtime workspace/resource-choice UI slice (Draft) | Build approved 2026-09-19; maintainer F5 accepted 2026-09-21; no runtime startup |
+| WI-007 | REQ-001 runtime startup from in-memory resource choice (Draft) | Build approved; maintainer F5 accepted 2026-09-21; `get_state` readiness only; no chat |
+| WI-004 | REQ-004 | Closed 2026-09-21; minimal streaming slice accepted — see [archive](archive/2026-09-21-closed-wi-history.md#wi-004) |
+| Unassigned | REQ-002, REQ-003, REQ-005–REQ-008 (full slices) | First-release proposal only; assign approved slices before Build |
+
+| REQ-004 | WI-004 slice: bounded user text send when RPC runtime is ready; incremental assistant text; `--no-tools` startup; bounded errors without secrets | Draft slice delivered WI-004; full REQ-004 still deferred |
 
 ## Non-goals and deferred capabilities
 
