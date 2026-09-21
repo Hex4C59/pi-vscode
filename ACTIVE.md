@@ -20,27 +20,35 @@
 
 | 字段 | 内容 |
 |------|------|
-| **ID** | 未指定（WI-010 已关闭；下一实施 WI 未开启） |
-| **阶段** | Prepare／等待维护者确定后续焦点；无进行中的 Build |
-| **Gate ID** | `gate-project-trust`、`gate-webview-trust`、`gate-session-streaming`（均 Open） |
-| **Decision** | 下一 WI 未定；WI-010 遗留 `pending-adr` 不关闭 |
-| **PRD 判定** | 待定（下一 WI 未定）；不新增需求或实施授权 |
+| **ID** | WI-011 |
+| **标题** | 模块内测试结构重构 |
+| **阶段** | Build 完成，待确认收尾（测试迁移及 2026-09-21 20:33 追加批准的 scripts 分组均完成） |
+| **Gate ID** | none；既有三个 gate 均保持 Open |
+| **Decision** | none；WI-010 遗留 `pending-adr` 保留 |
+| **决策类** | none |
+| **PRD 判定** | 纯技术：测试组织与收集重构，不改变产品行为，不新增需求 |
 
 ### 目标与范围
 
-本次仅关闭 WI-010；WI-008／WI-009 保留待验收状态，不因收尾而关闭或推断追加批准。下一步建议先完成下方既有延期 F5，再由维护者确认其关闭；不是自动开启新工作。
+按批准计划将应用测试迁入 `src/extension/tests/`、`src/adapter/tests/`、`src/webview/tests/`，统一 `.spec.ts`；脚本原位改为 `.spec.mjs`。按 workspace／focus／runtime-chat／model-selection／bounds／protocol／approval／architecture、adapter projection／environment、Webview HTML／workspace／model／execution 拆分，提取局部 harness，保留所有场景和断言。生产源码位置不变。
+
+新增薄 runner 与 import-safe 收集库：递归发现 owner-local specs、排除 helper／fixture／其他层级、不跟随符号链接、保留输出目录；只清理 `dist/tests/`，只执行本次确切清单，空集合／构建／进程失败均失败退出。新增临时夹具回归；同步 package 入口、CI 旧文件引用及双语指南／有效链接。保持 node:test、esbuild、当前 CI 范围、生产打包与依赖不变。
+
+### 追加批准：scripts 按用途分组
+
+维护者 2026-09-21 20:33 批准小重构：文档脚本移至 `scripts/docs/`，runner 移至 `scripts/testing/`，集成探针与信任辅助／测试移至 `scripts/spikes/`，VSIX 校验移至 `scripts/packaging/`。文件名、对外 npm 命令与行为不变，不增加 src/tests 多层目录；同步根路径计算、脚本调用、CI、夹具与有效文档链接。验证原 84 用例、编译／lint／文档检查，并针对移动后的入口做安全的路径验证；不运行付费调用或扩大验收。此次追加不修改原计划文件。
 
 ### 方案与架构核对
 
-WI-010 于 2026-09-21 获四项 F5 确认后，维护者要求“进入收尾吧”；范围、批准、实现与分层证据已移入[既有历史](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-010)。其决策类 `adr-after-approval`、Decision `pending-adr` 与三个 Open gate 保留，不宣布完整边界通过。
+所有权：测试按现有 host／adapter／Webview 归属，无生产边界变化。收集：现有平面 glob 漏掉嵌套目录，须与迁移同步修复；类型／lint 已覆盖 `src/**/*.ts`，不新增 tsconfig。风险：遗漏／重复用例、同名输出覆盖、旧 bundle、cwd／VM 语义变化；通过迁移前名称基线与收集器回归验证。WI-010 ADR pending 与既有 gate 不变。
 
 ### 验收
 
-当前仅文档收尾检查；后续已有待验收项见下方 WI-008／WI-009 与未决清单。新 WI 的目标与验收须先提案、再获批准。
+迁移前基线已运行：73/73、0 skipped（4 应用＋4 脚本文件）；逐项保留原名称／场景，新增 runner 测试单独计数。验证递归发现、同名隔离、辅助文件排除、空集合失败、旧输出清理且保留其他 dist 产物。运行 npm test／compile／lint／docs:verify／docs:health 及 git diff --check；不将结果算作 F5 或安装包验收。
 
 ### 范围外与批准边界
 
-不启动新 Build，不把待确认 WI 标为已验收，不改源码、package、已批准计划或 Git commit。
+不改生产逻辑／生产目录、依赖或锁文件；不新增 e2e／snapshot／性能通道、CI 矩阵或全套 CI 门禁；不调用真实模型，不关闭旧 WI／gate，不改已批准计划，不创建 Git commit。
 
 ## WI-008／WI-009 状态（延后选择主路径 F5 已确认；待收尾、非并行 Build）
 
@@ -74,7 +82,17 @@ WI-010 于 2026-09-21 获四项 F5 确认后，维护者要求“进入收尾吧
 
 ## 最近交接
 
-### WI-010 限定切片收尾（2026-09-21，最新）
+### WI-011 测试结构重构（2026-09-21，最新）
+
+- 追加 scripts 分组完成：19 个文件移入 docs（10）／testing（3）／spikes（5）／packaging（1），同步 npm／CI 入口、URL 根路径、runner 夹具与 VSIX 辅助导入及双语有效链接。对外命令、生产代码与依赖不变。再次验证 84/84、compile／lint／docs:verify／docs:health／diff check 全通过；三个探针与 VSIX 入口语法检查通过。未执行集成探针或 VSIX 重验；原 project-trust 探针仍有 0.85.1 固定版本 guard，与当前 0.86.1 不符，未在目录重构中改动该既有限制。历史归档旧路径保留为当时记录。
+
+- 原 44 应用用例拆入 14 个模块内 spec：extension 32、adapter 4、webview 8；4 个脚本测试改名且内容不变，原 29 脚本用例保留。原 73 个用例名称／断言保留；Webview 模型测试用显式类型化 DTO 替代仅为取状态而启动 provider，VM 交互断言不变。
+- 新 runner 显式收集、保留路径、清理专用输出并传递失败；11 个新增回归覆盖递归／排除／同名／空集合／旧输出／失败及 Unicode、非根 cwd。默认只跑 spec，不启用 e2e 等新层级。CI 仅更新旧文件名，未扩大执行范围；生产逻辑／打包入口／发布白名单／依赖未改。
+- 本次验证：`npm test` 84/84（73 原有＋11 新增，0 skipped）、compile、lint、docs:verify、docs:health、git diff --check 均通过；文档 0 errors／warnings／stale notices。scripts 仍不在 lint 范围，runner 由专门回归验证。无真实模型调用，无 F5／VSIX 重验，无提交；旧 WI／gate／ADR 状态保留。待维护者确认 WI-011 收尾。
+
+### 先前交接（2026-09-21）
+
+**WI-010 限定切片收尾**
 
 - 预览链接兼容修正（2026-09-21）：按维护者反馈，仅移除完成索引 8 个“记录”链接的章节锚点，保留相对路径与历史内容；绕过当前 Cursor 对带锚点相对链接的处理问题。实际预览点击待维护者复验，不改变 WI／gate 状态。
 
@@ -83,7 +101,7 @@ WI-010 于 2026-09-21 获四项 F5 确认后，维护者要求“进入收尾吧
 - 本次仅文档，不改源码、package、已批准计划或 Git commit。语义核对覆盖 WI-010 相关文档、状态与活动 DTO／测试；仓库 README 的旧脚手架状态另记为待后续文档同步，不在本次限定归档中扩大修改。
 - 本次 `npm run docs:verify` 通过：structure／i18n 均 0 errors、0 warnings、0 stale notices；`npm run docs:health` 通过：combined errors 0、review notices 0，扫描 29 文件。首次检查提示空闲交接缺当前项字段，已补齐未指定／未授权的 Prepare 入口后复查通过；未伪造新 WI。此前 73/73、compile／lint、审批／offline／VSIX 均为已有报告，非本次重跑。
 
-### 测试约定采用与后缀补齐（2026-09-21）
+**测试约定采用与后缀补齐**
 
 - 维护者批准双语 [testing playbook](docs/guides/agent/testing.zh.md)、加载地图／索引／TypeScript 指引及后缀解释；纯技术文档，不新增并行 WI，不关闭 gate。保留当前 `*.test.ts`／`*.test.mjs` 布局与 runner，不新增 Cursor rules，不迁移框架。
 - 指南区分当前收集与未来模块内 tests 迁移；解释 `.spec`、`.e2e`、`.expected.e2e`、`.snapshot`、`.bench`、`.perf` 及 host/client/compat，未来端到端统一 `.e2e.ts`；明确收集排除、前置条件、首次启用／跳过证据。此前 61/61、compile／lint／docs 检查通过，后缀纯文档会话未重跑代码测试／F5。此前 ACTIVE 长度警告是历史检查结果，后续压缩重复内容已处理。
