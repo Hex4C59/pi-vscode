@@ -84,6 +84,8 @@
 
 ### WI-011 测试结构重构（2026-09-21，最新）
 
+- 提交隔离工作流补强：双语协作／提交规范现要求开工基线分类、临时 commit map、实现提交排除 `ACTIVE.md`、当前 WI 固定 `docs(active)`、无关维护独立提交及重叠 hunk 的非破坏恢复。新增 `npm run commit:check`，只读检查暂存清单、whitespace，并机械拒绝 `ACTIVE.md` 与实现／构建／CI 路径同批暂存；不安装 hook，也不声称识别语义。10 个隔离 git 仓库回归覆盖空暂存、docs-only、混合路径、rename／Unicode、whitespace、非根 cwd 与 git 失败。全套 `npm test` 94/94（新增 10）、compile／lint／docs:verify／docs:health／diff check 均通过；文档 0 errors／warnings／stale notices。真实暂存区为空时 `commit:check` 按设计失败且不修改 index。
+
 - 追加 scripts 分组完成：19 个文件移入 docs（10）／testing（3）／spikes（5）／packaging（1），同步 npm／CI 入口、URL 根路径、runner 夹具与 VSIX 辅助导入及双语有效链接。对外命令、生产代码与依赖不变。再次验证 84/84、compile／lint／docs:verify／docs:health／diff check 全通过；三个探针与 VSIX 入口语法检查通过。未执行集成探针或 VSIX 重验；原 project-trust 探针仍有 0.85.1 固定版本 guard，与当前 0.86.1 不符，未在目录重构中改动该既有限制。历史归档旧路径保留为当时记录。
 
 - 原 44 应用用例拆入 14 个模块内 spec：extension 32、adapter 4、webview 8；4 个脚本测试改名且内容不变，原 29 脚本用例保留。原 73 个用例名称／断言保留；Webview 模型测试用显式类型化 DTO 替代仅为取状态而启动 provider，VM 交互断言不变。
