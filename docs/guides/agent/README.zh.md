@@ -10,6 +10,7 @@
 | 文档 | 何时读 |
 |------|--------|
 | [typescript.zh.md](typescript.zh.md) | Extension host 侧 TS、lint、测试 |
+| [testing.zh.md](testing.zh.md) | 行为变更、回归、测试位置／命名／收集与验证证据 |
 | [pi-integration.zh.md](pi-integration.zh.md) | SDK/RPC spike、runtime 生命周期、固定版本 |
 | [judgment.zh.md](judgment.zh.md) | 维护者做不做、停车场 |
 

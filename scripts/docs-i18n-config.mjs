@@ -17,6 +17,7 @@ export const REQUIRED_CHINESE_PAIRS = [
   'docs/guides/agent-collaboration.md',
   'docs/guides/documentation-health.md',
   'docs/guides/agent/judgment.md',
+  'docs/guides/agent/testing.md',
   'docs/reference/architecture-gates.md',
   'docs/architecture/vscode-extension-architecture.md',
 ];

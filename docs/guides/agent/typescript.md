@@ -44,6 +44,8 @@ For new public APIs, cross-layer dependencies or persistence, also use the produ
 
 ## Verification and reporting
 
+Read the [testing playbook](testing.md) before behavior changes, regression fixes or test changes; it owns test placement, naming, collection and evidence tiers. The general verification principles below still apply.
+
 - Run the repository's relevant lint, typecheck/build and test commands. A transpiler/bundler is not a typecheck; inspect what scripts actually cover. Reuse a combined command instead of repeating equivalent checks, and report missing checks honestly rather than inventing scripts.
 - Add or update behavior-focused tests for changed logic and regressions. Cover relevant malformed input, failure/cancellation, late completion and cleanup paths; do not add tests solely to mirror implementation or for copy-only changes.
 - Test through narrow seams for time, processes, filesystem or host APIs where needed. Avoid real credentials, user state, paid calls and uncontrolled network dependencies. Use temporary fixtures and clean them up.

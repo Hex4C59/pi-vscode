@@ -63,6 +63,7 @@
 |-----------|------|
 | 开始实现 | `ACTIVE.md` 当前 WI，再完整阅读 `docs/guides/agent-collaboration.zh.md` |
 | TypeScript / 工具链 | `docs/guides/agent/typescript.md` |
+| 修改行为／修复回归／添加或移动测试／测试收集 | `docs/guides/agent/testing.zh.md` |
 | pi SDK / RPC / spike | `docs/guides/agent/pi-integration.md` |
 | 文档健康 / WI 收尾 | [`docs/guides/documentation-health.zh.md`](docs/guides/documentation-health.zh.md) |
 | 判断 / 做不做 | `docs/guides/agent/judgment.md` |

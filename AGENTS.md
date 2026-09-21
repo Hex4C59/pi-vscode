@@ -58,6 +58,7 @@ Baseline reads come from `AGENTS.kernel.md`; this table adds **conditional route
 |-------------|------------|
 | Starting implementation | current WI in `ACTIVE.md`, then `docs/guides/agent-collaboration.md` in full |
 | TypeScript / tooling | `docs/guides/agent/typescript.md` |
+| Changing behavior / fixing regressions / adding or moving tests / test collection | `docs/guides/agent/testing.md` |
 | pi SDK / RPC / spike | `docs/guides/agent/pi-integration.md` |
 | Documentation health / WI close | [`docs/guides/documentation-health.md`](docs/guides/documentation-health.md) |
 | Judgment / “what else” / go-no-go | `docs/guides/agent/judgment.md` |
