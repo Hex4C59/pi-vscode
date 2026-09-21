@@ -66,6 +66,20 @@ Stop expanding links when scope, constraints, contract and required evidence are
 3. **Build** — After confirmation, agent follows `AGENTS.md` load map (packs, architecture governance when touching boundaries), implements, runs `package.json` checks when present, and reports results.
 4. **Close** — Compare delivered user-visible behavior against the approved PRD slice and WI acceptance; reconcile differences or explicitly defer them before claiming delivery. Agent updates `ACTIVE.md` **Last session**. If a gate-closing decision was confirmed, draft or update `docs/decisions/000x-….md` and [`architecture-gates.md`](../reference/architecture-gates.md), or set `Decision: pending-adr` on the work item.
 
+### Git ownership and concern isolation
+
+At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns even though product work remains WIP=1, but every change must have clear ownership and a destination before staging.
+
+Treat `ACTIVE.md` as an isolated record stream:
+
+- An implementation commit must not contain `ACTIVE.md`.
+- The current WI record belongs in a separate `docs(active)` commit.
+- Unrelated `ACTIVE.md` maintenance belongs in a separate `fix(docs)` or `docs` commit, according to whether it corrects an error or only updates documentation.
+
+Stage by path and hunk, preserving the pre-existing index. If concerns overlap so that hunk staging is unsafe, save a complete, non-destructive work copy, reconstruct and commit the first concern from its baseline, then restore the remaining work with a three-way apply and inspect the result. Never stash, drop, overwrite, reset, or commit user-owned work without explicit authorization.
+
+Before any commit, follow the staged-content review in [Git commit convention](../git-commit-convention.md). Commit authorization is unchanged: these isolation rules never authorize creating or rewriting a commit.
+
 ## 6. Maintainer prompts (copy-paste)
 
 **New chat (routine):**

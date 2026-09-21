@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[agent-collaboration.md](agent-collaboration.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-21
 
 - 类型：指南
 - 状态：Accepted
@@ -70,6 +70,20 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 2. **提案** — Prepare 阶段先将可审阅的 WI 讨论稿写入 `ACTIVE.md`，再给出简短计划与 **决策类** `none` | `spike-only` | `adr-after-approval`（适用时含 gate ID）。**必须做 PRD 判定**：将 WI 归类为用户可见或纯技术，并在 `ACTIVE.md` 记录理由。若涉及用户可见行为，先在 `docs/product-requirements.md` 及译文起草可观察需求（含相关空态／错误态）、验收和 WI 追溯行，进入 Build 前请维护者确认范围；若为纯技术工作，记录不新增 PRD 需求的原因。在当前 WI 的 `PRD 判定` 行写 `用户可见` 或 `纯技术` 并说明理由；仅 Prepare 阶段可留 `待定`。用户可见 Build 的 PRD 追溯行须写 WI 及对应 REQ ID。Draft 不代表已交付；未经维护者明确批准不得将 PRD 标为 `Accepted`。维护者确认（如「可以」「按 A 做」）后，记录确认与选定方案才进入 Build。一句目标或仅聊天中的计划不够。
 3. **建造** — 确认后按 `AGENTS.md` load map（边界变更时读 architecture-governance），按已确认的讨论稿实现并运行 `package.json` 中的检查。
 4. **收尾** — 对照已批准的 PRD 切片与 WI 验收核对实际交付的用户可见行为；差异须修正或明确延期，才能声称交付。更新 `ACTIVE.md` **Last session**；若已确认关 gate，更新 ADR 与 gate 表，或标 `Decision: pending-adr`。
+
+### Git 所有权与关注点隔离
+
+每次任务开始时检查 `git status`、`ACTIVE.md` 的未暂存 diff，以及已有的暂存 diff。将看到的每项变更归类为**既有 Agent 工作**、**当前任务工作**或**用户所有的工作**；无法确定时，在澄清前按用户所有处理。会话期间维护一份临时 commit map：每个关注点一行，记录所有者、预期提交以及预期路径或 hunk。尽管产品工作保持 WIP=1，worktree 可以同时存在多个关注点，但每项变更在暂存前都必须有明确所有权和去向。
+
+将 `ACTIVE.md` 视为独立的记录流：
+
+- 实现提交不得包含 `ACTIVE.md`。
+- 当前 WI 记录放在单独的 `docs(active)` 提交中。
+- 与当前 WI 无关的 `ACTIVE.md` 维护另作 `fix(docs)` 或 `docs` 提交：纠错用前者，仅更新文档用后者。
+
+按路径和 hunk 暂存，并保留任务开始前已有的 index。若关注点重叠、无法安全地按 hunk 暂存，先保存完整且非破坏性的工作副本，从其 baseline 重建并提交第一个关注点，再以 three-way apply 恢复剩余工作并检查结果。未经明确授权，绝不 stash、drop、覆盖、reset 或提交用户所有的工作。
+
+任何提交前均遵循 [Git 提交规范](../git-commit-convention.zh.md)中的暂存内容审阅流程。提交授权规则不变：这些隔离规则绝不构成创建或改写提交的授权。
 
 ## 6. 维护者提示词（可复制）
 

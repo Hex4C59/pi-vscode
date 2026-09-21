@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[git-commit-convention.md](git-commit-convention.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-21
 
 - 类型：指南
 - 状态：Accepted
@@ -95,7 +95,44 @@ BREAKING CHANGE: Unversioned webview messages are dropped.
 
 ## 提交前
 
-查 `git status` 与暂存 diff；排除无关改动；按暂存内容选 type/scope；写英文 subject + body；无 amend/rebase/squash/force-push 除非维护者明确要求。
+提交授权规则不变：只有维护者明确要求时才能创建或改写提交。对每个已授权提交：
+
+1. 用一句话说明该提交的关注点，并从会话临时 commit map 列出预期路径或 hunk。
+2. 检查 `git status`、`ACTIVE.md` 的未暂存 diff 和已有的暂存 diff。除非其所有者明确授权，否则保留任务开始前已有的全部 index 内容。
+3. 只按路径和 hunk 暂存该关注点。若所有权或重叠不明确，立即停止；采用[协作指南](guides/agent-collaboration.zh.md)中的非破坏性 baseline／工作副本／three-way 恢复流程，不用 stash、reset 或覆盖工作。
+4. 用 `git diff --cached` 检查**完整**暂存 patch，不能只看 `--stat` 或文件列表；逐个暂存 hunk 对照已声明的关注点和预期路径。
+5. 若 `ACTIVE.md` 与实现混在一起，停止并拆分。实现提交不含 `ACTIVE.md`；当前 WI 记录另作 `docs(active)` 提交；无关的 ACTIVE 纠错或维护另作 `fix(docs)` 或 `docs` 提交。
+6. 按确认过的暂存内容选择 type/scope，撰写英文 summary + body（及 footer），再检查长度和敏感信息。
+7. 提交后报告 worktree 或 index 中仍剩余的关注点，适用时注明所有权。
+8. 未经维护者明确要求，不得 amend/rebase/squash/force-push。
+
+仓库提供 `npm run commit:check` 时，它只是一道机械保护：会拒绝同时暂存 `ACTIVE.md` 与实现路径，但无法判断文档、测试或相邻 hunk 是否在语义上混杂。即使通过，也不能代替完整 cached diff 审阅。本仓库不安装 Git hook；有该命令时须显式运行。
+
+## 隔离示例（message 仍为英文）
+
+**正确——拆分关注点：**
+
+```text prompt
+feat(host): add project trust gate
+
+Prevent runtime startup until VS Code reports a trusted workspace.
+```
+
+```text prompt
+docs(active): record project trust verification
+
+Capture WI acceptance evidence separately from the host implementation.
+```
+
+**错误——实现与 ACTIVE 混合：**
+
+```text prompt
+feat(host): add project trust gate and update ACTIVE
+
+Implement the trust gate and record WI progress in the same commit.
+```
+
+错误示例无法独立审阅和回滚；机械检查也可能漏掉其他位置的语义混杂。
 
 ## 示例（message 仍为英文）
 

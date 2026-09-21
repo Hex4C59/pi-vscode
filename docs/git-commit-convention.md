@@ -119,12 +119,44 @@ BREAKING CHANGE: Unversioned webview messages are dropped.
 
 ## Before you commit
 
-1. Review `git status` and the full staged diff.
-2. Exclude unrelated changes; suggest splitting mixed work.
-3. Pick type/scope from staged content.
-4. Write English summary + body (+ footers).
-5. Check length and secrets.
-6. Do not amend/rebase/squash/force-push unless the maintainer explicitly asks.
+Commit authorization remains unchanged: do not create or rewrite a commit unless the maintainer explicitly asks. For each authorized commit:
+
+1. State the commit's concern in one sentence and list its expected paths or hunks from the session's ephemeral commit map.
+2. Inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Preserve all pre-existing index entries unless their owner explicitly authorizes changing them.
+3. Stage only that concern by path and hunk. If ownership or overlap is unclear, stop; use the non-destructive baseline/work-copy/three-way recovery procedure in the [collaboration guide](guides/agent-collaboration.md) rather than stash, reset, or overwrite work.
+4. Inspect the **full** cached patch with `git diff --cached`, not only `--stat` or a file list. Compare every staged hunk with the stated concern and expected paths.
+5. Stop and split if `ACTIVE.md` is mixed with implementation. Implementation commits exclude `ACTIVE.md`; current-WI records use a separate `docs(active)` commit, while unrelated ACTIVE correction or maintenance uses a separate `fix(docs)` or `docs` commit.
+6. Pick type/scope from the verified staged content; write the English summary + body (+ footers), then check length and secrets.
+7. After committing, report the concern still remaining in the worktree or index, including ownership when relevant.
+8. Do not amend/rebase/squash/force-push unless the maintainer explicitly asks.
+
+`npm run commit:check`, when the repository provides it, is only a mechanical guard: it rejects staging `ACTIVE.md` with implementation paths, but cannot judge whether documentation, tests, or adjacent hunks are semantically mixed. Passing it never replaces the full cached-diff review. No Git hook is installed by this repository; run the command explicitly when available.
+
+## Isolation examples
+
+**Good — separate concerns:**
+
+```text prompt
+feat(host): add project trust gate
+
+Prevent runtime startup until VS Code reports a trusted workspace.
+```
+
+```text prompt
+docs(active): record project trust verification
+
+Capture WI acceptance evidence separately from the host implementation.
+```
+
+**Bad — implementation and ACTIVE mixed:**
+
+```text prompt
+feat(host): add project trust gate and update ACTIVE
+
+Implement the trust gate and record WI progress in the same commit.
+```
+
+The bad example defeats independent review and rollback even if a mechanical check misses semantic mixing elsewhere.
 
 ## Examples
 
