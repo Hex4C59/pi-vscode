@@ -34,6 +34,7 @@
 
 下图展示目标边界；连线标注区分现有脚手架与后续工作。WI-001 选择子进程 RPC 用于运行时探针，尚非用户聊天能力。
 
+<!-- docs-i18n: localized-mermaid -->
 ```mermaid
 flowchart TD
     U["用户"] --> W["UI：侧栏 Webview<br/>src/webview/"]

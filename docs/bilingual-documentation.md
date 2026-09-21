@@ -34,6 +34,9 @@ Run `npm run docs:verify` (includes `docs:i18n:check`). Edit required pairs in `
 | `text` | **Yes** (warning if mismatch) |
 | `text prompt` | **No** — copy-paste maintainer prompts; tag **both** en and zh at the same index |
 | `text localized` | **No** — translated labels; keep path tokens identical; tag **both** sides |
+| `mermaid` preceded immediately by `<!-- docs-i18n: localized-mermaid -->` | **No** — translate diagram labels; keep node IDs and edges aligned; annotate **both** sides and keep the fence exactly `mermaid` so Markdown previews render it |
+
+Unmarked Mermaid blocks still report body differences. This opt-in applies only to a matching pair of Mermaid fences.
 
 ## Scope
 

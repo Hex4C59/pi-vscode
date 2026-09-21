@@ -28,6 +28,12 @@
   "categories": ["Other"],
   "activationEvents": ["onView:pi-vscode.chat"],
   "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Shows workspace status and native trust management only. Project resource choices require a trusted workspace; pi runtime is not started."
+    }
+  },
   "contributes": {
     "viewsContainers": {
       "secondarySidebar": [
@@ -52,18 +58,33 @@
       {
         "command": "pi-vscode.focusChat",
         "title": "pi: Focus Chat",
-        "category": "pi"
+        "category": "pi",
+        "icon": {
+          "light": "media/pi-light.svg",
+          "dark": "media/pi-dark.svg"
+        }
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "pi-vscode.focusChat",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "node esbuild.mjs && tsc --noEmit",
     "watch": "node esbuild.mjs --watch",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
+    "test": "esbuild src/extension/*.test.ts --bundle --platform=node --format=cjs --target=node22 --outdir=dist/tests && node --test dist/tests/*.test.js scripts/docs-i18n-check.test.mjs scripts/docs-verify.test.mjs scripts/docs-health.test.mjs scripts/project-trust.test.mjs",
+    "spike:project-trust": "node scripts/spike-project-trust.mjs",
     "spike:runtime": "npm run compile && node dist/spike-runtime.js",
     "docs:i18n:check": "node scripts/docs-i18n-check.mjs",
-    "docs:verify": "node scripts/docs-verify.mjs"
+    "docs:verify": "node scripts/docs-verify.mjs",
+    "docs:health": "node scripts/docs-health.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

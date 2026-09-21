@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 
-import { PiChatViewProvider } from "./extension/piChatViewProvider.js";
+import { focusPiChat, PiChatViewProvider } from "./extension/piChatViewProvider.js";
 
 export function activate(context: vscode.ExtensionContext): void {
-  const provider = new PiChatViewProvider();
+  const provider = new PiChatViewProvider(vscode);
+  context.subscriptions.push(provider);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -15,7 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("pi-vscode.focusChat", async () => {
-      await vscode.commands.executeCommand(`${PiChatViewProvider.viewType}.focus`);
+      await focusPiChat(vscode);
     }),
   );
 }

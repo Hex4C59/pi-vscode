@@ -39,6 +39,9 @@
 | `text` | **是** |
 | `text prompt` | **否** — 维护者话术；同一序号英中均标 `prompt` |
 | `text localized` | **否** — 标签可译、路径保留；两侧均标 `localized` |
+| 前面紧邻 `<!-- docs-i18n: localized-mermaid -->` 的 `mermaid` | **否** — 可翻译图中标签，节点 ID 与连线保持一致；英中两侧均加注释，围栏仍须写成纯 `mermaid`，以便 Markdown 预览渲染 |
+
+未标记的 Mermaid 图体不一致仍会报告警告；仅匹配的一对 Mermaid 围栏可使用此显式豁免。
 
 ## 范围
 

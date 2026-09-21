@@ -13,7 +13,7 @@
 - 接受：2026-09-19
 - Gate：`gate-extension-host-baseline`、`gate-sidebar-chat-shell`、`gate-runtime-host`
 - 取代：无
-- 相关：[vscode-extension-architecture](../architecture/vscode-extension-architecture.zh.md)、[WI-001](../../ACTIVE.md)、[wi-001-runtime-spike](../discussions/wi-001-runtime-spike.md)
+- 相关：[vscode-extension-architecture](../architecture/vscode-extension-architecture.zh.md)、[WI-001](../../ACTIVE.md)
 
 ## 背景
 
@@ -41,6 +41,12 @@ WI-001 要求可 **F5 调试** 的 VS Code 扩展，pi 聊天位于 **辅助侧�
 
 ## Spike 证据
 
-- **命令**：`npm run spike:runtime` → OK（`get_state succeeded; process exited within timeout`）。
-- **记录**：[wi-001-runtime-spike.md](../discussions/wi-001-runtime-spike.md)。
-- **维护者**：F5 扩展开发宿主；辅助侧栏 Pi 视图，仅占位文案。
+WI-001 历史验证摘要，于 2026-09-19 从独立 spike 笔记合并。本次整理未重跑探针，也未改变已接受的决策。
+
+- **日期与包版本**：2026-09-19；`@earendil-works/pi-coding-agent@0.85.1`。
+- **目标**：为基线验证运行时启动、一次 RPC 请求／响应及关闭。
+- **命令与已记录结果**：`npm run spike:runtime` → **OK**（`get_state succeeded; process exited within timeout`）。
+- **已记录机制**：启动 `dist/bundle/cli.js --mode rpc --no-session`，经 LF JSONL 发送 `get_state`，随后在记录的 5 秒超时限制内 SIGTERM。源码入口：[运行时探针](../../src/adapter/pi-rpc-probe.ts)与 [JSONL 辅助模块](../../src/adapter/jsonl.ts)；当前源码不是当时运行的不可变快照。
+- **已记录范围**：无 LLM/provider 调用。不证明面向用户的聊天、流式、工具审批、项目资源信任或长生命周期会话管理。
+- **证据限制**：原笔记仅保留成功摘要，没有原始执行日志或准确的 OS／Node／VS Code 版本。此处不事后重构这些细节，也不据此推断网络隔离保证。
+- **维护者验收**：F5 扩展开发宿主的辅助侧栏显示 Pi 占位视图；维护者于 2026-09-19 接受该目视检查与运行时 spike。Gate 关闭由本 ADR 与 [gate 表](../reference/architecture-gates.zh.md)记录。

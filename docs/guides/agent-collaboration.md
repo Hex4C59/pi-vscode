@@ -45,14 +45,15 @@ If chat and `ACTIVE.md` disagree, update `ACTIVE.md` after alignment.
 
 - Exactly **one** active work item (`WI-xxx`) in `ACTIVE.md` at a time.
 - New ideas go to **Parking lot** in `ACTIVE.md`, not into implementation, until the maintainer reprioritizes.
+- Each active WI has a persistent proposal in `ACTIVE.md` covering goal and scope, approach and risks, observable acceptance, out of scope, applicable gate ID and decision class, **PRD assessment**, and approval status. A proposal can be incomplete during Prepare, but Build requires recorded maintainer approval.
 - Architecture **gates** must not be treated as shipped product until closed with an Accepted ADR.
 
 ## 5. Session rhythm
 
 1. **Open** — Maintainer @-mentions **`ACTIVE.md` only** (or says 「继续 pi VS Code」). Agent reads `ACTIVE.md` and **this guide**, then restates: current WI, last session summary, proposed focus for today, and acceptance steps.
-2. **Propose** — Agent gives a short plan plus **Decision class**: `none` | `spike-only` | `adr-after-approval` (with gate ID if applicable). No broad implementation until the maintainer confirms (e.g. 「可以」「按 A 做」).
-3. **Build** — Agent follows `AGENTS.md` load map (packs, architecture governance when touching boundaries), implements, runs `package.json` checks when present, and reports results.
-4. **Close** — Agent updates `ACTIVE.md` **Last session**. If a gate-closing decision was confirmed, draft or update `docs/decisions/000x-….md` and [`architecture-gates.md`](../reference/architecture-gates.md), or set `Decision: pending-adr` on the work item.
+2. **Propose** — In Prepare, agent writes the reviewable WI proposal to `ACTIVE.md` and gives a short plan plus **Decision class**: `none` | `spike-only` | `adr-after-approval` (with gate ID if applicable). **PRD assessment is mandatory:** classify the WI as user-visible or technical-only, with a reason recorded in `ACTIVE.md`. For user-visible behavior, draft observable requirements (including relevant empty/error states), acceptance and a WI traceability row in `docs/product-requirements.md` and its translation; ask the maintainer to confirm the scope before Build. For technical-only work, record why no new PRD requirement is needed. Set the active WI's `PRD 判定` row to `用户可见` or `纯技术` with a reason; leave it `待定` only in Prepare. For user-visible Build, the PRD traceability row must name the WI and linked REQ IDs. Draft text is not shipped behavior; do not mark the PRD `Accepted` without explicit maintainer approval. Maintainer confirms (e.g. 「可以」「按 A 做」); record approval and chosen approach before moving to Build. A chat-only plan or one-line goal is not sufficient.
+3. **Build** — After confirmation, agent follows `AGENTS.md` load map (packs, architecture governance when touching boundaries), implements, runs `package.json` checks when present, and reports results.
+4. **Close** — Compare delivered user-visible behavior against the approved PRD slice and WI acceptance; reconcile differences or explicitly defer them before claiming delivery. Agent updates `ACTIVE.md` **Last session**. If a gate-closing decision was confirmed, draft or update `docs/decisions/000x-….md` and [`architecture-gates.md`](../reference/architecture-gates.md), or set `Decision: pending-adr` on the work item.
 
 ## 6. Maintainer prompts (copy-paste)
 
@@ -77,11 +78,30 @@ If chat and `ACTIVE.md` disagree, update `ACTIVE.md` after alignment.
 
 ## 7. Agent obligations
 
-- Propose the next step from requirements, architecture, and `ACTIVE.md`; do not require the maintainer to memorize a multi-step workflow.
-- Confirm before scaffolding, ADRs, security-boundary changes, or breaking layout.
+- Propose the next step from requirements, architecture, and `ACTIVE.md`; do not require the maintainer to memorize a multi-step workflow. If the WI proposal is missing, complete it in Prepare before asking to build.
+- Obtain approval for scaffolding, security-boundary changes, breaking layout, and the decisions underlying ADRs. Recording an already approved decision requires no separate permission.
 - On session end, update `ACTIVE.md` Last session even if work is incomplete.
 - Report: what changed, commands to run, what was tested, known limits.
 - Follow [When to write an ADR](../decisions/README.md#when-to-write-an-adr); label each proposal with gate ID and decision class.
+
+### Proactive recordkeeping
+
+Apply this checkpoint when a discussion reaches a meaningful interim conclusion, the maintainer confirms a choice, and a WI closes or affected documentation is replaced. It also applies to discussion-only sessions; do not wait for an implementation request or a directory instruction.
+
+| Trigger | Agent action |
+|---------|--------------|
+| A comparison, tradeoff, investigation or unresolved question is worth retaining across sessions | Create or update one topic in `docs/discussions/`: background, options, evidence, current leaning and open questions. Summarize rather than transcribe chat. |
+| The maintainer explicitly confirms a choice covered by the ADR criteria | Create or update `docs/decisions/` with context, decision, rationale, alternatives, consequences and evidence. Record approval separately from verification; use Accepted only after required approval and verification. Otherwise retain the pending state and missing conditions. |
+| WI close or a confirmed replacement leaves inactive material worth retaining | Archive affected old discussions, proposals or long closed-WI records under `docs/archive/`, with reason, historical status and a replacement link (or an explicit explanation when none exists). Keep historical ADRs in `docs/decisions/` with status and replacement relationships. |
+| Routine Q&A, a small change or a one-line future idea | No standalone document; use the existing handoff or parking lot if needed. |
+
+Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep `ACTIVE.md` focused on the current WI proposal summary required by §4, approval state, unresolved blockers and brief handoff, linking to detailed discussion, decisions and history. The approved scope and acceptance must remain readily reviewable from ACTIVE.
+
+This rule provides standing authorization for recordkeeping and archival **within the discussion or work already authorized**, without asking whether to save or where to put it. It does not approve a proposal, broaden implementation scope, start a bulk historical cleanup, authorize deletion or create Git commits. An explicit read-only request takes precedence. If approval is ambiguous, ask only about the specific decision; never infer approval from an agent recommendation or a successful test.
+
+Before archiving, preserve still-valid requirements and unresolved questions in an active document and link them; do not hide blockers or rewrite historical decisions. Move existing translations together, repair inbound and relative links and indexes, and leave a summary/link at the former entry point. Age or length alone is not an archival trigger. Follow the directory rules and [documentation health](documentation-health.md); run `npm run docs:verify` and, at WI close or archival, `npm run docs:health`.
+
+In the final handoff, briefly report what was saved or updated, its path, and any decision or verification still pending. No qualifying content means no new document.
 
 ## 8. ADRs and gates (maintainer-friendly)
 
@@ -92,14 +112,16 @@ If chat and `ACTIVE.md` disagree, update `ACTIVE.md` after alignment.
 
 ### Documentation drift
 
+At every WI close, inspect affected documents for superseded content and run `npm run docs:health`; record updates, retained history or deferred findings in the existing handoff. Follow [documentation health](documentation-health.md). This is a manual review obligation, not an installed weekly scheduler, and permits only the scoped recordkeeping in §7, not unrelated cleanup or commits.
+
 After doc-heavy sessions or before closing a WI that touched gates or ADRs, run `npm run docs:verify`. For boundary reviews, use [`architecture-governance.md`](architecture-governance.md) (copied from engineering-template `workflow/architecture-governance.md`).
 
 ## 9. Phases (lightweight)
 
 Each work item in `ACTIVE.md` is either:
 
-- **Prepare** — scope, gates, contracts, or discussion; no feature implementation yet.
-- **Build** — code and verification.
+- **Prepare** — scope, gates, contracts, or discussion; persist the WI proposal and seek maintainer approval; no feature implementation yet.
+- **Build** — code and verification against the approved proposal recorded in `ACTIVE.md`.
 
 Finer steps are decided by the agent per work item and recorded in `ACTIVE.md` when relevant.
 

@@ -29,6 +29,7 @@ The extension is a **presentation and orchestration layer**. It does not reimple
 
 The diagram shows the target boundaries; edge labels distinguish the current scaffold from later work. WI-001 selected subprocess RPC for the runtime probe, not end-user chat.
 
+<!-- docs-i18n: localized-mermaid -->
 ```mermaid
 flowchart TD
     U["User"] --> W["UI: sidebar Webview<br/>src/webview/"]

@@ -145,7 +145,9 @@ export function extractFencedCodeBlocks(content) {
   const re = /^```([^\n]*)\n([\s\S]*?)^```/gm;
   let m;
   while ((m = re.exec(content)) !== null) {
-    blocks.push({ info: (m[1] ?? '').trim(), body: m[2] });
+    const precedingText = content.slice(0, m.index);
+    const localizedMermaid = /(?:^|\n)<!-- docs-i18n: localized-mermaid -->\r?\n$/.test(precedingText);
+    blocks.push({ info: (m[1] ?? '').trim(), body: m[2], localizedMermaid });
   }
   return blocks;
 }
@@ -369,8 +371,12 @@ export function runDocsI18nCheck(options = {}) {
         }
         if (enBlocks[i].body !== zhBlocks[i].body) {
           const localizedOk =
-            codeFenceAllowsLocalizedBody(enBlocks[i].info) &&
-            codeFenceAllowsLocalizedBody(zhBlocks[i].info);
+            (codeFenceAllowsLocalizedBody(enBlocks[i].info) &&
+              codeFenceAllowsLocalizedBody(zhBlocks[i].info)) ||
+            (enBlocks[i].info === 'mermaid' &&
+              zhBlocks[i].info === 'mermaid' &&
+              enBlocks[i].localizedMermaid &&
+              zhBlocks[i].localizedMermaid);
           if (!localizedOk) {
             const severity = codeFenceSeverity(enBlocks[i].info);
             const finding = {

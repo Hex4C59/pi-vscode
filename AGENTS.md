@@ -42,6 +42,10 @@ Product streaming/lifecycle rules: `docs/guides/agent/boundaries.md` when presen
 
 Maintainer may @-mention **`ACTIVE.md` only** (or say 「继续 pi VS Code」). Agent obligations: see `AGENTS.kernel.md` § ACTIVE session pairing; collaboration guide at `docs/guides/agent-collaboration.md`.
 
+## Conversation records
+
+At meaningful discussion checkpoints, confirmed choices, and WI close, follow [collaboration §7](docs/guides/agent-collaboration.md#7-agent-obligations), including discussion-only sessions. The agent owns classification, recording and in-scope archival; the maintainer owns decisions and acceptance. Read that guide before recording. Do not ask the maintainer to choose a directory or reapprove routine recordkeeping.
+
 ## Before you start
 
 Follow `AGENTS.kernel.md` § Before you start, plus this repo’s `package.json` scripts and tests once WI-001 adds them.
@@ -53,6 +57,7 @@ Follow `AGENTS.kernel.md` § Before you start, plus this repo’s `package.json`
 | Starting implementation | `AGENTS.kernel.md`, `ACTIVE.md`, `docs/guides/agent-collaboration.md` |
 | TypeScript / tooling | `docs/guides/agent/typescript.md` |
 | pi SDK / RPC / spike | `docs/guides/agent/pi-integration.md` |
+| Documentation health / WI close | [`docs/guides/documentation-health.md`](docs/guides/documentation-health.md) |
 | Judgment / “what else” / go-no-go | `docs/guides/agent/judgment.md` |
 | Architecture / boundaries / new APIs or persistence | `docs/guides/architecture-governance.md`, `docs/architecture/vscode-extension-architecture.md` |
 | User-visible behavior | `docs/product-requirements.md`, architecture doc |

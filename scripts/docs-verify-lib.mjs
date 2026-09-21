@@ -5,6 +5,43 @@ import { extractRelativeLinks, listMarkdownFiles, repoRoot } from './docs-i18n-c
 
 const GATES_EN = 'docs/reference/architecture-gates.md';
 const DECISIONS_INDEX_EN = 'docs/decisions/README.md';
+const PRD_EN = 'docs/product-requirements.md';
+const ACTIVE = 'ACTIVE.md';
+
+// Only enforce the mechanical PRD gate for an active Build WI; Prepare may be incomplete.
+export function checkPrdGate(prd, active) {
+  const errors = [];
+  if (/\|\s*REQ-\d+\s*\|[^\n]*<!--/.test(prd)) {
+    errors.push({ code: 'prd-placeholder', message: `${PRD_EN}: REQ row contains a placeholder comment` });
+  }
+  const current = active.split(/^## 正在做（WIP=1）/m)[1]?.split(/^## /m)[0] ?? '';
+  const wi = current.match(/\|\s*\*\*ID\*\*\s*\|\s*(WI-\d+)\s*\|/)?.[1];
+  const build = /\|\s*\*\*阶段\*\*\s*\|\s*(?:建造|Build)(?:\s|\||（|\()/.test(current);
+  if (!wi || !build) return errors;
+  const assessment = current.match(/\|\s*\*\*PRD 判定\*\*\s*\|\s*([^|]+)\|/)?.[1]?.trim();
+  if (!assessment || /待定|pending/i.test(assessment)) {
+    errors.push({ code: 'prd-assessment-missing', message: `${wi}: Build requires a resolved PRD 判定 row in ACTIVE.md` });
+  } else if (/^(?:纯技术|technical-only)\s*[:：]\s*\S/i.test(assessment)) {
+    // A technical-only WI has no user-visible PRD slice, but must explain why.
+  } else if (/^(?:用户可见|user-visible)\s*[:：]\s*\S/i.test(assessment)) {
+    const row = prd.split(/\r?\n/).find((line) => new RegExp(`^\\|\\s*${wi}\\s*\\|`).test(line));
+    if (!row || /\*\(none|pending|待定|（无|暂无|<!--/i.test(row) || !/REQ-\d+/.test(row)) {
+      errors.push({ code: 'prd-trace-missing', message: `${wi}: user-visible Build requires a traceability row with a REQ ID` });
+    }
+    const linkedIds = row?.match(/REQ-\d+/g) ?? [];
+    const requirements = prd.split(/\r?\n/).filter((line) =>
+      linkedIds.some((id) => new RegExp(`^\\|\\s*${id}\\s*\\|`).test(line)) &&
+      !/<!--|\bTODO\b|待定|deferred/i.test(line) &&
+      line.split('|')[2]?.trim(),
+    );
+    if (!requirements.length) {
+      errors.push({ code: 'prd-requirement-missing', message: `${wi}: user-visible Build requires a substantive linked REQ row` });
+    }
+  } else {
+    errors.push({ code: 'prd-assessment-invalid', message: `${wi}: PRD 判定 must specify 用户可见 or 纯技术, with a reason` });
+  }
+  return errors;
+}
 
 function readRepo(rel) {
   return fs.readFileSync(path.join(repoRoot(), rel), 'utf8');
@@ -96,6 +133,12 @@ export function runDocsVerify() {
       if (!fileExists(resolved)) {
         push('error', 'link-missing', `${rel}: broken relative link: ${link} (resolved ${resolved})`);
       }
+    }
+  }
+
+  if (fileExists(PRD_EN) && fileExists(ACTIVE)) {
+    for (const finding of checkPrdGate(readRepo(PRD_EN), readRepo(ACTIVE))) {
+      push('error', finding.code, finding.message);
     }
   }
 

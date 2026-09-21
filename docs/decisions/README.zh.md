@@ -25,10 +25,15 @@
 ## 格式
 
 - 文件：`docs/decisions/0001-short-slug.md`（英文为权威；可选 `.zh.md`）
-- 元数据含 `Status: Accepted` 并链接 gate ID。
+- 元数据记录实际状态（`Draft`、`Accepted` 或 `Superseded`）及适用的 gate 链接。Accepted 须满足维护者批准与所需验证，分别记录日期和证据。
+- 包含背景、决定、理由、考虑过的替代方案、影响及相关讨论／验证证据。不编造替代方案或批准；未知项明确说明。
 
 ## Accepted ADR
 
 | ID | 标题 | Gate | 文件 |
 |----|------|------|------|
 | 0001 | 构建与扩展 baseline（WI-001） | `gate-extension-host-baseline`、`gate-sidebar-chat-shell`、`gate-runtime-host` | [0001-build-baseline.md](0001-build-baseline.md) |
+
+## Agent 流程
+
+符合 ADR 条件的选择获明确确认后，按[协作指南 §7](../guides/agent-collaboration.zh.md#7-agent-义务) 自动记录，无需另问是否保存。所需验证缺失时保持 ADR Draft，并在 ACTIVE 记录待满足条件（`Decision: pending-adr`），不关闭 gate。批准含义不清楚时询问具体决策，不询问目录。满足接受条件后更新本索引、相关 gate 链接及 ACTIVE。历史 ADR 留在此处；被替代时标明状态并链接替代记录，不改写原始理由，不因年代久远而移动。

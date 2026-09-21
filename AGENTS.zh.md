@@ -47,6 +47,10 @@
 
 维护者可仅 @ **`ACTIVE.md`**（或说「继续 pi VS Code」）。Agent 义务见 `AGENTS.kernel.md` § ACTIVE 会话配对；协作指南 `docs/guides/agent-collaboration.md`。
 
+## 对话记录
+
+在讨论形成阶段性结论、方案获得确认及 WI 收尾时，遵循[协作指南 §7](docs/guides/agent-collaboration.zh.md#7-agent-义务)，包括仅讨论的会话。Agent 负责分类、记录和范围内归档；维护者负责决策与验收。落盘前阅读该指南，不要求维护者选择目录或重复批准常规记录整理。
+
 ## 开始前
 
 遵循 `AGENTS.kernel.md` § 开始前，以及本仓 `package.json` 脚本与测试（WI-001 加入代码后）。
@@ -58,6 +62,7 @@
 | 开始实现 | `AGENTS.kernel.md`、`ACTIVE.md`、`docs/guides/agent-collaboration.md` |
 | TypeScript / 工具链 | `docs/guides/agent/typescript.md` |
 | pi SDK / RPC / spike | `docs/guides/agent/pi-integration.md` |
+| 文档健康 / WI 收尾 | [`docs/guides/documentation-health.zh.md`](docs/guides/documentation-health.zh.md) |
 | 判断 / 做不做 | `docs/guides/agent/judgment.md` |
 | 架构 / 边界 / 新 API 或持久化 | `docs/guides/architecture-governance.md`、`docs/architecture/vscode-extension-architecture.md` |
 | 用户可见行为 | `docs/product-requirements.md`、架构文档 |
