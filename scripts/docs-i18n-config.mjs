@@ -13,6 +13,7 @@ export const REQUIRED_CHINESE_PAIRS = [
   'docs/git-commit-convention.md',
   'docs/bilingual-documentation.md',
   'docs/product-requirements.md',
+  'docs/archive/2026-09-21-closed-wi-history.md',
   'docs/guides/agent-collaboration.md',
   'docs/guides/documentation-health.md',
   'docs/guides/agent/judgment.md',

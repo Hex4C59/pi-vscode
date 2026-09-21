@@ -45,7 +45,7 @@
 
 ## ACTIVE 会话配对
 
-维护者可仅 @ **`ACTIVE.md`**（或说「继续 pi VS Code」）。Agent 义务见 `AGENTS.kernel.md` § ACTIVE 会话配对；协作指南 `docs/guides/agent-collaboration.md`。
+维护者可仅 @ **`ACTIVE.md`**（或说「继续 pi VS Code」）。将它视为当前工作入口，而不是自包含历史日志。完整读取其中的当前 WI，再仅按加载地图展开与任务有关的路径；除非当前问题需要历史证据，否则归档链接只作背景。Agent 义务与渐进加载协议见 `AGENTS.kernel.md` § ACTIVE 会话配对及 `docs/guides/agent-collaboration.zh.md`。
 
 ## 对话记录
 
@@ -57,9 +57,11 @@
 
 ## 加载地图
 
+基础必读由 `AGENTS.kernel.md` 规定；下表增加的是**条件路由**，不是从头读到底的清单。当任务范围、约束、契约与证据已经明确时停止展开链接；证据缺失或冲突时必须报告，不得猜测。
+
 | 若你正在… | 先读 |
 |-----------|------|
-| 开始实现 | `AGENTS.kernel.md`、`ACTIVE.md`、`docs/guides/agent-collaboration.md` |
+| 开始实现 | `ACTIVE.md` 当前 WI，再完整阅读 `docs/guides/agent-collaboration.zh.md` |
 | TypeScript / 工具链 | `docs/guides/agent/typescript.md` |
 | pi SDK / RPC / spike | `docs/guides/agent/pi-integration.md` |
 | 文档健康 / WI 收尾 | [`docs/guides/documentation-health.zh.md`](docs/guides/documentation-health.zh.md) |

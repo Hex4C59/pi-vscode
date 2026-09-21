@@ -8,7 +8,7 @@ English | [中文](0001-build-baseline.zh.md)
 - Accepted: 2026-09-19
 - Gates: `gate-extension-host-baseline`, `gate-sidebar-chat-shell`, `gate-runtime-host`
 - Supersedes: none
-- Related: [vscode-extension-architecture](../architecture/vscode-extension-architecture.md), [WI-001](../../ACTIVE.md)
+- Related: [vscode-extension-architecture](../architecture/vscode-extension-architecture.md), [archived WI-001 record](../archive/2026-09-21-closed-wi-history.md#wi-001)
 
 ## Context
 

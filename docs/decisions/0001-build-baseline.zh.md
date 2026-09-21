@@ -13,7 +13,7 @@
 - 接受：2026-09-19
 - Gate：`gate-extension-host-baseline`、`gate-sidebar-chat-shell`、`gate-runtime-host`
 - 取代：无
-- 相关：[vscode-extension-architecture](../architecture/vscode-extension-architecture.zh.md)、[WI-001](../../ACTIVE.md)
+- 相关：[vscode-extension-architecture](../architecture/vscode-extension-architecture.zh.md)、[归档 WI-001 记录](../archive/2026-09-21-closed-wi-history.zh.md#wi-001)
 
 ## 背景
 

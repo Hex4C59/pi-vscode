@@ -23,6 +23,12 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 2. Ensure the **current** truth lives in PRD (`Accepted`), architecture, gates, ADRs, or `ACTIVE.md`.
 3. Prefer `YYYY-MM-DD-original-name.md` under `docs/archive/` (flat or subfolders by year).
 
+## Closed WI index
+
+| Record | Contents |
+|--------|----------|
+| [Closed work-item history through WI-007](2026-09-21-closed-wi-history.md) | WI-001/002/003/005/006/007 scope, acceptance evidence and retained limits |
+
 ## Agent rule
 
 If archive text conflicts with current authoritative docs, ignore archive and cite the live file.

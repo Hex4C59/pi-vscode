@@ -12,14 +12,18 @@
 - 创建：<!-- date -->
 - 权威：本产品仓库文档导航
 
-## 建议阅读顺序
+## 入口与任务路由
 
-1. [`../README.md`](../README.md)
-2. [`../AGENTS.md`](../AGENTS.md)
-3. 产品需求：[`product-requirements.md`](product-requirements.md)（首个用户可见 WI 前保持 `Draft`；`Accepted` 后为范围权威）
-4. 架构：`architecture/` 主文档；评审清单：[`guides/architecture-governance.zh.md`](guides/architecture-governance.zh.md)
-5. 当前工作：[`../ACTIVE.md`](../ACTIVE.md)
-6. 仅上下文：[`discussions/`](discussions/)、[`archive/`](archive/)
+本索引是一棵路由树，不是从头读到底的清单。仓库规则与基础必读以 [`../AGENTS.zh.md`](../AGENTS.zh.md) 及其内核为准。
+
+- **当前会话：** 完整阅读 [`../ACTIVE.md`](../ACTIVE.md) 中唯一的当前 WI、批准状态、仍有效限制与最近交接，再跟随与任务有关的链接。
+- **用户可见行为：** 阅读 [`product-requirements.zh.md`](product-requirements.zh.md) 与 [`architecture/`](architecture/) 下主架构。
+- **架构或契约：** 阅读主架构、[`reference/`](reference/) 下相关文件及 [`guides/architecture-governance.zh.md`](guides/architecture-governance.zh.md)。
+- **实现 playbook：** 按 [`../AGENTS.zh.md`](../AGENTS.zh.md) 或 [`guides/agent/`](guides/agent/) 的匹配路由选择，不默认展开无关指南。
+- **WI 收尾与文档维护：** 阅读 [`guides/agent-collaboration.zh.md`](guides/agent-collaboration.zh.md)、[`guides/documentation-health.zh.md`](guides/documentation-health.zh.md) 与 [`archive/`](archive/) 规则。
+- **仅历史证据：** 当前问题需要既往理由或观察时，才读取 [`discussions/`](discussions/) 与 [`archive/`](archive/)；它们不是实现权威。
+
+当前任务的范围、约束、契约及必要证据已明确时停止展开链接。证据缺失或冲突时应报告，不能把“链接可达”当作批准或提高权威。
 
 ## Agent：仅提交时
 

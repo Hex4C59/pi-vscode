@@ -67,7 +67,7 @@ Related: [TypeScript/Node playbook](typescript.md).
 |----------------|--------------------------|
 | [Runtime probe](../../../src/adapter/pi-rpc-probe.ts), [JSONL helper](../../../src/adapter/jsonl.ts), `npm run spike:runtime`, [WI-001 evidence in ADR 0001](../../decisions/0001-build-baseline.md#spike-evidence) | Historical evidence for one request/response and shutdown; not streaming, tool approval or production concurrency. The probe inherits the process environment and is not the isolated trust harness. |
 | [Trust harness](../../../scripts/spike-project-trust.mjs), [fixture/lifecycle helpers](../../../scripts/project-trust-lib.mjs), [tests](../../../scripts/project-trust.test.mjs), `npm run spike:project-trust` | Isolated startup and cross-cwd session-switch scenarios for the fixed version. Read the harness and its limitations before execution. |
-| [ACTIVE](../../../ACTIVE.md), WI-003 results | Recorded six-scenario trust observations and maintainer acceptance of the spike only. These are prior observations, not a claim that the current session reran them. |
+| [Archived WI-003 evidence](../../archive/2026-09-21-closed-wi-history.md#wi-003) | Recorded six-scenario trust observations and maintainer acceptance of the spike only. These are prior observations, not a claim that the current session reran them. |
 | [Webview contract](../../reference/webview-messages.md), WI-006 in ACTIVE | Workspace eligibility and in-memory resource choice UI; the runtime is not started. Selection recorded does not mean resources loaded. |
 
 ### Project trust findings and remaining limits

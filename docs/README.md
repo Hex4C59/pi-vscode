@@ -7,14 +7,18 @@ English | [中文](README.zh.md)
 - Created: <!-- date -->
 - Authority: navigation for this product repository
 
-## Recommended reading order
+## Entry points and task routes
 
-1. [`../README.md`](../README.md)
-2. [`../AGENTS.md`](../AGENTS.md)
-3. Product requirements: [`product-requirements.md`](product-requirements.md) (`Draft` until first user-visible WI; `Accepted` for scope authority)
-4. Architecture: `architecture/` (primary system doc); review checklist: [`guides/architecture-governance.md`](guides/architecture-governance.md)
-5. [`../ACTIVE.md`](../ACTIVE.md) for current work
-6. Context only: [`discussions/`](discussions/), [`archive/`](archive/)
+This index is a routing tree, not a read-everything order. Repository rules and mandatory baseline reads come from [`../AGENTS.md`](../AGENTS.md) and its kernel.
+
+- **Current session:** read [`../ACTIVE.md`](../ACTIVE.md) in full for the one current WI, approval state, open limits and latest handoff; then follow its task-relevant links.
+- **User-visible behavior:** read [`product-requirements.md`](product-requirements.md) and the primary document under [`architecture/`](architecture/).
+- **Architecture or contracts:** read the primary architecture, the relevant file under [`reference/`](reference/), and [`guides/architecture-governance.md`](guides/architecture-governance.md).
+- **Implementation playbooks:** choose the matching route in [`../AGENTS.md`](../AGENTS.md) or [`guides/agent/`](guides/agent/); do not open unrelated playbooks by default.
+- **WI close and documentation maintenance:** read [`guides/agent-collaboration.md`](guides/agent-collaboration.md), [`guides/documentation-health.md`](guides/documentation-health.md), and the [`archive/`](archive/) policy.
+- **Historical evidence only:** use [`discussions/`](discussions/) and [`archive/`](archive/) when the current question needs prior rationale or observations. These files are not implementation authority.
+
+Stop expanding links when the current task's scope, constraints, contract and required evidence are established. Report missing or conflicting evidence instead of treating link reachability as approval or authority.
 
 ## Agent: commits only
 

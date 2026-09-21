@@ -72,7 +72,7 @@
 |----------------|--------------------------|
 | [运行时探针](../../../src/adapter/pi-rpc-probe.ts)、[JSONL 辅助模块](../../../src/adapter/jsonl.ts)、`npm run spike:runtime`、[ADR 0001 的 WI-001 证据](../../decisions/0001-build-baseline.zh.md#spike-证据) | 一次请求／响应和关闭的历史证据，不证明流式、工具审批或生产并发。探针继承进程环境，不是隔离的信任验证程序。 |
 | [信任验证程序](../../../scripts/spike-project-trust.mjs)、[fixture／生命周期辅助模块](../../../scripts/project-trust-lib.mjs)、[测试](../../../scripts/project-trust.test.mjs)、`npm run spike:project-trust` | 固定版本下隔离的启动与跨 cwd 会话切换场景。执行前阅读程序及其限制。 |
-| [ACTIVE](../../../ACTIVE.md) 的 WI-003 结果 | 已记录的六组信任场景观察，以及维护者仅对 spike 的验收。这是既有观察，不代表当前会话已重跑。 |
+| [归档 WI-003 证据](../../archive/2026-09-21-closed-wi-history.zh.md#wi-003) | 已记录的六组信任场景观察，以及维护者仅对 spike 的验收。这是既有观察，不代表当前会话已重跑。 |
 | [Webview 契约](../../reference/webview-messages.zh.md)、ACTIVE 的 WI-006 | 工作区资格与内存资源选择 UI，未启动运行时。选择已记录不等于资源已加载。 |
 
 ### 项目信任发现与剩余限制

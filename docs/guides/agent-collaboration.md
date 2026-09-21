@@ -45,8 +45,19 @@ If chat and `ACTIVE.md` disagree, update `ACTIVE.md` after alignment.
 
 - Exactly **one** active work item (`WI-xxx`) in `ACTIVE.md` at a time.
 - New ideas go to **Parking lot** in `ACTIVE.md`, not into implementation, until the maintainer reprioritizes.
-- Each active WI has a persistent proposal in `ACTIVE.md` covering goal and scope, approach and risks, observable acceptance, out of scope, applicable gate ID and decision class, **PRD assessment**, and approval status. A proposal can be incomplete during Prepare, but Build requires recorded maintainer approval.
+- Each active WI has a persistent, fully reviewable proposal in `ACTIVE.md` covering goal and scope, approach and risks, observable acceptance, out of scope, applicable gate ID and decision class, **PRD assessment**, and approval status. A proposal can be incomplete during Prepare, but Build requires recorded maintainer approval.
+- `ACTIVE.md` is the current-work entry point, not an append-only history. Its stable sections are: session entry, exactly one Current work section, Current focus and open items, Parking lot, at most two recent handoffs, and a compact Completed WI index. Closed-WI proposals, long acceptance checklists and older handoffs belong under `docs/archive/`, with a link from the index.
 - Architecture **gates** must not be treated as shipped product until closed with an Accepted ADR.
+
+### Progressive loading
+
+Repository links form a routing tree, not a mandate to read every reachable file:
+
+1. **Required entry:** follow the kernel's baseline reads; for implementation, read this guide and the current WI in `ACTIVE.md` in full.
+2. **Conditionally required:** follow the matching `AGENTS.md` load-map route and the current WI's links for requirements, architecture, contracts, playbooks and upstream evidence.
+3. **Background evidence:** open discussions and archive records only when the current question needs prior rationale or observations.
+
+Stop expanding links when scope, constraints, contract and required evidence are established. Link reachability does not create authority or approval. If evidence is missing, conflicting or stale, report it rather than guessing. After context compression, if required material cannot be confidently recalled, reload from these entry points before editing.
 
 ## 5. Session rhythm
 
@@ -95,7 +106,7 @@ Apply this checkpoint when a discussion reaches a meaningful interim conclusion,
 | WI close or a confirmed replacement leaves inactive material worth retaining | Archive affected old discussions, proposals or long closed-WI records under `docs/archive/`, with reason, historical status and a replacement link (or an explicit explanation when none exists). Keep historical ADRs in `docs/decisions/` with status and replacement relationships. |
 | Routine Q&A, a small change or a one-line future idea | No standalone document; use the existing handoff or parking lot if needed. |
 
-Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep `ACTIVE.md` focused on the current WI proposal summary required by §4, approval state, unresolved blockers and brief handoff, linking to detailed discussion, decisions and history. The approved scope and acceptance must remain readily reviewable from ACTIVE.
+Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep the complete current-WI proposal, approval state, unresolved blockers and brief handoff in `ACTIVE.md`; link detailed background, decisions and closed history instead of copying them back. At WI close, move the inactive proposal, long acceptance evidence and superseded handoffs to archive, then replace them with one row in the Completed WI index. The approved current scope and acceptance must remain readily reviewable from ACTIVE.
 
 This rule provides standing authorization for recordkeeping and archival **within the discussion or work already authorized**, without asking whether to save or where to put it. It does not approve a proposal, broaden implementation scope, start a bulk historical cleanup, authorize deletion or create Git commits. An explicit read-only request takes precedence. If approval is ambiguous, ask only about the specific decision; never infer approval from an agent recommendation or a successful test.
 

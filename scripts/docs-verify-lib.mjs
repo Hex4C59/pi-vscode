@@ -7,6 +7,64 @@ const GATES_EN = 'docs/reference/architecture-gates.md';
 const DECISIONS_INDEX_EN = 'docs/decisions/README.md';
 const PRD_EN = 'docs/product-requirements.md';
 const ACTIVE = 'ACTIVE.md';
+const CURRENT_HEADING = '## 正在做（WIP=1）';
+const NO_CURRENT_HEADING = '## 当前无活动 WI（WIP=0）';
+
+function stripFencedBlocks(content) {
+  return content.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1\s*$/gm, (block) => '\n'.repeat(block.split(/\r?\n/).length - 1));
+}
+
+export function parseCurrentWork(active) {
+  const clean = stripFencedBlocks(active);
+  const currentCount = (clean.match(/^## 正在做（WIP=1）\s*$/gm) ?? []).length;
+  const emptyCount = (clean.match(/^## 当前无活动 WI（WIP=0）\s*$/gm) ?? []).length;
+  if (currentCount + emptyCount !== 1) return { kind: 'invalid', section: '' };
+  if (emptyCount === 1) return { kind: 'empty', section: '' };
+  const start = clean.search(/^## 正在做（WIP=1）\s*$/m);
+  const bodyStart = clean.indexOf('\n', start) + 1;
+  const next = clean.slice(bodyStart).search(/^## /m);
+  const section = next === -1 ? clean.slice(bodyStart) : clean.slice(bodyStart, bodyStart + next);
+  return { kind: 'current', section };
+}
+
+export function checkActiveStructure(active) {
+  const errors = [];
+  const warnings = [];
+  const parsed = parseCurrentWork(active);
+  if (parsed.kind === 'invalid') {
+    errors.push({ code: 'active-current-boundary', message: `${ACTIVE}: require exactly one canonical current-work or no-active-WI heading` });
+    return { errors, warnings };
+  }
+  const clean = stripFencedBlocks(active);
+  const requiredH2 = ['## 当前焦点与未决项', '## 停车场', '## 最近交接', '## 已完成 WI 索引'];
+  for (const heading of requiredH2) {
+    if ((clean.match(new RegExp(`^${heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'gm')) ?? []).length !== 1) {
+      errors.push({ code: 'active-section', message: `${ACTIVE}: require exactly one ${heading}` });
+    }
+  }
+  if (/^## (?:已完成（WI-|WI-\d+\s+讨论稿)/m.test(clean)) {
+    errors.push({ code: 'active-closed-detail', message: `${ACTIVE}: closed WI detail belongs in docs/archive; keep only the completed index` });
+  }
+  if (parsed.kind === 'current') {
+    for (const field of ['ID', '阶段', 'Gate ID', 'Decision', 'PRD 判定']) {
+      if (!new RegExp(`\\|\\s*\\*\\*${field}\\*\\*\\s*\\|`).test(parsed.section)) {
+        errors.push({ code: 'active-current-field', message: `${ACTIVE}: current WI is missing ${field}` });
+      }
+    }
+    for (const heading of ['目标与范围', '方案与架构核对', '验收', '范围外与批准边界']) {
+      if (!new RegExp(`^### ${heading}`, 'm').test(parsed.section)) {
+        errors.push({ code: 'active-current-detail', message: `${ACTIVE}: current WI is missing ${heading}` });
+      }
+    }
+  }
+  const handoff = clean.split(/^## 最近交接\s*$/m)[1]?.split(/^## /m)[0] ?? '';
+  if ((handoff.match(/^### /gm) ?? []).length > 2) {
+    errors.push({ code: 'active-handoff-count', message: `${ACTIVE}: keep at most two recent handoffs; archive older entries` });
+  }
+  const lineCount = active.split(/\r?\n/).length;
+  if (lineCount > 180) warnings.push({ code: 'active-size', message: `${ACTIVE}: ${lineCount} lines exceeds the 180-line guidance; do not remove live limits merely to reduce size` });
+  return { errors, warnings };
+}
 
 // Only enforce the mechanical PRD gate for an active Build WI; Prepare may be incomplete.
 export function checkPrdGate(prd, active) {
@@ -14,7 +72,8 @@ export function checkPrdGate(prd, active) {
   if (/\|\s*REQ-\d+\s*\|[^\n]*<!--/.test(prd)) {
     errors.push({ code: 'prd-placeholder', message: `${PRD_EN}: REQ row contains a placeholder comment` });
   }
-  const current = active.split(/^## 正在做（WIP=1）/m)[1]?.split(/^## /m)[0] ?? '';
+  const parsed = parseCurrentWork(active);
+  const current = parsed.kind === 'current' ? parsed.section : '';
   const wi = current.match(/\|\s*\*\*ID\*\*\s*\|\s*(WI-\d+)\s*\|/)?.[1];
   const build = /\|\s*\*\*阶段\*\*\s*\|\s*(?:建造|Build)(?:\s|\||（|\()/.test(current);
   if (!wi || !build) return errors;
@@ -43,8 +102,8 @@ export function checkPrdGate(prd, active) {
   return errors;
 }
 
-function readRepo(rel) {
-  return fs.readFileSync(path.join(repoRoot(), rel), 'utf8');
+function readRepo(rel, root = repoRoot()) {
+  return fs.readFileSync(path.join(root, rel), 'utf8');
 }
 
 function resolveLink(fromRel, linkPath) {
@@ -54,8 +113,8 @@ function resolveLink(fromRel, linkPath) {
   return joined;
 }
 
-function fileExists(rel) {
-  return fs.existsSync(path.join(repoRoot(), rel));
+function fileExists(rel, root = repoRoot()) {
+  return fs.existsSync(path.join(root, rel));
 }
 
 function parseGateRows(content) {
@@ -98,8 +157,8 @@ function parseAcceptedAdrRows(content) {
   return rows;
 }
 
-function listAdrFiles() {
-  const dir = path.join(repoRoot(), 'docs/decisions');
+function listAdrFiles(root = repoRoot()) {
+  const dir = path.join(root, 'docs/decisions');
   if (!fs.existsSync(dir)) return [];
   return fs
     .readdirSync(dir)
@@ -108,7 +167,8 @@ function listAdrFiles() {
     .sort();
 }
 
-export function runDocsVerify() {
+export function runDocsVerify(options = {}) {
+  const root = options.rootDir ?? repoRoot();
   const errors = [];
   const warnings = [];
 
@@ -118,39 +178,54 @@ export function runDocsVerify() {
     else warnings.push(item);
   };
 
-  const mdFiles = listMarkdownFiles().filter(
+  const exists = (rel) => fs.existsSync(path.join(root, rel));
+  const read = (rel) => readRepo(rel, root);
+  const mdFiles = listMarkdownFiles(root).filter(
     (rel) => rel.startsWith('docs/') || rel === 'README.md' || rel === 'AGENTS.md' || rel === 'ACTIVE.md',
   );
 
   for (const rel of mdFiles) {
-    const content = readRepo(rel);
+    const content = read(rel);
     for (const link of extractRelativeLinks(content)) {
       const resolved = resolveLink(rel, link);
       if (!resolved) {
         push('error', 'link-escape', `${rel}: link escapes repo: ${link}`);
         continue;
       }
-      if (!fileExists(resolved)) {
+      if (!exists(resolved)) {
         push('error', 'link-missing', `${rel}: broken relative link: ${link} (resolved ${resolved})`);
       }
     }
   }
 
-  if (fileExists(PRD_EN) && fileExists(ACTIVE)) {
-    for (const finding of checkPrdGate(readRepo(PRD_EN), readRepo(ACTIVE))) {
+  if (exists(ACTIVE)) {
+    const active = read(ACTIVE);
+    const activeReport = checkActiveStructure(active);
+    for (const finding of activeReport.errors) push('error', finding.code, finding.message);
+    for (const finding of activeReport.warnings) push('warning', finding.code, finding.message);
+    for (const match of active.matchAll(/\]\((docs\/archive\/[^)#]+\.md)#([a-z0-9-]+)\)/g)) {
+      const [, rel, anchor] = match;
+      if (exists(rel) && !new RegExp(`<a\\s+id=["']${anchor}["']\\s*><\\/a>`, 'i').test(read(rel))) {
+        push('error', 'active-archive-anchor', `${ACTIVE}: archive target ${rel} is missing explicit anchor #${anchor}`);
+      }
+    }
+  }
+
+  if (exists(PRD_EN) && exists(ACTIVE)) {
+    for (const finding of checkPrdGate(read(PRD_EN), read(ACTIVE))) {
       push('error', finding.code, finding.message);
     }
   }
 
-  if (fileExists(GATES_EN)) {
-    const gatesContent = readRepo(GATES_EN);
+  if (exists(GATES_EN)) {
+    const gatesContent = read(GATES_EN);
     for (const row of parseGateRows(gatesContent)) {
       if (row.status === 'Accepted') {
         if (!row.adrPath || row.adrCell === '—' || row.adrCell.includes('—')) {
           push('error', 'gate-accepted-no-adr', `${row.id}: status Accepted but ADR column is empty`);
         } else {
           const resolved = resolveLink(GATES_EN, row.adrPath);
-          if (!resolved || !fileExists(resolved)) {
+          if (!resolved || !exists(resolved)) {
             push(
               'error',
               'gate-adr-missing',
@@ -169,9 +244,9 @@ export function runDocsVerify() {
     }
   }
 
-  if (fileExists(DECISIONS_INDEX_EN)) {
-    const adrOnDisk = new Set(listAdrFiles());
-    const indexContent = readRepo(DECISIONS_INDEX_EN);
+  if (exists(DECISIONS_INDEX_EN)) {
+    const adrOnDisk = new Set(listAdrFiles(root));
+    const indexContent = read(DECISIONS_INDEX_EN);
     const accepted = parseAcceptedAdrRows(indexContent);
     const indexedFiles = new Set();
     for (const row of accepted) {
@@ -180,7 +255,7 @@ export function runDocsVerify() {
         if (resolved) {
           indexedFiles.add(resolved);
         }
-        if (!resolved || !fileExists(resolved)) {
+        if (!resolved || !exists(resolved)) {
           push(
             'error',
             'adr-index-missing-file',
@@ -193,7 +268,7 @@ export function runDocsVerify() {
       if (!indexedFiles.has(adr)) {
         push('warning', 'adr-file-not-indexed', `${adr} exists but is not listed in decisions/README Accepted ADRs table`);
       }
-      const body = readRepo(adr);
+      const body = read(adr);
       if (!/^-\s*Status:\s*Accepted/m.test(body)) {
         push('warning', 'adr-status-not-accepted', `${adr}: on disk but Status is not Accepted in file metadata`);
       }

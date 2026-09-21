@@ -40,7 +40,7 @@ Product streaming/lifecycle rules: `docs/guides/agent/boundaries.md` when presen
 
 ## ACTIVE session pairing
 
-Maintainer may @-mention **`ACTIVE.md` only** (or say 「继续 pi VS Code」). Agent obligations: see `AGENTS.kernel.md` § ACTIVE session pairing; collaboration guide at `docs/guides/agent-collaboration.md`.
+Maintainer may @-mention **`ACTIVE.md` only** (or say 「继续 pi VS Code」). Treat it as the current-work entry point, not a self-contained history log. Read its current WI in full, then follow only the task-relevant routes in the load map; archived links are background unless the current question needs their evidence. Agent obligations and the progressive-loading protocol are in `AGENTS.kernel.md` § ACTIVE session pairing and `docs/guides/agent-collaboration.md`.
 
 ## Conversation records
 
@@ -52,9 +52,11 @@ Follow `AGENTS.kernel.md` § Before you start, plus this repo’s `package.json`
 
 ## Load map
 
+Baseline reads come from `AGENTS.kernel.md`; this table adds **conditional routes**, not a linear read-everything list. Stop expanding links once the task's scope, constraints, contract and evidence are established. Missing or conflicting evidence must be reported rather than guessed.
+
 | If you are… | Read first |
 |-------------|------------|
-| Starting implementation | `AGENTS.kernel.md`, `ACTIVE.md`, `docs/guides/agent-collaboration.md` |
+| Starting implementation | current WI in `ACTIVE.md`, then `docs/guides/agent-collaboration.md` in full |
 | TypeScript / tooling | `docs/guides/agent/typescript.md` |
 | pi SDK / RPC / spike | `docs/guides/agent/pi-integration.md` |
 | Documentation health / WI close | [`docs/guides/documentation-health.md`](docs/guides/documentation-health.md) |
