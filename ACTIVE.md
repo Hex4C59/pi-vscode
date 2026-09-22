@@ -6,11 +6,11 @@
 
 | 步骤 | Agent |
 |------|-------|
-| **开场** | 读取本文件当前 WI 与最近交接；复述阶段、Gate、PRD 判定、焦点与验收。 |
+| **开场** | 完成内核基础阅读、本文件与协作指南；明确当前 WI、批准状态、Gate、PRD 判定、焦点与验收。 |
 | **渐进加载** | 按任务路由展开；归档仅在需要既往证据时读取。 |
-| **提案** | Prepare 在本文件保留完整可审阅提案；维护者确认后才 Build。 |
-| **建造** | 按已批准范围实现并运行检查。 |
-| **收尾** | 核对验收；关闭 WI 时长文归档；`docs:verify` 与适用的 `docs:health`。 |
+| **提案** | Prepare 保留完整提案和 PRD 判定；新增 Build 范围须记录确认，已有明确批准持续有效。 |
+| **建造** | 按已批准范围交付可审阅行为和适用检查结果，明确未验证部分。 |
+| **收尾** | 对照批准与验收，修正或记录延期；更新交接，按协作 §7 归档已失效材料；运行文档检查，保留待决验收／ADR。 |
 
 - **WIP=1：** 同时只有一个「正在做」。
 - **Gate：** 未经 Accepted ADR 关闭的 gate 不得当作已交付能力。
@@ -60,7 +60,7 @@
 - **追加 F5 确认（2026-09-21 19:44）：** 维护者确认回复过程中更换模型／thinking 不影响当前回复，结束后新配置生效，下一条消息正常使用新配置。此主路径不再待确认，无须重复验收。
 - **证据边界：** 本次确认不扩大为故障注入、RPC 失败回读、重启清理或审批／Stop 交错的完整手动矩阵；这些边界保留已有自动化证据及未独立手测说明，收尾时分别记录。
 - **原范围外保留：** 全局启动默认持久化（仍仅读取既有 defaultProvider/defaultModel）、登录／配置 UI、在线刷新模型、循环按钮替代列表／滑块、编辑区 Panel／Chat Participant、附件／历史／Markdown。Thinking 正文、工具审批与 Stop 由 WI-010 承接，不倒算为旧 WI 交付。
-- **关闭条件：** 两者剩余 F5 与全量检查汇总后，由维护者明确确认一起关闭，再归档；本次未归档或标为已关闭。pi 当前 `0.86.1`；[WI-004 RPC 证据（0.85.1）](docs/discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md) 保持历史。
+- **关闭条件：** 汇总已确认 F5 与全量检查，对剩余边界验证明确处理结论，再由维护者确认一起关闭并归档；本次未归档或标为已关闭。pi 当前 `0.86.1`；[WI-004 RPC 证据（0.85.1）](docs/discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md) 保持历史。
 
 ## 当前焦点与未决项
 
@@ -75,6 +75,7 @@
 
 ## 停车场
 
+- **下一候选：WI-012 — Webview 前端工程化与技术栈评估。** 在 WI-011 明确收尾后进入 Prepare；比较原生 TypeScript 模块化 browser bundle 与 React／Preact／Lit 等候选，评估 CSP、依赖与包体积、流式渲染、可访问性、测试迁移、现有协议／信任边界及渐进迁移风险。先形成可审阅选型与验证计划，不在技术选择获批前直接重写 UI；预期为纯技术，若改变可见行为则另行补 PRD 判定。框架／构建边界选择属于 ADR 候选，验证前保持 `pending-adr`。
 - 编辑区标签聊天（Claude Code 式 panel 默认）、Chat Participant API。
 - 流式 UI 限速／合并 delta（观感优化）。
 - 将模型／thinking 写回 settings.json 启动默认。
@@ -82,7 +83,37 @@
 
 ## 最近交接
 
-### WI-011 测试结构重构（2026-09-21，最新）
+### 文档审阅交接（2026-09-22）
+
+维护者明确要求按 `writing-for-agents` 全面审阅并修正文档，授权范围为本项目文档维护；不新增并行产品 WI。已逐份审阅 59 个 Markdown（含双语、隐藏技能与 PR 模板），另检查两个 Issue 表单及 LICENSE；排除依赖包与生成产物。交叉核对 package／CI、消息类型、宿主与 adapter、测试收集及历史验收；未重做产品运行验证。
+
+以下问题均为 `confirmed`，已在本次文档授权内修复；每个键由规则／路径／主题构成，可供后续复查：
+
+| 发现键 | 原问题与依据 | 处置 |
+|--------|--------------|------|
+| freshness/README.md/status | 首页仍称只有占位 UI；与源码及当前 WI 验收冲突 | 分开说明已实现切片、验收与发布缺口，同步 CHANGELOG |
+| freshness/docs/product-requirements.md/deferred-selection | PRD／消息契约仍写延后选择待 F5；ACTIVE 已记录 19:44 确认 | 同步主路径确认，保留边界手测及收尾缺口 |
+| hierarchy/docs/guides/architecture-governance.md/checklist | 603 行混合重复索引、示例与本仓不存在的路径；凭证 UI 条目不符产品 L0 | 保留 19 维度，集中完成条件与证据，使用真实入口并遵循 L0 |
+| duplication/docs/product-requirements.md/evidence | PRD／架构／契约重复测试数、包大小及收尾日志 | 原始结果留在历史，现行文档链接证据；PRD 保留需求，架构保留所有权，契约保留语义 |
+| workflow/docs/guides/agent-collaboration.md/completion | 提案步骤过密，Git 隔离规则多处维护 | 明确阶段完成条件，提交分支详规集中到提交指南；同步本文件契约 |
+| routing/docs/guides/agent/pi-integration.md/version | 历史无聊天结论与当前实现混排；信任探针硬性限定 0.85.1、当前 pin 0.86.1 | 区分版本与证据，明确该探针未对当前版本通过 |
+| hierarchy/docs/guides/agent/testing.md/tiers | 当前收集与未启用测试层级重复穿插 | 当前规则与新增层级分支分开，保留后缀含义、收集及证据要求 |
+| security/SECURITY.md/contact | 漏洞报告引用不存在的 README 私密渠道，行为准则使用 noreply | 按本次维护者答复统一为 GitHub 私密报告链接，并同步 Issue 表单 |
+| routing/docs/README.md/pointers | 索引指向宽泛目录，部分日期仍为模板占位 | 改为具体文档入口，移除未知创建日期占位，记录实际翻译同步日期 |
+| scope/.agents/skills/documentation-health/SKILL.md/acceptance | 工具验收分支容易被普通文档审阅误执行 | 仅工具变更走该分支；文案修复运行文档检查 |
+| portability/.agents/skills/writing-for-agents/SKILL-MECHANICS.md/invocation | 将特定宿主的调用开关和引用限制写成通用事实 | 改为按宿主 schema 核对；保留既有调用策略，补齐技能描述触发范围 |
+
+本次验证：`npm run docs:verify` 与 `npm run docs:health` 均通过，0 errors／warnings／stale notices／review notices；两项技能 `quick_validate.py` 均通过，两个 Issue 表单 YAML 解析通过。补充检查覆盖全部 59 个 Markdown 的 559 个本地链接／锚点，均有效；`git diff --check` 通过，暂存区仍为空。本次不运行应用测试／编译／lint／F5／VSIX，因为没有应用或工具实现改动。安全报告链接由维护者指定；外部服务可用性未作提交报告验证。模板来源的架构治理／判断指南现注明本地修订与未同步状态；engineering-template 和其他相邻仓库未改。保留开工时已有修改，不创建 Git commit；没有创建临时工作区。
+
+**此前交接（WI-011 及相关文档维护，保留原验证时点）：**
+
+- 共享内核可读性整理（2026-09-22）：按维护者批准的 `writing-for-agents` 审阅建议同步双语 `AGENTS.kernel`，明确职责与优先级、合并事实判断和开工流程、澄清只读问答例外、修正可选优化示例、改写安全／架构术语和可核对的交付条件；同步产品入口中的章节引用。保留提交授权、安全禁令、审批及基础阅读要求。本次仅修改本仓副本，engineering-template 未同步；未改变 WI／Gate 状态或生产代码。
+
+- Agent 入口规则可读性补强（2026-09-22）：按维护者明确请求，将双语 `AGENTS` 的压缩“权威栈”改写为“文档职责与冲突优先级”，逐项说明规则／Accepted PRD／架构／ACTIVE／历史材料的职责，定义真实冲突与互补关系并给出处理步骤；把加载地图的术语标签改为实际任务描述，使用中文路线并说明一项任务可匹配多行，加入 Webview 前端工程化示例，并将双语加载地图中的文档路径、架构文档引用及索引统一为可点击的相对 Markdown 链接（不加章节锚点）；再将抽象“上游指针”改为 pi 集成参考与规则，分别说明只读源码、集成指南、当前版本事实、升级重验和既有 RPC 决策边界；将过时“任务完成”短句改为“交付前检查”，按文档／代码／真实宿主列出检查及证据报告要求，区分检查通过与 WI／Gate 验收。随后按 `writing-for-agents` 审阅获批范围清理 WI-001 过时条件、合并开工指引、替换不存在的 boundaries 引用、澄清 Draft PRD 单独获批切片并集中 pi 集成规则，保留安全禁令与审批边界。不改变原优先级、加载义务、依赖版本、安全规则、产品／架构状态或生产代码。
+
+- Gate 参考文档可读性补强（2026-09-22）：按维护者明确请求扩展双语 `architecture-gates`，解释 Gate 与测试／spike／WI／人工验收／ADR 的关系、`Open`／`In spike`／`Accepted` 语义，并为六个 Gate 补充问题、证据和“不代表”边界；随后补充新增 gate 的准入、去重、命名、证据／排除项、ACTIVE 关联、初始状态、ADR 及替代历史规则。未改变任何 Gate 状态、ADR、当前 WI 范围或生产代码。
+
+- 架构文档局部纠偏（2026-09-21）：同步双语 §5，区分 Webview 释放仅清理视图与 provider 释放请求停止运行时；同步 §7／§8 的 19:44 延后选择主路径 F5 确认，保留边界矩阵未完整手测、WI 待收尾及 gate Open。仅修改文档，不改变当前 WI 范围或生产行为。
 
 - 提交隔离工作流补强：双语协作／提交规范现要求开工基线分类、临时 commit map、实现提交排除 `ACTIVE.md`、当前 WI 固定 `docs(active)`、无关维护独立提交及重叠 hunk 的非破坏恢复。新增 `npm run commit:check`，只读检查暂存清单、whitespace，并机械拒绝 `ACTIVE.md` 与实现／构建／CI 路径同批暂存；不安装 hook，也不声称识别语义。10 个隔离 git 仓库回归覆盖空暂存、docs-only、混合路径、rename／Unicode、whitespace、非根 cwd 与 git 失败。全套 `npm test` 94/94（新增 10）、compile／lint／docs:verify／docs:health／diff check 均通过；文档 0 errors／warnings／stale notices。真实暂存区为空时 `commit:check` 按设计失败且不修改 index。
 
