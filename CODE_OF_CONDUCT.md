@@ -59,8 +59,10 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-**101914276+Hex4C59@users.noreply.github.com**.
+reported to the community leaders responsible for enforcement through the
+maintainer-designated [private report form](https://github.com/Hex4C59/pi-vscode/security/advisories/new).
+If the form is unavailable, request a private contact route without publishing
+incident details or personal information.
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

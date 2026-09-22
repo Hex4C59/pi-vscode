@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the report. For **security vulnerabilities**, use [Security Advisories](SECURITY.md)—not public issues.
+        Thanks for the report. For **security vulnerabilities**, use [the private report form](https://github.com/Hex4C59/pi-vscode/security/advisories/new)—not public issues.
   - type: textarea
     id: what-happened
     attributes:

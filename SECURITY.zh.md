@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[SECURITY.md](SECURITY.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-22
 
 ## 受支持版本
 
@@ -19,13 +19,11 @@
 
 ## 报告漏洞
 
-**请勿在公开 GitHub Issue 中披露安全漏洞。**
+通过维护者指定的[私密报告入口](https://github.com/Hex4C59/pi-vscode/security/advisories/new)提交。请勿在公开 Issue 中披露漏洞细节或凭证。
 
-1. 仓库公开后，在 [github.com/Hex4C59/pi-vscode](https://github.com/Hex4C59/pi-vscode) 使用 **Security → Advisories → Report a vulnerability**，**或**
-2. 启用 [GitHub 私有漏洞报告](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/configuring-private-vulnerability-reporting-for-a-repository) 并通过该流程提交，**或**
-3. 通过 README 中列出的私有渠道联系维护者。
+提供影响、复现步骤、宿主版本和已知受影响 commit／tag；重点说明 extension host、Webview、RPC 或工作区信任边界。使用已脱敏的最小复现，不附 API 密钥、认证文件或完整私密对话。
 
-请尽量提供：描述与影响（`SecretStorage`、webview `postMessage`、子进程 RPC、工作区信任）；复现步骤（VS Code / Cursor 版本）；已知受影响 commit 或 tag。
+如入口不可用，可在公开 Issue 中仅请求恢复私密联系渠道，保留漏洞细节，待私密渠道可用后提交。维护者会在可行时确认收到并协调披露时间。
 
 ## 范围外
 
@@ -37,4 +35,4 @@
 
 贡献者须遵守 [`AGENTS.zh.md`](AGENTS.zh.md) L0：密钥仅 extension host；webview 仅展示；host 对 webview 入站消息做允许列表校验；勿在 host 内重写 pi agent 循环。
 
-感谢您帮助保护用户安全。
+这些边界持续生效；Gate 验收不会授权把凭证或高权限能力移入 Webview。

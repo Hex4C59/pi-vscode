@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check [`ACTIVE.md`](../../ACTIVE.md) for the current work item. Large ideas may belong in the parking lot until a WI is opened.
+        Check [`ACTIVE.md`](https://github.com/Hex4C59/pi-vscode/blob/HEAD/ACTIVE.md) for the current work item. Large ideas may belong in the parking lot until a WI is opened.
   - type: textarea
     id: problem
     attributes:
