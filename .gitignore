@@ -3,3 +3,7 @@ dist/
 out/
 *.vsix
 .vscode-test/
+
+# Local agent skills
+/.agents/
+/skills-lock.json
