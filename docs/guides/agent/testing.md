@@ -30,7 +30,7 @@ The current automated runner is `node:test`, not Vitest. Use `*.spec.ts` for app
 
 The runner cleans only `dist/tests/`, preserving other bundles under `dist/`, then uses esbuild to bundle application specs while preserving their source-relative directories: `src/extension/tests/webview-messages.spec.ts` becomes `dist/tests/extension/tests/webview-messages.spec.js`. It passes only the exact compiled-output list and discovered script specs to `node:test`, with the repository root as cwd; stale bundles and broad output globs are not execution inputs. Build and test-process failures fail the command.
 
-The existing TypeScript and lint configuration already covers nested `src/**/*.ts`; script `.mjs` files remain outside lint scope. CI retains its existing compile/lint and explicit documentation-spec checks; this migration does not add `npm test` to CI or a new matrix.
+Read type/lint scope from repository configuration; script `.mjs` files currently remain outside lint. The [workflow](../../../.github/workflows/ci.yml) defines actual CI checks; the local runner does not imply full CI collection.
 
 Before adding, moving or renaming a test:
 
@@ -41,50 +41,26 @@ Before adding, moving or renaming a test:
 
 Keep future test moves and renames scoped, updating collection and verification together. The suffix vocabulary below does not authorize additional tiers or a switch to Vitest.
 
-## Test suffix vocabulary and activation status
+## Test suffixes and new tiers
 
-Directories identify ownership; suffixes identify the kind of evidence; runner configuration determines execution. The implemented layout is module-local `src/extension/tests/`, `src/adapter/tests/` and `src/webview/tests/`, with production files left in place and script tests beside scripts. A future end-to-end suite may share an owner's directory, but only ordinary specs are currently collected. Do not create empty infrastructure directories.
+Directories express ownership, suffixes express evidence type, and the runner determines execution. **Only ordinary `.spec` files are currently collected.** Consult the other rows when proposing a new tier; they authorize neither empty directories nor new suites.
 
-### Ordinary specs: `*.spec.ts` / `*.spec.mjs`
+| Suffix | Meaning and activation boundary |
+|--------|---------------------------------|
+| `*.spec.ts` / `*.spec.mjs` | Module behavior or controlled multi-module composition, collected by `npm test`. Mock-provider and VM Webview tests belong here; specs are not limited to single functions and do not require Vitest. |
+| `*.e2e.ts` | A declared real entry with observable outcomes; name the real entry and substituted services. RPC evidence does not prove VS Code UI, and e2e does not imply paid calls. Use `.e2e.ts`, not `.e2e.test.ts`, when introduced. Proposed `test:e2e` does not exist; collection must be separate from default specs. |
+| `*.expected.e2e.ts` | Assembled process/CLI behavior compared with reviewed owner-local output, without session replay; `*.expected.json` is data. This also matches `.e2e.ts`, so a separate suite must be excluded from general e2e collection. Golden assertions alone do not make a spec e2e. |
+| `*.snapshot.ts` | Reserved for recorded-session replay, not all snapshot assertions or screenshots. Enabling requires a separate design for public APIs, recording/replay, secret handling and fixture review; do not copy pi storage internals or an external session corpus. |
+| `*.bench.ts` / `*.perf.ts` | Reserved respectively for performance budgets with failure thresholds and non-gating diagnostics; declare workload, environment and measurements. Neither is enabled or part of default behavior tests. |
 
-These replace `*.test.ts` / `*.test.mjs` and cover module behavior and controlled multi-module compositions. Use a module or behavior name in kebab-case, for example `webview-messages.spec.ts` or `model-selection.spec.ts`. Deterministic real implementations are preferred; narrow external seams may be mocked. A spec need not test only one function.
+Optional `.host.spec.ts` / `.client.spec.ts` / `.compat.spec.ts` qualifiers identify a tested side or compatibility subject and remain ordinary specs; `.bench.client.ts` / `.perf.client.ts` only qualify performance subjects. Qualifiers do not provide Node, DOM or browser environments. Share setup through ordinary helpers, not imported test entries.
 
-`npm test` collects these files without keys or paid calls. The `.spec` suffix does not require Vitest: `node:test` executes explicitly supplied compiled spec files. Existing mock-provider and VM-based Webview script tests belong here, not in a browser e2e tier.
+### Completion criteria for a new tier
 
-### End-to-end: `*.e2e.ts`
-
-Exercises a declared real entry path, such as a real pi subprocess or a VS Code test host, and asserts externally observable results. A future `runtime-startup.e2e.ts` could verify startup without any model call. E2e does not imply a paid model call or prove every product surface: RPC-process evidence does not establish VS Code UI correctness. State which entry is real and which external services, if any, are substituted.
-
-Use `.e2e.ts`, not the previously suggested `.e2e.test.ts`, when this tier is introduced. The proposed command is `npm run test:e2e`; it does not exist yet. Its collector must be separate from default specs, with documented build/runtime prerequisites, timeouts, isolation and teardown. Existing `spike:*` scripts and manual F5 checks remain their own evidence categories; renaming them alone does not establish an automated e2e suite.
-
-### Owner-local expected output: `*.expected.e2e.ts`
-
-In DeepSeek Harness this denotes assembled process/CLI expectations without recorded-session replay. The driver runs behavior and compares committed outputs near its owner, typically under `tests/expected/`. Expected data files such as `*.expected.json` are comparison data, not executable tests. An ordinary spec can also assert a golden output; that alone does not make it an e2e test.
-
-This tier is not enabled here. If introduced as a separate suite, define its command and exclude it from the general e2e collector: `*.expected.e2e.ts` also matches `*.e2e.ts`. Each file must have an explicit intended suite rather than accidental duplicate execution.
-
-### Recorded-session replay: `*.snapshot.ts`
-
-DeepSeek Harness reserves this suffix for recorded-session-driven replay; it is not a synonym for any test using snapshot assertions or screenshots. This repository has no such suite. Do not copy its top-level session corpus or pi session-file internals. Introducing replay infrastructure needs a separate approved design, documented public APIs, recording/replay rules, secret handling and reviewed fixture updates.
-
-### Performance: `*.bench.ts` / `*.perf.ts`
-
-The reference repository uses `.bench.ts` for performance budgets/gates and `.perf.ts` for diagnostic performance runs outside its default test inventory. Neither tier is enabled here. A future benchmark must define workload, environment, measurements and failure thresholds; a diagnostic must state that it is not a gate. Neither belongs in default behavior tests merely because a broad glob matches it.
-
-### Optional subject qualifiers and support files
-
-- `.host.spec.ts` / `.client.spec.ts` identify the tested side; `.compat.spec.ts` identifies compatibility behavior. They remain ordinary specs. Qualifiers do not automatically select Node, a DOM environment or a browser; setup and runner configuration must establish that environment. Use qualifiers only where they clarify an actual distinction.
-- `.bench.client.ts` / `.perf.client.ts` similarly qualify a client-side performance subject in the reference repository; they establish no local execution capability.
-- `harness.ts`, fixture helpers and expected data must not be collected as test entries. Never import a collected `.spec.ts` or `.e2e.ts` to share setup.
-
-### Requirements before enabling a new tier
-
-1. Add a real representative case, its runner command and explicit inclusion/exclusion rules in the same approved change. Update this guide's status and commands; do not advertise a future command as available.
-2. Declare dependencies, build artifacts, tested entry, credentials policy, timeouts and resource cleanup. Keep paid calls behind explicit maintainer approval even for e2e.
-3. Check recursive discovery, helper exclusion, overlapping suffixes, stale generated output and failure exit codes. Verify the intended case actually ran and was not registered twice.
-4. Report passed, failed, skipped and unavailable evidence separately. Define whether missing prerequisites fail a required lane or explicitly skip an optional one; an all-skipped suite is not a passed acceptance check.
-
-Only the ordinary-spec tier is enabled. The other suffixes define meanings and activation requirements only: no `test:e2e`, expected-output, snapshot or performance commands are installed.
+1. The same approved change includes a representative case, real runner command and explicit inclusion/exclusion rules, with this guide updated. Future commands remain labeled unavailable.
+2. Prerequisites cover dependencies, artifacts, real entry, credential policy, timeouts and cleanup. Paid calls still require explicit authorization.
+3. Verify recursive discovery, helper exclusion, overlapping suffixes, stale outputs and failure exit codes; the intended case must actually run without duplicate registration.
+4. Report passed, failed, skipped and unavailable evidence separately. Missing prerequisites fail or explicitly skip according to the lane's declared policy; an all-skipped suite is not passed acceptance.
 
 ## Evidence tiers and safety
 
@@ -100,7 +76,7 @@ Do not use real user state, secrets, uncontrolled network calls or paid model AP
 
 - State which changed behavior is covered, by which files and commands. Explain when no new behavioral test is warranted (for example, a documentation-only change).
 - Report executed, skipped and unverified checks separately. Identify missing prerequisites and outstanding F5 acceptance; mocks, spikes and manual checks are not interchangeable.
-- Use the current repository commands: relevant `npm test`, `npm run compile`, `npm run lint`; documentation changes require `npm run docs:verify`, and collaboration close/maintenance rules require `npm run docs:health` when applicable. Check their actual scope; successful commands do not prove that an uncollected test ran.
+- Select applicable commands from [Contributing](../../../CONTRIBUTING.md) and inspect actual collection; successful commands do not prove an uncollected test ran.
 - Update this guide and its translation alongside approved changes to test layout or collection. Keep transient results in the existing handoff, not in this policy. Passing tests neither accept a product requirement nor close an architecture gate.
 
 ## Adoption scope

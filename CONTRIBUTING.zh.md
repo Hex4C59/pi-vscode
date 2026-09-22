@@ -5,9 +5,9 @@
 - 翻译状态：Machine Draft
 - 权威原文：[CONTRIBUTING.md](CONTRIBUTING.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-22
 
-感谢关注本项目。进行中的工作见 [`ACTIVE.md`](ACTIVE.md)（同一时间只推进一个 WI）。
+进行中的工作见 [`ACTIVE.md`](ACTIVE.md)（同一时间只推进一个 WI）。
 
 ## 开 PR 之前
 
@@ -24,15 +24,18 @@
 
 ## 本地检查
 
-```bash
-npm install
-npm run compile
-npm run lint
-npm run docs:verify
-npm run spike:runtime   # optional; subprocess RPC probe, no LLM
-```
+从源码准备环境见 [README](README.zh.md)。按改动范围执行检查：
 
-CI 在 Pull Request 上运行 compile、lint 与文档校验（见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）。
+| 改动 | 必须执行的检查 |
+|------|----------------|
+| 仅文档 | `npm run docs:verify`；WI 收尾、归档或文档健康维护另跑 `npm run docs:health` |
+| 扩展代码 | `npm run compile`、`npm run lint`、`npm test` 及受影响文档检查 |
+| Node 脚本 | 相关脚本测试与文档检查；`scripts/` 不在当前 lint 范围 |
+| 宿主／安装包行为 | 按验收范围补充 F5／已安装 VSIX 验证；自动化测试不能替代 |
+
+完成条件：报告实际运行的命令、结果、跳过或未验证的部分及原因。测试收集与证据类别见[测试指南](docs/guides/agent/testing.zh.md)；实际 CI 覆盖以 [workflow](.github/workflows/ci.yml) 为准，不能假定本地全部测试都在 CI 运行。
+
+集成探针按 [pi 集成指南](docs/guides/agent/pi-integration.zh.md)的授权范围和隔离规则单独执行。`spike:runtime` 继承当前环境，即使不调用模型也不是隔离信任夹具。
 
 ## pi 集成
 

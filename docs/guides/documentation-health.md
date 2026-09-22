@@ -45,10 +45,12 @@ Standalone health reviews default to read-only. Updating, merging or archiving r
 
 When approved, preserve history and explain why material was superseded; ensure current truth has an owner, retain a summary and link at the former entry, move English/Chinese together, repair relative links and indexes, then run relevant tests and documentation checks. Follow [archive rules](../archive/README.md). Do not automatically relocate ACTIVE histories based on length alone.
 
-Never modify unrelated dirty files. Generated guides must be changed at their declared template source and synchronized with separate authorization; this project-local policy does not authorize sibling-repository edits. Future unattended work must use an isolated checkout and explicit permissions.
+Never modify unrelated dirty files. By default, change generated guides at their authorized template source and synchronize them. If the maintainer explicitly authorizes a local adaptation, mark its provenance, local revision and unsynchronized template state, then reconcile it before future sync. Project-local authorization does not extend to sibling repositories. Future unattended work must use an isolated checkout and explicit permissions.
 
-## Manual acceptance exercise
+## Acceptance exercise for documentation tooling
 
-Run `npm test`, `npm run docs:verify`, and `npm run docs:health`. Tests cover due/future/invalid dates, historical exemptions, replacement consistency, stable IDs, CLI output and no file writes.
+Use this section only when accepting or changing documentation-health tooling itself. Ordinary content reviews use the procedure above; copy edits do not require rerunning application behavior tests.
 
-Then inspect at least one current command claim and one behavior claim against their implementations. For a safe semantic exercise, present an in-memory hypothetical claim that `docs:health` performs weekly automatic deletion: the reviewer must reject it with this guide and the CLI as evidence, without writing that false claim into the repo. Semantic review remains a human/agent exercise, not an automated model-quality test.
+Run `npm test`, `npm run docs:verify` and `npm run docs:health`. Completion requires passing tests for due/future/invalid dates, historical exemptions, replacement consistency, stable IDs, CLI output and no file writes, plus error-free documentation checks.
+
+Then compare at least one command claim and one behavior claim with implementation. For the semantic exercise, consider only in memory the claim that docs:health deletes files automatically every week. Refute it using this guide and the CLI, stating actual capability and evidence limits without writing the false claim to the repo. This is a human/agent exercise, not an automated model-quality test.

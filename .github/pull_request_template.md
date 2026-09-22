@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What does this PR change and why? -->
+<!-- State the problem and resulting behavior. -->
 
 ## Work item
 
@@ -8,9 +8,11 @@
 
 ## Checks
 
-- [ ] `npm run compile`
-- [ ] `npm run lint`
-- [ ] `npm run docs:verify`
+<!-- Record actual results and reasons for N/A. Documentation-only changes do not need unrelated builds/tests. -->
+
+- [ ] Code: `npm run compile`, `npm run lint`, relevant `npm test`
+- [ ] Documentation: `npm run docs:verify`; `npm run docs:health` for WI close/archival/health maintenance
+- [ ] Required F5 / installed-VSIX acceptance and remaining gaps recorded
 - [ ] Commit messages follow [`docs/git-commit-convention.md`](../docs/git-commit-convention.md) (English, Conventional Commits)
 
 ## Security / trust boundaries

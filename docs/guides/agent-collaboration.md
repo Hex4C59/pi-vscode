@@ -13,7 +13,7 @@ English | [中文](agent-collaboration.zh.md)
 
 **pi VS Code** is built through discussion between a maintainer (product judgment and acceptance) and coding agents (technical sequencing and implementation). Chat context does not persist across new windows or compression; **repository files** carry the current work item and handoff.
 
-This guide does not define product behavior or system architecture. Those remain in `docs/product-requirements.md` (when present) and your primary architecture document under `docs/architecture/`.
+This guide owns work approval and handoff. [Product requirements](../product-requirements.md) own user-visible scope; [architecture](../architecture/vscode-extension-architecture.md) owns boundaries.
 
 ## 2. Division of responsibility
 
@@ -30,16 +30,9 @@ Agent proposals may conclude **“do not do this yet”**, **“current state is
 
 ## 3. Sources of truth
 
-| Question | Authority |
-|----------|-----------|
-| Security and repo rules | `AGENTS.md` kernel and `docs/guides/agent/` playbooks (see kernel load map) |
-| User-visible scope and acceptance | `docs/product-requirements.md` when `Accepted` |
-| Structure, boundaries, owners | Primary doc in `docs/architecture/` |
-| **What we are doing right now** | [`ACTIVE.md`](../../ACTIVE.md) at repository root |
-| Why a past choice was made | Accepted ADRs in `docs/decisions/` |
-| Architecture gate status | [`docs/reference/architecture-gates.md`](../reference/architecture-gates.md) |
+Use [AGENTS](../../AGENTS.md) for document responsibilities and conflict priority. Individually approved slices of a Draft PRD take their scope from ACTIVE and its linked approval record; that does not promote the entire PRD. Read the [gate table](../reference/architecture-gates.md) for status and the [ADR index](../decisions/README.md) for established technical decisions.
 
-If chat and `ACTIVE.md` disagree, update `ACTIVE.md` after alignment.
+When a new confirmed choice in chat differs from ACTIVE, update ACTIVE to that confirmed choice while retaining unresolved conditions.
 
 ## 4. Work in progress (WIP=1)
 
@@ -61,24 +54,20 @@ Stop expanding links when scope, constraints, contract and required evidence are
 
 ## 5. Session rhythm
 
-1. **Open** — Maintainer @-mentions **`ACTIVE.md` only** (or says 「继续 pi VS Code」). Agent reads `ACTIVE.md` and **this guide**, then restates: current WI, last session summary, proposed focus for today, and acceptance steps.
-2. **Propose** — In Prepare, agent writes the reviewable WI proposal to `ACTIVE.md` and gives a short plan plus **Decision class**: `none` | `spike-only` | `adr-after-approval` (with gate ID if applicable). **PRD assessment is mandatory:** classify the WI as user-visible or technical-only, with a reason recorded in `ACTIVE.md`. For user-visible behavior, draft observable requirements (including relevant empty/error states), acceptance and a WI traceability row in `docs/product-requirements.md` and its translation; ask the maintainer to confirm the scope before Build. For technical-only work, record why no new PRD requirement is needed. Set the active WI's `PRD 判定` row to `用户可见` or `纯技术` with a reason; leave it `待定` only in Prepare. For user-visible Build, the PRD traceability row must name the WI and linked REQ IDs. Draft text is not shipped behavior; do not mark the PRD `Accepted` without explicit maintainer approval. Maintainer confirms (e.g. 「可以」「按 A 做」); record approval and chosen approach before moving to Build. A chat-only plan or one-line goal is not sufficient.
-3. **Build** — After confirmation, agent follows `AGENTS.md` load map (packs, architecture governance when touching boundaries), implements, runs `package.json` checks when present, and reports results.
-4. **Close** — Compare delivered user-visible behavior against the approved PRD slice and WI acceptance; reconcile differences or explicitly defer them before claiming delivery. Agent updates `ACTIVE.md` **Last session**. If a gate-closing decision was confirmed, draft or update `docs/decisions/000x-….md` and [`architecture-gates.md`](../reference/architecture-gates.md), or set `Decision: pending-adr` on the work item.
+| Step | Action and completion criterion |
+|------|---------------------------------|
+| Open | Use kernel baseline reads, this guide and ACTIVE to establish the WI, approval, last handoff, proposed focus and acceptance. Mentioning only ACTIVE uses the same entry procedure. |
+| Propose (Prepare) | Complete the reviewable proposal from §4 in ACTIVE, with decision class `none` / `spike-only` / `adr-after-approval` and applicable gate. Record maintainer approval of approach/scope before Build; existing explicit approval remains valid. |
+| Build | Implement the approved proposal using AGENTS task routes and run applicable checks. Completion requires reviewable behavior and verification results, not merely edited files. |
+| Close | Reconcile the approved slice and acceptance; fix or explicitly defer differences. Update the latest handoff and preserve history under §7. Keep missing maintainer acceptance or ADR conditions pending and name the gap. |
+
+**PRD assessment:** the current WI's `PRD 判定` row must state `用户可见` or `纯技术` with a reason; `待定` is allowed only in Prepare. Before user-visible Build, both PRD languages need observable slice behavior, relevant empty/error states, acceptance and WI/REQ traceability, followed by maintainer scope confirmation. Technical-only work records why no new requirement is needed. Draft candidates are not approved behavior; promoting the entire PRD to Accepted requires explicit approval.
 
 ### Git ownership and concern isolation
 
 At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns even though product work remains WIP=1, but every change must have clear ownership and a destination before staging.
 
-Treat `ACTIVE.md` as an isolated record stream:
-
-- An implementation commit must not contain `ACTIVE.md`.
-- The current WI record belongs in a separate `docs(active)` commit.
-- Unrelated `ACTIVE.md` maintenance belongs in a separate `fix(docs)` or `docs` commit, according to whether it corrects an error or only updates documentation.
-
-Stage by path and hunk, preserving the pre-existing index. If concerns overlap so that hunk staging is unsafe, save a complete, non-destructive work copy, reconstruct and commit the first concern from its baseline, then restore the remaining work with a three-way apply and inspect the result. Never stash, drop, overwrite, reset, or commit user-owned work without explicit authorization.
-
-Before any commit, follow the staged-content review in [Git commit convention](../git-commit-convention.md). Commit authorization is unchanged: these isolation rules never authorize creating or rewriting a commit.
+When staging or committing, load the [Git commit convention](../git-commit-convention.md), which owns ACTIVE isolation, overlapping-hunk recovery and full staged-content review. Keep the WI record distinct from implementation concerns, preserving the existing index and user work. Commits still require explicit authorization.
 
 ## 6. Maintainer prompts (copy-paste)
 
@@ -103,11 +92,7 @@ Before any commit, follow the staged-content review in [Git commit convention](.
 
 ## 7. Agent obligations
 
-- Propose the next step from requirements, architecture, and `ACTIVE.md`; do not require the maintainer to memorize a multi-step workflow. If the WI proposal is missing, complete it in Prepare before asking to build.
-- Obtain approval for scaffolding, security-boundary changes, breaking layout, and the decisions underlying ADRs. Recording an already approved decision requires no separate permission.
-- On session end, update `ACTIVE.md` Last session even if work is incomplete.
-- Report: what changed, commands to run, what was tested, known limits.
-- Follow [When to write an ADR](../decisions/README.md#when-to-write-an-adr); label each proposal with gate ID and decision class.
+Scaffolding, security-boundary changes, breaking layout and decisions underlying ADRs require approval; recording an already approved decision needs no new permission. End each session with an updated ACTIVE handoff, including unfinished work: changes, actual checks/results, limits and pending acceptance. Use the [ADR rules](../decisions/README.md) for classification and acceptance conditions.
 
 ### Proactive recordkeeping
 
@@ -128,12 +113,9 @@ Before archiving, preserve still-valid requirements and unresolved questions in 
 
 In the final handoff, briefly report what was saved or updated, its path, and any decision or verification still pending. No qualifying content means no new document.
 
-## 8. ADRs and gates (maintainer-friendly)
+## 8. ADRs and gates
 
-- **You approve**; the agent writes ADRs after approval when triggers apply.
-- **ADR timing**: after spike/discussion is done and you confirm (not at first proposal).
-- **Gate closure** needs an Accepted ADR linked from [`architecture-gates.md`](../reference/architecture-gates.md).
-- In `ACTIVE.md`, use **Gate ID** (e.g. `gate-build-baseline`) and **Decision** (`none` | `pending-adr` | `0001-slug`).
+After the maintainer confirms an architectural choice, use the [ADR rules](../decisions/README.md) to record the decision and verification. The [gate table](../reference/architecture-gates.md) defines gate acceptance; retain current status and record gaps while evidence or approval is missing. ACTIVE uses `Gate ID` and `Decision` (`none` / `pending-adr` / ADR identifier).
 
 ### Documentation drift
 
@@ -141,14 +123,9 @@ At every WI close, inspect affected documents for superseded content and run `np
 
 After doc-heavy sessions or before closing a WI that touched gates or ADRs, run `npm run docs:verify`. For boundary reviews, use [`architecture-governance.md`](architecture-governance.md) (copied from engineering-template `workflow/architecture-governance.md`).
 
-## 9. Phases (lightweight)
+## 9. Phases
 
-Each work item in `ACTIVE.md` is either:
-
-- **Prepare** — scope, gates, contracts, or discussion; persist the WI proposal and seek maintainer approval; no feature implementation yet.
-- **Build** — code and verification against the approved proposal recorded in `ACTIVE.md`.
-
-Finer steps are decided by the agent per work item and recorded in `ACTIVE.md` when relevant.
+Use the Prepare/Build boundaries in §5. Record finer task steps and missing conditions in ACTIVE when relevant; a phase label is not implementation authorization or acceptance.
 
 ## Maintenance (session contract summary)
 

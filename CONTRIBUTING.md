@@ -2,7 +2,7 @@
 
 English | [中文](CONTRIBUTING.zh.md)
 
-Thank you for your interest in this project. Active work is tracked in [`ACTIVE.md`](ACTIVE.md) (one work item at a time).
+Active work is tracked in [`ACTIVE.md`](ACTIVE.md) (one work item at a time).
 
 ## Before you open a PR
 
@@ -19,15 +19,18 @@ Thank you for your interest in this project. Active work is tracked in [`ACTIVE.
 
 ## Local checks
 
-```bash
-npm install
-npm run compile
-npm run lint
-npm run docs:verify
-npm run spike:runtime   # optional; subprocess RPC probe, no LLM
-```
+Use [README](README.md) to prepare a source checkout. Match checks to the change:
 
-CI runs compile, lint, and docs verification on pull requests (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+| Change | Required checks |
+|--------|-----------------|
+| Documentation only | `npm run docs:verify`; also `npm run docs:health` for WI close, archival or documentation-health maintenance |
+| Extension code | `npm run compile`, `npm run lint`, `npm test` and affected documentation checks |
+| Node scripts | Relevant script tests and documentation checks; `scripts/` is outside the current lint scope |
+| Host/package behavior | F5 or installed-VSIX verification required by acceptance; automated tests do not replace it |
+
+Completion means reporting the commands actually run, their results, and skipped or unverified areas with reasons. Use the [testing guide](docs/guides/agent/testing.md) for collection and evidence tiers. The [workflow](.github/workflows/ci.yml) defines actual CI coverage; do not assume all local tests run in CI.
+
+Run integration probes separately under the [pi integration guide](docs/guides/agent/pi-integration.md), within the authorized scope and isolation rules. `spike:runtime` inherits the current environment; absence of model calls does not make it an isolated trust fixture.
 
 ## pi integration
 

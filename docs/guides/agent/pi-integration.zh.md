@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[pi-integration.md](pi-integration.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-21
+- 最近同步：2026-09-22
 
 - 类型：指南
 - 状态：Accepted
@@ -66,23 +66,20 @@
 
 ## pi VS Code：已选方案与证据
 
-[ADR 0001](../../decisions/0001-build-baseline.zh.md) 为基线和初始适配器方向选择子进程 RPC，固定 npm 包 `@earendil-works/pi-coding-agent@0.85.1`。现有探针以 `--mode rpc --no-session` 启动 `dist/bundle/cli.js`，通过 LF JSONL 发送 `get_state` 后停止。这是探针，不是长生命周期产品运行时。遵循[主架构](../../architecture/vscode-extension-architecture.zh.md)与实际 [gate 表](../../reference/architecture-gates.zh.md)，包括 `gate-runtime-host`；不为本项目编造 `gate-build-baseline`。
+[ADR 0001](../../decisions/0001-build-baseline.zh.md)确立子进程 RPC 基线；其 `0.85.1` 是历史验证版本。当前依赖以 [`package.json`](../../../package.json) 的精确 pin 为准，并与已安装包版本核对。现行运行时、受控执行与环境边界见[架构](../../architecture/vscode-extension-architecture.zh.md)，消息行为见[契约](../../reference/webview-messages.zh.md)。
 
-| 证据入口 | 支持的结论／限制 |
-|----------------|--------------------------|
-| [运行时探针](../../../src/adapter/pi-rpc-probe.ts)、[JSONL 辅助模块](../../../src/adapter/jsonl.ts)、`npm run spike:runtime`、[ADR 0001 的 WI-001 证据](../../decisions/0001-build-baseline.zh.md#spike-证据) | 一次请求／响应和关闭的历史证据，不证明流式、工具审批或生产并发。探针继承进程环境，不是隔离的信任验证程序。 |
-| [信任验证程序](../../../scripts/spikes/spike-project-trust.mjs)、[fixture／生命周期辅助模块](../../../scripts/spikes/project-trust-lib.mjs)、[测试](../../../scripts/spikes/project-trust.spec.mjs)、`npm run spike:project-trust` | 固定版本下隔离的启动与跨 cwd 会话切换场景。执行前阅读程序及其限制。 |
-| [归档 WI-003 证据](../../archive/2026-09-21-closed-wi-history.zh.md#wi-003) | 已记录的六组信任场景观察，以及维护者仅对 spike 的验收。这是既有观察，不代表当前会话已重跑。 |
-| [Webview 契约](../../reference/webview-messages.zh.md)、ACTIVE 的 WI-006 | 工作区资格与内存资源选择 UI，未启动运行时。选择已记录不等于资源已加载。 |
-| [WI-007 归档](../../archive/2026-09-21-closed-wi-history.zh.md#wi-007)、[`pi-rpc-runtime`](../../../src/adapter/pi-rpc-runtime.ts) | 由宿主选择触发的长生命周期子进程 RPC；`get_state` 就绪；无聊天或流式。 |
-| [WI-004 RPC 证据（0.85.1）](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md) | Prepare 阶段与固定版本一致的 `prompt`、`text_delta`、`turn_end` 与 `--no-tools` 文档；非 WI-004 实机验证。 |
+| 任务 | 证据入口与限制 |
+|------|----------------|
+| 最小启动／RPC／关闭 | [运行时探针](../../../src/adapter/pi-rpc-probe.ts)、`npm run spike:runtime`；历史结论见 ADR 0001。探针继承当前环境，不是隔离信任夹具。 |
+| 项目资源信任 | [信任验证程序](../../../scripts/spikes/spike-project-trust.mjs)和[辅助测试](../../../scripts/spikes/project-trust.spec.mjs)。当前程序硬性限定 `0.85.1`，与 manifest 的 `0.86.1` 不符，不能当作当前版本通过的检查；升级须先重审公开 API。 |
+| 早期 UI／启动／聊天 | [WI-006／WI-007／WI-004 历史](../../archive/2026-09-21-closed-wi-history.zh.md)及 [0.85.1 RPC 调研](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)。历史的无运行时／无聊天／无工具边界不描述当前整个产品。 |
+| 当前活动／审批／Stop | [`pi-rpc-runtime.ts`](../../../src/adapter/pi-rpc-runtime.ts)、[审批探针](../../../scripts/spikes/spike-approval.mjs)、[离线推理探针](../../../scripts/spikes/spike-offline-inference.mjs)。按任务读取并核对脚本版本和隔离方式后执行；既有结果见 [WI-010](../../archive/2026-09-21-closed-wi-history.zh.md#wi-010)。 |
+| 包边界 | [VSIX 验证器](../../../scripts/packaging/verify-vsix.mjs)。解压后的 CLI／握手验证与已安装 VSIX 激活／UI 验收分别报告。 |
 
 ### 项目信任发现与剩余限制
 
-- 已记录的固定版本 spike 使用公开 `--approve` / `--no-approve` 覆盖参数，观察到显式拒绝覆盖全局 `always` 和已保存信任。不将裸 RPC 启动当作产品默认拒绝路径。后续运行时集成须消费宿主拥有的当前选择，复核资格／身份并应用受支持的显式控制。
-- 已记录观察覆盖启动与切换时的项目扩展、skills、prompt templates 和 APPEND_SYSTEM 标记。拒绝路径仍存在全局扩展及 AGENTS.md 上下文。切换后旧项目命令消失；每次切换观察到两次 resume 事件，因此不能写死单事件假设。
-- 未独立观察 settings 效果与 themes，刻意未安装项目包。系统提示观察来自公开会话 API，不是实际 provider 请求。扩大结论或关闭 gate 前须保留这些限制。
-- 信任验证使用临时 cwd／home／配置、环境允许列表、公开 `PI_CODING_AGENT_DIR`、`PI_OFFLINE=1` 和 `PI_TELEMETRY=0`；会话 fixture 与已保存信任通过公开 API／hook 创建，不解析／写入会话或信任文件。这不提供 OS 网络沙箱或独立流量审计。ACTIVE 记录早期探索没有离线开关，不得追溯声称所有运行均隔离网络流量。
-- 工作区资格、项目资源加载和工具审批保持独立。详细产品选择与重置规则属于 [PRD](../../product-requirements.zh.md) 和当前 WI，本指南不批准其实现。按 gate 表记录，`gate-project-trust`、`gate-webview-trust`、`gate-session-streaming` 仍为 Open。
+[WI-003 记录](../../archive/2026-09-21-closed-wi-history.zh.md#wi-003)保存六组 `0.85.1` 场景、隔离方式、两次 resume 观察及未观察的 settings／themes／packages 限制。仅在分析相关信任或切换行为时加载；不可据其推断新版本验证或当前第三方扩展加载策略。WI-010 受控配置已禁用第三方扩展发现。
 
-文档变更使用 `npm run docs:verify` 及协作流程要求的 `npm run docs:health`；集成代码运行 compile、lint 和相关测试／spike，并遵循上述隔离要求。包升级须遵循 ADR 0001 的运行时 spike 与维护者复核要求，以及受影响的信任／会话回归检查。更新证据和限制，不改写历史结果。
+启动必须消费宿主当前明确的资源选择，重新核对资格／身份并使用公开控制；工作区资格、项目资源加载、工具审批各自独立。拒绝资源不等于排除 AGENTS.md 或全部用户上下文；离线开关不等于 OS 网络沙箱。当前批准的选择与重置要求属于 [PRD](../../product-requirements.zh.md)，完整验证状态属于 [Gate 表](../../reference/architecture-gates.zh.md)。
+
+集成任务的完成记录须包含实际版本、运行命令、观察结果与剩余限制。包升级遵守 ADR 0001 的运行时探针及维护者复核要求，并重跑受影响信任／会话检查；保留历史版本结果，另记新证据。通用检查入口见[贡献指南](../../../CONTRIBUTING.zh.md)。

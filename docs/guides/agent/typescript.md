@@ -44,12 +44,9 @@ For new public APIs, cross-layer dependencies or persistence, also use the produ
 
 ## Verification and reporting
 
-Read the [testing playbook](testing.md) before behavior changes, regression fixes or test changes; it owns test placement, naming, collection and evidence tiers. The general verification principles below still apply.
+Read the [testing guide](testing.md) before behavior, regression or test changes. It owns placement, collection, behavior coverage, isolation and evidence tiers. Add coverage for changed behavior and regressions; copy-only edits need no implementation-mirroring tests.
 
-- Run the repository's relevant lint, typecheck/build and test commands. A transpiler/bundler is not a typecheck; inspect what scripts actually cover. Reuse a combined command instead of repeating equivalent checks, and report missing checks honestly rather than inventing scripts.
-- Add or update behavior-focused tests for changed logic and regressions. Cover relevant malformed input, failure/cancellation, late completion and cleanup paths; do not add tests solely to mirror implementation or for copy-only changes.
-- Test through narrow seams for time, processes, filesystem or host APIs where needed. Avoid real credentials, user state, paid calls and uncontrolled network dependencies. Use temporary fixtures and clean them up.
-- Distinguish unit tests, real integration checks and manual host acceptance. Mocks do not prove host lifecycle or deployment compatibility. Report commands run, outcomes, untested paths and material limits; passing checks alone does not close a product gate.
+Inspect actual script coverage: transpiling/bundling is not type checking, and combined commands need no duplicate checks. Handoff requires applicable checks to have run, with outcomes and unverified areas recorded. Select command entries from [Contributing](../../../CONTRIBUTING.md).
 
 ## Keeping this playbook useful
 
@@ -57,8 +54,8 @@ When a task reveals a recurring TypeScript/Node failure mode, an approved toolin
 
 ## pi VS Code application
 
-- Read `tsconfig.json`, `eslint.config.mjs`, `esbuild.mjs` and `package.json` for current settings. At this revision, TypeScript uses strict checking and Node16 module resolution; esbuild emits CommonJS host bundles targeting Node 22, with `vscode` external. Keep existing `.js` relative imports in TypeScript. These settings do not prove compatibility with every supported VS Code host; validate the actual host when runtime features change.
+- Inspect `tsconfig.json`, `eslint.config.mjs`, `esbuild.mjs` and `package.json` for current settings. Preserve existing `.js` relative imports and check compiler resolution, output format and host runtime together; configuration declarations do not establish real-host compatibility.
 - `src/extension/` owns VS Code capabilities; `src/adapter/` owns runtime integration; `src/webview/` supplies presentation. See the [primary architecture](../../architecture/vscode-extension-architecture.md) and [pi integration](pi-integration.md) before changing boundaries. A host-side HTML builder does not grant scripts running in the webview access to Node or pi SDKs.
 - Keep inbound webview validation in the host and align changes with [webview messages](../../reference/webview-messages.md). Preserve workspace-generation checks for asynchronous actions. Do not move secrets into HTML or messages, create a generic command bridge, or expand project-resource permissions through a type cast.
-- Use `npm run compile` (esbuild plus `tsc --noEmit`), `npm run lint`, and `npm test` for relevant code changes. `npm run typecheck` provides the typecheck alone when needed; compile already includes it. Lint currently covers `src`, not `scripts`; review and test changed Node scripts explicitly. Run `npm run docs:verify` for documentation changes and `npm run docs:health` when required by the collaboration workflow.
+- When selecting checks, note that `compile` includes type checking and `scripts/` is outside lint scope; review and test Node scripts explicitly.
 - Run runtime/project-trust spikes only for the relevant integration scope, following its isolation rules. For host/UI behavior changes, report required F5 checks separately from automated tests. Keep generated `dist/` output out of source edits.

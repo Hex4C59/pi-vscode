@@ -1,5 +1,3 @@
-<!-- GENERATED from workflow — do not edit; run `npm run docs:sync-guides` in engineering-template. -->
-
 # Judgment and honest answers
 
 English | [中文](judgment.zh.md)
@@ -9,81 +7,29 @@ English | [中文](judgment.zh.md)
 - Created: 2026-09-19
 - Authority: response patterns for agents; does not override `AGENTS.kernel.md`, PRD, or maintainer decisions
 
-When examples mention a WI or gate, **`ACTIVE.md` and files on disk are authoritative**. The questions below are illustrative, not evidence of the current project state.
+- Provenance: local revision of engineering-template `workflow/judgment.md`. The maintainer authorized this project documentation review on 2026-09-22; the template is not synchronized. Reconcile local changes before future sync.
 
-## Before you answer
+## Answer procedure
 
-1. Is the maintainer asking for **judgment**, a **proposal**, **execution**, or explicit **brainstorming**? Do not treat a question as authorization to edit.
-2. Read `ACTIVE.md` and the relevant requirements, gates, or files before citing them. Distinguish what you observed from what you infer; never claim to have run a command you did not run.
-3. Give a clear conclusion when possible: **yes / no / partly / not yet / unknown**. Then give the decisive evidence, the blocker (if any), and the smallest relevant next step. If evidence is missing or conflicting, say what needs checking instead of guessing.
-4. Separate maintainer-owned product decisions from agent-owned investigation and proposals. Do not quietly convert optional ideas into active WIs.
+1. **Identify the request.** Distinguish judgment, proposal, execution and explicit brainstorming, checking existing authorization. A read-only question is complete when answered; an implementation request requires completing the authorized work.
+2. **Check evidence.** Follow kernel baseline reads and task routes to ACTIVE and the relevant requirements, gates, code or verification record. Separate observation, inference and unknowns. Finish when factual conclusions have cited support and missing evidence has a concrete checking action.
+3. **Decide.** Lead with yes, no, partly, not yet or unknown; give decisive evidence and the necessary next step. No additional work needed for this phase is a valid conclusion.
+4. **Record the handoff.** Product tradeoffs belong to the maintainer; investigation and proposals belong to the agent. Save conclusions worth retaining under [collaboration §7](../agent-collaboration.md#7-agent-obligations). Recording an idea does not authorize implementation or a parallel WI.
 
-## A. Optimization and scope
+## Apply by question
 
-### A1 — “What else should we optimize?”
+| Question | Completion criterion |
+|----------|----------------------|
+| What else needs optimization? | Compare observed gaps with current-WI acceptance; say when no material change is needed. List optional ideas only for an explicit options/brainstorm request. |
+| Please brainstorm | Label ideas optional/deferred and distinguish exploration from commitments; record them under the collaboration rules. |
+| Tests passed; is it delivered? | Check technical verification, the approved slice, required manual acceptance and applicable gates separately. Claim completion only for supported scope. |
+| Does the host support this integration? | Support the answer with a public API or controlled spike; otherwise identify the unknown and smallest verification step. |
+| This feature already exists, right? | Check current implementation and acceptance; state the supported part and limits. Historical scaffold examples cannot establish today's state. |
+| Will the Draft PRD be filled later? | Check the Prepare→Build PRD assessment and slice proposal; identify a missing trigger instead of promising automatic completion. |
+| Can we implement the archived design? | Compare current authority and approval; a useful historical design can inform a proposal, not authorize implementation. |
+| What should happen next? | Recommend from ACTIVE's WI, phase and open conditions; keep unapproved new scope in Prepare. |
+| Am I right? | Answer the exact claim with yes/partly/no, evidence and missing conditions. |
 
-- **Ask:** “We added documentation checks. What else must we do now?”
-- **Prefer:** “Nothing material is required for the current WI based on `ACTIVE.md` and the checks I ran. If you want a brainstorm, I can suggest optional later work.”
-- **Avoid:** Inventing new WIs, skills, or a PRD rewrite to appear proactive.
-- **Why:** An open-ended question is not a request to expand scope; ‘nothing required’ is a valid judgment.
+## Evidence boundaries
 
-### A2 — Explicit brainstorming
-
-- **Ask:** “Brainstorm possible future improvements.”
-- **Prefer:** Give a small set of clearly **optional / deferred** ideas, distinct from the active WI; do not edit the parking lot unless asked.
-- **Avoid:** Presenting possibilities as commitments or starting them without approval.
-- **Why:** Generating options and setting priorities are different tasks.
-
-## B. Go / no-go and evidence
-
-### B1 — Tests passed; can we claim delivery?
-
-- **Ask:** “The automated checks pass. Is the user-facing feature shipped?”
-- **Prefer:** “Not yet if the current WI also requires maintainer acceptance, an approved PRD slice, or an open gate to be closed. Here is what passed and what remains, per `ACTIVE.md` and the gate record.”
-- **Avoid:** Equating green checks with acceptance, writing an Accepted ADR early, or claiming a Draft PRD is authoritative.
-- **Why:** Verification, product acceptance, and gate closure are separate decisions. Check the actual WI and gate before applying this example.
-
-### B2 — Evidence is incomplete
-
-- **Ask:** “Does the host support the proposed integration?”
-- **Prefer:** “Unknown from the documents checked; the relevant public API or a controlled spike has not been verified. First check that API, then decide.”
-- **Avoid:** Confidently answering yes from a planned architecture or no from an untested suspicion.
-- **Why:** A proposal is not implementation evidence; uncertainty should be actionable.
-
-## C. Correcting assumptions and missing documents
-
-### C1 — Planned capability described as shipped
-
-- **Ask:** “This view already supports real chat, right?”
-- **Prefer:** “Not according to the current `ACTIVE.md` acceptance and implementation I checked: the view is only a shell. Real chat remains a separate scope.” (Replace this illustrative state with the repo's actual evidence.)
-- **Avoid:** “Mostly yes” without checking, or a dismissive correction with no citation.
-- **Why:** Acknowledge the goal, but let repository facts determine the phase.
-
-### C2 — An empty Draft PRD
-
-- **Ask:** “Will these placeholder requirements get filled in later?”
-- **Prefer:** “A Draft can remain sparse during technical work, but that does not guarantee follow-up. Check the WI's Prepare→Build PRD assessment; if missing, flag the process gap and propose a trigger. Draft only the current user-visible slice for maintainer review.”
-- **Avoid:** “It will be filled in automatically,” silently treating placeholders as approved scope, or inventing a full product PRD without discussion.
-- **Why:** Agents must surface missing decision points; only the maintainer can approve product scope.
-
-### C3 — Historical context mistaken for authority
-
-- **Ask:** “Can we implement the design from `docs/archive/`?”
-- **Prefer:** “First compare it with the current architecture, PRD status, and WI. Archive is context, not current authority; propose a change if the old design still makes sense.”
-- **Avoid:** Building from a superseded document because it is more detailed.
-- **Why:** Detail does not establish authority.
-
-## D. Proposal versus execution
-
-### D1 — “What should we do next?”
-
-- **Prefer:** Name the current WI and phase from `ACTIVE.md`. If the proposal or approval is missing, stay in Prepare and present the smallest reviewable proposal, including PRD impact for user-visible work.
-- **Avoid:** Starting another WI, interpreting a chat-only plan as approval, or doing feature work to demonstrate initiative.
-- **Why:** Advice, recorded approval, and execution are distinct steps.
-
-### D2 — “Am I right?”
-
-- **Prefer:** Answer the exact claim with **yes / partly / no**, identify any missing condition, and cite the governing file. If repo evidence conflicts, explain the conflict and what to check next.
-- **Avoid:** “Absolutely!” when only part of the premise is true.
-- **Why:** Agreement without qualification can hide a blocked gate or missing acceptance.
-
+Examples define a reasoning method only. Obtain WI status, versions and acceptance from the current files and checks; unrun checks remain unverified. Maintainer approval does not replace factual evidence, and agent advice or passing tests do not replace product decisions, gate acceptance or explicit commit authorization.

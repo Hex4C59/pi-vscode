@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[typescript.md](typescript.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-22
 
 - 类型：指南
 - 状态：Accepted
@@ -49,12 +49,9 @@
 
 ## 验证与报告
 
-行为变更、回归修复或测试变更前阅读[测试指南](testing.zh.md)；测试位置、命名、收集与证据层级由该指南拥有。下列通用验证原则仍适用。
+行为变更、回归修复或测试变更前阅读[测试指南](testing.zh.md)，由它统一规定测试位置、收集、行为覆盖、隔离和证据层级。为改变的行为与回归补充测试；纯文案改动无需镜像实现的测试。
 
-- 运行仓库相关 lint、类型检查／构建和测试命令。转译／打包不等于类型检查，要检查脚本实际覆盖范围。复用组合命令，避免重复等价检查；缺失的检查如实报告，不编造脚本。
-- 针对逻辑变化和回归添加或更新行为测试。按改动覆盖畸形输入、失败／取消、迟到完成和清理路径；不为镜像实现或纯文案修改添加测试。
-- 必要时为时间、进程、文件系统或宿主 API 提供窄测试替换点。避免真实凭证、用户状态、付费调用及不可控网络依赖。使用临时 fixture 并清理。
-- 区分单元测试、真实集成检查和人工宿主验收。Mock 不能证明宿主生命周期或部署兼容性。报告执行命令、结果、未验证路径与实质限制；检查通过本身不关闭产品 gate。
+核对仓库脚本实际覆盖范围：转译／打包不等于类型检查，组合命令已经覆盖的检查无需重复执行。交付条件是适用检查已运行、结果与未验证部分已记录；命令入口按[贡献指南](../../../CONTRIBUTING.zh.md)选择。
 
 ## 如何维护本指南
 
@@ -62,8 +59,8 @@
 
 ## pi VS Code 项目应用
 
-- 当前配置以 `tsconfig.json`、`eslint.config.mjs`、`esbuild.mjs` 和 `package.json` 为准。此版本 TypeScript 开启严格检查并使用 Node16 模块解析；esbuild 输出以 Node 22 为目标的 CommonJS 宿主包，`vscode` 为外部依赖。保留 TypeScript 中现有的 `.js` 相对导入。这些配置不能证明兼容所有支持的 VS Code 宿主；运行时特性变化须在实际宿主验证。
+- 当前设置从 `tsconfig.json`、`eslint.config.mjs`、`esbuild.mjs` 和 `package.json` 核对。保留现有 `.js` 相对导入，并一起检查编译器解析、输出格式与宿主运行时；配置声明不能替代真实宿主兼容性验证。
 - `src/extension/` 拥有 VS Code 能力，`src/adapter/` 负责运行时集成，`src/webview/` 提供展示。改边界前读[主架构](../../architecture/vscode-extension-architecture.zh.md)与 [pi 集成](pi-integration.zh.md)。宿主侧 HTML 构建器不代表 Webview 中执行的脚本获得 Node 或 pi SDK 权限。
 - Webview 入站校验留在宿主，变更同步[消息契约](../../reference/webview-messages.zh.md)。异步操作保留工作区代次校验。不将密钥放入 HTML 或消息，不新增通用命令桥，不通过类型断言扩大项目资源权限。
-- 相关代码变更使用 `npm run compile`（esbuild 加 `tsc --noEmit`）、`npm run lint` 和 `npm test`。需要单独类型检查时可用 `npm run typecheck`；compile 已包含它。当前 lint 覆盖 `src`，不覆盖 `scripts`，变更的 Node 脚本须单独审阅并测试。文档变更运行 `npm run docs:verify`，协作流程要求时运行 `npm run docs:health`。
+- 选择检查时注意 `compile` 已包含类型检查，`scripts/` 当前不在 lint 范围；Node 脚本须独立审阅和测试。
 - 仅在相关集成范围内、遵守隔离规则运行运行时／项目信任 spike。宿主／UI 行为变化时，将所需 F5 验证与自动测试分开报告。不要直接编辑生成的 `dist/` 输出。

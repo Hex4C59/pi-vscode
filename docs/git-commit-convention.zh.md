@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[git-commit-convention.md](git-commit-convention.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-21
+- 最近同步：2026-09-22
 
 - 类型：指南
 - 状态：Accepted
@@ -34,14 +34,23 @@
 
 Git 默认 merge/revert 文案可保留；手动改 revert 须用 body 说明原因。
 
-## 语言
-
-- 整段 message **英文**（含 body、自定义 footer）。
-- 勿中英混写；标准 trailer 保持惯例；标识符与路径按需原样保留。
-
 ## 类型（type）
 
-与英文版一致：`feat` `fix` `docs` `refactor` `test` `build` `ci` `perf` `style` `chore` `revert`。优先最具体类型，勿用 `chore` 掩盖含糊变更。
+| Type | 用途 |
+|------|------|
+| `feat` | 用户可见功能 |
+| `fix` | 修复错误行为 |
+| `docs` | 仅文档 |
+| `refactor` | 不意图改变行为的结构调整 |
+| `test` | 仅测试 |
+| `build` | 依赖、打包及构建系统 |
+| `ci` | CI 或发布自动化 |
+| `perf` | 不改变行为的性能改进 |
+| `style` | 仅格式 |
+| `chore` | 其他类型未覆盖的仓库维护 |
+| `revert` | 非 Git 默认格式的撤回 |
+
+优先使用最具体的类型，勿用 `chore` 掩盖含糊变更。
 
 ## 范围（scope）
 
@@ -93,15 +102,21 @@ talk to a newer bridge after upgrade.
 BREAKING CHANGE: Unversioned webview messages are dropped.
 ```
 
+## 关注点隔离与恢复
+
+实现提交排除 `ACTIVE.md`。当前 WI 记录单独使用 `docs(active)`；无关 ACTIVE 纠错使用 `fix(docs)`，一般维护使用 `docs`。这是稳定记录流的 scope 约定，不必为单个文件创建其他 scope。
+
+按路径和 hunk 暂存并保留既有 index。若重叠导致无法安全暂存，先保存完整非破坏性工作副本，从 baseline 重建并提交第一个已授权关注点，再以 three-way apply 恢复剩余工作，逐项确认所有变更和证据仍在。未经授权不得 stash、drop、覆盖、reset 或提交用户工作；临时副本仅在唯一内容已保全且没有进程依赖后清理。
+
 ## 提交前
 
 提交授权规则不变：只有维护者明确要求时才能创建或改写提交。对每个已授权提交：
 
 1. 用一句话说明该提交的关注点，并从会话临时 commit map 列出预期路径或 hunk。
 2. 检查 `git status`、`ACTIVE.md` 的未暂存 diff 和已有的暂存 diff。除非其所有者明确授权，否则保留任务开始前已有的全部 index 内容。
-3. 只按路径和 hunk 暂存该关注点。若所有权或重叠不明确，立即停止；采用[协作指南](guides/agent-collaboration.zh.md)中的非破坏性 baseline／工作副本／three-way 恢复流程，不用 stash、reset 或覆盖工作。
+3. 只按路径和 hunk 暂存该关注点。若所有权或重叠不明确，立即停止；采用上方的非破坏性恢复流程，不用 stash、reset 或覆盖工作。
 4. 用 `git diff --cached` 检查**完整**暂存 patch，不能只看 `--stat` 或文件列表；逐个暂存 hunk 对照已声明的关注点和预期路径。
-5. 若 `ACTIVE.md` 与实现混在一起，停止并拆分。实现提交不含 `ACTIVE.md`；当前 WI 记录另作 `docs(active)` 提交；无关的 ACTIVE 纠错或维护另作 `fix(docs)` 或 `docs` 提交。
+5. 若 `ACTIVE.md` 与实现混在一起，停止并拆分。按上方关注点隔离规则处理。
 6. 按确认过的暂存内容选择 type/scope，撰写英文 summary + body（及 footer），再检查长度和敏感信息。
 7. 提交后报告 worktree 或 index 中仍剩余的关注点，适用时注明所有权。
 8. 未经维护者明确要求，不得 amend/rebase/squash/force-push。

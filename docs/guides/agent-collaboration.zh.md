@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[agent-collaboration.md](agent-collaboration.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-21
+- 最近同步：2026-09-22
 
 - 类型：指南
 - 状态：Accepted
@@ -18,7 +18,7 @@
 
 **pi VS Code** 由维护者（产品判断与验收）与 coding agent（技术顺序与实现）讨论推进。新窗口或上下文压缩后，聊天内容会丢失；**仓库里的文件**保存当前工作项与交接信息。
 
-本指南不定义产品行为或系统架构；那些以 `docs/product-requirements.md`（若有）与 `docs/architecture/` 下主架构文档为准。
+本指南负责工作批准与交接；[产品需求](../product-requirements.zh.md)负责用户可见范围，[架构](../architecture/vscode-extension-architecture.zh.md)负责边界。
 
 ## 2. 分工
 
@@ -35,16 +35,9 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 ## 3. 权威来源
 
-| 问题 | 权威 |
-|------|------|
-| 安全与仓库规则 | `AGENTS.md` 内核与 `docs/guides/agent/` playbook |
-| 用户可见范围与验收 | `Accepted` 的 `docs/product-requirements.md` |
-| 结构、边界、所有权 | `docs/architecture/` 主文档 |
-| **当前在做什么** | 根目录 [`ACTIVE.md`](../../ACTIVE.md) |
-| 历史决策原因 | `docs/decisions/` 中 Accepted ADR |
-| 架构 gate 状态 | [`docs/reference/architecture-gates.md`](../reference/architecture-gates.md) |
+文档职责与冲突顺序以 [AGENTS](../../AGENTS.zh.md) 为准。Draft PRD 中单独获批的切片，以 ACTIVE 及其关联批准记录明确范围；这不提升整份 PRD。Gate 状态查 [Gate 表](../reference/architecture-gates.zh.md)，既有技术决定查 [ADR 索引](../decisions/README.zh.md)。
 
-聊天与 `ACTIVE.md` 不一致时，对齐后应更新 `ACTIVE.md`。
+聊天中的新确认与 ACTIVE 不一致时，按已确认决定更新 ACTIVE，保留未决条件。
 
 ## 4. 单一进行中项（WIP=1）
 
@@ -66,24 +59,20 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 ## 5. 会话节奏
 
-1. **开场** — 维护者 **只 @ `ACTIVE.md`**（或说「继续 pi VS Code」）。Agent 阅读本指南后复述：当前 WI、Last session、今日焦点、验收步骤。
-2. **提案** — Prepare 阶段先将可审阅的 WI 讨论稿写入 `ACTIVE.md`，再给出简短计划与 **决策类** `none` | `spike-only` | `adr-after-approval`（适用时含 gate ID）。**必须做 PRD 判定**：将 WI 归类为用户可见或纯技术，并在 `ACTIVE.md` 记录理由。若涉及用户可见行为，先在 `docs/product-requirements.md` 及译文起草可观察需求（含相关空态／错误态）、验收和 WI 追溯行，进入 Build 前请维护者确认范围；若为纯技术工作，记录不新增 PRD 需求的原因。在当前 WI 的 `PRD 判定` 行写 `用户可见` 或 `纯技术` 并说明理由；仅 Prepare 阶段可留 `待定`。用户可见 Build 的 PRD 追溯行须写 WI 及对应 REQ ID。Draft 不代表已交付；未经维护者明确批准不得将 PRD 标为 `Accepted`。维护者确认（如「可以」「按 A 做」）后，记录确认与选定方案才进入 Build。一句目标或仅聊天中的计划不够。
-3. **建造** — 确认后按 `AGENTS.md` load map（边界变更时读 architecture-governance），按已确认的讨论稿实现并运行 `package.json` 中的检查。
-4. **收尾** — 对照已批准的 PRD 切片与 WI 验收核对实际交付的用户可见行为；差异须修正或明确延期，才能声称交付。更新 `ACTIVE.md` **Last session**；若已确认关 gate，更新 ADR 与 gate 表，或标 `Decision: pending-adr`。
+| 步骤 | 动作与完成条件 |
+|------|----------------|
+| 开场 | 按内核基础阅读、本指南与 ACTIVE 确定当前 WI、批准状态、最近交接、今日焦点和验收。仅 @ ACTIVE 也使用同一入口。 |
+| 提案（Prepare） | 在 ACTIVE 补齐 §4 的可审阅提案，标明决策类 `none`／`spike-only`／`adr-after-approval` 及适用 Gate。Build 前须记录维护者确认的方案与范围；已有明确批准持续有效。 |
+| 建造（Build） | 按已批准提案和 AGENTS 任务路由实施，运行适用检查。完成条件是约定行为与验证结果可审阅，而非仅编辑过文件。 |
+| 收尾 | 对照批准切片和验收核对结果，修正或明确延期差异。更新最近交接，按 §7 保存历史；需要维护者验收或 ADR 的条件仍未满足时，保持待定并列出缺口。 |
+
+**PRD 判定：** 当前 WI 的 `PRD 判定` 行必须写 `用户可见` 或 `纯技术` 并说明理由；仅 Prepare 可留 `待定`。用户可见 Build 前，双语 PRD 须有可观察的切片行为、相关空态／错误态、验收和关联 WI／REQ 的追溯行，再由维护者确认范围。纯技术工作记录无需新增需求的原因。Draft 候选不等于已批准行为，整份 PRD 提升为 Accepted 另需明确批准。
 
 ### Git 所有权与关注点隔离
 
 每次任务开始时检查 `git status`、`ACTIVE.md` 的未暂存 diff，以及已有的暂存 diff。将看到的每项变更归类为**既有 Agent 工作**、**当前任务工作**或**用户所有的工作**；无法确定时，在澄清前按用户所有处理。会话期间维护一份临时 commit map：每个关注点一行，记录所有者、预期提交以及预期路径或 hunk。尽管产品工作保持 WIP=1，worktree 可以同时存在多个关注点，但每项变更在暂存前都必须有明确所有权和去向。
 
-将 `ACTIVE.md` 视为独立的记录流：
-
-- 实现提交不得包含 `ACTIVE.md`。
-- 当前 WI 记录放在单独的 `docs(active)` 提交中。
-- 与当前 WI 无关的 `ACTIVE.md` 维护另作 `fix(docs)` 或 `docs` 提交：纠错用前者，仅更新文档用后者。
-
-按路径和 hunk 暂存，并保留任务开始前已有的 index。若关注点重叠、无法安全地按 hunk 暂存，先保存完整且非破坏性的工作副本，从其 baseline 重建并提交第一个关注点，再以 three-way apply 恢复剩余工作并检查结果。未经明确授权，绝不 stash、drop、覆盖、reset 或提交用户所有的工作。
-
-任何提交前均遵循 [Git 提交规范](../git-commit-convention.zh.md)中的暂存内容审阅流程。提交授权规则不变：这些隔离规则绝不构成创建或改写提交的授权。
+暂存或提交时，加载 [Git 提交规范](../git-commit-convention.zh.md)：其中集中规定 ACTIVE 隔离、重叠 hunk 恢复和完整暂存审阅。当前 WI 记录独立于实现关注点；保持既有 index 和用户工作。提交仍须明确授权。
 
 ## 6. 维护者提示词（可复制）
 
@@ -108,10 +97,7 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 ## 7. Agent 义务
 
-- 根据需求、架构与 `ACTIVE.md` 提议下一步；若缺讨论稿，先在 Prepare 补全，再请求进入建造。
-- 脚手架、安全边界、破坏性结构调整及 ADR 所记录的决策须获批准。记录已经批准的决策无需另行许可。
-- 会话结束须更新 Last session（未完成也要写）。
-- 遵守 [何时写 ADR](../decisions/README.md#when-to-write-an-adr)；提案须标明 gate ID 与决策类。
+脚手架、安全边界、破坏性结构调整及 ADR 背后的决定须获批准；记录已批准决定无需再次许可。会话结束时更新 ACTIVE 最近交接，即使工作未完成：说明改动、实际检查与结果、已知限制和仍需验收的条件。ADR 分类与接受条件见 [ADR 规则](../decisions/README.zh.md)。
 
 ### 主动沉淀记录
 
@@ -132,11 +118,9 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 最终交接简短说明保存或更新了什么、文件位置，以及仍待确认的决策或验证。没有符合条件的内容就不新建文档。
 
-## 8. ADR 与 gate
+## 8. ADR 与 Gate
 
-- **你拍板**；满足触发条件时由 agent 在批准后撰写 ADR。
-- **关闭 gate** 须在 gate 表链接 Accepted ADR。
-- `ACTIVE.md` 使用 **Gate ID** 与 **Decision**（`none` | `pending-adr` | `0001-slug`）。
+维护者确认架构选择后，按 [ADR 规则](../decisions/README.zh.md)记录决定与验证。Gate 接受条件由 [Gate 表](../reference/architecture-gates.zh.md)定义；证据或批准不足时保留当前状态并记录缺口。ACTIVE 使用 `Gate ID` 与 `Decision`（`none`／`pending-adr`／ADR 编号）。
 
 ### 文档漂移
 
@@ -144,12 +128,9 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 涉及 gate 或 ADR 的会话结束前运行 `npm run docs:verify`。边界评审见 [`architecture-governance.zh.md`](architecture-governance.zh.md)。
 
-## 9. 阶段（两档）
+## 9. 阶段
 
-- **Prepare** — 范围、gate、契约或讨论；将 WI 讨论稿写入 `ACTIVE.md` 并请求维护者确认，尚未做功能实现。
-- **Build** — 按 `ACTIVE.md` 中已确认的讨论稿写代码与验证。
-
-更细步骤由 agent 按工作项写入 `ACTIVE.md`。
+使用 §5 的 Prepare／Build 边界。更细的任务步骤和缺少条件按需写入 ACTIVE；阶段名本身不构成实现授权或验收。
 
 ## 维护
 

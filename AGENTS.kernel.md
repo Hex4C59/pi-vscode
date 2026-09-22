@@ -1,4 +1,4 @@
-# AGENTS kernel (shared)
+# Shared agent working rules
 
 English | [中文](AGENTS.kernel.zh.md)
 
@@ -8,106 +8,88 @@ English | [中文](AGENTS.kernel.zh.md)
 - Authority: cross-project rules for human contributors and coding agents
 - Applies to: every product repository bootstrapped from this template, and to agents editing those repos
 
-Copy this file (and `AGENTS.kernel.zh.md`) into each **product** repository root. The product’s `AGENTS.md` adds project facts, security L0, architecture paths, and load-map links—it does not relax this kernel.
+This file defines common agent working rules. Product `AGENTS.md` adds project facts, concrete security constraints, architecture paths and task-specific reading routes; it must not weaken this kernel.
 
-## Authority stack (pattern)
+This English/Chinese pair originates in engineering-template and is copied to product repository roots. When editing shared rules, record the synchronization state of the template and the local copy. A local edit does not update the template or other projects. **2026-09-22:** readability changes approved for this repository; the template source has not been updated in this task.
 
-On conflict, use this order—replace paths in items (2)–(3) in the product `AGENTS.md`:
+## Document responsibilities and conflict priority
 
-1. This kernel and `docs/guides/agent/` playbooks for engineering constraints.
-2. Product requirements document when `Accepted` (typically `docs/product-requirements.md`).
-3. Primary system architecture (typically under `docs/architecture/`).
-4. `ACTIVE.md` for the current work item.
-5. `docs/discussions/` and `docs/archive/` are context only—not implementation authority.
+First use the document responsible for the question. The following list also defines conflict priority from highest to lowest; concrete product paths belong in `AGENTS.md`:
 
-For questions of fact, phase, or repository state, **evidence in the repo outweighs agreeing with the maintainer’s framing**. Product tradeoffs and whether to start work remain the maintainer’s decision.
+1. This kernel and agent playbooks define mandatory engineering constraints.
+2. An `Accepted` product requirements document defines approved user-visible behavior and acceptance.
+3. The primary architecture document defines structure, boundaries and responsibility owners.
+4. `ACTIVE.md` records the current WI, scope, phase and approval.
+5. Discussions and archives provide background and historical evidence, not independent implementation authorization.
 
-## Phase honesty
+A conflict means incompatible requirements about the same question, not complementary descriptions of different concerns. Identify the conflicting sources and follow the priority above rather than silently overriding a document. Product tradeoffs and whether to start work remain the maintainer's decision.
 
-- Do not describe planned or gated capabilities as shipped until acceptance criteria, closed gates, and maintainer confirmation say so.
+## Git changes require explicit authorization (L0)
 
-## Non-negotiables (L0)
+Do not create, modify, merge or rewrite Git commits unless the user explicitly asks.
 
-- Do not create, modify, merge, or rewrite Git commits unless the user explicitly asks.
+## Evidence-based judgment and reporting (L0)
 
-## Judgment and honesty (L0)
+- Give a clear conclusion when evidence allows one: yes, no, partly, not yet or unknown. Ground it in repository files, current phase, gates and commands actually run.
+- When the maintainer's premise conflicts with repository facts, identify the discrepancy and cite what you checked, specifically and professionally. Evidence determines factual claims; the maintainer decides product tradeoffs.
+- State missing evidence when uncertain. Do not invent gaps to appear useful or agreement to satisfy the phrasing of a question.
+- When asked what to optimize or do next, it is valid to recommend no material change, the existing ACTIVE queue, or deferring a premature idea. List optional ideas only when explicitly asked for brainstorming, options or a backlog.
+- Do not describe planned or gated capabilities as shipped until the applicable acceptance criteria, gate closure and maintainer confirmation support that exact scope.
+- These judgment rules do not override product security rules, explicit instructions for a scoped task, or the requirement for explicit commit authorization.
 
-- Give a **clear conclusion** when the repo allows one (`yes` / `no` / `partly` / `not yet` / `unknown`). Do not default to agreement because the question sounds like it expects praise or more work.
-- Ground claims in **this repository** (`ACTIVE.md`, phase, gates, files, commands you ran). Do not invent gaps to appear helpful.
-- When asked what to optimize or do next, you **may** answer that **nothing material is needed now**, that the **`ACTIVE.md` queue is sufficient**, or that an idea is **premature for the current phase**. List optional ideas only when the maintainer **explicitly** asks for brainstorming, options, or a backlog dump.
-- If the maintainer’s premise conflicts with docs or facts, **say so** and cite what you checked. Be specific and professional—not dismissive.
-- If evidence is insufficient, say what is missing; do not fake confidence either way.
-- This section does not override product security L0 in `AGENTS.md`, explicit maintainer instructions for a **scoped task**, or “do not commit unless asked.”
+Example: asked whether more optimization is needed, a supported answer is “No additional work is required before the current WI.” Asked to mark an ADR Accepted while its spike is unconfirmed, report the missing verification and retain the current gate status.
 
-**Mini-examples**
+For further judgment examples, consult the product's `docs/guides/agent/judgment.md`; the template source is `workflow/judgment.md` in engineering-template.
 
-- Maintainer: “We added `docs:verify`—what else should we optimize?”  
-  **Good:** “Nothing required before the current WI; optional later: CI for `docs:verify`.”  
-  **Bad:** Unrelated new WIs or rewrites without evidence.
+## Mandatory security boundaries across projects (L0)
 
-- Maintainer: “Write the Accepted ADR now?”  
-  **Good:** “No—spike unconfirmed; gate stays `In spike` per `ACTIVE.md`.”  
-  **Bad:** Draft Accepted ADR early to please the question.
+Product `AGENTS.md` supplies concrete rules implementing these principles:
 
-More patterns: `docs/guides/agent/judgment.md` in product repos; `workflow/judgment.md` in engineering-template.
+- **Low-trust UI:** must not receive credentials, arbitrary host capabilities or direct access to upstream runtime APIs.
+- **Privileged host:** exposes only named, allowlisted operations across the boundary and validates incoming values before acting.
+- **Upstream ownership:** use the documented SDK/RPC for agent loops, session stores and provider stacks; do not reimplement those capabilities unless the product charter says otherwise.
+- **Sandbox honesty:** when the runtime executes with the user's permissions, do not imply it is a security sandbox. Make the actual trust and permission limits visible in UI and documentation.
 
-## Trust boundaries (abstract L0)
+## Common system layers and responsibilities
 
-Product `AGENTS.md` must spell out concrete rules. Every product using this kernel should enforce the same **ideas**:
+The same responsibility split applies across Electron, VS Code, web and CLI hosts:
 
-- **Low-trust UI** must not receive credentials, arbitrary host capabilities, or direct access to upstream runtime APIs.
-- **High-trust host** exposes only **named, allowlisted** cross-boundary operations; validate inputs in the host.
-- **Do not reimplement** upstream agent loops, session stores, or provider stacks when an SDK/RPC already owns them—stay a presentation or integration layer unless the product charter says otherwise.
-- **Do not imply a sandbox** when the runtime runs as the user; trust and permissions must be visible in UI and docs.
+- **UI:** views, input and short-lived presentation state.
+- **Host:** privileged capabilities, lifecycle and validated interfaces.
+- **Adapter:** maps upstream SDK/RPC to internal events and isolates version changes.
+- **Runtime:** upstream models, agents, tools and sessions.
 
-## Layer model (pattern)
+Product architecture and playbooks own streaming and lifecycle details. The product load map must point to the relevant existing documents; this kernel does not prescribe a placeholder filename.
 
-Regardless of framework (Electron, VS Code, web, CLI):
+## Starting a task
 
-| Layer | Role |
-|-------|------|
-| **UI** | Views, input, short-lived UI state |
-| **Host** | Privileged capabilities, lifecycle, validated API surface |
-| **Adapter** | Upstream SDK/RPC → internal events; isolate version changes |
-| **Runtime** | Upstream models, agents, tools, sessions |
+1. Read this kernel, product `AGENTS.md`, `ACTIVE.md`, `README.md`, the current directory tree, `package.json` when present, and relevant tests.
+2. Read the current WI and session summary in `ACTIVE.md`. Before proposing or editing application code, read the product collaboration guide in full (typically `docs/guides/agent-collaboration.md`), even if the maintainer did not mention it.
+3. Follow the product load map for task-specific playbooks. Preserve unrelated user Git changes and use the repository's package manager and scripts; do not swap the stack for preference.
+4. If the task changes security, persistence or upstream integration strategy, clarify the impact and record the decision before large changes. Apply the product collaboration guide's approval requirements before implementation.
 
-Streaming and lifecycle details belong in product playbooks (for example `boundaries.md`), not in this kernel.
+Mentioning only `ACTIVE.md` is a session entry point, not a waiver of required reading or implementation approval. The collaboration-guide read may be skipped only for a read-only answer with no WI changes and no code changes, unless gates, ADRs or session-close rules apply. This exception does not waive the other baseline requirements.
 
-## ACTIVE session pairing
+## When architecture review is required
 
-The maintainer may @-mention **`ACTIVE.md` only** to start a session. The agent must:
+For changes to structure, boundaries, interfaces, dependencies, contracts or ownership—and related concurrency, lifecycle, security, persistence, observability, errors, tests or release behavior—use repository documents rather than assuming previous chat context is available:
 
-1. Read `ACTIVE.md` (session contract summary and current WI).
-2. Read the product collaboration guide (for example `docs/guides/agent-collaboration.md`) in full **before** proposing or editing application code.
+1. Read the relevant product architecture and module/reference documents when present.
+2. Before proposing module splits, interfaces for other modules or external callers, or cross-layer dependencies, or claiming architectural correctness, review the applicable dimensions of the architecture checklist. Report what is satisfied and what remains a gap, with evidence paths and unresolved risks.
 
-Skip step 2 only for read-only answers with no WI or code changes, unless gates, ADRs, or session-close rules apply.
+The checklist is `docs/guides/architecture-governance.md` in product repositories; its template source is `workflow/architecture-governance.md`. Do not invent implemented owners or `Living` contracts from `Planned` document shells.
 
-## Before you start
+Detailed engineering constraints remain in task-specific playbooks under `docs/guides/agent/`. The product load map must include architecture governance and state when each guide is required; it is not an instruction to read every guide for every task.
 
-1. Read this kernel, the product `AGENTS.md`, `ACTIVE.md`, `README.md`, the current tree, `package.json` when present, and relevant tests.
-2. For implementation sessions, follow **ACTIVE session pairing** even if the maintainer did not @ the collaboration guide.
-3. Preserve the user’s unrelated Git changes; use the repo’s package manager and scripts—do not swap the stack for preference.
-4. If the task changes security, persistence, or upstream integration strategy, clarify impact and record the decision before large changes.
+## Checks before handoff
 
-## Architecture governance
+Check the approved scope and report the evidence for completion:
 
-Agents do not retain chat memory. For **structure, boundaries, APIs, dependencies, contracts, ownership**, and related quality attributes (concurrency, lifecycle, security, persistence, observability, errors, tests, release), use:
+1. Deliver end-to-end usable behavior when the WI requires it, not only a static UI.
+2. For behavior touched by the WI, verify types, errors, cancellation, resource cleanup and empty states. Do not turn inapplicable checks into extra feature scope.
+3. Add or update relevant tests and actually run them. Run the repository's applicable lint/typecheck checks and report their results; checks that could not run remain explicitly unverified, not passed.
+4. Preserve security boundaries. Changes require the applicable approval and explicit verification; a successful build alone does not authorize expanded access.
+5. Update documentation for affected user-visible behavior and commands. After substantive documentation changes, run the repository's documentation verification command.
+6. Report which checks ran, results and unverified areas with reasons. Distinguish current runs from historical evidence. Passing checks does not automatically establish maintainer acceptance, WI closure or gate acceptance; follow the project's approval and decision rules.
 
-1. Product architecture and modules/reference docs when they exist.
-2. The portable checklist: `docs/guides/architecture-governance.md` in product repos; `workflow/architecture-governance.md` in engineering-template.
-
-Before proposing module splits, new public surfaces, cross-layer dependencies, or claiming architectural correctness, **scan the checklist** and cite pass/gap with file paths. Do not invent owners or `Living` contracts from `Planned` shells.
-
-## Playbooks
-
-Detailed constraints live under `docs/guides/agent/` and load progressively. The product `AGENTS.md` load map must include architecture governance and list which playbook to open for which paths.
-
-## Task completion (kernel)
-
-1. End-to-end usable behavior when the WI requires it—not static UI only.
-2. Types, errors, cancellation, cleanup, and empty states handled where the WI touches behavior.
-3. Relevant tests added or updated and actually run; lint/typecheck pass when the repo defines them.
-4. Security boundaries not expanded without explicit verification.
-5. User-visible and command changes reflected in docs when applicable.
-
-After substantive documentation changes, run the repo’s documentation verify command (for example `npm run docs:verify`).
+Project-specific commands and acceptance procedures belong in product `AGENTS.md`, its playbooks and repository configuration, not in this shared kernel.

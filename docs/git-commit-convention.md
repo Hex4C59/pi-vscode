@@ -35,13 +35,6 @@ Requirements:
 
 Standard Git merge/revert messages may keep their default format. If you edit a revert message manually, add a body explaining why.
 
-## Language
-
-- Entire message in **English** (summary, body, custom footer text).
-- Do not mix English and Chinese in the message.
-- Keep standard trailers (`BREAKING CHANGE:`, `Refs:`, `Closes:`, `Co-authored-by:`) as usual.
-- Preserve identifiers, paths, and commands literally when needed.
-
 ## Types
 
 | Type | Use for |
@@ -117,15 +110,21 @@ talk to a newer bridge after upgrade.
 BREAKING CHANGE: Unversioned webview messages are dropped.
 ```
 
+## Concern isolation and recovery
+
+Implementation commits exclude `ACTIVE.md`. Current-WI records use a separate `docs(active)` commit; unrelated ACTIVE corrections use `fix(docs)` and ordinary maintenance uses `docs`. This is a stable record-stream scope convention, not a reason to invent other file-specific scopes.
+
+Stage by path and hunk while preserving the existing index. When overlap prevents safe staging, save a complete non-destructive work copy, reconstruct and commit the first authorized concern from its baseline, then restore remaining work with a three-way apply. Confirm every unique change and its evidence survived. Without authorization, never stash, drop, overwrite, reset or commit user work; clean temporary copies only after unique content is preserved and no process depends on them.
+
 ## Before you commit
 
 Commit authorization remains unchanged: do not create or rewrite a commit unless the maintainer explicitly asks. For each authorized commit:
 
 1. State the commit's concern in one sentence and list its expected paths or hunks from the session's ephemeral commit map.
 2. Inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Preserve all pre-existing index entries unless their owner explicitly authorizes changing them.
-3. Stage only that concern by path and hunk. If ownership or overlap is unclear, stop; use the non-destructive baseline/work-copy/three-way recovery procedure in the [collaboration guide](guides/agent-collaboration.md) rather than stash, reset, or overwrite work.
+3. Stage only that concern by path and hunk. If ownership or overlap is unclear, stop; use the recovery procedure above rather than stash, reset, or overwrite work.
 4. Inspect the **full** cached patch with `git diff --cached`, not only `--stat` or a file list. Compare every staged hunk with the stated concern and expected paths.
-5. Stop and split if `ACTIVE.md` is mixed with implementation. Implementation commits exclude `ACTIVE.md`; current-WI records use a separate `docs(active)` commit, while unrelated ACTIVE correction or maintenance uses a separate `fix(docs)` or `docs` commit.
+5. Stop and split if `ACTIVE.md` is mixed with implementation. Apply the concern-isolation rules above.
 6. Pick type/scope from the verified staged content; write the English summary + body (+ footers), then check length and secrets.
 7. After committing, report the concern still remaining in the worktree or index, including ownership when relevant.
 8. Do not amend/rebase/squash/force-push unless the maintainer explicitly asks.
