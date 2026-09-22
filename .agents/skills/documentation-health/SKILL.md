@@ -17,9 +17,9 @@ Default to read-only. Use the requested scope; if unspecified, inspect mechanica
 2. From the repository root run `npm run --silent docs:health -- --json`; inspect errors, review notices and limitations. An execution failure is an incomplete check, not a clean result.
 3. Read relevant authority docs and compare claims to package scripts, actual source/tests, approved requirements and gates. Historical ADRs describe past choices; dates alone never prove obsolescence.
 4. Report each issue with stable key (rule/path/subject), file and line, claim, counter-evidence location, confidence, minimal proposed disposition and required approval. Distinguish observed facts from hypotheses. Reuse existing issue keys in the handoff when present.
-5. For phase-one acceptance, run the in-memory semantic exercise in the policy; do not add false text to files. Do not claim this is an automated model evaluation.
-6. Summarize checked scope, actual command outcomes and unchecked areas. No issues means no new work item. Use conversation/task output rather than a permanent report file.
+5. Only when accepting or changing the health tooling itself, run the policy's acceptance exercise. Ordinary document reviews skip that branch.
+6. Finish when every finding has evidence and a disposition, checks have recorded outcomes, and reviewed/unreviewed scope is explicit. Use the existing handoff or conversation; no findings means no new WI or standalone report.
 
 ## Repair boundary
 
-Only prepare edits after scoped authorization, following the policy's controlled disposition rules. Never delete history, approve product decisions, edit generated sources, create commits/PRs, or modify sibling repositories based on this skill alone. After authorized edits run relevant tests and `npm run docs:verify` plus `npm run docs:health`.
+Only prepare edits after scoped authorization, following the policy's controlled disposition rules. Never delete history, approve product decisions, edit generated sources, create commits/PRs, or modify sibling repositories based on this skill alone. After authorized edits run `npm run docs:verify` and `npm run docs:health`; add relevant tests only if tooling or behavior changed.
