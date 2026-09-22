@@ -5,22 +5,21 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：<!-- date -->
+- 最近同步：2026-09-22
 
 - 类型：参考
 - 状态：Accepted
-- 创建：<!-- date -->
 - 权威：本仓库何时、如何撰写 ADR
 
 ## 何时写 ADR
 
-在维护者确认以下决策后撰写 **Accepted** ADR：
+维护者确认下列选择后记录 ADR；所需验证未完成时保持 Draft，批准与验证齐备后才标 **Accepted**：
 
 - 关闭 [`architecture-gates.md`](../reference/architecture-gates.md) 中的架构 gate；
 - 变更信任边界、持久化或集成策略；
 - 在不可逆技术选项间做选择（框架、进程模型）。
 
-勿在首次提案时或失败 spike 未理清前写 Accepted ADR。
+首次提案及仍有未解释失败的 spike 保留待定状态与缺少条件。
 
 ## 格式
 

@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[bilingual-documentation.md](bilingual-documentation.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-22
 
 - 类型：指南
 - 状态：Accepted
@@ -29,14 +29,16 @@
 1. **Machine Draft** — 初稿；英文未稳定前原文版本用 `Uncommitted baseline`。
 2. **Human Reviewed** — 维护者通读中文；原文版本设为所审英文文件的 git commit；更新最近同步。
 3. **Technically Verified** — 可选：英文大改后重跑 `docs:verify`。
-4. **Stale** — 英文已漂移；修中文或标 Stale。
+4. **Stale** — 英文已漂移；修中文或标 Stale（否则 `docs:i18n:check` 将漂移作为错误）。
+
+同步完成须逐项核对正文含义、限定条件、链接及围栏，并运行文档检查。机械通过不证明翻译准确，也不自动授予 Human Reviewed；仅填写实际发生的审阅状态和同步日期，已有术语无需重复在两处维护定义。
 
 ## 译文中的代码块
 
 | 围栏标记 | 正文须与英文一致？ |
 |----------|-------------------|
 | `bash`、`json`、`typescript` 等 | **是** |
-| `text` | **是** |
+| `text` | **是**（不一致时警告） |
 | `text prompt` | **否** — 维护者话术；同一序号英中均标 `prompt` |
 | `text localized` | **否** — 标签可译、路径保留；两侧均标 `localized` |
 | 前面紧邻 `<!-- docs-i18n: localized-mermaid -->` 的 `mermaid` | **否** — 可翻译图中标签，节点 ID 与连线保持一致；英中两侧均加注释，围栏仍须写成纯 `mermaid`，以便 Markdown 预览渲染 |

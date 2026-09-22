@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- WI-002 preparation: webview trust gate and ping/pong bridge (not started in this release).
+- Versioned Webview messaging, workspace eligibility/resource choices and host-owned RPC startup (WI-002/006/007).
+- Bounded text streaming, model/thinking selection and chat-first UI, including next-turn settings (WI-004/008/009).
+- Thinking/tool cards, controlled execution approvals and Stop (WI-010).
+- Documentation-health checks and module-owned automated tests (WI-005/011).
+
+### Acceptance limits
+
+These entries describe development changes. Current approval, F5 acceptance and remaining work are in [ACTIVE](ACTIVE.md); closed slices and their original evidence are in the [archive](docs/archive/2026-09-21-closed-wi-history.md). WI-008/WI-009/WI-011 closure, installed-VSIX acceptance and three architecture gates remain pending. This section does not announce a Marketplace or Open VSX release.
 
 ## [0.0.1] - 2026-09-19
 

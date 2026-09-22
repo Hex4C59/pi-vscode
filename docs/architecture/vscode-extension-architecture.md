@@ -27,15 +27,15 @@ The extension is a **presentation and orchestration layer**. It does not reimple
 | **Adapter** | pi SDK or RPC subprocess → internal domain events consumed by host + webview | `src/adapter/` |
 | **Runtime (upstream)** | Models, tools, sessions, project resources | pi packages / subprocess |
 
-The diagram shows the target boundaries; edge labels distinguish the current scaffold from later work. WI-001 selected subprocess RPC for the runtime probe, not end-user chat.
+The diagram shows the current layers and call direction. ACTIVE and historical records establish implementation scope and product acceptance; the diagram does not certify complete boundary verification.
 
 <!-- docs-i18n: localized-mermaid -->
 ```mermaid
 flowchart TD
     U["User"] --> W["UI: sidebar Webview<br/>src/webview/"]
-    W <-->|"postMessage: WI-002 ping; WI-006 workspace"| H["Extension host<br/>src/extension/"]
-    H <-->|"Chat and controlled execution: WI-010 closed"| A["Adapter<br/>src/adapter/"]
-    A <-->|"Subprocess RPC: WI-007 lifecycle"| P["Upstream pi runtime<br/>npm dependency, outside this repo's src/"]
+    W <-->|"Versioned intents and host projections"| H["Extension host<br/>src/extension/"]
+    H <-->|"Runtime lifecycle and domain events"| A["Adapter<br/>src/adapter/"]
+    A <-->|"Subprocess JSONL RPC"| P["Upstream pi runtime<br/>npm dependency, outside this repo's src/"]
     E["Extension entry point<br/>src/extension.ts"] -->|"Registers view and command"| H
 ```
 
@@ -45,33 +45,28 @@ flowchart TD
 |---------|------|---------|
 | **Primary sidebar** | Explorer, SCM, etc. | Unchanged (user keeps file tree on the left) |
 | **Secondary Side Bar** | pi chat **Webview View** | **Preferred** default dock (VS Code `viewsContainers.secondarySidebar`) |
-| **Primary sidebar fallback** | Same webview view container | When Secondary Side Bar API or host fork does not support aux bar |
+| **Primary sidebar fallback** | Same webview view container | Compatibility direction; verify the target host, without promising automatic fallback |
 | **Editor-area panel** | Full-tab chat | **Parking lot** (optional later; not MVP default) |
 
-Commands (planned): open/focus pi sidebar; on older VS Code, document drag-to-right workflow.
+The `pi-vscode.focusChat` command reveals the existing container and focuses chat from the editor title or Command Palette. Placement compatibility requires target-host verification.
 
 ## 4. Trust boundaries
 
 - **Secrets** (API keys, tokens): extension host only (`SecretStorage` / env policy). **Never** pass to webview HTML/JS or webview `localStorage`.
-- **Webview**: no `require`, no direct pi SDK, no filesystem or shell. Only structured messages defined in `docs/reference/` (outline before WI-002+).
+- **Webview**: no `require`, no direct pi SDK, no filesystem or shell. Only structured messages in the [message contract](../reference/webview-messages.md).
 - **Workspace access**: host reads/writes files per user action and VS Code workspace trust; webview requests capabilities via messages, host validates.
 - **Sessions**: do not read/write pi session files for product session features unless an Accepted ADR explicitly allows; prefer SDK/RPC session APIs.
 - **Honesty**: do not describe the webview or extension host as a security sandbox against untrusted code; pi retains tool and shell capabilities per upstream design.
 
-## 5. Main flows (target)
+## 5. Main flows and lifecycle
 
-1. **Open**: user opens pi view in secondary sidebar → host creates/retains `WebviewView` → webview loads bundled script with strict CSP.
-2. **Chat (later WIs)**: webview sends user input message → host → adapter → pi runtime stream → host forwards sanitized events to webview.
-3. **Shutdown**: deactivate extension / dispose webview → adapter stops runtime / child process with timeout; no zombie subprocess (WI-001 spike proves clean exit).
+1. **Open**: user opens pi view in secondary sidebar → host creates/retains `WebviewView` → webview loads an inline page script with strict CSP and a nonce.
+2. **Chat**: webview sends user input message → host → adapter → pi runtime stream → host forwards bounded presentation projections to webview (filtering cannot guarantee arbitrary output is secret-free).
+3. **View disposal and runtime shutdown**: disposing or replacing a Webview calls `PiChatViewProvider.clearView()` to release view listeners and view-bound operations; it does not stop the runtime or clear host-owned chat/pending settings. A recreated view resynchronizes from the host. Provider disposal (including extension teardown) unsubscribes runtime events, clears chat/pending settings and approvals/grants, requests `runtime.stop()`, and releases view/workspace listeners. The adapter owns bounded subprocess shutdown; this does not guarantee cancellation of every descendant process.
 
-## 6. Open decisions (gates)
+## 6. Architecture gates
 
-See [`../reference/architecture-gates.md`](../reference/architecture-gates.md):
-
-- `gate-extension-host-baseline` — build, F5, package
-- `gate-sidebar-chat-shell` — secondary-sidebar webview placeholder
-- `gate-webview-trust` — message schema, CSP, secret isolation (before real chat)
-- `gate-runtime-host` — pi in-process SDK vs subprocess RPC
+The [gate table](../reference/architecture-gates.md) owns status and acceptance scope; [ADR 0001](../decisions/0001-build-baseline.md) preserves the minimum host/sidebar/RPC baseline decision. [ACTIVE](../../ACTIVE.md) tracks unresolved boundaries and missing ADR conditions. Existing code or a closed scoped WI does not establish the complete architectural conclusion.
 
 ## 7. Controlled execution ownership (WI-010 closed, 2026-09-21)
 
@@ -81,14 +76,14 @@ See [`../reference/architecture-gates.md`](../reference/architecture-gates.md):
 - **Projection and lifecycle:** `runtimeLifecycle.ts` defines activity/final-message/runtime-error events and narrow `abortTask` / approval-handler injection. `activityProjection.ts` correlates actual thinking by message/content index and tools by tool-call ID, replaces cumulative outputs, and bounds display fields. `PiChatViewProvider` owns projected timeline, execution state and approval lifetime. Stop cancels pending approvals before adapter `clear_queue` + `abort`; no settlement/failure causes runtime shutdown and explicit error. Successful Stop retains same-live-session grants; replacement/disconnect clears them. Deferred settings wait for settlement and completion of stopping. No side-effect rollback or automatic task retry.
 - **Contract/security:** [contract-webview-messages](../reference/webview-messages.md) records exact inbound actions and bounded DTOs. No generic commands or raw runtime/stderr forwarding; credential-pattern filtering is best-effort, not complete secret removal from arbitrary outputs. Incremental UI, per-item and reserved aggregate overflow notices, stable expansion/focus/scroll, full approval input, grant revocation and draft-preserving Stop are implemented and covered by UI tests. Four development F5 checks were confirmed by the maintainer: thinking/state, read/tool cards, denied write without side effects then allowed writes, and Stop during a long harmless command. The scoped WI is closed; installed-VSIX and exhaustive manual matrix acceptance are not implied.
 
-**Evidence and maturity:** offline `scripts/spikes/spike-approval.mjs` targets installed `0.86.1`, using isolated fixture provider/configuration without real provider credentials. Two write calls test allow/deny, timeout plus late replies, Stop and load failure; load-failure fixture uses `--no-tools`, separately from production startup rejection. The extra fixture extension is test-only, not product third-party loading. Reported checks pass 73 tests, compile/lint and all nine real approval fixtures, now including PowerShell running Stop and discovered/settings/package extension exclusion markers. `controlledEnvironment.ts` overrides inherited values with `PI_OFFLINE=1`, `PI_TELEMETRY=0`, retaining trusted user provider configuration and credential commands, which are outside tool-gate coverage. Offline is a startup-network/package-install restriction, not inference/network isolation: `scripts/spikes/spike-offline-inference.mjs` uses `--offline` with a missing package and actual loopback HTTP inference; environment override is separately unit-tested. Dependencies-inclusive `dist/pi-vscode-validation.vsix` (139.71 MB, 14,080 entries) passed `scripts/packaging/verify-vsix.mjs`: extracted pinned CLI, production dependencies and gate hello/get_state independently of repository paths, using a no-tools probe. These are prior reported checks, not reruns at documentation closure. Installed-VSIX activation/runtime validation, exhaustive external-provider and grant/lifecycle/security validation remain gaps; the four development F5 observations above are separate closure evidence. WI-008/WI-009 deferred-selection F5, including approval/Stop ordering, remains pending. Architecture remains Proposed/Direction; `gate-project-trust`, `gate-webview-trust`, `gate-session-streaming` stay Open and the boundary ADR remains pending in ACTIVE.
+**Environment and coverage:** [`controlledEnvironment.ts`](../../src/adapter/controlledEnvironment.ts) forces `PI_OFFLINE=1` / `PI_TELEMETRY=0` while retaining trusted user provider configuration and credential commands; those commands are outside tool-approval coverage. Offline restricts startup networking/missing-package installation, not inference or tool networking.
 
-## 8. Implementation snapshot (WI-008 / WI-009 Build; not gate closure)
+**Evidence and maturity:** [WI-010 history](../archive/2026-09-21-closed-wi-history.md#wi-010) owns version-matched approval fixtures, offline/extracted-package checks, four development F5 observations and their limits. Architecture remains Proposed/Direction. Installed-VSIX, broad external-provider and complete boundary verification/ADR remain gaps; ACTIVE tracks their current conditions.
 
-The sidebar Webview uses a **chat-first redesign**: compact header with runtime status dot, card-style setup empty states, right-aligned user message pills, and a bottom rounded composer card containing a **single combined model · thinking chip**, anchored popover and icon send button. The popover has a collapsible model list and thick discrete thinking slider: fixed `#168BFF` fill/thumb, no yellow outline, blue keyboard-focus halo; other styling uses theme tokens.
+## 8. Model-settings ownership (WI-008/WI-009)
 
-The approved next-turn-only extension is behavioral, not merely presentation: `PiChatViewProvider` owns `pendingModel` / `pendingThinkingLevel`, independently replacing the latest intent while `chatBusy` without changing applied settings. Idle choices apply immediately. After the current session's `agent_settled`, `applyPendingSettings` serializes model mutation, refreshed capabilities and validated thinking mutation under `modelBusy`; sends and selections are blocked during application. Failures read back actual state without mutation retry, report bounded errors and clear pending intent. Generation/session/catalog tokens reject obsolete completions; host-owned intent survives view recreation but not workspace/eligibility change, runtime replacement or provider disposal. The Webview only renders applied versus pending state and sends the existing allowlisted commands; the adapter maps public RPC. See [message contract](../reference/webview-messages.md).
+`PiChatViewProvider` owns applied settings and separate `pendingModel` / `pendingThinkingLevel` intents. Idle changes apply immediately; during an active reply, each pending field retains its latest choice. After the current session's `agent_settled`, `modelBusy` serializes model mutation, capability refresh and validated thinking mutation. Failures read back actual state without mutation retry. Generation/runtime-session/catalog tokens reject obsolete completions; intent survives view recreation but clears on workspace/eligibility change, runtime replacement and provider disposal.
 
-Current manifest and installed pi are `0.86.1`; its public `docs/rpc.md` defines `agent_settled` as no remaining automatic retry, compaction retry or queued continuation. `turn_end` / low-level `agent_end` are not this completion boundary. WI-004's `0.85.1` evidence remains historical. WI-008/WI-009 themselves retained bounded plain text, host-owned in-memory transcript and `--no-tools`; deferred selection alone did not add Stop. WI-010 now supersedes that startup profile with controlled execution in §7.
+The Webview presents applied/pending state and sends allowlisted intents; the adapter maps public RPC. The [message contract](../reference/webview-messages.md) owns detailed errors, Stop ordering and cleanup semantics; [REQ-002](../product-requirements.md#req-002--model-readiness) owns the visible controls.
 
-Maintainer F5 accepted idle model/thinking changes followed by streaming, folding/Esc/keyboard/light theme and no-folder/untrusted/resource setup. New deferred selection still awaits F5; WI-008/WI-009 remain open. Earlier bridge/workspace/runtime slices remain in place; trust and session-streaming gates stay Open per [`architecture-gates.md`](../reference/architecture-gates.md).
+The maintainer confirmed the deferred-selection main path at 19:44 on 2026-09-21: the current reply stays unchanged, settings apply after settlement, and the next message uses them. Idle selection and baseline UI were also confirmed. Failed readback, restart cleanup and approval/Stop interleavings lack complete independent manual coverage; WI-008/WI-009 still await consolidation and explicit closure. [ACTIVE](../../ACTIVE.md) owns the latest acceptance record.

@@ -5,11 +5,10 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：<!-- date -->
+- 最近同步：2026-09-22
 
 - 类型：参考
 - 状态：Accepted
-- 创建：<!-- date -->
 - 权威：**仅作上下文**——不覆盖 `AGENTS.md`、`docs/product-requirements.md`（`Accepted` 后）、架构、`ACTIVE.md` 或 ADR
 
 ## 用途

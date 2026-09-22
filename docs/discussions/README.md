@@ -4,7 +4,6 @@ English | [中文](README.zh.md)
 
 - Type: Reference
 - Status: Accepted
-- Created: <!-- date -->
 - Authority: **context only**—does not override `AGENTS.md`, `docs/product-requirements.md` (when `Accepted`), architecture, `ACTIVE.md`, or ADRs
 
 ## Purpose

@@ -5,12 +5,14 @@
 - 翻译状态：Machine Draft
 - 权威原文：[2026-09-21-wi-004-rpc-evidence-0.85.1.md](2026-09-21-wi-004-rpc-evidence-0.85.1.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-21
+- 最近同步：2026-09-22
 
 - 类型：讨论
 - 状态：Accepted（证据记录）
 - 创建：2026-09-21
 - 权威：**仅作背景** — 不授权 Build、不关闭 gate，不凌驾于 [`ACTIVE.md`](../../ACTIVE.md) 或 Draft PRD
+
+> 历史 Prepare 快照：下方版本、提案和待验证项均指原调研时点。现行 pin 从 package.json 核对；后续 WI-004 已验收，完成边界以[当前消息契约](../reference/webview-messages.zh.md)的 `agent_settled` 为准。保留原提案的 `turn_end` 讨论，不将其当作现行实现规则。
 
 ## 目的
 
@@ -72,6 +74,6 @@
 
 ## 链接
 
-- 当前 WI：[`ACTIVE.md`](../../ACTIVE.md)（WI-004 Prepare；未批准 Build）
+- 原阶段：WI-004 Prepare，调研时尚未批准 Build；后续验收见[历史](../archive/2026-09-21-closed-wi-history.zh.md#wi-004)，当前工作见 [ACTIVE](../../ACTIVE.md)。
 - PRD 切片：[REQ-004 WI-004 提案切片](../product-requirements.zh.md#req-004--可观察的任务执行)
 - 集成 playbook：[pi-integration § pi VS Code](../guides/agent/pi-integration.zh.md#pi-vs-code已选方案与证据)

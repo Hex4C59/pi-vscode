@@ -10,6 +10,8 @@ English | [中文](2026-09-21-closed-wi-history.zh.md)
 
 > Do not implement from this file. It preserves historical scope, approval, evidence and limits. Current requirements, architecture, gates, ADRs and `ACTIVE.md` take precedence.
 
+Versions, script paths and pending acceptance below are snapshots at each recorded closure. ACTIVE records the later 19:44 deferred-selection confirmation and WI-011 script regrouping; the [pi integration guide](../guides/agent/pi-integration.md) links current command entries. Original paths and acceptance observations remain historical, without implying a rerun.
+
 <a id="wi-001"></a>
 ## WI-001 — Build baseline and runtime probe
 

@@ -7,6 +7,8 @@ English | [中文](2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)
 - Created: 2026-09-21
 - Authority: **context only** — does not authorize Build, close gates, or override [`ACTIVE.md`](../../ACTIVE.md) or the Draft PRD
 
+> Historical Prepare snapshot: versions, proposals and pending checks below refer to the original research. Read package.json for the current pin. WI-004 was subsequently accepted; the [current message contract](../reference/webview-messages.md) uses `agent_settled` for completion. The original `turn_end` proposal is retained as history, not a current implementation rule.
+
 ## Purpose
 
 Record **version-matched** public documentation for WI-004 (`prompt` + assistant `text_delta` streaming, `--no-tools` startup). Upstream `main` URLs alone do not prove behavior for the pinned npm package.
@@ -67,6 +69,6 @@ This is a **product safety slice**, not a sandbox claim. Declining project resou
 
 ## Links
 
-- Current WI: [`ACTIVE.md`](../../ACTIVE.md) (WI-004 Prepare; Build not approved)
+- Original phase: WI-004 Prepare, before Build approval. Subsequent acceptance is in [history](../archive/2026-09-21-closed-wi-history.md#wi-004); current work is in [ACTIVE](../../ACTIVE.md).
 - PRD slice: [REQ-004 WI-004 proposed slice](../product-requirements.md#req-004--observable-task-execution)
 - Integration playbook: [pi-integration § pi VS Code](../guides/agent/pi-integration.md#pi-vs-code-selected-approach-and-evidence)

@@ -26,6 +26,8 @@ Run `npm run docs:verify` (includes `docs:i18n:check`). Edit required pairs in `
 3. **Technically Verified** — Optional: re-ran `docs:verify` after English edits.
 4. **Stale** — English drifted; fix Chinese or mark Stale (`docs:i18n:check` errors on drift otherwise).
 
+Synchronization is complete after comparing meaning, qualifications, links and fences and running documentation checks. Mechanical success does not prove translation accuracy or grant Human Reviewed status. Record only the review actually performed and the actual sync date; keep definitions at their owning source.
+
 ## Code fences in translations
 
 | Fence tag | Body must match English? |

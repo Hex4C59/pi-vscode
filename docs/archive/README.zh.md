@@ -5,11 +5,10 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：<!-- date -->
+- 最近同步：2026-09-22
 
 - 类型：参考
 - 状态：Accepted
-- 创建：<!-- date -->
 - 权威：**仅历史上下文**——已替代的 PRD、WI、spike、讨论等
 
 ## 用途

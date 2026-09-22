@@ -4,18 +4,17 @@ English | [中文](README.zh.md)
 
 - Type: Reference
 - Status: Accepted
-- Created: <!-- date -->
 - Authority: when and how to write ADRs in this repository
 
 ## When to write an ADR
 
-Write an **Accepted** ADR after the maintainer confirms a decision that:
+Record an ADR after the maintainer confirms a choice below. Keep it Draft until required verification is complete; use **Accepted** only with both approval and verification:
 
 - Closes an architecture gate in [`architecture-gates.md`](../reference/architecture-gates.md);
 - Changes trust boundaries, persistence, or integration strategy;
 - Chooses between irreversible technical options (framework, process model).
 
-Do **not** write Accepted ADRs at first proposal or before a failed spike is understood.
+Initial proposals and unexplained spike failures retain their pending state and missing conditions.
 
 ## Format
 

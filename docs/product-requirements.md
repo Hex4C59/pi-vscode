@@ -8,7 +8,7 @@ English | [中文](product-requirements.zh.md)
 - Authority: user-visible scope and acceptance only after explicit maintainer approval; this draft does not authorize implementation
 - Related: [`../ACTIVE.md`](../ACTIVE.md), [`architecture/`](architecture/), [`guides/agent-collaboration.md`](guides/agent-collaboration.md)
 
-> On 2026-09-19 the maintainer agreed with the product direction and authorized drafting this proposal. D-01 (initial approval policy), D-02 (approval scope, lifetime and Unrestricted-execution mode lifecycle), D-03 (continuing without project resources), and D-04 (first-release boundaries) were explicitly confirmed on 2026-09-19. The release boundaries are approved; detailed slice acceptance, technical validation, Build authorization and promotion of this entire PRD to Accepted remain outstanding. WI-005 was accepted by the maintainer on 2026-09-19; WI-003's technical trust spike passed its checks and was accepted by the maintainer on 2026-09-19; documented limitations remain, with no product UI delivery or gate closure. Technical scaffolding is not end-user chat delivery.
+> The maintainer agreed with the direction and confirmed D-01–D-04 on 2026-09-19. The whole PRD remains Draft; individually approved slices are identified in traceability, archived approval records and ACTIVE's current scope. Scope approval, technical verification, user acceptance and gate acceptance are recorded separately.
 
 ## Product direction (agreed)
 
@@ -24,7 +24,7 @@ Confirmed D-04 limits: one local workspace folder (Git or non-Git) and one activ
 
 ## Candidate requirements and acceptance
 
-Every requirement below is Draft. IDs make discussion traceable, not implementation-ready. Before Build, assign the selected slice to one WI, resolve its open decisions and record approval in ACTIVE.
+Each full requirement remains Draft; some slices have separate approval and acceptance. For a new Build, use the [collaboration guide](guides/agent-collaboration.md) to link the selected slice to one WI, resolve its decisions, define observable acceptance and record approval.
 
 ### REQ-001 — Project and trust visibility
 
@@ -32,25 +32,23 @@ Show the active workspace folder before running a task. With no folder, explain 
 
 Distinguish VS Code workspace trust, pi project-resource trust and tool approval. Per confirmed D-03, do not start the agent in a VS Code untrusted workspace; do not silently trust pi project resources. When VS Code trusts the workspace but pi resource trust is declined, allow the session to continue with a visible indication that project-local pi resources are not loaded. This does not prevent ordinary project-file reads or imply that all context files and user/global resources are excluded; verify the exact pi loading boundary before implementation. Never describe resource trust as filesystem/network isolation.
 
-#### WI-006 proposed slice — Pre-runtime workspace and resource choice (Draft)
+#### WI-006 accepted slice — Workspace and resource choice
 
-Show the current local folder and explicit blocked states for no folder, multi-root, remote extension hosts (even with file URIs), non-file workspaces and VS Code untrusted workspaces. Offer native folder selection and manage-workspace-trust entry points, with cancellation and recoverable errors. In an empty local window, add the selected folder using the public workspace API; request acceptance is not proof of completion, so render authoritative state after workspace change or host restart. Provide an editor-title Pi icon (navigation group) that reveals the existing container and focuses its view without toggling or duplication; retain the Command Palette fallback when no editor is open. Never grant VS Code trust automatically.
+The accepted WI-006 UI distinguishes no-folder, multi-root, remote-host, non-file, untrusted and eligible states, with native folder/trust recovery and editor-title/Command Palette focus actions. The host keeps resource choice in memory, bound to workspace identity; view recreation retains it, while identity/eligibility changes and host reload clear it. Trust is never granted automatically and the Webview supplies no arbitrary path.
 
-For an eligible workspace, offer explicit allow/decline project-resource choices with risk and residual-context explanations. Keep the choice only in host memory, bound to workspace identity/generation; preserve it across view recreation, clear it on host reload, workspace change or eligibility loss, and reject stale-page actions. Permit changing the choice before startup. Do not persist pi trust or accept arbitrary paths/commands from the webview.
-
-**This slice never starts pi.** Both choices must visibly say that the choice is recorded but the runtime has not started; do not claim resources have loaded or a session is ready. Test zero runtime starts, invalid/stale messages, escaped paths, lifecycle cleanup and native-command cancellation/errors. Actual approve/no-approve startup integration and remaining resource-category validation require a later approved slice; WI-006 does not complete REQ-001 or close a gate. Detailed proposal and manual acceptance are in ACTIVE.
+WI-006 originally recorded the choice without starting pi; WI-007 then added choice-driven runtime startup. Zero runtime starts is the historical WI-006 acceptance boundary, not a current product requirement. See [WI-006/WI-007 history](archive/2026-09-21-closed-wi-history.md) for original scope and acceptance, and the [message contract](reference/webview-messages.md) for current transitions and native-action completion. Full REQ-001 and the related gates remain unaccepted.
 
 ### REQ-002 — Model readiness
 
 Show the selected provider/model and allow selection among available configured models. Reuse existing pi authentication for the initial release. With no usable model, missing credentials or authentication failure, explain the problem and recovery path without exposing credentials in HTML, logs or webview messages. Do not silently switch provider. A successful configuration display is not proof that the next request will succeed.
 
-#### WI-008 proposed slice — Composer popover model and thinking level (Draft)
+#### WI-008/WI-009 approved slice — Model and thinking selection
 
 On the WI-004 chat composer, a **single combined model · thinking chip** opens an **anchored popover** with a collapsible model list from `get_available_models` and a discrete thinking slider from `get_available_thinking_levels`. The approved WI-009 styling uses a thick slider with fixed `#168BFF` fill/thumb, no yellow focus outline, and a blue keyboard-focus halo; the remaining surface uses theme tokens.
 
 Maintainer approved **while-streaming selection for the next turn only** on 2026-09-21. Selection requires ready runtime, matching generation, and neither workspace `busy` nor `modelBusy`; `chatBusy` alone does not disable it. Idle choices apply immediately. While streaming, keep the applied chip unchanged and show separate pending intent (latest choice per field wins). After `agent_settled`, apply model first, refresh capabilities, then apply the requested thinking level only if supported; block sending and further selection during application. Failures show bounded errors and read back actual state, never silently claim success or retry a mutation. No credential UI, startup-default persistence, or native Quick Pick. Precise lifecycle/error rules: [webview contract](reference/webview-messages.md).
 
-F5 acceptance recorded for idle model/thinking changes followed by a streamed reply, model-list folding, Esc/keyboard, light theme, and no-folder/untrusted/resource setup. The newly implemented deferred selection still awaits F5; WI-008/WI-009 and gates remain open. Current manifest and installed pi are `0.86.1`; [WI-004 evidence (0.85.1)](discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md) remains historical. See [`ACTIVE.md`](../ACTIVE.md).
+The maintainer confirmed idle selection, baseline UI, and the deferred-selection main path at 19:44 on 2026-09-21: the current reply stays unchanged, settings apply after settlement, and the next message uses them. WI-008/WI-009 still await consolidation and explicit closure; approval/Stop interleavings, failed readback and restart cleanup lack complete independent manual coverage. See the current handoff in [`ACTIVE.md`](../ACTIVE.md).
 
 ### REQ-003 — Explicit editor context
 
@@ -60,13 +58,11 @@ Allow users to attach a workspace file or selected code with its path and line r
 
 Send a text task and render streamed responses and tool activity. Distinguish running, awaiting approval, retrying, compacting, completed, stopped and failed states when relevant. Show tool identity, target and result with bounded output and protected secrets. An accepted prompt is not a completed task; do not display completion while queued continuation or automatic retry remains.
 
-#### WI-004 proposed slice — First user text and assistant text streaming (Draft)
+#### WI-004 accepted slice — Text streaming
 
-After WI-007 runtime readiness (`workspaceState.runtime === "ready"`), allow sending **bounded plain user text** and show **incremental assistant text** in the sidebar webview. The original WI-004 evidence used pi `0.85.1`; the current manifest and installed dependency are `0.86.1`. Host sends `prompt` over subprocess JSONL RPC; adapter maps `message_update` events where `assistantMessageEvent.type === "text_delta"` into host-owned transcript state. Current completion uses public `agent_settled`: no automatic retry, compaction retry or queued continuation remains; `turn_end` / low-level `agent_end` are insufficient. Treat the `prompt` command `response` as acceptance/rejection only, not completion.
+Accept bounded plain text when the runtime is ready and display incremental assistant text. Reuse existing pi configuration; model/credential/provider failures need bounded recovery information with secrets protected. Display request acceptance separately from task completion; clear invalidated runtime transcripts and reject late events. The [message contract](reference/webview-messages.md) owns exact messages and completion boundaries.
 
-Historical WI-004 profile (superseded by WI-010 controlled execution below): start the runtime with public `--no-tools` until REQ-006 approval UI exists; label the UI as no-tools / not a full agent and do not claim sandbox isolation. Reuse existing pi credentials/configuration; show bounded recovery text on model/credential/provider failure without secrets in the webview or logs. Clear in-memory transcript on workspace identity/eligibility change, runtime stop or provider dispose; reject stale webview sends and late events from a prior runtime generation.
-
-**This slice does not deliver:** model picker (REQ-002), editor attachments (REQ-003), Stop (REQ-005), tool approval UI (REQ-006), tool activity/retry/compaction states, session history (REQ-008), `abort`/`steer`, images or extension-command bridging. Detailed proposal, gates and Build approval live in [`ACTIVE.md`](../ACTIVE.md). Historical public RPC evidence for the original slice is in [WI-004 RPC evidence (0.85.1)](discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md).
+[WI-004 history](archive/2026-09-21-closed-wi-history.md#wi-004) preserves approval, acceptance and exclusions for the minimal slice. Its original `--no-tools` profile was replaced by WI-010 controlled execution. Model selection, Stop and approvals came from later approved slices; attachments and session history remain outside this delivery. Original version research remains in [0.85.1 RPC evidence](discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md).
 
 ### REQ-005 — Stop and recovery
 
@@ -82,15 +78,15 @@ Third-party extensions can execute code outside ordinary tool calls. Their trust
 
 #### WI-010 approved slice — Thinking and controlled execution (closed, 2026-09-21)
 
-The maintainer approved actual tool execution, not event display alone, for REQ-004 / REQ-005 / REQ-006. Continue pinned pi `0.86.1` subprocess RPC. The controlled profile disables third-party extension discovery with `--no-extensions` and explicitly loads only the bundled approval extension; project-resource consent does not authorize tools or re-enable third-party extensions. This narrows the older resource-loading profile, not all context or user/global resources. Full Unrestricted execution remains deferred; D-01/D-02 remain the policy basis.
+This REQ-004/REQ-005/REQ-006 slice approves actual tool execution under D-01/D-02. The controlled profile loads only the bundled approval extension and disables third-party extension discovery; project-resource consent cannot re-enable it or authorize tools. Full Unrestricted execution remains deferred; other context and trusted user configuration are not all excluded.
 
-Show only upstream-provided thinking text/summary, with collapsible thinking and tool cards, meaningful complete approval input, bounded output, stable IDs and incremental rendering preserving expansion, focus and user scroll. Missing thinking is not invented. A tool start event means preparing, not proof that side effects began; cumulative output replaces the prior snapshot. Final message events reconcile text. The UI is implemented: stable incremental cards preserve expansion/focus/scroll, approvals expose full input and exact grants, Stop preserves drafts, and per-item truncation plus a reserved aggregate overflow notice disclose display limits. Automated UI tests pass. On 2026-09-21 the maintainer confirmed four development F5 checks: thinking/state display, file reads/tool cards, rejected write without side effect followed by allowed writes, and Stop during a long harmless command. The maintainer then requested closure; [WI-010 is closed](archive/2026-09-21-closed-wi-history.md#wi-010) for this slice, not the full approval matrix or installed-VSIX acceptance.
+Show only upstream-provided thinking text/summary. Collapsible thinking/tool cards use stable incremental rendering that preserves expansion, focus and scroll; final messages reconcile text and cumulative output replaces prior snapshots. Tool start means preparing, not proof of side effects. Approvals show complete meaningful input; bounded output discloses truncation, and aggregate overflow never skips approval. Stop preserves unsent drafts.
 
-Current backend auto-allows only `read` of a canonical in-workspace regular file. Search/list (`grep`, `find`, `ls`) still ask: read-only intent does not establish safe recursive scope. Edit/write, shell and external paths ask; unknown tools fail closed. Nonexistent or unresolvable targets have no reusable scope: Allow once only. Existing regular-file grants match tool category plus canonical path; shell grants match tool, canonical cwd and complete input, including conditions. No directory or command-prefix widening. Grants are inspectable/revocable, memory-only, retained over ordinary turn completion/Stop in the same live session, cleared on workspace/runtime replacement. Path canonicalization does not eliminate filesystem replacement races or constitute isolation.
+The approved automatic allowance covers only canonical in-workspace regular-file `read`. Search/list, edits/writes, shell and external paths ask; unknown tools deny. Nonexistent or unresolvable targets allow one-call approval only. Session file grants match tool category and canonical path; shell grants match tool, canonical cwd and complete input/conditions, without directory or command-prefix widening. Grants are inspectable/revocable and follow D-02 lifetimes.
 
-The bundled extension waits in public asynchronous `tool_call` interception via `ctx.ui.confirm`, using a product-versioned envelope bound to runtime/cwd, request/tool-call IDs and full arguments. No generic `approve_tool_call` RPC or title-based privilege detection. Missing bundle or unverified handshake blocks startup; the current implementation stops rather than falling back to a usable no-tools chat. Oversized/unreviewable or credential-like approval input is denied, not blindly approved. Stop invalidates pending approvals, then sends `clear_queue` and `abort`; remain stopping until settled or explicit failure/shutdown, reject late decisions, and never retry potentially side-effecting work automatically. Stop is not rollback and this profile is not a sandbox. Filtering cannot guarantee arbitrary tool output contains no sensitive information.
+Missing approval components or unverified handshake block startup; the UI cannot claim readiness. Oversized, unreviewable or credential-like approval inputs deny execution. Stop cancels pending approvals, clears queued continuation and requests abort; display stopping until settled or explicit failure/shutdown, without automatic replay of potentially side-effecting work. Canonicalization cannot remove filesystem replacement races; Stop neither rolls back nor guarantees every descendant exits. This is an execution policy, not a sandbox. Output filtering is best-effort; trusted user credential commands remain outside tool-approval coverage.
 
-Acceptance reconciliation: the four F5 checks above are confirmed. Grant reuse/revocation/reset, changed-scope prompting and the remaining manual approval/lifecycle/theme matrix are not inferred as accepted; they remain boundary validation in ACTIVE. Deferred next-turn settings interacting with approval/Stop belong to the still-open WI-008/WI-009 F5. Previously reported verification (not rerun during this documentation closure) passes 73 tests, compile and lint; `scripts/spikes/spike-approval.mjs` passes nine real pi `0.86.1` fixtures including PowerShell allow/deny, pending and running Stop, timeout/late replies and load failure, with discovered/settings/package third-party extension markers absent. No real provider credentials were used. Production forces `PI_OFFLINE=1` and `PI_TELEMETRY=0` while preserving trusted user provider configuration and credential commands; this is not a sandbox or credential-command approval boundary. `scripts/spikes/spike-offline-inference.mjs` uses `--offline` to show missing-package startup installation is skipped while actual loopback HTTP inference still succeeds; production environment override has separate unit coverage. The dependencies-inclusive `dist/pi-vscode-validation.vsix` is 139.71 MB / 14,080 entries; `scripts/packaging/verify-vsix.mjs` verifies extracted pinned CLI/dependencies and bundled-gate handshake/get_state independently of the repo. Extraction is not installed-VSIX activation/F5, exhaustive external-provider acceptance or proof of universal descendant-process cancellation. Development F5 is recorded separately above. See ACTIVE for remaining evidence, pending ADR and open gates. This approved slice does not promote the whole PRD to Accepted.
+[WI-010 closure](archive/2026-09-21-closed-wi-history.md#wi-010) owns the four F5 observations and historical automated/offline/package evidence. Those F5 checks support scoped closure; the full grant/lifecycle matrix, installed-VSIX acceptance and boundary ADR remain pending in ACTIVE. [Architecture §7](architecture/vscode-extension-architecture.md) owns responsibilities; the [contract](reference/webview-messages.md) owns messages, bounds, handshake and cancellation ordering. This slice does not promote the whole PRD or gates to Accepted.
 
 ### REQ-007 — Post-edit change review
 
@@ -137,23 +133,28 @@ A release direction may span future WIs, but only one implementation WI is activ
 
 | WI ID | PRD scope | Acceptance / status |
 |-------|-----------|---------------------|
-| WI-001 | None — technical spike | See ACTIVE; no user chat |
-| WI-002 | None — ping/pong scaffold | See ACTIVE; no user chat |
-| WI-003 | Technical-only trust spike informing REQ-001 / D-03; no product delivery | Maintainer accepted 2026-09-19; six scenarios passed, limits retained in ACTIVE; gate Open |
+| WI-001 | None — technical spike | See [archive](archive/2026-09-21-closed-wi-history.md); no chat in that historical slice |
+| WI-002 | None — ping/pong scaffold | See [archive](archive/2026-09-21-closed-wi-history.md); no chat in that historical slice |
+| WI-003 | Technical-only trust spike informing REQ-001 / D-03; no product delivery | Maintainer accepted 2026-09-19; six scenarios passed, limits in archive and ACTIVE; gate Open |
 | WI-005 | None — documentation tooling | Checks passed; maintainer accepted 2026-09-19 |
 | WI-006 | REQ-001 pre-runtime workspace/resource-choice UI slice (Draft) | Build approved 2026-09-19; maintainer F5 accepted 2026-09-21; no runtime startup |
 | WI-007 | REQ-001 runtime startup from in-memory resource choice (Draft) | Build approved; maintainer F5 accepted 2026-09-21; `get_state` readiness only; no chat |
 | WI-004 | REQ-004 | Closed 2026-09-21; minimal streaming slice accepted — see [archive](archive/2026-09-21-closed-wi-history.md#wi-004) |
-| WI-008 | REQ-002 | Build; idle selection F5 accepted; next-turn-only selection implemented, F5 pending; remains open — see ACTIVE |
-| WI-009 | REQ-004, REQ-002 (restyle plus approved deferred-selection behavior) | Build 2026-09-21; baseline UI F5 accepted; deferred host/projection/completion behavior awaits F5; remains open — see ACTIVE |
-| WI-010 | REQ-004 / REQ-005 / REQ-006 (thinking, controlled execution and Stop) | Closed 2026-09-21 after four maintainer F5 checks; prior 73 tests/offline/package evidence retained; installed VSIX and remaining manual matrix pending; ADR pending, gates Open |
+| WI-008 | REQ-002 | Idle and deferred-selection main paths F5 confirmed; boundary matrix and formal closure still pending — see ACTIVE |
+| WI-009 | REQ-004, REQ-002 (restyle plus approved deferred-selection behavior) | Baseline UI and deferred-selection main path F5 confirmed; boundary matrix and formal closure still pending — see ACTIVE |
+| WI-010 | REQ-004 / REQ-005 / REQ-006 (thinking, controlled execution and Stop) | Closed 2026-09-21 after four maintainer F5 checks; historical automated/offline/package evidence in archive; installed VSIX and remaining manual matrix pending; ADR pending, gates Open |
 | Unassigned | REQ-003, REQ-007–REQ-008 and remaining full REQ-004–REQ-006 scope | First-release proposal only; assign approved slices before Build |
 
-| REQ-006 | WI-010: pre-execution approval with full input, once/session decisions, conservative file-read policy and Stop cancelling approvals before clear_queue/abort | Scoped WI-010 closed 2026-09-21; four F5 checks confirmed, not full REQ-006 acceptance; installed VSIX and remaining manual matrix pending |
-
-| REQ-002 | WI-008 slice: popover model list and discrete thinking slider; RPC `set_model` / `set_thinking_level` | Draft; Build 2026-09-21 |
-
-| REQ-004 | WI-004 slice: bounded user text send when RPC runtime is ready; incremental assistant text; `--no-tools` startup; bounded errors without secrets; WI-009 restyles the surface (chat-first layout, composer card, message pills) with separately approved next-turn-only model/thinking selection | Draft slice delivered WI-004; restyled WI-009; full REQ-004 still deferred |
+| REQ ID | Observable acceptance target | Scope |
+|--------|------------------------------|-------|
+| REQ-001 | Show project/trust before execution; block ineligible workspaces | Workspace/startup slices separately accepted |
+| REQ-002 | Display/select available model/thinking; show next-turn intent while busy | WI-008/WI-009; full requirement remains Draft |
+| REQ-003 | Explicitly attach, preview and remove workspace text/selections | No WI assigned |
+| REQ-004 | Show streamed text, actual activity and bounded errors; separate acceptance from completion | WI-004/WI-009/WI-010 slices |
+| REQ-005 | Stop queued/active work, show stopping and its outcome, preserve drafts | WI-010 slice |
+| REQ-006 | Review full input before execution, grant exact once/session scope and revoke grants | WI-010 slice; Unrestricted execution postponed |
+| REQ-007 | Review applied changes and available diffs with attribution limits | No WI assigned |
+| REQ-008 | Deliberately create/restore this extension's known sessions in the correct project | No WI assigned |
 
 ## Non-goals and deferred capabilities
 

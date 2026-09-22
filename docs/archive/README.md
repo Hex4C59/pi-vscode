@@ -4,7 +4,6 @@ English | [中文](README.zh.md)
 
 - Type: Reference
 - Status: Accepted
-- Created: <!-- date -->
 - Authority: **historical context only**—superseded PRDs, WIs, spikes, and discussions
 
 ## Purpose
