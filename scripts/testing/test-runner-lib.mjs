@@ -30,7 +30,7 @@ function walk(directory, relative = '') {
 export function discoverTests(rootDir) {
   const root = path.resolve(rootDir);
   const app = walk(path.join(root, 'src'))
-    .filter((name) => /^[^/]+\/tests\/(?:[^/]+\/)*[^/]+\.spec\.ts$/.test(name))
+    .filter((name) => /^(?:extension|adapter|webview)\/(?:[^/]+\/)*tests\/(?:[^/]+\/)*[^/]+\.spec\.ts$/.test(name))
     .sort().map((name) => path.join(root, 'src', name));
   const scripts = walk(path.join(root, 'scripts'))
     .filter((name) => name.endsWith('.spec.mjs'))

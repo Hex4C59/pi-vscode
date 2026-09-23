@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/webviewProtocol.js";
+import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
 
 export interface ModelPickerProps {
   state: WorkspaceStateMessage;

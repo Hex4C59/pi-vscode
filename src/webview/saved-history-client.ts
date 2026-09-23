@@ -1,4 +1,4 @@
-import type { HostMessage, SavedHistoryStateMessage, WebviewMessage } from "../extension/webviewProtocol.js";
+import type { HostMessage, SavedHistoryStateMessage, WebviewMessage } from "../extension/contracts/webviewProtocol.js";
 
 export const SAVED_HISTORY_PAGE_SIZE = 32;
 const SAVED_PREVIEW_BACK_LIMIT = 128;

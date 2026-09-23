@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ChangeReviewEntry, ChangeReviewStateMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
+import type { ChangeReviewEntry, ChangeReviewStateMessage, WebviewMessage } from "../../extension/contracts/webviewProtocol.js";
 import { parseHostMessage } from "../parse-host-message.js";
 import { WebviewClient } from "../webview-client.js";
 import { attachmentState, uiHarness } from "./react-harness.js";

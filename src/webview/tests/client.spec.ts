@@ -4,7 +4,7 @@ import { WebviewClient } from "../webview-client.js";
 import { parseHostMessage } from "../parse-host-message.js";
 import { createWebviewBridge } from "../bridge.js";
 import { readySettings } from "../../extension/tests/harness.js";
-import type { HostMessage, WebviewMessage } from "../../extension/webviewMessages.js";
+import type { HostMessage, WebviewMessage } from "../../extension/bridge/webviewMessages.js";
 
 function clientHarness() {
   const sent: WebviewMessage[] = [];

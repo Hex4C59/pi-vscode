@@ -1,8 +1,8 @@
 import type * as vscode from "vscode";
-import type { SessionBackend } from "../sessionBackend.js";
+import type { SessionBackend } from "../contracts/sessionBackend.js";
 import { PiChatViewProvider } from "../piChatViewProvider.js";
-import { noopPiRuntimeLifecycle, type PiRuntimeLifecycle, type RuntimeEvent } from "../runtimeLifecycle.js";
-import type { WorkspaceStateMessage, AttachmentStateMessage } from "../webviewMessages.js";
+import { noopPiRuntimeLifecycle, type PiRuntimeLifecycle, type RuntimeEvent } from "../contracts/runtimeLifecycle.js";
+import type { WorkspaceStateMessage, AttachmentStateMessage } from "../bridge/webviewMessages.js";
 
 export class Event<T> {
   readonly listeners = new Set<(value: T) => unknown>();
@@ -27,13 +27,7 @@ function resourceUri(path: string, scheme = "file") {
   };
 }
 export const tick = async () => { await new Promise<void>((resolve) => setImmediate(resolve)); };
-export function harness(
-  folders = [folder()],
-  trusted = true,
-  remoteName: string | undefined = undefined,
-  runtime?: PiRuntimeLifecycle,
-  sessions?: SessionBackend,
-) {
+export function hostFixture(folders = [folder()], trusted = true, remoteName: string | undefined = undefined) {
   const change = new Event<void>();
   const trust = new Event<void>();
   const documentChange = new Event<{ document: vscode.TextDocument }>();
@@ -61,12 +55,23 @@ export function harness(
     window: { showWarningMessage: async (_message: string, _options: vscode.MessageOptions, ..._items: string[]): Promise<string | undefined> => undefined, showTextDocument: async (uri: unknown) => { shown.push(uri); }, showOpenDialog: async (): Promise<ReturnType<typeof folder>["uri"][] | undefined> => { picks++; return undefined; } },
     commands: { executeCommand: async (...args: unknown[]) => { commands.push(args); executed.fire(args); } },
   };
+  return { api, change, trust, documentChange, documentClose, fileCreate, fileChange, fileDelete, contentProviders, shown, executed, commands, updates, get picks() { return picks; } };
+}
+
+export function harness(
+  folders = [folder()], trusted = true, remoteName: string | undefined = undefined,
+  runtime?: PiRuntimeLifecycle, sessions?: SessionBackend,
+  toolOptions?: ConstructorParameters<typeof PiChatViewProvider>[4],
+) {
+  const host = hostFixture(folders, trusted, remoteName);
+  const { api } = host;
   const extensionUri = resourceUri("/extension");
   const provider = new PiChatViewProvider(
     api as unknown as ConstructorParameters<typeof PiChatViewProvider>[0],
     runtime ?? noopPiRuntimeLifecycle,
     extensionUri as unknown as ConstructorParameters<typeof PiChatViewProvider>[2],
     sessions,
+    toolOptions,
   );
   const createView = () => {
     const receive = new Event<unknown>();
@@ -92,7 +97,7 @@ export function harness(
     };
     return { view, receive, dispose, sent, posted, send, state, action, attachments };
   };
-  return { api, provider, createView, change, trust, documentChange, documentClose, fileCreate, fileChange, fileDelete, contentProviders, shown, executed, commands, updates, get picks() { return picks; } };
+  return { ...host, provider, createView, get picks() { return host.picks; } };
 }
 
 export const prepareTestPrompt: PiRuntimeLifecycle["preparePrompt"] = function (this: PiRuntimeLifecycle, input) {

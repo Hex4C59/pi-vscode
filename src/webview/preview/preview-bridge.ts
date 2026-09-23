@@ -11,7 +11,7 @@ import type {
   SessionStateMessage,
   WebviewMessage,
   WorkspaceStateMessage,
-} from "../../extension/webviewProtocol.js";
+} from "../../extension/contracts/webviewProtocol.js";
 import {
   type PreviewScenario,
   THINKING_LEVELS,

@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 test("host and browser modules preserve the runtime and capability boundaries", () => {
   for (const path of [
     "src/extension/piChatViewProvider.ts",
-    "src/extension/webviewHtml.ts",
-    "src/extension/webviewMessages.ts",
+    "src/extension/bridge/webviewHtml.ts",
+    "src/extension/bridge/webviewMessages.ts",
     "src/webview/main.tsx",
     "src/webview/bridge.ts",
     "src/webview/webview-client.ts",

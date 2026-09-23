@@ -1,4 +1,4 @@
-import type { WebviewMessage } from "../extension/webviewProtocol.js";
+import type { WebviewMessage } from "../extension/contracts/webviewProtocol.js";
 
 /** A private presentation transport. It exposes no host capabilities beyond named intents. */
 export interface WebviewBridge {

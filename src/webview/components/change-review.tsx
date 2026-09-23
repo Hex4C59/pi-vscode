@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { CHANGE_REVIEW_PAGE_SIZE } from "../client-state.js";
-import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "../../extension/webviewProtocol.js";
+import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "../../extension/contracts/webviewProtocol.js";
 
 export interface ChangeReviewProps {
   state: ChangeReviewStateMessage | null;

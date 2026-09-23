@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { SavedHistoryStateMessage, SessionStateMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
+import type { SavedHistoryStateMessage, SessionStateMessage, WebviewMessage } from "../../extension/contracts/webviewProtocol.js";
 import { WebviewClient } from "../webview-client.js";
 import { readyState, attachmentState, uiHarness } from "./react-harness.js";
 import { parseHostMessage } from "../parse-host-message.js";
 import { readySettings, tick } from "../../extension/tests/harness.js";
-import { parseWebviewMessage } from "../../extension/webviewMessages.js";
+import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 
 const envelope = { version: 2, generation: 1, viewId: "view" } as const;
 function historyState(patch: Partial<SavedHistoryStateMessage> = {}): SavedHistoryStateMessage {

@@ -1,4 +1,4 @@
-import { runPiRuntimeProbe } from "../../src/adapter/pi-rpc-probe.ts";
+import { runPiRuntimeProbe } from "../../src/adapter/runtime/pi-rpc-probe.ts";
 
 async function main() {
   const result = await runPiRuntimeProbe();

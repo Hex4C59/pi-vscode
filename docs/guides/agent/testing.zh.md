@@ -18,7 +18,7 @@
 
 ## 所有权与文件位置
 
-- 应用测试放在所属模块的 `tests/` 目录：`src/extension/tests/**/*.spec.ts`、`src/adapter/tests/**/*.spec.ts` 或 `src/webview/tests/**/*.spec.ts`。生产源码保持原位；例如 `src/extension/webviewMessages.ts` 由 `src/extension/tests/webview-messages.spec.ts` 覆盖。不要引入 `src/__tests__/` 或仓库级混杂的 `test/` 目录。
+- 应用测试放在 `src/extension/`、`src/adapter/` 或 `src/webview/` 下的 `tests/` 目录。功能测试紧邻其模块（例如 `src/extension/draft/tests/`）；跨模块组合测试及共享宿主夹具保留在层级 `tests/`。`src/extension/bridge/webviewMessages.ts` 由 `src/extension/bridge/tests/webview-messages.spec.ts` 覆盖。不要引入 `src/__tests__/` 或仓库级混杂的 `test/` 目录。
 - Node 脚本测试紧邻脚本，使用 `scripts/**/*.spec.mjs`。
 - 使用 kebab-case 的模块或可观察行为名。一个测试文件可以覆盖跨模块的内聚行为，不强制源码与测试一一对应。
 - 可复用初始化放在 `harness.ts` 或 `<subject>.test-support.ts` 等普通文件中，不放在另一个被收集的 `*.spec.ts` 中。导入测试文件可能再次注册和执行其用例。
@@ -31,9 +31,9 @@
 
 当前自动化 runner 是 `node:test`，不是 Vitest。应用测试使用 `*.spec.ts`，脚本测试使用 `*.spec.mjs`。后缀只有结合 runner 的实际收集规则才有意义；仅重命名文件不会创建测试层级。
 
-`npm test` 调用 `scripts/testing/run-tests.mjs`，由可安全导入的 `scripts/testing/test-runner-lib.mjs` 提供支持。它从上述所属位置递归发现并排序确切的应用与脚本测试清单，跳过符号链接及名为 `fixtures` 或 `expected` 的目录，任一清单为空即失败。辅助文件与其他测试层级后缀不作为入口。
+`npm test` 调用 `scripts/testing/run-tests.mjs`，由可安全导入的 `scripts/testing/test-runner-lib.mjs` 提供支持。它从上述层级及模块内位置递归发现并排序确切的应用与脚本测试清单，跳过符号链接及名为 `fixtures` 或 `expected` 的目录，任一清单为空即失败。辅助文件与其他测试层级后缀不作为入口。
 
-runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuild 打包应用 spec 并保留相对于源码根目录的层级：`src/extension/tests/webview-messages.spec.ts` 输出为 `dist/tests/extension/tests/webview-messages.spec.js`。它只将确切的编译输出清单与发现的脚本 spec 传给 `node:test`，cwd 为仓库根目录；陈旧 bundle 和宽泛输出 glob 不作为执行输入。构建或测试进程失败会使命令失败。
+runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuild 打包应用 spec 并保留相对于源码根目录的层级：`src/extension/bridge/tests/webview-messages.spec.ts` 输出为 `dist/tests/extension/bridge/tests/webview-messages.spec.js`。它只将确切的编译输出清单与发现的脚本 spec 传给 `node:test`，cwd 为仓库根目录；陈旧 bundle 和宽泛输出 glob 不作为执行输入。构建或测试进程失败会使命令失败。
 
 Webview 应用 spec 通过 `mountApp`、jsdom 和 synthetic bridge/host 挂载 React 前端。它们沿用浏览器预览使用的应用入口，检查 host projection、展示状态和命名出站 intent。已移除的内联字符串 VM harness 不属于当前测试路径；新的 Webview 行为应写在已挂载 React/jsdom 的 `*.spec.ts` 用例中。
 

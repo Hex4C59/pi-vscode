@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readAppStyles } from "./react-harness.js";
 import { attachmentState, uiHarness } from "./react-harness.js";
-import type { AttachmentHistoryEntry } from "../../extension/webviewProtocol.js";
+import type { AttachmentHistoryEntry } from "../../extension/contracts/webviewProtocol.js";
 
 const envelope = { version: 2, generation: 1, viewId: "view" };
 function entries(count: number): AttachmentHistoryEntry[] {

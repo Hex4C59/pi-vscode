@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseWebviewMessage } from "../webviewMessages.js";
+import { parseWebviewMessage } from "../bridge/webviewMessages.js";
 
 test("saved-session intents are bounded named capabilities rather than storage paths", () => {
  const envelope = { version: 2, viewId: "view", generation: 1 };
@@ -13,8 +13,8 @@ test("saved-session intents are bounded named capabilities rather than storage p
  assert.equal(parseWebviewMessage({ ...envelope, type: "newConversation", force: true }), undefined);
 });
 
-import type { SessionBackend, SavedSession } from "../sessionBackend.js";
-import type { SessionStateMessage, SavedHistoryStateMessage } from "../webviewProtocol.js";
+import type { SessionBackend, SavedSession } from "../contracts/sessionBackend.js";
+import type { SessionStateMessage, SavedHistoryStateMessage } from "../contracts/webviewProtocol.js";
 import { folder, harness, settingsRuntime, tick } from "./harness.js";
 const saved: SavedSession = { id: "public-pi-id", path: "/private-store/session.jsonl", name: "Saved task", firstMessage: "Earlier question", modified: "2026-09-22T00:00:00.000Z" };
 function backend(): SessionBackend { return {

@@ -34,7 +34,7 @@
 
 ## 宿主状态投影
 
-宿主发送 `version: 1, type: "workspaceState"`。完整字段／类型以 [`WorkspaceStateMessage`](../../src/extension/webviewMessages.ts) 为准；下表定义语义分组。UI 渲染此投影，不自行构造权威状态。
+宿主发送 `version: 1, type: "workspaceState"`。完整字段／类型以 [`WorkspaceStateMessage`](../../src/extension/bridge/webviewMessages.ts) 为准；下表定义语义分组。UI 渲染此投影，不自行构造权威状态。
 
 | 字段 | 语义与限制 |
 |------|------------|
@@ -97,13 +97,13 @@ Adapter 仅接受自带 gate 的产品封装 `protocol: "pi-vscode-approval", ve
 
 ### 所有权、资格与有界捕获
 
-`PiChatViewProvider` 协调一个 host 草稿及提交事务；小型 host 附件 helper 可负责捕获／资格／存储。`runtimeLifecycle.ts` 拥有窄内部 prompt／结果契约；adapter 负责编码、关联及有界写；Webview 仅展示。使用 VS Code 公开 document／picker API 与仅宿主侧 Node `fs/promises`／`path`，不提供 Webview 文件访问、通用 bridge 或 pi 会话文件访问。不新增依赖、框架、进程模型或持久化。
+`DraftSubmission` 拥有 host 草稿、附件准备与提交账本；`PiChatViewProvider` 提供执行资格并协调运行时／Stop／会话切换。`runtimeLifecycle.ts` 拥有窄内部 prompt／结果契约；adapter 负责编码、关联及有界写；Webview 仅展示。使用 VS Code 公开 document／picker API 与仅宿主侧 Node `fs/promises`／`path`，不提供 Webview 文件访问、通用 bridge 或 pi 会话文件访问。不新增依赖、框架、进程模型或持久化。
 
 - 添加使用 `window.showOpenDialog`，仅文件、单选、当前工作区默认目录。取消为 `cancelled`，不是错误，保留草稿。单槽已占用时禁用添加；须先移除再显式重附。要求当前可信单本地 file 工作区及 ready 受控 runtime；每个 await 后复核资格。不推断附加已打开文件。
 - 加载文档前拒绝非 `file` URI、authority／query／fragment、非绝对或 Windows 歧义路径（device／extended 前缀、UNC、drive-relative、ADS、控制字符、保留设备名组件、尾点／空格）。root／target 经 `realpath`，要求普通文件并用按路径段的 `path.relative` 判断归属，不用字符串前缀或一律转小写比较。原始与解析路径均检查；symlink／junction 指向 root 外则拒绝。记录 canonical root／target 和 stat 身份（`dev`、`ino`、size、mtime／ctime）；复查必须匹配。身份不支持／不可解析时失败关闭。这不是文件系统原子锁或恶意工作区沙箱。
 - **加载前**阻止已知凭证来源：任意 `.local-env`／`.ssh` 组件、`.env`／`.env.*`、`auth.json`、`credentials.json`、`id_rsa`、`id_ed25519` 及 `.pem`／`.key`／`.p12`／`.pfx` 文件（组件大小写不敏感，原始／canonical 均检查）。绝不从 SecretStorage、进程环境或 pi 凭证库取附件。捕获后拒绝可识别私钥块或凭证赋值，沿用现有凭证类键词汇（`api_key`、`authorization`、`password`、`secret`、`access_token`，含大小写／分隔符变体）；无覆盖开关，错误不含原文。这是保守防御，不保证识别任意代码中的全部秘密；UI 提醒只附加非敏感代码。夹具只用 dummy 标记，不用私有文件／密钥。
 - `openTextDocument` 前检查 `stat`：未打开磁盘文件超过 **1 MiB** 则 `source-too-large`，本功能不打开／读取。该捕获上限为 256 KiB 文本快照留出常见 UTF-16／UTF-8 解码开销，不是附件预算。已打开且匹配的 TextDocument（含 dirty 文本）即使磁盘较大也复用，但仍要求现有普通文件／归属。`getText()` 前通过末行末尾的 `offsetAt` 检查，超过 **262,144 UTF-16 code units** 时不分配全文；捕获后再限制 **262,144 UTF-8 bytes**。未打开文件由 VS Code 负责解码／加载，其公开 API 不提供抵抗并发文件增长的硬读取限额。完成后 re-stat，变化／超限拒绝；诚实披露残余竞态，不宣称有界 OS 读取。无原始读取回退、自动保存或旧磁盘替代。
-- 文本资格指支持的文件成功作为 VS Code TextDocument 打开；被拒绝／二进制／不支持的打开结果为 `not-text`。不是按扩展名嗅探二进制，也不保证任意 bytes 都是文本。空文本文件可配非空正文发送。记录实际编辑器文本、document 对象／URI、version、dirty。变化／关闭重开、重命名／删除、canonical／stat 身份变化或最终文本不同，使已附 revision 持续无效直至移除／重附，即使后来恢复原文也一样。监听文档变化／关闭并在发送时复核；provider 拥有并清理监听。预览始终展示已捕获快照，不静默更新。
+- 文本资格指支持的文件成功作为 VS Code TextDocument 打开；被拒绝／二进制／不支持的打开结果为 `not-text`。不是按扩展名嗅探二进制，也不保证任意 bytes 都是文本。空文本文件可配非空正文发送。记录实际编辑器文本、document 对象／URI、version、dirty。变化／关闭重开、重命名／删除、canonical／stat 身份变化或最终文本不同，使已附 revision 持续无效直至移除／重附，即使后来恢复原文也一样。监听文档变化／关闭并在发送时复核；`DraftSubmission` 拥有并清理其文档监听。预览始终展示已捕获快照，不静默更新。
 
 ### 版本化意图与安全投影
 

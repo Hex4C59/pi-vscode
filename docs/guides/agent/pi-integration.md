@@ -65,10 +65,10 @@ Related: [TypeScript/Node playbook](typescript.md).
 
 | Task | Evidence entry and limits |
 |------|---------------------------|
-| Minimum startup/RPC/shutdown | [Runtime probe](../../../src/adapter/pi-rpc-probe.ts), `npm run spike:runtime`; historical conclusion in ADR 0001. The probe inherits the current environment and is not an isolated trust fixture. |
+| Minimum startup/RPC/shutdown | [Runtime probe](../../../src/adapter/runtime/pi-rpc-probe.ts), `npm run spike:runtime`; historical conclusion in ADR 0001. The probe inherits the current environment and is not an isolated trust fixture. |
 | Project-resource trust | [Trust harness](../../../scripts/spikes/spike-project-trust.mjs) and [helper tests](../../../scripts/spikes/project-trust.spec.mjs). The harness currently requires `0.85.1`, which differs from the manifest's `0.86.1`; it is not a passing current-version check. Re-review public APIs before upgrading it. |
 | Early UI/startup/chat | [WI-006/WI-007/WI-004 history](../../archive/2026-09-21-closed-wi-history.md) and [0.85.1 RPC research](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.md). Historical no-runtime/no-chat/no-tools boundaries do not describe the whole current product. |
-| Current activity/approval/Stop | [`pi-rpc-runtime.ts`](../../../src/adapter/pi-rpc-runtime.ts), [approval probe](../../../scripts/spikes/spike-approval.mjs), [offline inference probe](../../../scripts/spikes/spike-offline-inference.mjs). Read the relevant script and check version/isolation before running; prior outcomes belong to [WI-010](../../archive/2026-09-21-closed-wi-history.md#wi-010). |
+| Current activity/approval/Stop | [`pi-rpc-runtime.ts`](../../../src/adapter/runtime/pi-rpc-runtime.ts), [approval probe](../../../scripts/spikes/spike-approval.mjs), [offline inference probe](../../../scripts/spikes/spike-offline-inference.mjs). Read the relevant script and check version/isolation before running; prior outcomes belong to [WI-010](../../archive/2026-09-21-closed-wi-history.md#wi-010). |
 | Package boundary | [VSIX verifier](../../../scripts/packaging/verify-vsix.mjs). Report extracted CLI/handshake checks separately from installed-VSIX activation/UI acceptance. |
 
 ### Project trust findings and remaining limits

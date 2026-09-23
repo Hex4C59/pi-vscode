@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { SessionBackend, SavedSession } from "../../extension/sessionBackend.js";
-import type { HostMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
-import { parseWebviewMessage } from "../../extension/webviewMessages.js";
+import type { SessionBackend, SavedSession } from "../../extension/contracts/sessionBackend.js";
+import type { HostMessage, WebviewMessage } from "../../extension/contracts/webviewProtocol.js";
+import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 import { folder, harness, settingsRuntime, tick } from "../../extension/tests/harness.js";
 import { WebviewClient } from "../webview-client.js";
 import { parseHostMessage } from "../parse-host-message.js";

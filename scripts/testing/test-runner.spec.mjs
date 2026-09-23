@@ -33,11 +33,15 @@ const minimal = {
 test('runner discovery is recursive, sorted and exact across owners and scripts', (t) => {
   const included = [
     'src/webview/tests/nested/z.spec.ts', 'src/adapter/tests/a.spec.ts',
+    'src/extension/draft/tests/a.spec.ts', 'src/adapter/sessions/tests/a.spec.ts',
+    'src/extension/nested/module/tests/deep/a.spec.ts',
     'src/extension/tests/nested/a.spec.ts', 'scripts/nested/z.spec.mjs', 'scripts/a.spec.mjs',
   ];
   const excluded = [
-    'src/extension/outside.spec.ts', 'src/extension/nested/tests/no.spec.ts',
+    'src/extension/outside.spec.ts', 'src/extension/draft/no.spec.ts', 'src/other/tests/no.spec.ts',
     'src/tests/no.spec.ts', 'src/extension/tests/harness.ts',
+    'src/extension/draft/tests/harness.ts', 'src/adapter/sessions/tests/no.e2e.ts',
+    'src/extension/fixtures/tests/no.spec.ts', 'src/adapter/sessions/expected/tests/no.spec.ts',
     'src/extension/tests/old.test.ts', 'src/extension/tests/x.e2e.ts',
     'src/extension/tests/x.expected.e2e.ts', 'src/extension/tests/x.snapshot.ts',
     'src/extension/tests/x.bench.ts', 'src/extension/tests/x.perf.ts',
@@ -55,6 +59,7 @@ test('runner ignores linked directories including linked owners and script roots
   const root = fixture(t, minimal);
   const outside = fixture(t, { 'tests/no.spec.ts': '', 'no.spec.mjs': '' });
   fs.symlinkSync(outside, path.join(root, 'src', 'linked'), 'junction');
+  fs.symlinkSync(outside, path.join(root, 'src', 'extension', 'linked'), 'junction');
   fs.symlinkSync(outside, path.join(root, 'scripts', 'linked'), 'junction');
   assert.deepEqual(relative(root, discoverTests(root).app), ['src/extension/tests/basic.spec.ts']);
   assert.deepEqual(relative(root, discoverTests(root).scripts), ['scripts/basic.spec.mjs']);
@@ -87,6 +92,8 @@ test('runner cleans stale tests only, builds same basenames separately and execu
   const root = fixture(t, {
     ...minimal,
     'src/adapter/tests/basic.spec.ts': passing,
+    'src/adapter/sessions/tests/basic.spec.ts': passing,
+    'src/extension/draft/tests/basic.spec.ts': passing,
     'src/webview/tests/nested/basic.spec.ts': passing,
     'src/extension/tests/harness.ts': 'export const value = 42;',
     'src/extension/tests/import.spec.ts': "import { value } from './harness'; if (value !== 42) throw Error('helper failed');",
@@ -101,7 +108,8 @@ test('runner cleans stale tests only, builds same basenames separately and execu
     return spawnSync(command, args, options);
   } });
   assert.deepEqual(relative(root, result.built), [
-    'dist/tests/adapter/tests/basic.spec.js', 'dist/tests/extension/tests/basic.spec.js',
+    'dist/tests/adapter/sessions/tests/basic.spec.js', 'dist/tests/adapter/tests/basic.spec.js',
+    'dist/tests/extension/draft/tests/basic.spec.js', 'dist/tests/extension/tests/basic.spec.js',
     'dist/tests/extension/tests/import.spec.js', 'dist/tests/webview/tests/nested/basic.spec.js',
   ]);
   for (const file of result.built) assert.ok(fs.existsSync(file));
@@ -126,7 +134,7 @@ test('runner refuses linked output parents and linked test outputs without delet
 });
 
 test('runner fails real esbuild errors without launching tests', async (t) => {
-  const root = fixture(t, { ...minimal, 'src/extension/tests/broken.spec.ts': 'const broken = ;' });
+  const root = fixture(t, { ...minimal, 'src/extension/draft/tests/broken.spec.ts': 'const broken = ;' });
   await assert.rejects(runTests(root, { spawn: () => assert.fail('must not launch') }), /Build failed/);
 });
 

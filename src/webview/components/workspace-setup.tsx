@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/webviewProtocol.js";
+import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
 
 export type WorkspaceSetupAction =
   | { type: "openFolder" }

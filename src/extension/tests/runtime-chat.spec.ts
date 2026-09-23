@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { PiRuntimeLifecycle } from "../runtimeLifecycle.js";
+import type { PiRuntimeLifecycle } from "../contracts/runtimeLifecycle.js";
 import { prepareTestPrompt, folder, harness, readySettings, settingsRuntime, tick } from "./harness.js";
 
 test("resource choice starts runtime with approve or no-approve and stops on workspace change", async () => {
@@ -38,7 +38,7 @@ test("resource choice starts runtime with approve or no-approve and stops on wor
 
 test("sendChat streams assistant text and rejects stale runtime events", async () => {
   let session = 0;
-  const listeners = new Set<(event: import("../runtimeLifecycle.js").RuntimeEvent) => void>();
+  const listeners = new Set<(event: import("../contracts/runtimeLifecycle.js").RuntimeEvent) => void>();
   const runtime: PiRuntimeLifecycle = {
     preparePrompt: prepareTestPrompt,
     async start() {

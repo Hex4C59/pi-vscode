@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { ATTACHMENT_HISTORY_PAGE_SIZE } from "../client-state.js";
-import type { AttachmentHistoryEntry, AttachmentStateMessage, AttachmentDetails } from "../../extension/webviewProtocol.js";
+import type { AttachmentHistoryEntry, AttachmentStateMessage, AttachmentDetails } from "../../extension/contracts/webviewProtocol.js";
 
 export interface AttachmentPreview {
   snapshotId: string;

@@ -22,7 +22,7 @@ Q1–Q16 访谈已经完成。维护者确认共同理解并授权交互预览�
 
 本地证据：`app.tsx` 将会话／审阅／授权放在对话与输入区周围；`attachment-panel.tsx` 常驻说明文案、三个操作、草稿状态和容量；`conversation.tsx` 已默认折叠活动详情，因此紧凑活动展示不是完全缺失的能力。截图宽度不同且含预览专用工具栏；后续视觉验收需使用相同宽度并区分预览外壳与正式产品。既有 PRD 要求保留已应用／待应用设置、完整审批信息、Stop、附件快照及键盘／主题可访问性；简化不能默默删除这些语义。
 
-补充本地契约证据：[activityProjection.ts](../../src/adapter/activityProjection.ts) 按助手消息 ID 关联活动，没有用户整轮标识。会话目录提供标题／摘要／修改时间，按最近修改排序且分页；最近会话可使用既有投影。[toolApproval.ts](../../src/extension/toolApproval.ts) 允许最多八项待审批，每项有独立身份及有效期。前端导航和选择性展开不能延长有效期、批量授权或静默切换活跃会话。
+补充本地契约证据：[activityProjection.ts](../../src/adapter/runtime/activityProjection.ts) 按助手消息 ID 关联活动，没有用户整轮标识。会话目录提供标题／摘要／修改时间，按最近修改排序且分页；最近会话可使用既有投影。[toolApproval.ts](../../src/extension/editor-tools/toolApproval.ts) 允许最多八项待审批，每项有独立身份及有效期。前端导航和选择性展开不能延长有效期、批量授权或静默切换活跃会话。
 
 设计树已覆盖范围／密度／视口、导航、输入／附件、活动、审批／审阅、消息渲染与预览优先交付。这些产品分支已确认；未来产物的视觉接受与技术验证仍未完成。当前实现工作与未决验证继续由 ACTIVE 管理。
 
@@ -202,9 +202,9 @@ flowchart TD
 
 ## 仓库证据
 
-迁移前实现现已移除。历史只读检查发现 `src/webview/placeholderHtml.ts` 共 682 行，其中 432 行为 TypeScript 字符串内的 JavaScript。该历史脚本本身没有 TypeScript 检查，集中维护模型控件、附件草稿／预览／历史、按 ID 更新的消息／活动／审批渲染及工作区状态同步。它的按 ID 更新刻意保留节点身份、焦点、展开状态和滚动；当前 React 应用须保留这些行为。当前 host 壳与打包资源加载位于 [webviewHtml.ts](../../src/extension/webviewHtml.ts)，当前 React 应用位于 [app.tsx](../../src/webview/app.tsx)。
+迁移前实现现已移除。历史只读检查发现 `src/webview/placeholderHtml.ts` 共 682 行，其中 432 行为 TypeScript 字符串内的 JavaScript。该历史脚本本身没有 TypeScript 检查，集中维护模型控件、附件草稿／预览／历史、按 ID 更新的消息／活动／审批渲染及工作区状态同步。它的按 ID 更新刻意保留节点身份、焦点、展开状态和滚动；当前 React 应用须保留这些行为。当前 host 壳与打包资源加载位于 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)，当前 React 应用位于 [app.tsx](../../src/webview/app.tsx)。
 
-历史上，[esbuild.mjs](../../esbuild.mjs) 有 host、探针及审批 gate 入口，但没有浏览器入口。当前浏览器应用由 Vite 驱动并使用 [app.tsx](../../src/webview/app.tsx)；host HTML／CSP 与资源加载使用 [webviewHtml.ts](../../src/extension/webviewHtml.ts)。已移除的迁移前 HTML 测试为 `src/webview/tests/placeholder-html.spec.ts`；当前壳／资源检查在 [webview-html.spec.ts](../../src/extension/tests/webview-html.spec.ts)。迁移前 UI 测试使用手写 DOM 的 VM；当前 [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) 挂载 React 应用。本讨论保存迁移理由，不表示应用、包或宿主检查通过。
+历史上，[esbuild.mjs](../../esbuild.mjs) 有 host、探针及审批 gate 入口，但没有浏览器入口。当前浏览器应用由 Vite 驱动并使用 [app.tsx](../../src/webview/app.tsx)；host HTML／CSP 与资源加载使用 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)。已移除的迁移前 HTML 测试为 `src/webview/tests/placeholder-html.spec.ts`；当前壳／资源检查在 [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts)。迁移前 UI 测试使用手写 DOM 的 VM；当前 [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) 挂载 React 应用。本讨论保存迁移理由，不表示应用、包或宿主检查通过。
 
 ## 确认前比较的候选
 
@@ -231,8 +231,8 @@ flowchart TD
 | 历史／来源证据 | 原 Draft 承接内容 |
 |------------------|------------------|
 | [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) | 原 VM harness 覆盖了字面分块预览、已确认草稿／较新编辑、准备被取代、稳定节点／展开／焦点／滚动、审批／授权撤销、Stop 与 generation 变化。当前 React 应用须保留这些可观察行为；模拟滚动坐标不证明浏览器布局。 |
-| [模型 UI specs](../../src/webview/tests/model-selection.spec.ts)、[工作区 UI specs](../../src/webview/tests/workspace-ui.spec.ts)、[Webview HTML spec](../../src/extension/tests/webview-html.spec.ts) | 原检查覆盖 applied/pending 区分、busy 控件限制、恶意文本、键盘原生动作及 CSP。当前 React／host 壳使用组件行为与打包资源检查；保留安全断言。 |
-| [附件 host specs](../../src/extension/tests/file-attachment.spec.ts) 及[既有 harness](../../src/extension/tests/harness.ts) | 真实 host 意图到捕获 runtime prompt 已覆盖 dirty 文本、来源变化、接纳、取消和生命周期。复用此边界，不能仅用宽松预览 mock 证明策略正确。 |
+| [模型 UI specs](../../src/webview/tests/model-selection.spec.ts)、[工作区 UI specs](../../src/webview/tests/workspace-ui.spec.ts)、[Webview HTML spec](../../src/extension/bridge/tests/webview-html.spec.ts) | 原检查覆盖 applied/pending 区分、busy 控件限制、恶意文本、键盘原生动作及 CSP。当前 React／host 壳使用组件行为与打包资源检查；保留安全断言。 |
+| [附件 host specs](../../src/extension/draft/tests/file-attachment.spec.ts) 及[既有 harness](../../src/extension/tests/harness.ts) | 真实 host 意图到捕获 runtime prompt 已覆盖 dirty 文本、来源变化、接纳、取消和生命周期。复用此边界，不能仅用宽松预览 mock 证明策略正确。 |
 | [Provider](../../src/extension/piChatViewProvider.ts) 与[消息参考](../reference/webview-messages.zh.md) | 当前 Webview 使用 v2／view 身份及 host 草稿 revision；reference 历史 v1 字段不是迁移目标。历史资源接入替换了内联脚本与空 localResourceRoots，不转移 host 权威。 |
 | [测试 runner](../../scripts/testing/test-runner-lib.mjs)、[TypeScript 配置](../../tsconfig.json)、[lint 配置](../../eslint.config.mjs)、[构建](../../esbuild.mjs) | 在综合时，node:test 应用入口为 .spec.ts，由 esbuild 打包。原提案要求将浏览器 TSX／DOM 类型检查及 JSX 支持明确接入；导入 TSX 组件不必要求新测试后缀／runner。Node／jsdom 测试 helper 与产品浏览器环境分离。 |
 | [Package manifest](../../package.json)、[Webview 静态资源检查器](../../scripts/packaging/verify-webview-assets.mjs) 与[VSIX 检查器](../../scripts/packaging/verify-vsix.mjs) | 迁移前发布白名单缺前端输出。当前包清单已包含 Webview bundle，静态资源检查有独立 checker；现有 VSIX checker 仍检查压缩包并运行解包 pi RPC／gate readiness。 |

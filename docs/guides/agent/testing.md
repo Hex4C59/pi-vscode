@@ -13,7 +13,7 @@ Read this playbook before changing behavior, fixing a regression, adding or movi
 
 ## Ownership and file placement
 
-- Keep application tests in their owner's `tests/` directory: `src/extension/tests/**/*.spec.ts`, `src/adapter/tests/**/*.spec.ts` or `src/webview/tests/**/*.spec.ts`. Production source stays in place; for example, `src/extension/webviewMessages.ts` is covered by `src/extension/tests/webview-messages.spec.ts`. Do not introduce `src/__tests__/` or a repository-wide catch-all `test/` directory.
+- Keep application tests in a `tests/` directory under `src/extension/`, `src/adapter/` or `src/webview/`. Feature tests live with their module (for example `src/extension/draft/tests/`); cross-module composition tests and shared host fixtures remain in the layer's `tests/` directory. `src/extension/bridge/webviewMessages.ts` is covered by `src/extension/bridge/tests/webview-messages.spec.ts`. Do not introduce `src/__tests__/` or a repository-wide catch-all `test/` directory.
 - Keep Node script tests beside their scripts as `scripts/**/*.spec.mjs`.
 - Use kebab-case module or observable-behavior names. A test file may cover a coherent behavior across multiple modules; a one-to-one source/test mapping is not mandatory.
 - Put reusable setup in ordinary files such as `harness.ts` or `<subject>.test-support.ts`, not in another collected `*.spec.ts` file. Importing a test can register and run its cases again.
@@ -26,9 +26,9 @@ Scripts are grouped by purpose: `scripts/docs/` owns documentation checks and th
 
 The current automated runner is `node:test`, not Vitest. Use `*.spec.ts` for application tests and `*.spec.mjs` for scripts. The suffix has meaning only together with the runner's actual collection rules; renaming a file alone does not create a test tier.
 
-`npm test` invokes `scripts/testing/run-tests.mjs`, backed by the import-safe `scripts/testing/test-runner-lib.mjs`. It recursively discovers and sorts the exact application and script inventories from the owner-local paths above, skips symbolic links and directories named `fixtures` or `expected`, and fails if either inventory is empty. Helpers and other test-tier suffixes are not entries.
+`npm test` invokes `scripts/testing/run-tests.mjs`, backed by the import-safe `scripts/testing/test-runner-lib.mjs`. It recursively discovers and sorts the exact application and script inventories from the layer-level and module-local paths above, skips symbolic links and directories named `fixtures` or `expected`, and fails if either inventory is empty. Helpers and other test-tier suffixes are not entries.
 
-The runner cleans only `dist/tests/`, preserving other bundles under `dist/`, then uses esbuild to bundle application specs while preserving their source-relative directories: `src/extension/tests/webview-messages.spec.ts` becomes `dist/tests/extension/tests/webview-messages.spec.js`. It passes only the exact compiled-output list and discovered script specs to `node:test`, with the repository root as cwd; stale bundles and broad output globs are not execution inputs. Build and test-process failures fail the command.
+The runner cleans only `dist/tests/`, preserving other bundles under `dist/`, then uses esbuild to bundle application specs while preserving their source-relative directories: `src/extension/bridge/tests/webview-messages.spec.ts` becomes `dist/tests/extension/bridge/tests/webview-messages.spec.js`. It passes only the exact compiled-output list and discovered script specs to `node:test`, with the repository root as cwd; stale bundles and broad output globs are not execution inputs. Build and test-process failures fail the command.
 
 Webview application specs mount the React frontend through `mountApp`, jsdom and a synthetic bridge/host. They exercise host projections, presentation state and named outbound intents through the same app entry used by the browser preview. The retired inline-string VM harness is not part of the current test lane; keep new Webview behavior in mounted React/jsdom `*.spec.ts` cases.
 

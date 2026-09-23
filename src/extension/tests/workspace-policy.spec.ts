@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { WorkspaceStateMessage } from "../webviewMessages.js";
+import type { WorkspaceStateMessage } from "../bridge/webviewMessages.js";
 import { folder, harness, tick } from "./harness.js";
 
 test("eligibility matrix blocks every action except native recovery for its state", async () => {

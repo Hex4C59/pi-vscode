@@ -29,7 +29,7 @@ const spikeBuild = {
 };
 
 const gateBuild = { entryPoints: ["src/adapter/approvalGate.ts"], bundle: true, outfile: "dist/approval-gate.mjs", format: "esm", platform: "node", target: "node22", logLevel: "info" };
-const sessionBuild = { entryPoints: ["src/adapter/sessionWorker.ts"], bundle: true, outfile: "dist/session-worker.mjs", external: ["@earendil-works/pi-coding-agent"], format: "esm", platform: "node", target: "node22", logLevel: "info" };
+const sessionBuild = { entryPoints: ["src/adapter/sessions/sessionWorker.ts"], bundle: true, outfile: "dist/session-worker.mjs", external: ["@earendil-works/pi-coding-agent"], format: "esm", platform: "node", target: "node22", logLevel: "info" };
 if (watch) {
   const sessionContext = await esbuild.context(sessionBuild);
   await sessionContext.watch();

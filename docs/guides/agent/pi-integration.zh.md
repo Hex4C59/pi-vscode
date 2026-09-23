@@ -70,10 +70,10 @@
 
 | 任务 | 证据入口与限制 |
 |------|----------------|
-| 最小启动／RPC／关闭 | [运行时探针](../../../src/adapter/pi-rpc-probe.ts)、`npm run spike:runtime`；历史结论见 ADR 0001。探针继承当前环境，不是隔离信任夹具。 |
+| 最小启动／RPC／关闭 | [运行时探针](../../../src/adapter/runtime/pi-rpc-probe.ts)、`npm run spike:runtime`；历史结论见 ADR 0001。探针继承当前环境，不是隔离信任夹具。 |
 | 项目资源信任 | [信任验证程序](../../../scripts/spikes/spike-project-trust.mjs)和[辅助测试](../../../scripts/spikes/project-trust.spec.mjs)。当前程序硬性限定 `0.85.1`，与 manifest 的 `0.86.1` 不符，不能当作当前版本通过的检查；升级须先重审公开 API。 |
 | 早期 UI／启动／聊天 | [WI-006／WI-007／WI-004 历史](../../archive/2026-09-21-closed-wi-history.zh.md)及 [0.85.1 RPC 调研](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)。历史的无运行时／无聊天／无工具边界不描述当前整个产品。 |
-| 当前活动／审批／Stop | [`pi-rpc-runtime.ts`](../../../src/adapter/pi-rpc-runtime.ts)、[审批探针](../../../scripts/spikes/spike-approval.mjs)、[离线推理探针](../../../scripts/spikes/spike-offline-inference.mjs)。按任务读取并核对脚本版本和隔离方式后执行；既有结果见 [WI-010](../../archive/2026-09-21-closed-wi-history.zh.md#wi-010)。 |
+| 当前活动／审批／Stop | [`pi-rpc-runtime.ts`](../../../src/adapter/runtime/pi-rpc-runtime.ts)、[审批探针](../../../scripts/spikes/spike-approval.mjs)、[离线推理探针](../../../scripts/spikes/spike-offline-inference.mjs)。按任务读取并核对脚本版本和隔离方式后执行；既有结果见 [WI-010](../../archive/2026-09-21-closed-wi-history.zh.md#wi-010)。 |
 | 包边界 | [VSIX 验证器](../../../scripts/packaging/verify-vsix.mjs)。解压后的 CLI／握手验证与已安装 VSIX 激活／UI 验收分别报告。 |
 
 ### 项目信任发现与剩余限制

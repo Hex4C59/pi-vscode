@@ -114,7 +114,7 @@ async function worker(root) {
 try {
   if (process.argv[2] === '--build') {
     const { build } = await import('esbuild');
-    await build({ entryPoints: [path.join(repo, 'src/adapter/pi-rpc-runtime.ts')], bundle: true, platform: 'node', format: 'cjs', target: 'node22', outfile: path.join(repo, 'dist/attachment-verification.cjs') });
+    await build({ entryPoints: [path.join(repo, 'src/adapter/runtime/pi-rpc-runtime.ts')], bundle: true, platform: 'node', format: 'cjs', target: 'node22', outfile: path.join(repo, 'dist/attachment-verification.cjs') });
     record('production-adapter-bundle', { status: 'built' });
   } else {
     await guard();

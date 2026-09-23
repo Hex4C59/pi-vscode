@@ -3,8 +3,8 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { act } from "react";
-import type { AttachmentStateMessage, WebviewMessage, WorkspaceStateMessage } from "../../extension/webviewProtocol.js";
-import { parseWebviewMessage } from "../../extension/webviewMessages.js";
+import type { AttachmentStateMessage, WebviewMessage, WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
+import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 import type { WebviewBridge } from "../bridge.js";
 
 export const readyState: WorkspaceStateMessage = {

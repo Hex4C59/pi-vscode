@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
-import type { SavedHistoryStateMessage } from "../../extension/webviewProtocol.js";
+import type { SavedHistoryStateMessage } from "../../extension/contracts/webviewProtocol.js";
 import { SAVED_HISTORY_PAGE_SIZE, type SavedHistoryPreview } from "../saved-history-client.js";
 
 interface SavedHistoryProps {

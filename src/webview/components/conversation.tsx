@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/webviewProtocol.js";
-import type { ActivityItem } from "../../extension/webviewProtocol.js";
+import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
+import type { ActivityItem } from "../../extension/contracts/webviewProtocol.js";
 
 export interface ConversationProps {
   messages: WorkspaceStateMessage["messages"];

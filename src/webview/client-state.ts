@@ -1,4 +1,4 @@
-import type { AttachmentHistoryEntry, AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage, WebviewMessage, WorkspaceStateMessage } from "../extension/webviewProtocol.js";
+import type { AttachmentHistoryEntry, AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage, WebviewMessage, WorkspaceStateMessage } from "../extension/contracts/webviewProtocol.js";
 import type { SavedHistorySnapshot } from "./saved-history-client.js";
 
 type WithoutEnvelope<T> = T extends { generation: number; viewId: string } ? Omit<T, "generation" | "viewId" | "version"> : never;
