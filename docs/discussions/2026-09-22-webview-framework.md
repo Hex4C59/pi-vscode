@@ -25,7 +25,7 @@ The design tree covered scope/density/viewport, navigation, composer/attachments
 
 ### Status and traceability
 
-**Draft — local synthesis, 2026-09-23.** The requested slice is a working browser preview of the confirmed visual redesign. Product choices belong to the [PRD visual direction](../product-requirements.md#visual-redesign-direction-2026-09-23); their interview IDs Q1–Q16 are trace labels, not new requirements. [ACTIVE](../../ACTIVE.md) records the explicit preview authorization and the subsequent documentation-only to-spec task. This Draft does not grant additional Build scope, publish a tracker item or establish delivery. WI-017 remains the recorded implementation WI during this synthesis; a serial handoff must be recorded before preview coding begins, preserving its unfinished work.
+**Draft — local synthesis, 2026-09-23.** The requested slice is a working browser preview of the confirmed visual redesign. Product choices belong to the [PRD visual direction](../product-requirements.md#visual-redesign-direction-2026-09-23); their interview IDs Q1–Q16 are trace labels, not new requirements. [ACTIVE](../../ACTIVE.md) records the explicit preview authorization and the subsequent documentation-only to-spec task. This Draft does not grant additional Build scope, publish a tracker item or establish delivery. The initial synthesis retained WI-017 as the implementation WI. The maintainer has since selected the preview as WI-019, with UIP-01 first; ACTIVE records the serial handoff and retains WI-017 pending acceptance. Frontend file organization has since been updated; candidate visual-preview implementation has not started.
 
 | Slice concern | Canonical requirement |
 |---------------|-----------------------|
