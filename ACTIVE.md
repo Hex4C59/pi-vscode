@@ -20,7 +20,7 @@
 
 维护者本次 /goal 明确授权完成前端重构以及 PRD REQ-001～REQ-009 的明确需求和必要构建、打包、测试、文档，允许独立无秘密配置下浏览器／开发宿主／实际 F5／安装版及本机合成服务验证。按依赖串行推进、WIP=1；每次切换 WI 前记录范围、REQ、验证与排除项。此授权取代历史候选“须再次申请常规 Build”与永久暂停措辞，但不接受整份 Draft PRD／ADR／gate，不替代人工验收，不决定尚未确认的产品选择。禁止读取 .local-env／用户凭证、付费模型、相邻仓库修改、发布／外部 tracker、索引／提交／推送／合并操作。
 
-**当前唯一工作项为 WI-019：UI 交互预览。** 2026-09-23 维护者明确要求登记 UI 预览为当前任务，沿用 Q1–Q16 后已确认的预览制作授权，首个实施切片为 UIP-01；已完成登记及维护者追加批准的前端文件整理，候选视觉预览尚未实现。此前 Goal 实施暂停仅对其余后端工作继续有效。WI-018 曾作为执行状态调查的候选编号，未登记／未实现，本次不复用该编号。WI-017 代码／可执行验证完成，转为待维护者验收，未正式关闭。WI-014／015／016 的体验／ADR／gate 接受仍待确认；预览登记不替代这些接受，也不代表 Goal 已达成。
+**当前唯一工作项为 WI-020：跨模块公共入口重构。** 2026-09-23 维护者明确要求暂停 WI-019、登记本项并开始修改；WI-019 的批准范围与 UIP-01 入口保留在下方停车场，待本项交接后恢复。此前登记事实：2026-09-23 维护者明确要求登记 UI 预览为当前任务，沿用 Q1–Q16 后已确认的预览制作授权，首个实施切片为 UIP-01；已完成登记及维护者追加批准的前端文件整理，候选视觉预览尚未实现。此前 Goal 实施暂停仅对其余后端工作继续有效。WI-018 曾作为执行状态调查的候选编号，未登记／未实现，本次不复用该编号。WI-017 代码／可执行验证完成，转为待维护者验收，未正式关闭。WI-014／015／016 的体验／ADR／gate 接受仍待确认；预览登记不替代这些接受，也不代表 Goal 已达成。
 
 先前 Goal 固定审查基点为 `4bbf9ec923f2499a88f52a29b8439fb9d9d5396c`，当时 index 为空，既有脏修改按用户所有保留。2026-09-23 维护者随后明确要求整理当前项目全部改动并创建 Git commit，本次据此按关注点暂存／提交，ACTIVE 单独提交；该明确授权取代本次本地提交所涉及的历史索引／提交禁令，不授权推送／合并或恢复产品实施。`dist/goal-evidence-20260923/` 保留恢复基线、测试／包／宿主证据；历史交接已因事实更新被替代，见[归档](docs/archive/2026-09-22-pre-goal-handoffs.zh.md)，不是 WI 关闭。
 
@@ -44,9 +44,73 @@
 
 | 字段 | 内容 |
 |------|------|
+| **ID** | WI-020 |
+| **标题** | 跨模块公共入口重构 |
+| **阶段** | Build 已授权；公共入口与追加的模块类型契约两片均完成本地自动检查，待维护者审阅；WI-019 暂停。 |
+| **Gate ID** | 无新增 gate；既有 gate-webview-trust／gate-session-streaming／gate-project-trust 均保持 Open。 |
+| **Decision** | none；仅调整源码模块导入入口，不改变跨层所有权或公开产品协议。 |
+| **PRD 判定** | 纯技术：现有功能、交互、消息协议与打包行为保持不变，无新增用户可见需求。 |
+
+### 目标与范围
+
+维护者要求不止会话后端：有跨模块消费者的内部模块统一通过明确的 index.ts 入口导入，不再从其他模块直接指向实现文件。先盘点实际依赖图，定义模块为有外部消费者、承担独立职责的目录；模块内文件继续直接导入，不为每个文件和测试目录机械添加转发入口。入口只导出所需能力，类型用 type-only 导出；Webview 不得经入口获得 host／Node 实现。构建／脚本的独立打包入口（如 session worker、审批 gate）保持明确文件路径，文件内测试可以直测内层实现。WI-019 已批准的产品预览保持暂停，不在本项实现 UIP-01 或恢复后端工作。
+
+### 方案与架构核对
+
+模块入口只转发已存在的能力和类型；Provider、Webview 与适配层原有职责不变。构建配置继续指向独立打包文件，模块入口不参与改变其启动路径。
+
+### 验收
+
+- 识别每条应用源码跨模块导入并迁移到对应公共入口；检查生产构建入口、跨层依赖、无运行时导入环和类型／值导出的一致性。只为现有消费建立入口，不增加空薄包装或新功能。
+- npm run compile、npm run lint、npm test、npm run verify:webview 与适用的文档验证；重点检查实际生产 Webview bundle 未混入特权宿主实现、session worker／approval gate 仍按原入口打包。记录实际结果；真实 F5／安装版不作为无行为改动的本次交付证据。
+
+### 追加批准：模块类型契约（2026-09-23）
+
+维护者要求参考只读上游 `../pi/packages/agent/src/types.ts`，将本仓库模块自有、由调用者使用的类型抽为模块内 `types.ts` 契约文件；仍通过各目录 `index.ts` 做外部导出。该请求作为 WI-020 的后续纯技术切片实施；宿主拥有的 Webview／runtime／session 契约继续以 `src/extension/contracts/` 为单一权威，不复制或改写上游类型／策略。实现类与类型文件之间只用 type-only 依赖；不为无自有类型的目录凑空文件，不调整构建入口、行为、协议、所有权和权限。验收为 compile／lint／全量测试／Webview 产物与依赖图复查，并记录尚未运行的真实宿主验证。
+
+### 架构核对（本次限定切片）
+
+| 维度 | 结论与证据／限制 |
+|------|----------------|
+| 1–2 职责与接口 | pass：12 个公共入口只对外转发既有值及模块自有 `types.ts` 的类型；跨层契约仍归宿主所有，未定义通用插件接口。 |
+| 3、12 依赖／信任 | pass（静态）：跨模块与 type-only 结构检查、70 个生产源码的运行时依赖图无环；Webview 对宿主契约只作类型导入，独立打包入口不经公共索引。未复验真实宿主。 |
+| 4–5 契约／所有权 | pass（既有自动范围）：只搬迁调用者契约与展示 Props 的类型定义，原有 DTO／runtime／session 契约保持单源；无状态持有、协议或 dispose 行为修改，320/320 自动回归。F5／安装版未验证。 |
+| 6、16–17 范围／测试／构建 | pass（本地）：纯技术批准见本表，compile／lint／全量测试、Webview 资产检查通过；不表示产品体验接受或 gate 关闭。 |
+| 7–11、13–15、18–19 | N/A（本次无新增领域身份、状态转移、并发、持久化、容量、协议版本或用户交互）；现有实证限制沿用 WI-019／历史记录。 |
+
+### 范围外与批准边界
+
+不修改 pi 集成策略、存储、协议、产品可见行为，不接受 ADR／关闭 gate。原提案阶段不暂存或提交；维护者本次另行明确授权本地 Git commit，不授权推送／合并。
+
+## 当前焦点与未决项
+
+- [x] WI-020：12 个公共入口和 8 个模块自有 `types.ts` 契约已整理；compile／lint／320/320 测试、Webview 产物检查通过；待维护者审阅，WI-019 保持暂停。
+- [ ] WI-019／UIP-01（暂停）：隔离候选入口及聊天／Stop 闭环；文件整理已完成，候选视觉预览尚待恢复实施。
+
+- [x] WI-016 T016-01：代码／可执行验证完成，最终回归 210/210；实际 F5 与普通安装版分别通过 dirty／等待／grant／edit／恢复／Stop 矩阵。Standards 修复两轮测试时序／挂起发现后 0 未解决；Spec 0。没有替代维护者体验接受，WI-016 尚未关闭。
+- [x] WI-016 T016-02：代码／可执行验证完成，229/229、双轴无未解决发现；浏览器／真实 F5／安装版各自记录，当前包与源码一致。维护者体验接受单独保留；[历史交接](docs/archive/2026-09-22-goal-change-review-handoff.zh.md)。
+- [x] WI-017：T017-01～03 代码／可执行验证完成；compile／lint、308/308（0 skipped），Standards／Spec 复审均无未解决项；实际 F5／普通安装版、最终 VSIX 内容与清理分列记录。仍待维护者体验接受，未正式关闭；[完整交接](docs/archive/2026-09-23-goal-session-handoff.zh.md)。
+- [ ] 预览之外仍暂停的接续候选：REQ-004 retry／compaction／completed／stopped 与可靠终态，其后核对 REQ-001／002／005 余下故障矩阵；WI-018 未启动。只读核对声明 @earendil-works/pi-coding-agent 0.86.1：prompt ACK／agent_end／compaction_end 均不等于终态，agent_settled 才表示自动续行已结束；Stop 先 clear_queue 再 abort。源为安装包 docs/rpc.md 与公开类型，尚无该新切片代码或运行验证。
+- [x] WI-014 T014-01～05：明确 REQ-003 代码／可执行验证完成，T05 检查点 197/197、本轮总回归 229/229；浏览器、真实 pi 合成链路、实际 F5、普通安装版与包一致性分列。维护者仍需确认窄栏／键盘、逐项确认、长历史预览与容量恢复体验；不自动正式关闭。
+- [ ] WI-015 人工体验确认及 ADR 0003 接受仍待；不因前端重构永久暂停后续需求。
+- [ ] WI-008／009：已确认 2026-09-21 的基础／空闲及延后设置主路径；故障／审批／Stop 完整矩阵未整体接受，不重复要求已确认路径。
+- [ ] WI-010 pending-adr／完整边界矩阵及三个 Open gate 保留；有限切片关闭不代表安全沙箱、回滚或全后代取消保证。
+- [ ] WI-013 依赖前置后恢复；加载目标选择／验证及交互队列预算仍有真实待定选择，见[保留调查](docs/discussions/2026-09-22-pi-compatibility.zh.md#wi-013-暂缓提案保留2026-09-22)。到需要时提出最少量具体问题，不重访已确认设计。
+- 当前禁止读取 `.local-env`；历史配置授权不覆盖本 Goal 禁令。F5 存在 code134 间歇启动失败，已有成功隔离验证与失败日志并列；不把 sourceMaps／trace 开关声称为已证明根因修复。
+
+## 停车场
+
+UI 交互预览 WI-019 已暂停，原批准方案保留在本节；[UIP-01～07 与依赖图](docs/discussions/2026-09-22-webview-framework.zh.md#交互预览候选切片)作为其串行拆分参考，当前选择 UIP-01，其余保持排队。
+
+编辑区 panel／Chat Participant、全生态或额外平台扩展、无产品依据的 delta 优化、全局启动默认持久化及跳过工具审批仍不自动纳入。REQ-007／008／009 明确需求不是停车场。
+
+### 暂停中的 WI-019：窄侧栏 UI 交互预览（非当前 Build）
+
+| 字段 | 内容 |
+|------|------|
 | **ID** | WI-019 |
 | **标题** | 窄侧栏 UI 交互预览 |
-| **阶段** | Build 已授权；前端文件整理完成，候选视觉预览尚未实现。 |
+| **阶段** | 已授权但暂停；前端文件整理完成，候选视觉预览尚未实现。恢复为唯一当前 WI 后从 UIP-01 继续。 |
 | **Gate ID** | gate-webview-trust／gate-session-streaming／gate-project-trust 保持 Open；预览不关闭 gate |
 | **Decision** | none（Direction）；沿用 React／CSS／client／bridge 和现有 host 权威，ADR 0003 保持 Draft |
 | **PRD 判定** | 用户可见：[视觉重设计方向](docs/product-requirements.zh.md#视觉重设计方向2026-09-23)，关联 REQ-001～008；只交付模拟浏览器预览，不实现剩余后端需求。 |
@@ -77,7 +141,7 @@
 
 ### 追加批准：模块内聚性整理（2026-09-23）
 
-维护者明确要求优化本轮审查指出的 Provider 职责集中、前端 client 状态集中及 adapter 对宿主策略实现的交叉依赖，授权本次有界实现与验证。归入当前 WI-019 的技术维护，串行完成后回到 UIP-01，不启动剩余后端需求。
+维护者明确要求优化本轮审查指出的 Provider 职责集中、前端 client 状态集中及 adapter 对宿主策略实现的交叉依赖，授权本次有界实现与验证。归入 WI-019 的技术维护，串行完成后回到 UIP-01，不启动剩余后端需求。
 
 - **PRD 判定：** 纯技术；保持现有可见行为、消息协议、审批策略与运行时调用顺序。
 - **方案／所有权：** ModelSettings 独立拥有模型投影、待应用意图与异步失效标识；Provider 保留工作区／运行时身份、Stop／会话切换协调。前端历史阅读模块拥有分页／分块预览状态，client 保留消息身份校验和传输。审批 envelope 校验归属纯宿主契约，运行时错误格式化归属 adapter。
@@ -123,30 +187,20 @@
 
 ### WI-017 待验收（非并行 Build）
 
-REQ-008 会话连续性的代码与可执行验证已完成，尚未正式关闭。批准范围、公开 API／宿主证据、最终 VSIX 及资源保留条件见[WI-017 检查点](docs/archive/2026-09-23-goal-session-handoff.zh.md)。仍需维护者确认：窄栏／键盘会话列表与长历史分块、Cancel 保留草稿、确认 New／Restore 清理临时状态、原入口退出说明、审批／grant 重置及失败恢复。WI-019 不重写这些条件或提升 PRD／ADR／gate 状态。
+REQ-008 会话连续性的代码与可执行验证已完成，尚未正式关闭。批准范围、公开 API／宿主证据、最终 VSIX 及资源保留条件见[WI-017 检查点](docs/archive/2026-09-23-goal-session-handoff.zh.md)。仍需维护者确认：窄栏／键盘会话列表与长历史分块、Cancel 保留草稿、确认 New／Restore 清理临时状态、原入口退出说明、审批／grant 重置及失败恢复。WI-020 不重写这些条件或提升 PRD／ADR／gate 状态。
 
-## 当前焦点与未决项
-
-- [ ] WI-019／UIP-01：实现隔离候选入口及聊天／Stop 闭环；已完成文件整理；候选视觉预览的实现与验收仍待开展。
-
-- [x] WI-016 T016-01：代码／可执行验证完成，最终回归 210/210；实际 F5 与普通安装版分别通过 dirty／等待／grant／edit／恢复／Stop 矩阵。Standards 修复两轮测试时序／挂起发现后 0 未解决；Spec 0。没有替代维护者体验接受，WI-016 尚未关闭。
-- [x] WI-016 T016-02：代码／可执行验证完成，229/229、双轴无未解决发现；浏览器／真实 F5／安装版各自记录，当前包与源码一致。维护者体验接受单独保留；[历史交接](docs/archive/2026-09-22-goal-change-review-handoff.zh.md)。
-- [x] WI-017：T017-01～03 代码／可执行验证完成；compile／lint、308/308（0 skipped），Standards／Spec 复审均无未解决项；实际 F5／普通安装版、最终 VSIX 内容与清理分列记录。仍待维护者体验接受，未正式关闭；[完整交接](docs/archive/2026-09-23-goal-session-handoff.zh.md)。
-- [ ] 预览之外仍暂停的接续候选：REQ-004 retry／compaction／completed／stopped 与可靠终态，其后核对 REQ-001／002／005 余下故障矩阵；WI-018 未启动。只读核对声明 @earendil-works/pi-coding-agent 0.86.1：prompt ACK／agent_end／compaction_end 均不等于终态，agent_settled 才表示自动续行已结束；Stop 先 clear_queue 再 abort。源为安装包 docs/rpc.md 与公开类型，尚无该新切片代码或运行验证。
-- [x] WI-014 T014-01～05：明确 REQ-003 代码／可执行验证完成，T05 检查点 197/197、本轮总回归 229/229；浏览器、真实 pi 合成链路、实际 F5、普通安装版与包一致性分列。维护者仍需确认窄栏／键盘、逐项确认、长历史预览与容量恢复体验；不自动正式关闭。
-- [ ] WI-015 人工体验确认及 ADR 0003 接受仍待；不因前端重构永久暂停后续需求。
-- [ ] WI-008／009：已确认 2026-09-21 的基础／空闲及延后设置主路径；故障／审批／Stop 完整矩阵未整体接受，不重复要求已确认路径。
-- [ ] WI-010 pending-adr／完整边界矩阵及三个 Open gate 保留；有限切片关闭不代表安全沙箱、回滚或全后代取消保证。
-- [ ] WI-013 依赖前置后恢复；加载目标选择／验证及交互队列预算仍有真实待定选择，见[保留调查](docs/discussions/2026-09-22-pi-compatibility.zh.md#wi-013-暂缓提案保留2026-09-22)。到需要时提出最少量具体问题，不重访已确认设计。
-- 当前禁止读取 `.local-env`；历史配置授权不覆盖本 Goal 禁令。F5 存在 code134 间歇启动失败，已有成功隔离验证与失败日志并列；不把 sourceMaps／trace 开关声称为已证明根因修复。
-
-## 停车场
-
-UI 交互预览已移至当前 WI-019；[UIP-01～07 与依赖图](docs/discussions/2026-09-22-webview-framework.zh.md#交互预览候选切片)作为其串行拆分参考，当前选择 UIP-01，其余保持排队。
-
-编辑区 panel／Chat Participant、全生态或额外平台扩展、无产品依据的 delta 优化、全局启动默认持久化及跳过工具审批仍不自动纳入。REQ-007／008／009 明确需求不是停车场。
 
 ## 最近交接
+
+### WI-020 公共入口重构（2026-09-23）
+
+维护者要求暂停 WI-019 后，新增 adapter／runtime／sessions、host／bridge／contracts／draft／editor-tools／models／sessions、Webview／components 共 12 个显式目录入口，仅对已有跨模块消费者导出值和类型；更新生产导入，模块内部、单独打包入口与模块内测试仍可直指文件。架构文档双语同步，增加静态结构回归覆盖跨模块入口和 Webview 仅类型导入宿主契约。Windows Node 24.12.0 实跑 compile、lint、全量 319/319（0 skipped）、verify:webview 通过；AST 静态扫描生产 62 个 TypeScript 文件无运行时导入环；既有独立 worker／gate 的产物仍正常打包，Webview 产物体积未见本轮明显增量。git diff --check 通过。docs:verify 结构 0 error、5 warning（含 ACTIVE 篇幅与既有 Draft ADR），i18n 0 stale；仍因本轮未修改的本地技能 .agents/skills/setup-ts-deep-modules/SKILL.md 中失效示例链接失败，不把它说成通过。未做 F5／安装版、真实 pi 或维护者产品验收，不关闭任何 gate／ADR；没有暂存、提交或清理证据目录。WI-019 原批准方案保留在停车场，恢复后从 UIP-01 继续。
+
+**追加类型契约切片：** 参考只读的 `../pi/packages/agent/src/types.ts` 的类型集中、接口语义注释及实现分离方式，为 runtime、session adapter、draft、editor-tools、models、host sessions、Webview、presentation components 的实际调用者创建 8 个模块内 `types.ts`。类型由原实现迁往契约，模块 `index.ts` 以 type-only 方式导出；原文件需要的类型转发保留兼容，既有跨层契约继续保留 `src/extension/contracts/` 为单一权威。双语架构文档同步。Windows Node 24.12.0 重新实跑 compile／lint／320/320（0 skipped）、verify:webview；静态结构新测覆盖类型文件没有运行时导入／导出、入口导出；70 个生产 TS／TSX 的运行时导入图无环。docs:verify 结构 0 error／5 warning、翻译 0 stale，仍因本轮未修改的本地技能 `setup-ts-deep-modules` 示例相对链接失效而整体失败。未运行 F5／安装版／真实 pi，未修改相邻仓库，未创建提交；待维护者审阅。
+
+**文档校验修复（2026-09-23）：** 维护者明确要求解决先前 `docs:verify` 的失效链接。已修正本机 `.agents/skills/setup-ts-deep-modules/SKILL.md` 的示例：说明相对链接应由目标仓库的 `AGENTS.md`／`CLAUDE.md` 解析，技能文档本身不再包含指向不存在目录的 Markdown 链接。重新实跑 `npm run docs:verify`：结构 0 error／5 warning（ACTIVE 篇幅及现有 Draft ADR），i18n 0 error／0 stale，命令退出 0；`git diff --check` 退出 0。本次只改文档，未重跑无关代码检查；文件属于 `.gitignore` 忽略的个人本地技能，不会随仓库 Git 变更传播；保留以维持本机校验，除非维护者自行移除或更新该技能，不清理／暂存／提交。
+
+**提交检查点（2026-09-23）：** 维护者明确要求提交 Git commit。代码、类型契约、静态测试与双语架构说明作为 `705baf2` 独立提交；本 `ACTIVE.md` 仅记录工作项和检查点，单独提交。提交前重新实跑 Windows compile／lint、320/320 测试、verify:webview、docs:verify（0 error／5 个既有提示，i18n 0 stale）及 commit:check；无 F5／安装版或维护者体验验收，不关闭 WI／ADR／gate。`.agents/skills/setup-ts-deep-modules/SKILL.md` 是被忽略的个人本地文件，修复只保留在本机，不强制纳入仓库；新环境的文档检查需自行保证该本地技能链接有效或不存在。未推送／合并。
 
 ### WI-019 模块内聚性与前端文件整理（2026-09-23）
 
@@ -157,7 +211,7 @@ UI 交互预览已移至当前 WI-019；[UIP-01～07 与依赖图](docs/discussi
 
 按维护者明确请求，将 UI 交互预览登记为唯一当前 WI，首片 UIP-01；沿用明确预览授权，未重复访谈。WI-017 转入待验收入口，证据与限制仍指向已有双语归档；不记为关闭。同步 PRD 工作追溯及前端讨论中的当前入口，保留后端余项暂停。登记时仅修改文档；随后维护者明确批准前端文件整理：重命名 client／消息解析模块、分离场景数据与模拟 bridge、迁移预览首页、按职责拆分 CSS 并同步测试／文档。此整理属于 WI-019 内的技术维护，保持现有产品行为；UIP-01 候选视觉界面尚未实现。本轮 Windows Node compile／lint、重跑全量 308/308 测试（0 skipped）、verify:webview、预览 HTTP 模块加载、CSS 全量选择器属性／覆盖顺序对照及 docs:verify 通过。首次全量测试停在未修改的 tool-approval 测试子进程，已结束自有测试进程树，重跑通过；不推断挂起根因。预览检查 server.close 后 Node 进程仍驻留，已核对命令行并结束自有进程树；已有用户预览服务未关闭。日志／校验脚本保留在 `dist/webview-reorganization/`，检查证据无需保留后可删除。未进行浏览器视觉／F5／安装版复验，无 Git 提交。登记阶段 docs:verify／docs:health 与 git diff --check 通过：0 error，4 个既有 Draft ADR 提示；双语 0 error／0 stale，health 0 review notice。这些为登记阶段结果，后续整理验证见上文。
 
-### 提交基线与保留证据（2026-09-23）
+**提交基线与保留证据（2026-09-23）：**
 
 前轮按维护者请求整理八个提交，基线 HEAD 为 `aee4178`，当时工作区干净。前轮 Windows Node compile／lint、308/308 测试、verify:webview、docs:verify／docs:health 通过；文档有 4 个既有 Draft ADR 提示。这些是先前结果，不是新预览证据。`dist/commit-preflight-20260923/` 保留提交检查日志，确认无需保留后可删除；`dist/goal-evidence-20260923/` 与 `dist/session-integration-adapter.cjs` 的宿主／包／夹具证据保留条件见各 WI 归档，不能按名称删除。没有在本次登记中创建临时工作区。
 
