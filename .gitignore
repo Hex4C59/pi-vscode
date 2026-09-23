@@ -4,6 +4,9 @@ out/
 *.vsix
 .vscode-test/
 
+# Local provider credentials (never commit)
+/.local-env/
+
 # Local agent skills
 /.agents/
 /skills-lock.json
