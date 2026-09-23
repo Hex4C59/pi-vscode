@@ -33,7 +33,66 @@ test('approval deny timeout cancellation late replies and exact session grant re
 test('approval protocol rejects wrong versions unknown tools and extra webview capabilities',()=>{
   assert.equal(parseGateEnvelope({...call('.'),protocol:'pi-vscode-approval',version:2,kind:'call'}),undefined);
   assert.equal(parseGateEnvelope({...call('.'),protocol:'pi-vscode-approval',version:1,kind:'call',tool:'unknown'}),undefined);
-  assert.ok(parseWebviewMessage({version:1,type:'decideApproval',generation:1,id:'a',decision:'once'}));
-  assert.equal(parseWebviewMessage({version:1,type:'decideApproval',generation:1,id:'a',decision:'once',command:'run'}),undefined);
-  assert.equal(parseWebviewMessage({version:1,type:'decideApproval',generation:1,id:'a',decision:'always'}),undefined);
+  assert.ok(parseWebviewMessage({version:2,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'once'}));
+  assert.equal(parseWebviewMessage({version:2,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'once',command:'run'}),undefined);
+  assert.equal(parseWebviewMessage({version:2,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'always'}),undefined);
+});
+
+
+test('revoking a reused session grant during the final asynchronous safety check prevents execution', { timeout: 5000 }, async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'approval-revoke-'));
+  let release: (() => void) | undefined;
+  let pause = false;
+  let checks = 0;
+  let checked: (() => void) | undefined;
+  let offered: (() => void) | undefined;
+  const manager = new ToolApprovals(() => { if (manager.cards().length) offered?.(); }, 1000, async () => {
+    if (pause && ++checks === 2) { const pending = new Promise<void>(resolve => { release = resolve; }); checked?.(); await pending; }
+    return true;
+  });
+  try {
+    await writeFile(path.join(root, 'file'), 'disk');
+    const approval = new Promise<void>(resolve => { offered = resolve; });
+    const first = manager.request(call(root, 'first'));
+    assert.equal(await Promise.race([approval.then(() => "offered"), first.then(() => "settled")]), "offered");
+    manager.decide('first', 'session'); assert.equal(await first, true);
+    const grant = manager.scopes()[0]; assert.ok(grant);
+    pause = true;
+    const reached = new Promise<void>(resolve => { checked = resolve; });
+    const next = manager.request(call(root, 'reuse'));
+    assert.equal(await Promise.race([reached.then(() => "checking"), next.then(() => "settled")]), "checking");
+    manager.revoke(grant.id); release?.();
+    assert.equal(await next, false);
+  } finally { release?.(); manager.cancel(true); await rm(root, { recursive: true, force: true }); }
+});
+
+
+test('a write spelling normalized by pi cannot obtain a grant for a different raw filesystem target', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'approval-normalized-'));
+  try {
+    await writeFile(path.join(root, 'space file'), 'actual write destination');
+    await writeFile(path.join(root, 'space\u00a0file'), 'different raw-name file');
+    assert.equal((await inspectScope({ ...call(root), input: { path: 'space\u00a0file', content: 'new' } })).scope, null);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+
+test('approval expiry during the final asynchronous safety check cannot authorize a call or session grant', { timeout: 5000 }, async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: 1000 });
+  const root = await mkdtemp(path.join(tmpdir(), 'approval-expiry-'));
+  let offered: (() => void) | undefined; let checked: (() => void) | undefined; let release: (() => void) | undefined; let checks = 0;
+  const manager = new ToolApprovals(() => { if (manager.cards().length) offered?.(); }, 1000, async () => {
+    if (++checks === 2) { const pending = new Promise<void>(resolve => { release = resolve; }); checked?.(); await pending; }
+    return true;
+  });
+  try {
+    await writeFile(path.join(root, 'file'), 'disk');
+    const card = new Promise<void>(resolve => { offered = resolve; }); const finalCheck = new Promise<void>(resolve => { checked = resolve; });
+    const pending = manager.request(call(root, 'expires'));
+    assert.equal(await Promise.race([card.then(() => "offered"), pending.then(() => "settled")]), "offered");
+    manager.decide('expires', 'session');
+    assert.equal(await Promise.race([finalCheck.then(() => "checking"), pending.then(() => "settled")]), "checking");
+    t.mock.timers.tick(1001); release?.();
+    assert.equal(await pending, false); assert.equal(manager.scopes().length, 0);
+  } finally { release?.(); manager.cancel(true); await rm(root, { recursive: true, force: true }); }
 });

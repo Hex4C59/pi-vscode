@@ -8,7 +8,10 @@ export default tseslint.config(
     ignores: ["dist/**", "node_modules/**", "scripts/**"],
   },
   {
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    languageOptions: {
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "error",

@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PiRuntimeLifecycle } from "../runtimeLifecycle.js";
-import { folder, harness, readySettings, settingsRuntime, tick } from "./harness.js";
+import { prepareTestPrompt, folder, harness, readySettings, settingsRuntime, tick } from "./harness.js";
 
 test("resource choice starts runtime with approve or no-approve and stops on workspace change", async () => {
   const starts: { cwd: string; projectTrust: string }[] = [];
   const runtime: PiRuntimeLifecycle = {
+    preparePrompt: prepareTestPrompt,
     async start(options) {
       starts.push(options);
       return { ok: true, modelLabel: "Test / model" };
@@ -39,6 +40,7 @@ test("sendChat streams assistant text and rejects stale runtime events", async (
   let session = 0;
   const listeners = new Set<(event: import("../runtimeLifecycle.js").RuntimeEvent) => void>();
   const runtime: PiRuntimeLifecycle = {
+    preparePrompt: prepareTestPrompt,
     async start() {
       session += 1;
       return { ok: true, modelLabel: null };
@@ -90,18 +92,82 @@ test('Stop holds deferred settings until cancellation completes and runtime loss
   r.events.fire({kind:'runtime_error',session:r.runtime.getSession(),detail:'Disconnected'});assert.equal(v.state().runtime,'error');assert.equal(v.state().execution,'failed');assert.equal(v.state().pendingThinkingLevel,null);h.provider.dispose();
 });
 
-test("late prompt acknowledgement cannot disturb settled configuration or a newer turn", async () => {
+test("early settlement keeps admission blocked until prompt acknowledgement resolves", async () => {
   const { r, h, v } = await readySettings();
-  let finish!: (value: { ok: false; detail: string }) => void;
+  let finish!: (value: { ok: true }) => void;
   r.runtime.prompt = () => new Promise(resolve => { finish = resolve; });
   v.action("sendChat", { text: "first" });
   v.action("setThinkingLevel", { level: "high" });
   r.settled(); await tick();
-  r.runtime.prompt = async () => ({ ok: true });
-  v.action("sendChat", { text: "next" });
-  finish({ ok: false, detail: "late" }); await tick();
   assert.equal(v.state().chatBusy, true);
+  assert.equal(v.state().thinkingLevel, "medium");
+  v.action("sendChat", { text: "next" });
+  assert.equal(v.state().messages.filter(message => message.role === "user").length, 1);
+  finish({ ok: true }); await tick();
+  assert.equal(v.state().chatBusy, false);
   assert.equal(v.state().thinkingLevel, "high");
-  assert.notEqual(v.state().chatError, "late");
+  assert.equal(v.state().execution, "idle", "early settlement must end waiting after the ACK");
+  assert.equal(v.attachments().draft.text, "next");
   h.provider.dispose();
+});
+
+
+test("RPC rejection ends waiting, preserves a newer draft, and never replays the rejected task", async () => {
+  const { r, h, v } = await readySettings();
+  let reject!: (value: { ok: false; detail: string }) => void;
+  let prompts = 0;
+  r.runtime.prompt = () => { prompts++; return new Promise(resolve => { reject = resolve; }); };
+  try {
+    v.action("sendChat", { text: "rejected task" });
+    v.action("updateDraft", { draftRevision: v.attachments().draft.revision, editSequence: 2, text: "new unsent draft" });
+    reject({ ok: false, detail: "synthetic missing model" });
+    await tick();
+    assert.equal(v.state().execution, "failed");
+    assert.equal(v.state().chatBusy, false);
+    assert.equal(v.state().runtime, "ready");
+    assert.match(v.state().chatError ?? "", /rejected/i);
+    assert.doesNotMatch(v.state().chatError ?? "", /Stop/);
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-rejected");
+    assert.equal(v.attachments().lastSubmission?.outcome, "failed");
+    assert.equal(v.attachments().draft.text, "new unsent draft");
+    const next = h.createView(); next.action("getWorkspaceState");
+    assert.equal(next.state().execution, "failed");
+    assert.equal(next.attachments().draft.text, "new unsent draft");
+    assert.equal(prompts, 1);
+  } finally { h.provider.dispose(); }
+});
+
+
+test("a late Stop resynchronizes settled host state instead of leaving the view stopping", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "task" }); await tick();
+    const busy = v.state();
+    r.settled();
+    const count = v.sent.length;
+    // Renderer can still have the prior busy snapshot when the user presses Stop.
+    v.send("stopChat", { generation: busy.generation, viewId: busy.viewId }); await tick();
+    const replies = v.sent.slice(count);
+    assert.ok(replies.some(message => (message as { type: string }).type === "workspaceState"));
+    assert.equal(v.state().chatBusy, false);
+    assert.equal(v.state().execution, "idle");
+    assert.deepEqual(r.calls, ["prompt"]);
+  } finally { h.provider.dispose(); }
+});
+
+
+test("late prompt acknowledgement cannot turn a disconnected runtime back into idle", async () => {
+  const { r, h, v } = await readySettings();
+  let acknowledge!: (value: { ok: true }) => void;
+  r.runtime.prompt = () => new Promise(resolve => { acknowledge = resolve; });
+  try {
+    v.action("sendChat", { text: "uncertain task" });
+    r.events.fire({ kind: "runtime_error", session: r.runtime.getSession(), detail: "Runtime disconnected." });
+    acknowledge({ ok: true }); await tick();
+    assert.equal(v.state().runtime, "error");
+    assert.equal(v.state().execution, "failed");
+    assert.equal(v.attachments().lastSubmission?.delivery, "unknown");
+    assert.equal(v.attachments().lastSubmission?.outcome, "interrupted");
+    assert.equal(v.state().chatBusy, false);
+  } finally { h.provider.dispose(); }
 });

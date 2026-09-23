@@ -23,7 +23,7 @@
   ],
   "engines": {
     "vscode": "^1.85.0",
-    "node": ">=22"
+    "node": ">=22.19.0"
   },
   "categories": [
     "Other"
@@ -32,7 +32,15 @@
     "onView:pi-vscode.chat"
   ],
   "main": "./dist/extension.js",
-  "files": ["dist/extension.js", "dist/approval-gate.mjs", "assets", "LICENSE", "node_modules/**"],
+  "files": [
+    "dist/extension.js",
+    "dist/approval-gate.mjs",
+    "dist/session-worker.mjs",
+    "dist/webview/**",
+    "assets",
+    "LICENSE",
+    "node_modules/**"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
@@ -80,10 +88,13 @@
     }
   },
   "scripts": {
-    "compile": "node esbuild.mjs && tsc --noEmit",
+    "compile": "node esbuild.mjs && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.tests.json",
     "watch": "node esbuild.mjs --watch",
+    "build:webview": "vite build --config vite.config.mts",
+    "preview:webview": "vite --config vite.config.mts",
+    "verify:webview": "node scripts/packaging/verify-webview-assets.mjs",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.tests.json",
     "test": "node scripts/testing/run-tests.mjs",
     "commit:check": "node scripts/testing/commit-check.mjs",
     "spike:offline-inference": "node scripts/spikes/spike-offline-inference.mjs",
@@ -96,12 +107,20 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/jsdom": "28.0.3",
     "@types/node": "^22.19.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/vscode": "^1.85.0",
+    "@vitejs/plugin-react": "5.1.1",
     "esbuild": "^0.25.12",
     "eslint": "^9.39.1",
+    "jsdom": "28.1.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.46.4",
+    "vite": "7.3.1"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.86.1"

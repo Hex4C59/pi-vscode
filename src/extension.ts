@@ -1,3 +1,5 @@
+import path from "node:path";
+import { createPiSessionBackend } from "./adapter/pi-session-backend.js";
 import * as vscode from "vscode";
 
 import { createPiRpcRuntime } from "./adapter/pi-rpc-runtime.js";
@@ -5,7 +7,7 @@ import { focusPiChat, PiChatViewProvider } from "./extension/piChatViewProvider.
 
 export function activate(context: vscode.ExtensionContext): void {
   const runtime = createPiRpcRuntime();
-  const provider = new PiChatViewProvider(vscode, runtime);
+  const provider = new PiChatViewProvider(vscode, runtime, context.extensionUri, createPiSessionBackend(path.join(context.extensionUri.fsPath, "dist/session-worker.mjs")));
   context.subscriptions.push(provider);
 
   context.subscriptions.push(

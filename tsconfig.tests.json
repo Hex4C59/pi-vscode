@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.webview.json",
+  "compilerOptions": {
+    "types": ["node", "jsdom", "vite/client"]
+  },
+  "include": ["src/webview/tests/**/*.ts", "src/webview/tests/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

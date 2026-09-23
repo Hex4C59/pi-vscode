@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PiRuntimeLifecycle } from "../runtimeLifecycle.js";
-import { folder, harness, readySettings, tick } from "./harness.js";
+import { prepareTestPrompt, folder, harness, readySettings, tick } from "./harness.js";
 
 test("setThinkingLevel and setChatModel update projection and reject stale or busy operations", async () => {
   const calls: string[] = [];
   const runtime: PiRuntimeLifecycle = {
+    preparePrompt: prepareTestPrompt,
     async start() { return { ok: true, modelLabel: "A / one" }; },
     async stop() { /* noop */ },
     getSession() { return 3; },
@@ -146,7 +147,7 @@ test("in-flight settings completion cannot overwrite replacement runtime or work
     v.action("sendChat", { text: "first" });
     v.action("setChatModel", { provider: "B", modelId: "two" });
     v.action("setThinkingLevel", { level: "high" });
-    r.settled();
+    r.settled(); await tick();
     let fresh = v;
     if (invalidation === "workspace") { h.api.workspace.workspaceFolders = [folder("/next")]; h.change.fire(); }
     if (invalidation === "resources") v.action("chooseResources", { choice: "decline" });

@@ -39,7 +39,7 @@ test("choices survive view rebuild, reset on identity or eligibility changes and
   assert.equal(v.state().choice, "decline");
   h.api.workspace.workspaceFolders = [folder("/new")]; h.change.fire();
   assert.equal(v.state().choice, null);
-  v.send("chooseResources", { generation, choice: "allow" });
+  v.send("chooseResources", { generation, viewId: v.state().viewId, choice: "allow" });
   assert.equal(v.state().choice, null);
   v.action("chooseResources", { choice: "allow" });
   h.api.workspace.isTrusted = false; // rechecked even without an event
@@ -58,11 +58,11 @@ test("actions recheck host eligibility without trusting a prior state message", 
   for (const change of ["trust", "remote", "folder"]) {
     const h = harness(); const v = h.createView();
     const generation = v.state().generation;
-    v.send("chooseResources", { generation, choice: "allow" });
+    v.send("chooseResources", { generation, viewId: v.state().viewId, choice: "allow" });
     if (change === "trust") h.api.workspace.isTrusted = false;
     if (change === "remote") h.api.env.remoteName = "ssh-remote";
     if (change === "folder") h.api.workspace.workspaceFolders = [folder("/switched")];
-    v.send("chooseResources", { generation, choice: "decline" });
+    v.send("chooseResources", { generation, viewId: v.state().viewId, choice: "decline" });
     assert.equal((v.sent.at(-1) as WorkspaceStateMessage).choice, null);
     assert.ok((v.sent.at(-1) as WorkspaceStateMessage).generation > generation);
     assert.deepEqual(h.commands, []);

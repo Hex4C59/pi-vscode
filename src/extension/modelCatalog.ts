@@ -8,7 +8,8 @@ export const MAX_THINKING_LEVEL_CHARS = 16;
 const THINKING_LEVEL_PATTERN = /^[a-z0-9]+$/;
 const MODEL_TOKEN_PATTERN = /^[\w.-]+$/;
 
-export type ModelCatalogEntry = { provider: string; modelId: string; label: string };
+import type { ModelCatalogEntry } from "./webviewProtocol.js";
+export type { ModelCatalogEntry } from "./webviewProtocol.js";
 
 export function isValidThinkingLevel(level: string): boolean {
   return level.length > 0

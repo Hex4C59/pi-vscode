@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import { sameNativePath } from "./pathIdentity.js";
 import { access } from "node:fs/promises";
 import { parseGateEnvelope, type GateCall } from "../extension/toolApproval.js";
 import { ActivityProjection, displayText } from "./activityProjection.js";
@@ -8,7 +9,7 @@ import { controlledEnvironment } from './controlledEnvironment.js';
 import { CONTROLLED_TOOLS } from "./approvalGate.js";
 import type { Readable } from "node:stream";
 
-import { attachJsonlLineReader, serializeJsonLine } from "./jsonl.js";
+import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./jsonl.js";
 import { resolvePiCliPath } from "./pi-rpc-probe.js";
 import { readPiStartupModelArg } from "./piStartupModel.js";
 import type {
@@ -32,6 +33,15 @@ const PROMPT_TIMEOUT_MS = 30_000;
 const MODEL_RPC_TIMEOUT_MS = 15_000;
 const STOP_TIMEOUT_MS = 5_000;
 
+/** VS Code URI drives are lowercase; saved pi cwd may retain an uppercase drive.
+ * Normalize separators/dot segments and the drive only, not potentially case-sensitive directory names. */
+function sameGateCwd(candidate: string, owned: string): boolean {
+  if (candidate === owned) return true;
+  if (process.platform !== "win32") return false;
+  return sameNativePath(candidate, owned);
+}
+
+
 type RpcResponse = {
   id?: string;
   type?: string;
@@ -41,12 +51,18 @@ type RpcResponse = {
   finalError?: string;
 };
 
-export function createPiRpcRuntime(): PiRuntimeLifecycle {
+export function createPiRpcRuntime(environment: {
+  spawn?: typeof spawn;
+  startupModel?: typeof readPiStartupModelArg;
+  cliPath?: typeof resolvePiCliPath;
+  gateAccess?: typeof access;
+} = {}): PiRuntimeLifecycle {
   let child: ChildProcess | null = null;
   let detachReader: (() => void) | null = null;
   let startToken = 0;
   let activeSession = 0;
   let promptInFlight = false;
+  let promptAckPending = false;
   let requestCounter = 0;
   let gateId = '';
   let cwd = '';
@@ -74,13 +90,13 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
     const id = typeof parsed.id === "string" ? parsed.id : undefined;
     if (parsed.type === 'extension_ui_request') {
       let envelope; try { envelope = parseGateEnvelope(JSON.parse(typeof parsed.message === 'string' ? parsed.message : 'null')); } catch { /* Invalid request is denied below. */ }
-      if (envelope?.runtime === gateId && envelope.cwd === cwd && envelope.kind === 'hello' && parsed.method === 'notify') { gateReady = true; return; }
+      if (envelope?.runtime === gateId && sameGateCwd(envelope.cwd, cwd) && envelope.kind === 'hello' && parsed.method === 'notify') { gateReady = true; return; }
       if (id && parsed.method === 'confirm') {
         const session = activeSession; const process = child;
         const reply = (allow: boolean): void => { approvals.delete(id); if (process === child) process?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,confirmed:allow && session===activeSession && !aborting})); };
-        if (!gateReady || !session || aborting || envelope?.kind !== 'call' || envelope.runtime !== gateId || envelope.cwd !== cwd || !approvalHandler) { reply(false); return; }
+        if (!gateReady || !session || aborting || envelope?.kind !== 'call' || envelope.runtime !== gateId || !sameGateCwd(envelope.cwd, cwd) || !approvalHandler) { reply(false); return; }
         approvals.add(id);
-        void approvalHandler(envelope).then(reply,()=>reply(false));
+        void approvalHandler({ ...envelope, cwd }).then(reply,()=>reply(false));
       }
       return;
     }
@@ -91,6 +107,9 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
     }
     const session = activeSession;
     if (!session) return;
+    if (parsed.type === "tool_execution_end" && typeof parsed.toolCallId === "string" && parsed.toolCallId.length > 0 && parsed.toolCallId.length <= 200 && typeof parsed.isError === "boolean") {
+      emit({ kind: "tool_finished", session, toolCallId: parsed.toolCallId, failed: parsed.isError });
+    }
     for (const item of activity.parse(parsed)) emit({kind:'activity',session,item});
     const finalMessage = parsed.message as Record<string,unknown> | undefined;
     if(parsed.type==='message_end' && finalMessage?.role==='assistant' && Array.isArray(finalMessage.content)) {
@@ -139,14 +158,19 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
       });
     });
 
+  let shutdown: Promise<void> = Promise.resolve();
+  let shutdownUnconfirmed = false;
   const stop = async (): Promise<void> => {
-    startToken += 1;
+    const owned = child;
+    child = null; // Detach synchronously: late loss/close cannot affect a replacement.
+    if (startToken < Number.MAX_SAFE_INTEGER) startToken += 1;
     activeSession = 0;
+    promptAckPending = false;
     promptInFlight = false;
     gateReady = false;
     aborting = false;
     activity.reset();
-    for (const id of approvals) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
+    for (const id of approvals) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Terminate even if cancellation cannot be written. */ } }
     approvals.clear();
     for (const resolve of pending.values()) resolve({success:false});
     pending.clear();
@@ -154,31 +178,35 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
       detachReader();
       detachReader = null;
     }
-    if (child) {
-      await stopChildProcess(child, STOP_TIMEOUT_MS);
-      child = null;
-    }
+    if (owned) shutdown = stopChildProcess(owned, STOP_TIMEOUT_MS).then(closed => { if (!closed) shutdownUnconfirmed = true; });
+    await shutdown;
   };
 
   const start = async (options: {
     cwd: string;
     projectTrust: ProjectTrustFlag;
+    resume?: { id: string; path: string };
   }): Promise<RuntimeStartResult> => {
     await stop();
+    if (shutdownUnconfirmed) return { ok: false, detail: "Runtime shutdown was not confirmed. Manually end the old process and reload the extension host." };
+    if (startToken >= Number.MAX_SAFE_INTEGER) return { ok: false, detail: "Runtime identity exhausted. Reload the extension host." };
     const token = ++startToken;
-    const cliPath = resolvePiCliPath();
+    const cliPath = (environment.cliPath ?? resolvePiCliPath)();
     const trustArg = options.projectTrust === "approve" ? "--approve" : "--no-approve";
     gateId = randomUUID();
     cwd = options.cwd;
     const gatePath = path.join(__dirname, 'approval-gate.mjs');
-    try { await access(gatePath); } catch { return {ok:false,detail:'Bundled approval extension is missing. Tools remain disabled.'}; }
-    const args = ["--mode", "rpc", "--no-session", "--tools", CONTROLLED_TOOLS.join(','), '--no-extensions', '-e', gatePath, trustArg];
-    const startupModel = readPiStartupModelArg();
+    try { await (environment.gateAccess ?? access)(gatePath); } catch { return {ok:false,detail:'Bundled approval extension is missing. Tools remain disabled.'}; }
+    if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
+    if (options.resume && (!/^[A-Za-z0-9_-]{1,100}$/.test(options.resume.id) || !path.isAbsolute(options.resume.path))) return { ok: false, detail: "Saved session identity is invalid." };
+    const args = ["--mode", "rpc", "--tools", CONTROLLED_TOOLS.join(','), '--no-extensions', '-e', gatePath, trustArg];
+    if (options.resume) args.push("--session", options.resume.path);
+    const startupModel = (environment.startupModel ?? readPiStartupModelArg)();
     if (startupModel) args.push("--model", startupModel);
 
     // Raw stderr may contain provider credentials; never project or accumulate it.
     try {
-      child = spawn(process.execPath, [cliPath, ...args], {
+      child = (environment.spawn ?? spawn)(process.execPath, [cliPath, ...args], {
         cwd: options.cwd,
         stdio: ["pipe", "pipe", "pipe"],
         env: controlledEnvironment(process.env, gateId),
@@ -191,6 +219,7 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
         const session = activeSession; activeSession = 0; gateReady = false; promptInFlight = false;
         for (const resolve of pending.values()) resolve({success:false}); pending.clear();
         if (session) emit({kind:'runtime_error',session,detail:'Runtime disconnected. Work may be interrupted; no task was retried.'});
+        if (child === owned) void stop();
       };
       child.on('error',lost); child.on('close',lost); child.stdin?.on('error',lost);
 
@@ -211,10 +240,16 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
           detail: 'Runtime readiness or approval extension verification failed.',
         };
       }
+      const data = response.data as Record<string, unknown> | undefined;
+      const identityValid = data && typeof data === "object" && typeof data.sessionId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(data.sessionId) && typeof data.sessionFile === "string" && data.sessionFile.length <= 32768 && path.isAbsolute(data.sessionFile) && (data.sessionName == null || typeof data.sessionName === "string");
+      if (!identityValid || (options.resume && (data.sessionId !== options.resume.id || !sameNativePath(data.sessionFile as string, options.resume.path)))) {
+        await stop();
+        return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
+      }
       activeSession = token;
-      return { ok: true, modelLabel: formatModelLabel(response.data) };
+      return { ok: true, modelLabel: formatModelLabel(response.data), conversation: { id: data.sessionId as string, path: data.sessionFile as string, name: typeof data.sessionName === "string" ? data.sessionName.slice(0,160) : null } };
     } catch (error) {
-      await stop();
+      if (token === startToken) await stop();
       const message = error instanceof Error ? error.message : String(error);
       return {
         ok: false,
@@ -231,6 +266,7 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
       throw new Error("Runtime not ready.");
     }
     const session = activeSession;
+    if (requestCounter >= Number.MAX_SAFE_INTEGER) throw new Error("Runtime request identities exhausted.");
     const requestId = `pi-vscode-rpc-${session}-${++requestCounter}`;
     const waiting = waitForResponse(requestId, timeoutMs);
     child.stdin?.write(serializeJsonLine({ id: requestId, ...body }));
@@ -306,15 +342,15 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
     if (!child || !activeSession || !gateReady || aborting) {
       return { ok: false, detail: "Runtime not ready." };
     }
-    if (promptInFlight) {
-      return { ok: false, detail: "A message is already in progress." };
+    if (promptInFlight || promptAckPending || requestCounter >= Number.MAX_SAFE_INTEGER) {
+      return { ok: false, detail: "A message is already in progress or request identities are exhausted." };
     }
     const session = activeSession;
     const requestId = `pi-vscode-prompt-${session}-${++requestCounter}`;
     promptInFlight = true;
     try {
       const waiting = waitForResponse(requestId, PROMPT_TIMEOUT_MS);
-      child.stdin?.write(serializeJsonLine({ id: requestId, type: "prompt", message: text }));
+      child.stdin?.write(serializePromptFrame(requestId, { kind: "plain", body: text }));
       const response = await waiting;
       if (session !== activeSession) {
         promptInFlight = false;
@@ -334,9 +370,61 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
     }
   };
 
+  const preparePrompt: PiRuntimeLifecycle["preparePrompt"] = (input, expectedSession) => {
+    if (requestCounter >= Number.MAX_SAFE_INTEGER) throw new Error("Runtime request identifiers exhausted. Restart required.");
+    const requestId = `pi-vscode-prompt-${expectedSession}-${++requestCounter}`;
+    let frame = serializePromptFrame(requestId, input);
+    let consumed = false;
+    return { send(onAttempt) {
+      const owned = child;
+      const stream = owned?.stdin;
+      if (consumed || expectedSession !== activeSession || !activeSession || !gateReady || aborting || promptInFlight || promptAckPending || !stream || stream.destroyed || stream.writableEnded) {
+        frame = "";
+        return Promise.resolve({ delivery: "not-sent", code: "runtime-lost" });
+      }
+      consumed = true; promptInFlight = true; promptAckPending = true;
+      return new Promise(resolve => {
+        let attempted = false; let finished = false; let callback = false; let drained = false; let returned = false;
+        let response: RpcResponse | undefined;
+        const finish = (delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown", code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost") => {
+          if (finished) return; finished = true;
+          if (activeSession === expectedSession) promptAckPending = false;
+          clearTimeout(writeTimer); clearTimeout(ackTimer); pending.delete(requestId);
+          stream.off("error", lost); stream.off("close", lost); stream.off("drain", drain); frame = "";
+          if (delivery !== "rpc-accepted" && child === owned) promptInFlight = false;
+          resolve({ delivery, ...(code ? { code } : {}) });
+          if (delivery === "unknown" && child === owned) {
+            emit({ kind: "runtime_error", session: expectedSession, detail: "Prompt delivery is uncertain. Runtime stopped; no retry was made." });
+            void stop();
+          }
+        };
+        const check = () => {
+          if (!returned || !callback || !drained) return;
+          clearTimeout(writeTimer);
+          if (response) {
+            if (activeSession !== expectedSession || response.command !== "prompt" || typeof response.success !== "boolean") finish("unknown", "runtime-lost");
+            else finish(response.success ? "rpc-accepted" : "rpc-rejected", response.success ? undefined : "rpc-rejected");
+          }
+        };
+        const lost = () => finish(attempted ? "unknown" : "not-sent", "write-failed");
+        const drain = () => { drained = true; check(); };
+        const writeTimer = setTimeout(lost, 5000);
+        const ackTimer = setTimeout(() => finish("unknown", "ack-timeout"), 30000);
+        pending.set(requestId, value => { response = value; check(); });
+        stream.on("error", lost); stream.on("close", lost); stream.on("drain", drain);
+        try {
+          attempted = true; onAttempt();
+          const accepted = stream.write(frame, error => { if (error) lost(); else { callback = true; check(); } });
+          drained ||= accepted; returned = true; frame = ""; check();
+        } catch { lost(); }
+      });
+    } };
+  };
+
   return {
     start,
     stop,
+    preparePrompt,
     setApprovalHandler(handler) { approvalHandler = handler; },
     async abortTask() {
       aborting = true;
@@ -364,11 +452,18 @@ export function createPiRpcRuntime(): PiRuntimeLifecycle {
   };
 }
 
-async function stopChildProcess(child: ChildProcess, timeoutMs: number): Promise<void> {
-  if (child.exitCode !== null || child.signalCode !== null) return;
-  await new Promise<void>((resolve) => {
-    const timer = setTimeout(() => { child.kill('SIGKILL'); }, timeoutMs);
-    child.once('close', () => { clearTimeout(timer); resolve(); });
-    child.kill('SIGTERM');
+async function stopChildProcess(child: ChildProcess, timeoutMs: number): Promise<boolean> {
+  if (child.exitCode !== null || child.signalCode !== null) return true;
+  return new Promise<boolean>((resolve) => {
+    let finished = false;
+    const finish = (confirmed: boolean) => {
+      if (finished) return; finished = true;
+      clearTimeout(escalate); clearTimeout(deadline); child.off("close", closed); resolve(confirmed);
+    };
+    const closed = () => finish(true);
+    const escalate = setTimeout(() => { try { child.kill("SIGKILL"); } catch { /* Final deadline reports unconfirmed shutdown. */ } }, timeoutMs);
+    const deadline = setTimeout(() => finish(false), timeoutMs * 2);
+    child.once("close", closed);
+    try { child.kill("SIGTERM"); } catch { /* Still observe closure or deadline. */ }
   });
 }

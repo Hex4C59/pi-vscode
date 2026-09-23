@@ -1,57 +1,11 @@
-export const WEBVIEW_MESSAGE_VERSION = 1;
+export const WEBVIEW_MESSAGE_VERSION = 2;
+export type * from "./webviewProtocol.js";
+import type { PingMessage, PongMessage, WebviewMessage } from "./webviewProtocol.js";
 
 import { MAX_CHAT_MESSAGE_CHARS } from "./chatBounds.js";
-import { isValidModelRef, isValidThinkingLevel, type ModelCatalogEntry } from "./modelCatalog.js";
-import type { RuntimePhase } from "./runtimeLifecycle.js";
+import { isValidModelRef, isValidThinkingLevel } from "./modelCatalog.js";
 
-import type { ActivityItem } from "./runtimeLifecycle.js";
-import type { ApprovalCard, SessionGrant, ApprovalDecision } from "./toolApproval.js";
 
-export type ResourceChoice = "allow" | "decline";
-export type WorkspaceStatus = "no-folder" | "multi-root" | "remote" | "non-file" | "untrusted" | "eligible";
-export type ChatRole = "user" | "assistant";
-export type ChatLine = { role: ChatRole; text: string; id?: string };
-export type PingMessage = { version: 1; type: "ping" };
-export type PongMessage = { version: 1; type: "pong" };
-export type WebviewMessage = PingMessage
-  | { version: 1; type: "stopChat"; generation: number }
-  | { version: 1; type: "decideApproval"; generation: number; id: string; decision: ApprovalDecision }
-  | { version: 1; type: "revokeGrant"; generation: number; id: string }
-  | { version: 1; type: "getWorkspaceState" }
-  | { version: 1; type: "openFolder" | "manageTrust"; generation: number }
-  | { version: 1; type: "chooseResources"; generation: number; choice: ResourceChoice }
-  | { version: 1; type: "sendChat"; generation: number; text: string }
-  | { version: 1; type: "setThinkingLevel"; generation: number; level: string }
-  | { version: 1; type: "setChatModel"; generation: number; provider: string; modelId: string };
-export type WorkspaceStateMessage = {
-  version: 1;
-  type: "workspaceState";
-  generation: number;
-  status: WorkspaceStatus;
-  folder: { name: string; path: string } | null;
-  choice: ResourceChoice | null;
-  busy: boolean;
-  error: string | null;
-  runtime: RuntimePhase;
-  runtimeDetail: string | null;
-  messages: ChatLine[];
-  chatBusy: boolean;
-  chatError: string | null;
-  chatModel: string | null;
-  thinkingLevel: string | null;
-  thinkingLevels: string[];
-  availableModels: ModelCatalogEntry[];
-  /** Host-owned next-turn intent; never represents applied runtime configuration. */
-  pendingModel: ModelCatalogEntry | null;
-  pendingThinkingLevel: string | null;
-  modelBusy: boolean;
-  modelError: string | null;
-  activities: ActivityItem[];
-  approvals: ApprovalCard[];
-  grants: SessionGrant[];
-  execution: "idle" | "waiting" | "thinking" | "awaiting-approval" | "executing" | "replying" | "stopping" | "failed";
-  controlledExecution: true;
-};
 
 export function parseWebviewMessage(value: unknown): WebviewMessage | undefined {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
@@ -63,33 +17,34 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     || !Object.hasOwn(Object.getOwnPropertyDescriptor(value, key) ?? {}, "value"))) return undefined;
   const message = value as Record<string, unknown>;
   if (message.version !== WEBVIEW_MESSAGE_VERSION) return undefined;
-  const expected = message.type === "ping" || message.type === "getWorkspaceState"
-    ? ["version", "type"]
-    : message.type === 'decideApproval' ? ['version','type','generation','id','decision']
-    : message.type === 'revokeGrant' ? ['version','type','generation','id']
-    : message.type === "openFolder" || message.type === "manageTrust" || message.type === 'stopChat'
-      ? ["version", "type", "generation"]
-      : message.type === "chooseResources"
-        ? ["version", "type", "generation", "choice"]
-        : message.type === "sendChat"
-          ? ["version", "type", "generation", "text"]
-          : message.type === "setThinkingLevel"
-            ? ["version", "type", "generation", "level"]
-            : message.type === "setChatModel"
-              ? ["version", "type", "generation", "provider", "modelId"]
-              : [];
+  const actions: Record<string, string[]> = {
+    newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
+    stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
+    decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
+    sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
+    updateDraft: ["draftRevision", "editSequence", "text"], removeAttachment: ["draftRevision", "attachmentId"],
+    getAttachmentPreview: ["requestId", "snapshotId", "offset"],
+    confirmFileAttachment: ["draftRevision", "attachmentId", "snapshotId"],
+    confirmSelectionAttachment: ["draftRevision", "attachmentId", "snapshotId"],
+    setThinkingLevel: ["level"], setChatModel: ["provider", "modelId"],
+  };
+  const bootstrap = message.type === "ping" || message.type === "getWorkspaceState";
+  if (!bootstrap && (typeof message.type !== "string" || !Object.hasOwn(actions, message.type))) return undefined;
+  const expected = bootstrap ? ["version", "type"] : ["version", "type", "generation", "viewId", ...actions[message.type as string]];
+  for (const key of ["viewId", "attachmentId", "snapshotId", "requestId", "id"]) {
+    if (expected.includes(key) && (typeof message[key] !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(message[key]))) return undefined;
+  }
+  for (const key of ["draftRevision", "editSequence", "offset", "page"]) {
+    if (expected.includes(key) && (!Number.isSafeInteger(message[key]) || (message[key] as number) < 0)) return undefined;
+  }
   if (fields.length !== expected.length || fields.some((key) => typeof key !== "string" || !expected.includes(key))) return undefined;
   if (expected.includes("generation") && (!Number.isSafeInteger(message.generation) || (message.generation as number) < 0)) return undefined;
   if (message.type === 'decideApproval' || message.type === 'revokeGrant') {
-    if (typeof message.id !== 'string' || !message.id || message.id.length > 100) return undefined;
-    if (message.type === 'decideApproval' && !['once','session','deny'].includes(String(message.decision))) return undefined;
+
+    if (message.type === 'decideApproval' && (typeof message.decision !== 'string' || !['once','session','deny'].includes(message.decision))) return undefined;
   }
   if (message.type === "chooseResources" && message.choice !== "allow" && message.choice !== "decline") return undefined;
-  if (message.type === "sendChat") {
-    if (typeof message.text !== "string") return undefined;
-    const text = message.text.trim();
-    if (!text || text.length > MAX_CHAT_MESSAGE_CHARS) return undefined;
-  }
+  if (message.type === "updateDraft" && (typeof message.text !== "string" || message.text.length > MAX_CHAT_MESSAGE_CHARS)) return undefined;
   if (message.type === "setThinkingLevel") {
     if (typeof message.level !== "string" || !isValidThinkingLevel(message.level)) return undefined;
   }
