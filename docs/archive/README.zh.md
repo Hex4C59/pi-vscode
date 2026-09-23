@@ -31,7 +31,16 @@
 
 | 记录 | 内容 |
 |------|------|
-| [已关闭工作项历史 — WI-001～007 与 WI-010](2026-09-21-closed-wi-history.zh.md) | 已关闭范围、验收证据与保留限制；WI-008／WI-009 在 ACTIVE 保持开放 |
+| [已关闭工作项历史 — WI-001～007 与 WI-010～012](2026-09-21-closed-wi-history.zh.md) | 已关闭范围、验收证据与保留限制；WI-008／WI-009 在 ACTIVE 保持开放 |
+
+## 被替代的交接
+
+| 记录 | 内容 |
+|--------|----------|
+| [工作区恢复所替代的 Goal 前交接](2026-09-22-pre-goal-handoffs.zh.md) | 历史批准／证据；不代表 WI 关闭，不是当前任务账本 |
+| [Goal 前端与附件检查点](2026-09-22-goal-frontend-attachment-handoffs.zh.md) | 下一 Goal 切片替代的 WI-015／WI-014 可执行交接；维护者接受与 gate 仍开放 |
+| [Goal 修改审查检查点](2026-09-22-goal-change-review-handoff.zh.md) | 会话连续性接替的 WI-016 代码／可执行交接；维护者接受与 gate 仍开放 |
+| [Goal 会话连续性检查点](2026-09-23-goal-session-handoff.zh.md) | WI-017 可执行交付与维护者要求的暂停；下一实现尚未启动，验收与 gate 仍保留 |
 
 ## Agent 规则
 

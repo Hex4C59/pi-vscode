@@ -6,6 +6,10 @@ English | [中文](README.zh.md)
 - Status: Accepted
 - Authority: navigation for this product repository
 
+## Domain vocabulary
+
+Use the [domain glossary](../CONTEXT.md) for confirmed terminology. It does not replace requirements, architecture or approval records.
+
 ## Entry points and task routes
 
 This index is a routing tree, not a read-everything order. Repository rules and mandatory baseline reads come from [`../AGENTS.md`](../AGENTS.md) and its kernel.

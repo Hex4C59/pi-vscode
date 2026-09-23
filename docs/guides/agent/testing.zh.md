@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[testing.md](testing.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-22
+- 最近同步：2026-09-23
 
 - 类型：指南
 - 状态：Accepted
@@ -35,7 +35,25 @@
 
 runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuild 打包应用 spec 并保留相对于源码根目录的层级：`src/extension/tests/webview-messages.spec.ts` 输出为 `dist/tests/extension/tests/webview-messages.spec.js`。它只将确切的编译输出清单与发现的脚本 spec 传给 `node:test`，cwd 为仓库根目录；陈旧 bundle 和宽泛输出 glob 不作为执行输入。构建或测试进程失败会使命令失败。
 
+Webview 应用 spec 通过 `mountApp`、jsdom 和 synthetic bridge/host 挂载 React 前端。它们沿用浏览器预览使用的应用入口，检查 host projection、展示状态和命名出站 intent。已移除的内联字符串 VM harness 不属于当前测试路径；新的 Webview 行为应写在已挂载 React/jsdom 的 `*.spec.ts` 用例中。
+
 类型／lint 范围从仓库配置核对；脚本 `.mjs` 当前不在 lint 范围。实际 CI 检查由 [workflow](../../../.github/workflows/ci.yml) 定义，不能从本地 runner 推断 CI 执行全部测试。
+
+## 前端与打包检查
+
+使用浏览器预览观察外观和交互，使用已挂载的 spec 检查可重复行为：
+
+```bash
+npm run preview:webview
+npm run compile
+npm test
+npm run build:webview
+npm run verify:webview
+```
+
+`npm run preview:webview` 使用 synthetic host fixture 提供 React 应用和浏览器热刷新；不会启动 pi，也不提供 VS Code 宿主证据。`npm run compile` 使用 esbuild 构建 extension host，使用 Vite 构建 Webview，并运行严格的 host、浏览器和测试 TypeScript 配置。`npm run watch` 监视 host/gate 构建并重建生产 Webview，与浏览器预览服务器分开。
+
+`npm run build:webview` 将本地生产资源写入 `dist/webview`。`npm run verify:webview` 检查非空的静态 `webview.js` 和 `webview.css` 输出。使用 `npm run verify:webview -- path/to/pi-vscode.vsix` 传入 VSIX 路径后，还会检查归档内的 `extension/dist/webview/webview.js` 和 `extension/dist/webview/webview.css`。这些检查不会安装 VSIX、启动开发服务器或运行 pi；生产环境必须在没有开发服务器时加载打包的本地资源。
 
 添加、移动或重命名测试之前：
 
@@ -52,7 +70,7 @@ runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuil
 
 | 后缀 | 含义与启用边界 |
 |------|----------------|
-| `*.spec.ts`／`*.spec.mjs` | 模块行为或受控多模块组合；当前 `npm test` 收集。Mock provider 和 VM Webview 测试属于此类，spec 不限于单函数，也不要求 Vitest。 |
+| `*.spec.ts`／`*.spec.mjs` | 模块行为或受控多模块组合；当前 `npm test` 收集。已挂载的 React/jsdom Webview spec、host 测试和窄 provider seam 属于此类；spec 不限于单函数，也不要求 Vitest。 |
 | `*.e2e.ts` | 经过声明的真实入口，验证外部可观察结果；说明哪个入口真实、哪些服务被替换。RPC 证据不证明 VS Code UI，e2e 也不意味着付费调用。引入时使用 `.e2e.ts`，不使用 `.e2e.test.ts`。拟议 `test:e2e` 尚不存在，收集须与默认 spec 分离。 |
 | `*.expected.e2e.ts` | 组装进程／CLI 与所属位置的已审查预期输出比较，不是会话回放；`*.expected.json` 是数据。此后缀也匹配 `.e2e.ts`，引入独立套件时须从一般 e2e 排除。普通 spec 的黄金断言本身不构成 e2e。 |
 | `*.snapshot.ts` | 预留给录制会话回放，不泛指快照断言或截图。启用须独立设计公开 API、录制／回放、密钥处理及 fixture 审查；不能复制 pi 会话存储内部格式或直接搬入外部语料目录。 |
@@ -69,7 +87,7 @@ runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuil
 
 ## 证据层级与安全
 
-- **自动化测试（`npm test`）：** 可重复、无密钥的行为与回归检查。优先使用真实且确定的实现，只替换 VS Code API、进程、时钟、RPC 等窄外部接口。覆盖相关畸形输入、错误、取消、迟到完成、代次变化与资源清理。断言可观察输出与副作用，而不只是 mock 调用次数或复刻实现的字符串。
+- **自动化测试（`npm test`）：** 可重复、无密钥的行为与回归检查。优先使用真实且确定的实现，只替换 VS Code API、进程、时钟、RPC 和浏览器 host 边界等窄外部接口。已挂载的 React/jsdom Webview spec 覆盖 projection、交互与清理，但不声称证明浏览器布局或 VS Code 宿主行为。覆盖相关畸形输入、错误、取消、迟到完成、代次变化与资源清理。断言可观察输出与副作用，而不只是 mock 调用次数或复刻实现的字符串。
 - **运行时／项目信任探针（`spike:*`）：** 遵循 [pi 集成指南](pi-integration.zh.md) 的显式、隔离集成证据。mock RPC 测试不能证明已安装 pi 进程具有相同行为。
 - **手工宿主验收（F5）：** 真实扩展生命周期与 Webview 交互，包括适用的键盘、焦点、主题和失败行为。HTML／CSP 断言与脚本化 UI 测试有价值，但不能证明真实宿主渲染或交互正确。
 
@@ -88,4 +106,4 @@ Node 测试 harness 与 Webview 运行时代码保持分离：测试宿主 HTML 
 
 维护者于 2026-09-21 批准 playbook 加加载地图方案。本指南借鉴 [DeepSeek Harness 测试策略](https://github.com/Hex4C59/deepseek-harness/blob/master/docs/testing.md) 的所有权、显式收集与证据分层，不迁移其 monorepo 布局、runner、付费 API 策略、会话快照基础设施或逐文件 100% 覆盖率门禁。
 
-历史说明：最初的纯文档采用保留了紧邻源码的 `*.test.ts`、脚本 `*.test.mjs` 与仅覆盖平面 extension 测试的收集命令。随后获批的 WI-011 迁移实现了上述模块内 `.spec` 布局与递归 runner，保留 `node:test` 和 esbuild，不启用额外证据层级。
+历史说明：最初的纯文档采用保留了紧邻源码的 `*.test.ts`、脚本 `*.test.mjs` 与仅覆盖平面 extension 测试的收集命令，其中包含旧的内联字符串 VM Webview harness。随后获批的 WI-011 迁移实现了上述模块内 `.spec` 布局与递归 runner；WI-015 用已挂载的 React/jsdom spec 替换该 Webview harness，同时保留 `node:test` 和 esbuild，不启用额外证据层级。

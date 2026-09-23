@@ -1,4 +1,4 @@
-# 已关闭工作项历史 — WI-001～007 与 WI-010
+# 已关闭工作项历史 — WI-001～007 与 WI-010～012
 
 [English](2026-09-21-closed-wi-history.md) | 中文
 
@@ -10,11 +10,53 @@
 - 状态：Historical
 - 创建：2026-09-21
 - 权威：仅作上下文；当前工作仍以 [`ACTIVE.md`](../../ACTIVE.md) 为准
-- 归档原因：WI-001/002/003/004/005/006/007/010 已关闭；其提案、验收证据与旧交接不再属于当前工作入口。WI-008／WI-009 未关闭，仍保留在 ACTIVE。
+- 归档原因：WI-001/002/003/004/005/006/007/010/011/012 已关闭；其提案、验收证据与旧交接不再属于当前工作入口。WI-008／WI-009 未关闭，仍保留在 ACTIVE。
 
 > 不得按本文件直接实现。它保留历史范围、批准、证据和限制；现行需求、架构、gate、ADR 与 `ACTIVE.md` 优先。
 
 记录中的版本、脚本路径及“待验收”均是各次收尾时的快照。后续 19:44 延后选择确认及 WI-011 脚本分组见 [ACTIVE](../../ACTIVE.md)，现行命令入口见 [pi 集成指南](../guides/agent/pi-integration.zh.md)。原路径与原验收观察保留，不据此推断本次重跑。
+
+<a id="wi-012"></a>
+## WI-012 — 最小公开 API 兼容性探针（2026-09-22 关闭）
+
+归档原因：维护者明确确认**最小探针切片**收尾，随后仅进入 WI-013 标准交互／Stop Prepare。[ACTIVE](../../ACTIVE.md) 持有替代提案。仍活跃的[兼容性调查](../discussions/2026-09-22-pi-compatibility.zh.md) 保留确切运行命令、分阶段观察及尚未执行的完整 CF 矩阵，不整篇归档。关闭接受限定调查结果和缺口，不是产品兼容、ADR 或 gate 验收。
+
+### 批准提案与批准顺序
+
+- **分类：** 纯技术、spike-only；关联 REQ-009.3–5、REQ-006／008 与 REQ-005 约束。project-trust／session-streaming 及 webview-trust gate 保持 Open，WI-010 pending ADR 保留。原前端候选编号用于 WI-012，前端工程化仍未分配。
+- **14:50 Prepare／14:59 Build 授权：** 在 `scripts/spikes/` 添加独立调用 runner、worker、合成扩展、helper 与 `.spec.mjs` 回归，沿用现有 runner。不改生产源码、依赖／锁文件、构建或 CI；允许按需新增独立 npm 入口，实际未添加。SDK 仅用于隔离夹具进程，不改 ADR 0001 生产子进程基线。
+- **P1（CF-05 子集）：** 公开包 API 创建／保存一次性 A／B 会话，`SessionManager.list` 枚举 A，经 RPC 恢复返回的不透明路径，检查历史／项目标记、空列表／不可用／错误及无重放。不解析会话文件、不证明独占锁或产品授权重置。
+- **P2（CF-03 子集）：** 合成初始化／命令／工具／hook，对比受控禁用和明确加载、active-tool 排除，以及真实临时写入拒绝／允许的副作用。最初禁止真实或假模型调用；找不到公开无模型执行入口记 blocked，不以直接工具／mock 代替通过。
+- **P3（CF-04／08 子集）：** select／confirm／input／editor 完成、普通取消、公开支持的超时、clear_queue／abort／断连、请求／进程代次与迟到／替代答案。普通取消不是 Stop 或全部扩展代码终止，不支持路径明确记缺口。
+- **16:06 补充范围确认，随后单独明确批准代码／运行：** 允许公开合成助手消息持久化，及无网络确定性 provider 输出驱动 P2 真实 pi 循环；细化取消先于 abort、继续执行／迟到答案、探针代次 ledger 与独立自然 EOF 观察。仅对这些夹具替代原假 provider 禁令；不授权真实模型／外网、本地凭证加载或产品 Build。共同理解确认本身不是执行批准。
+- **隔离／预算：** 先检查固定版本公开签名／CLI 和夹具；唯一自有临时 home／config／session／cwd，环境白名单排除真实密钥、凭证命令、代理与用户／全局扩展；禁止安装包／外网。`PI_OFFLINE` 不足以隔离。无法建立可观察隔离即 blocked，不改全局防火墙／环境。提议并批准预算为请求 10 秒、场景 60 秒、退出等待 5 秒、场景诊断 64 KiB；超界失败，不重试不确定副作用。成功／失败只清理自有资源，记录失败与实际子进程退出，不保证全部后代。
+- **架构核对／验收：** Direction、spike first。保留分层／范围／存储边界；公开 API、关联、错误、隔离、有界诊断与清理须运行证据。各变体记录 passed／failed／blocked／not-run、确切命令／包／Node／OS、输入／预期／实际、事件顺序、副作用与退出。helper 回归覆盖空输入／关联／超时／非零退出／清理／日志预算，运行相关回归、全量 tests、JS 语法和文档检查。产品 UI／可访问性／安装验收 N/A。失败是调查证据，不是兼容成功。
+- **范围外：** 完整 CF-01／02、CF-06／07、profile／授权重置矩阵、性能、真实扩展、F5／已安装 VSIX、前端工程化、生产 SDK／架构／会话格式修改、旧 trust 探针修改、其他 WI／ADR／gate 关闭及提交。
+
+### 历史执行、验收对照与限制
+
+最初无模型完整运行于 15:30 exit 0；默认 root WSL 执行经审阅改为 nobody／UID 65534 guard，两个 RPC 与 worker 退出、清理通过。P1 仅用户／自定义消息持久化及 P2 受覆盖执行 blocked；P3 仅 abort 后仍接受肯定答案。历史 Windows tests 101/101、Linux helper 7/7、五脚本语法通过。这些结果推动单独获批补充，并非静默扩大范围。
+
+最终完整运行于 **UTC+8 16:20:45** 结束，pi **0.86.1**、Node **v24.12.0**、Ubuntu-24.04／WSL Linux **6.18.33.2-microsoft-standard-WSL2**，非特权用户／network namespace，无接口／可用路由，环境白名单与隔离夹具。五个 RPC 与 worker 均 exit 0，自有清理通过。不是文件系统沙箱或 Windows 宿主验证；确切命令及变体观察保留在上述调查。
+
+- **P1 合成公开 API 边界通过：** 助手夹具使 A／B 持久化，A 列表排除 B；RPC 恢复三条消息，含 A 标记、无 B／任务重放。缺失路径仍成功空历史；真正恢复失败、终端生成历史及产品授权重置未验证。
+- **P2 合成拦截边界通过：** 固定 provider 驱动真实 pi 循环；内置／自定义写工具拒绝后无目标，允许后精确内容。合成 hook 成功不证明产品自带 gate、所有扩展或真实推理。
+- **P3 部分观察／兼容缺口：** 先取消再 abort 的 confirm 返回 false，旧答案无影响，但扩展 JavaScript 继续；仅 abort 接受 true。四种对话框有请求／继续／完成观察。跨代次仅测探针 ledger。自然 EOF 在 owner shutdown 前 exit 0 且无完成标记，不证明优雅取消。editor timeout 仍 blocked；没有完整 Stop 保证或产品宿主迟到答案验证。
+- **历史检查：** Windows 103/103、Linux helper 9/9、五脚本语法、docs:verify 与 diff 检查通过；当时保留 ACTIVE 长度警告。较早 docs:health 通过。本次纯文档收尾未重跑 tests／探针，当前文档检查归 ACTIVE。不宣称真实 provider 请求、凭证读取、F5／安装版 VSIX、真实扩展、产品／依赖／CI 修改或提交。
+- **收尾对照：** 获批探针要求诚实逐变体证据，而非兼容全通过。剩余 P3／恢复错误缺口明确结转，子集结果不接受整个 CF 夹具。WI-008／009 开放、WI-010 ADR pending、三个相关 gate Open。REQ-009 的操作级不支持／终端回退、已待决未确认停止／手动结束政策仍是未来目标；不批准自动终止／重启补救，既有故障关闭保留。WI-013 在 Build 前须建立可靠分离／完成依据，否则报告阻塞。
+
+<a id="wi-011"></a>
+## WI-011 — 模块内测试结构重构（2026-09-22 关闭）
+
+归档原因：维护者于 9 月 22 日 14:50 请求收尾，随后进入兼容性 Prepare。当前工作转至 [ACTIVE](../../ACTIVE.md)；此处保留已批准技术范围，不代表产品交付。
+
+- **批准范围：** 应用测试迁入 extension／adapter／webview 各自的 `tests/`，统一 `.spec.ts`；脚本使用 `.spec.mjs`。按 workspace／focus／runtime／model／bounds／protocol／approval／architecture、adapter projection／environment、Webview HTML／workspace／model／execution 拆分连贯套件并提取局部 harness。保留全部原场景／断言，生产源码位置不变。
+- **Runner 提案与验收：** 薄 runner 加 import-safe 递归收集库，排除 helper／fixture／其他层级和符号链接，保留相对输出路径，仅执行本次确切清单。只清理 `dist/tests/`；空集合、构建和进程失败均失败退出。临时夹具覆盖发现、同名隔离、排除、旧输出清理与失败。保持 node:test、esbuild、生产打包／依赖和既有 CI 范围，同步 package／CI／文档引用，不新增 tsconfig 或测试层级。
+- **追加批准（2026-09-21 20:33）：** scripts 按 docs／testing／spikes／packaging 分组，文件名、对外 npm 命令与行为不变；同步根路径计算、导入、CI 及夹具。不增加 src/tests 多层目录、不运行付费调用或扩大验收，原已批准计划未改。
+- **架构／风险核对：** 保持既有分层所有权；迁移须同步递归收集以免漏掉嵌套测试。风险为遗漏／重复用例、输出冲突、旧 bundle、cwd／VM 变化；名称基线与收集器回归提供已记录证据。不改变生产边界或需求；本 WI decision／gate 为 none。
+- **历史验证：** 原基线 73/73、0 skipped（44 应用＋29 脚本用例）。应用用例拆入 14 个模块内 spec，保留原名称／场景／断言。11 个 runner 回归后为 84/84，包含 Unicode 与非根 cwd。实现时及 19 文件 scripts 分组后 compile、lint、docs:verify、docs:health、diff 检查通过。三个探针入口与 VSIX 入口语法检查通过，未重跑探针或 VSIX 验收。scripts 仍不在 lint 范围，有专门回归覆盖。
+- **后续独立维护证据：** 提交隔离检查器新增 10 个测试，记录为 94/94，compile／lint／docs／diff 检查通过。不是 WI-011 迁移再新增 11 个用例，也不是本次收尾重跑。
+- **收尾限制：** 本次仅文档收尾，依据既有检查记录与维护者收尾授权，不宣称新运行应用测试／compile／lint／F5／VSIX。本次文档检查记录在 ACTIVE。收尾不涉及生产逻辑、依赖／锁文件、新 e2e／snapshot／性能通道、CI 矩阵扩展或 Git commit。既有 project-trust 探针的 0.85.1 guard 仍不同于 0.86.1 pin，不推断探针结果。WI-008／WI-009 保持开放，WI-010 pending ADR 与三个 Open gate 不变。
 
 <a id="wi-001"></a>
 ## WI-001 — 构建基线与运行时探针

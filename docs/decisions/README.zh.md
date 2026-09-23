@@ -33,6 +33,12 @@
 |----|------|------|------|
 | 0001 | 构建与扩展 baseline（WI-001） | `gate-extension-host-baseline`、`gate-sidebar-chat-shell`、`gate-runtime-host` | [0001-build-baseline.md](0001-build-baseline.md) |
 
+## Draft ADR
+
+- [0003 — React 与 TypeScript Webview 前端](0003-react-webview.zh.md)：WI-015 Prepare 的框架方向已确认，需要外观整理与浏览器预览；Build 和必要验证待完成，WI-014 Paused，gate 保持 Open。
+
+- [0002 — 本地交互契约与上游能力提案](0002-interaction-contract-route.zh.md)：文档路线于 2026-09-22 批准，随后修订为优先使用未修改发行版 pi，上游增强可选。详细限定设计、实现及所需验证待完成。WI-013 Paused，未完成；ADR 仍 Draft，gate 保持 Open；不解决 WI-010 遗留 pending ADR。
+
 ## Agent 流程
 
 符合 ADR 条件的选择获明确确认后，按[协作指南 §7](../guides/agent-collaboration.zh.md#7-agent-义务) 自动记录，无需另问是否保存。所需验证缺失时保持 ADR Draft，并在 ACTIVE 记录待满足条件（`Decision: pending-adr`），不关闭 gate。批准含义不清楚时询问具体决策，不询问目录。满足接受条件后更新本索引、相关 gate 链接及 ACTIVE。历史 ADR 留在此处；被替代时标明状态并链接替代记录，不改写原始理由，不因年代久远而移动。

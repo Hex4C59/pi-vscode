@@ -26,7 +26,16 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 
 | Record | Contents |
 |--------|----------|
-| [Closed work-item history — WI-001–007 and WI-010](2026-09-21-closed-wi-history.md) | Closed scope, acceptance evidence and retained limits; WI-008/WI-009 remain open in ACTIVE |
+| [Closed work-item history — WI-001–007 and WI-010–012](2026-09-21-closed-wi-history.md) | Closed scope, acceptance evidence and retained limits; WI-008/WI-009 remain open in ACTIVE |
+
+## Superseded handoffs
+
+| Record | Contents |
+|--------|----------|
+| [Pre-Goal handoffs superseded by workspace recovery](2026-09-22-pre-goal-handoffs.md) | Historical approvals/evidence; not a WI closure or current task ledger |
+| [Goal frontend and attachment checkpoints](2026-09-22-goal-frontend-attachment-handoffs.md) | Executable WI-015 / WI-014 handoffs replaced by the next Goal slice; maintainer acceptance and gates remain open |
+| [Goal change-review checkpoint](2026-09-22-goal-change-review-handoff.md) | WI-016 code/executable handoff replaced by session continuity; maintainer acceptance and gates remain open |
+| [Goal session-continuity checkpoint](2026-09-23-goal-session-handoff.md) | WI-017 executable delivery and maintainer-requested pause; next implementation not started, acceptance and gates remain open |
 
 ## Agent rule
 

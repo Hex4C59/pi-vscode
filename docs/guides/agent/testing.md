@@ -30,7 +30,25 @@ The current automated runner is `node:test`, not Vitest. Use `*.spec.ts` for app
 
 The runner cleans only `dist/tests/`, preserving other bundles under `dist/`, then uses esbuild to bundle application specs while preserving their source-relative directories: `src/extension/tests/webview-messages.spec.ts` becomes `dist/tests/extension/tests/webview-messages.spec.js`. It passes only the exact compiled-output list and discovered script specs to `node:test`, with the repository root as cwd; stale bundles and broad output globs are not execution inputs. Build and test-process failures fail the command.
 
+Webview application specs mount the React frontend through `mountApp`, jsdom and a synthetic bridge/host. They exercise host projections, presentation state and named outbound intents through the same app entry used by the browser preview. The retired inline-string VM harness is not part of the current test lane; keep new Webview behavior in mounted React/jsdom `*.spec.ts` cases.
+
 Read type/lint scope from repository configuration; script `.mjs` files currently remain outside lint. The [workflow](../../../.github/workflows/ci.yml) defines actual CI checks; the local runner does not imply full CI collection.
+
+## Frontend and package checks
+
+Use the browser preview for visual and interaction observation, and use the mounted specs for repeatable behavior checks:
+
+```bash
+npm run preview:webview
+npm run compile
+npm test
+npm run build:webview
+npm run verify:webview
+```
+
+`npm run preview:webview` serves the React application with synthetic host fixtures and browser hot refresh. It does not start pi or provide VS Code host evidence. `npm run compile` builds the extension host with esbuild, builds the Webview with Vite, and runs strict host, browser and test TypeScript configurations. `npm run watch` watches the host/gate builds and production Webview rebuild; it is separate from the browser preview server.
+
+`npm run build:webview` writes local production assets to `dist/webview`. `npm run verify:webview` checks the non-empty static `webview.js` and `webview.css` output. Passing a VSIX path with `npm run verify:webview -- path/to/pi-vscode.vsix` additionally checks `extension/dist/webview/webview.js` and `extension/dist/webview/webview.css` inside the archive. These checks do not install the VSIX, start a dev server or run pi; production must load the packaged local assets without a dev server.
 
 Before adding, moving or renaming a test:
 
@@ -47,7 +65,7 @@ Directories express ownership, suffixes express evidence type, and the runner de
 
 | Suffix | Meaning and activation boundary |
 |--------|---------------------------------|
-| `*.spec.ts` / `*.spec.mjs` | Module behavior or controlled multi-module composition, collected by `npm test`. Mock-provider and VM Webview tests belong here; specs are not limited to single functions and do not require Vitest. |
+| `*.spec.ts` / `*.spec.mjs` | Module behavior or controlled multi-module composition, collected by `npm test`. Mounted React/jsdom Webview specs, host tests and narrow provider seams belong here; specs are not limited to single functions and do not require Vitest. |
 | `*.e2e.ts` | A declared real entry with observable outcomes; name the real entry and substituted services. RPC evidence does not prove VS Code UI, and e2e does not imply paid calls. Use `.e2e.ts`, not `.e2e.test.ts`, when introduced. Proposed `test:e2e` does not exist; collection must be separate from default specs. |
 | `*.expected.e2e.ts` | Assembled process/CLI behavior compared with reviewed owner-local output, without session replay; `*.expected.json` is data. This also matches `.e2e.ts`, so a separate suite must be excluded from general e2e collection. Golden assertions alone do not make a spec e2e. |
 | `*.snapshot.ts` | Reserved for recorded-session replay, not all snapshot assertions or screenshots. Enabling requires a separate design for public APIs, recording/replay, secret handling and fixture review; do not copy pi storage internals or an external session corpus. |
@@ -64,7 +82,7 @@ Optional `.host.spec.ts` / `.client.spec.ts` / `.compat.spec.ts` qualifiers iden
 
 ## Evidence tiers and safety
 
-- **Automated tests (`npm test`):** repeatable, keyless behavior and regression checks. Prefer real deterministic implementations; substitute narrow external seams such as VS Code APIs, processes, clocks and RPC. Test relevant malformed input, errors, cancellation, late completion, generation changes and resource cleanup. Assert observable outputs and side effects, not just mock call counts or implementation-shaped strings.
+- **Automated tests (`npm test`):** repeatable, keyless behavior and regression checks. Prefer real deterministic implementations; substitute narrow external seams such as VS Code APIs, processes, clocks, RPC and the browser host boundary. Mounted React/jsdom Webview specs cover projection, interaction and cleanup without claiming browser layout or VS Code host behavior. Test relevant malformed input, errors, cancellation, late completion, generation changes and resource cleanup. Assert observable outputs and side effects, not just mock call counts or implementation-shaped strings.
 - **Runtime/project-trust spikes (`spike:*`):** explicit, isolated integration evidence under the [pi integration playbook](pi-integration.md). A mock RPC test is not proof that the installed pi process behaves the same way.
 - **Manual host acceptance (F5):** actual extension lifecycle and Webview interactions, including applicable keyboard, focus, theme and failure behavior. HTML/CSP assertions and scripted UI tests are useful but do not establish real host rendering or interaction correctness.
 
@@ -83,4 +101,4 @@ Do not use real user state, secrets, uncontrolled network calls or paid model AP
 
 The maintainer approved playbook plus load-map adoption on 2026-09-21. This adopts ownership, explicit collection and evidence separation from [DeepSeek Harness testing policy](https://github.com/Hex4C59/deepseek-harness/blob/master/docs/testing.md), not its monorepo layout, runner, paid-API policy, session snapshot infrastructure or per-file 100% coverage gate.
 
-Historical note: the initial documentation-only adoption retained adjacent `*.test.ts` files, `*.test.mjs` script files and the flat extension-only collection command. The subsequent approved WI-011 migration implements the owner-local `.spec` layout and recursive runner described above, retaining `node:test` and esbuild. It does not enable additional evidence tiers.
+Historical note: the initial documentation-only adoption retained adjacent `*.test.ts` files, `*.test.mjs` script files and the flat extension-only collection command, including the former inline-string VM Webview harness. The subsequent approved WI-011 migration implements the owner-local `.spec` layout and recursive runner described above, and WI-015 replaces that Webview harness with mounted React/jsdom specs while retaining `node:test` and esbuild. It does not enable additional evidence tiers.
