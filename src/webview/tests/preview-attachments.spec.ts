@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PreviewBridge, type PreviewScenario } from "../preview/fixtures.js";
-import { parseHostMessage } from "../host-messages.js";
+import { PreviewBridge } from "../preview/preview-bridge.js";
+import type { PreviewScenario } from "../preview/scenarios.js";
+import { parseHostMessage } from "../parse-host-message.js";
 import { parseWebviewMessage, type HostMessage, type AttachmentStateMessage } from "../../extension/webviewMessages.js";
 
 function fixture(scenario: PreviewScenario) {

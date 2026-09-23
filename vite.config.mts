@@ -7,7 +7,7 @@ const repositoryRoot = path.dirname(fileURLToPath(import.meta.url));
 const webviewRoot = path.join(repositoryRoot, "src", "webview");
 
 export default defineConfig({
-  root: webviewRoot,
+  root: path.join(webviewRoot, "preview"),
   plugins: [react()],
   // The checkout may be edited through Windows while Vite runs in WSL.
   server: { watch: { usePolling: true, interval: 200 } },

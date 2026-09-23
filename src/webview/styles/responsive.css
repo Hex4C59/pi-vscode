@@ -1,0 +1,28 @@
+@media (max-width: 420px) {
+  #main,
+  .app-main,
+  .main-scroll { padding: 10px; }
+  #composer-wrap,
+  .composer-wrap { padding-inline: 10px; }
+  #attachment-history-list { max-height: 110px; }
+  #attachment-preview,
+  .attachment-preview { max-height: 150px; }
+  #attachment-preview-text,
+  .attachment-preview-text { max-height: 116px; }
+}
+
+@media (max-height: 560px) {
+  #composer-wrap,
+  .composer-wrap { max-height: 48vh; }
+  #attachment-history-list { max-height: 90px; }
+  #attachment-preview,
+  .attachment-preview { max-height: 126px; }
+  #attachment-preview-text,
+  .attachment-preview-text { max-height: 94px; }
+}
+
+@media (max-width: 320px) {
+  .msg-user,
+  .message--user,
+  .message.user { max-width: 94%; }
+}

@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import type { WebviewBridge } from "./bridge.js";
-import { WebviewClient } from "./client.js";
+import { WebviewClient } from "./webview-client.js";
 import { App } from "./app.js";
 
 /** Shared application entry for the packaged Webview and the isolated preview. */

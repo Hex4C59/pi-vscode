@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import { attachmentError, availability, type WebviewClient } from "./client.js";
+import { attachmentError, availability } from "./client-state.js";
+import { type WebviewClient } from "./webview-client.js";
 import { WorkspaceSetup } from "./components/workspace-setup.js";
 import { Conversation } from "./components/conversation.js";
 import { ModelPicker } from "./components/model-picker.js";
@@ -63,8 +64,8 @@ export function App({ client }: { client: WebviewClient }) {
         {state.status === "eligible" && state.choice !== null && snapshot.savedHistory && (snapshot.savedHistory.available || snapshot.savedHistory.error) && <SavedHistory
           state={snapshot.savedHistory} pendingPage={snapshot.savedHistoryPendingPage} preview={snapshot.savedHistoryPreview}
           disabled={!!snapshot.error || state.busy || a.sessionTransitioning}
-          onPage={client.getSavedHistory} onPreview={client.requestSavedHistoryPreview} onPreviewPage={client.navigateSavedHistoryPreview}
-          onClosePreview={client.closeSavedHistoryPreview} onInteract={readSavedHistory}
+          onPage={client.savedHistory.page} onPreview={client.savedHistory.preview} onPreviewPage={client.savedHistory.navigatePreview}
+          onClosePreview={client.savedHistory.closePreview} onInteract={readSavedHistory}
         />}
         {(!chatVisible || state.runtime !== "ready") && <WorkspaceSetup state={state} onAction={client.action} />}
         {(!chatVisible || state.runtime !== "ready") && snapshot.changeReview?.reset && <p id="change-review-reset-notice" className="banner" role="status">Captured change reviews were cleared for this runtime or project. No previous review data is available.</p>}

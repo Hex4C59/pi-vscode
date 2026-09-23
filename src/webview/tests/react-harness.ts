@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { act } from "react";
@@ -47,4 +49,10 @@ export async function uiHarness(initial = true) {
     async unmount() { await act(async () => dispose()); },
     async close() { await act(async () => dispose()); dom.window.close(); for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); } },
   };
+}
+
+/** Resolve the shared CSS entry for jsdom, preserving the production import order. */
+export function readAppStyles(file = "src/webview/styles.css"): string {
+  return readFileSync(file, "utf8").replace(/@import "(\.[^"]+)";/g, (_match, relative: string) =>
+    readAppStyles(path.resolve(path.dirname(file), relative)));
 }

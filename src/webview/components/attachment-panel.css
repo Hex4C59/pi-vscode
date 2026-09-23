@@ -1,0 +1,86 @@
+/* Attachment panel */
+#attachment-controls,
+.attachment-panel {
+  min-width: 0;
+  margin: 8px 0 0;
+}
+
+#attachment-controls > p,
+.attachment-panel > p {
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+
+#attachment-entry,
+#attachment-history-list,
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 7px;
+}
+
+#attachment-history-list > * { flex-shrink: 0; }
+
+#attachment-history-list {
+  max-height: 150px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.attachment,
+.attachment-row,
+.attachment-card {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 7px;
+  padding: 7px 8px;
+  overflow: hidden;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+}
+
+.attachment__body,
+.attachment-body,
+.attachment-info { min-width: 0; flex: 1 1 auto; }
+
+.attachment__path,
+.attachment-path,
+.attachment-title {
+  overflow-wrap: anywhere;
+  color: var(--ui-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.attachment__meta,
+.attachment-meta {
+  overflow-wrap: anywhere;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+
+.attachment[data-state="changed"],
+.attachment--changed,
+.attachment-card[data-state="changed"] { border-color: var(--ui-warning); }
+
+.attachment[data-state="unavailable"],
+.attachment--unavailable,
+.attachment-card[data-state="unavailable"] { border-color: var(--ui-danger); }
+
+#attachment-preview,
+.attachment-preview {
+  min-width: 0;
+  max-height: 190px;
+  margin-top: 8px;
+  overflow: auto;
+}
+
+#attachment-preview-text,
+.attachment-preview-text { max-height: 150px; }

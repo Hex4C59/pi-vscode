@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { SessionStateMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
-import { WebviewClient } from "../client.js";
-import { parseHostMessage } from "../host-messages.js";
+import { WebviewClient } from "../webview-client.js";
+import { parseHostMessage } from "../parse-host-message.js";
 import { attachmentState, readyState, uiHarness } from "./react-harness.js";
 
 const sessionEntry = (index: number) => ({

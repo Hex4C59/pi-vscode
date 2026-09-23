@@ -1,72 +1,7 @@
-import type { AttachmentHistoryEntry, AttachmentStateMessage, ChangeReviewStateMessage, SavedHistoryStateMessage, SessionStateMessage, WebviewMessage, WorkspaceStateMessage } from "../extension/webviewProtocol.js";
+import { SavedHistoryClient } from "./saved-history-client.js";
+import { attachmentError, availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE, type ClientSnapshot, type Intent } from "./client-state.js";
 import type { WebviewBridge } from "./bridge.js";
-import { parseHostMessage } from "./host-messages.js";
-
-type WithoutEnvelope<T> = T extends { generation: number; viewId: string } ? Omit<T, "generation" | "viewId" | "version"> : never;
-export type Intent = WithoutEnvelope<WebviewMessage>;
-export const ATTACHMENT_HISTORY_PAGE_SIZE = 16;
-export const CHANGE_REVIEW_PAGE_SIZE = 16;
-export const SESSION_PAGE_SIZE = 16;
-export const SAVED_HISTORY_PAGE_SIZE = 32;
-const SAVED_PREVIEW_BACK_LIMIT = 128;
-export type Preview = { snapshotId: string; requestId: string; offset: number; text: string; error: string | null };
-export type SavedHistoryPreview = {
-  id: string; requestId: string; offset: number; nextOffset: number; totalChars: number | null;
-  text: string; done: boolean; phase: "loading" | "idle" | "error";
-  error: SavedHistoryStateMessage["error"]; previousOffsets: number[];
-};
-export type ClientSnapshot = {
-  workspace: WorkspaceStateMessage | null;
-  attachments: AttachmentStateMessage | null;
-  sessions: SessionStateMessage | null;
-  savedHistory: SavedHistoryStateMessage | null;
-  savedHistoryPendingPage: number | null;
-  savedHistoryPreview: SavedHistoryPreview | null;
-  changeReview: ChangeReviewStateMessage | null;
-  changeReviewOpen: boolean;
-  changeReviewPage: number;
-  text: string;
-  synchronizing: boolean;
-  submitting: boolean;
-  stopRequested: boolean;
-  history: AttachmentHistoryEntry[];
-  historyOpen: boolean;
-  historyPage: number | null;
-  preview: Preview | null;
-  error: string | null;
-};
-export function attachmentError(code: string, kind?: "file" | "selection"): string {
-  if (code === "source-changed" && kind === undefined) return "Sources changed. Send checks all attachments; confirm each marked snapshot or remove and reattach.";
-  if (code === "source-changed" && kind === "selection") return "Source changed. Selection text stays fixed; Send checks the source before you choose Use old snapshot, or remove and reattach.";
-  const messages: Record<string, string> = {
-    "no-editor": "Open a workspace text editor and select code first.", "empty-selection": "Select a nonempty range of code first.", "multiple-selections": "Select one range at a time, then attach it.",
-    cancelled: "Selection cancelled. Draft retained.", busy: "Wait for the current operation.", stale: "Draft changed; synchronized with the host.",
-    ineligible: "A trusted local workspace and ready runtime are required.", "attachment-limit": "At most 20 attachments. Remove an item before attaching more.", "total-too-large": "Attachment text exceeds 1 MiB. Reduce or remove attachments before sending.",
-    "sensitive-source": "Credential-like source blocked. Attach only nonsecret code.",
-    "history-full": "Attachment history is full. Inspect history, or use Developer: Reload Window to restart (current chat, attachment snapshots and unsent draft will be lost). Plain chat remains available.",
-    "source-changed": "Source changed. Send refreshes the snapshot; confirm Use latest contents before sending. Remove and reattach if unavailable.", "preparation-cancelled": "Preparation cancelled. Draft retained.",
-    "runtime-lost": "Runtime/session ended. In-memory attachment history ended; reattach for the new session.",
-    "write-failed": "Delivery uncertain. No retry was made. Stop or restart before retrying.",
-    "ack-timeout": "Acknowledgement timed out. No retry was made. Stop or restart.",
-    "rpc-rejected": "Runtime rejected this submission. Inspect history before trying again.",
-  };
-  return messages[code] ?? "File could not be attached or sent. Remove and reattach a smaller eligible workspace text file.";
-}
-export function availability(s: ClientSnapshot) {
-  const w = s.workspace;
-  const stopping = s.stopRequested || w?.execution === "stopping" || w?.runtime === "stopping";
-  const ready = !!w && w.runtime === "ready" && !w.busy;
-  const sessionTransitioning = s.sessions?.phase === "confirming" || s.sessions?.phase === "switching";
-  const chatDisabled = !ready || !!w?.chatBusy || !!w?.modelBusy || stopping || !!s.error || sessionTransitioning;
-  return {
-    stopping,
-    sessionTransitioning,
-    settingsDisabled: !ready || !!w?.modelBusy || stopping || !!s.error || sessionTransitioning,
-    sendDisabled: chatDisabled || !w?.chatModel || !!s.attachments?.draft.attachments.some(a => ["unavailable", "confirmation-required"].includes(a.state)) || s.synchronizing || s.submitting || s.attachments?.preparation !== "idle" || !s.text.trim(),
-    attachmentDisabled: chatDisabled || s.synchronizing || s.submitting || s.attachments?.preparation !== "idle",
-    showStop: !!w?.chatBusy || stopping || (!!s.attachments && s.attachments.preparation !== "idle"),
-  };
-}
+import { parseHostMessage } from "./parse-host-message.js";
 
 function sessionActionsBlocked(snapshot: ClientSnapshot): boolean {
   const phase = snapshot.sessions?.phase;
@@ -96,9 +31,6 @@ function blockedDuringSessionSwitch(intent: Intent): boolean {
 
 /** Owns view-local reconciliation only. The host decides all business transitions. */
 export class WebviewClient {
-  private snapshot: ClientSnapshot = { workspace: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
-    savedHistory: null, savedHistoryPendingPage: null, savedHistoryPreview: null,
-    changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   private listeners = new Set<() => void>();
   private unsubscribe: (() => void) | undefined;
   private identity: { generation: number; viewId: string } | undefined;
@@ -107,6 +39,17 @@ export class WebviewClient {
   private submitted: { revision: number; sequence: number; text: string } | null = null;
   private previewCounter = 0;
   private disposed = false;
+  readonly savedHistory = new SavedHistoryClient(
+    () => {
+      const { workspace, error } = this.snapshot;
+      return !this.disposed && !error && !!workspace && workspace.status === "eligible" && workspace.choice !== null
+        && !workspace.busy && !availability(this.snapshot).sessionTransitioning;
+    },
+    intent => this.action(intent), snapshot => this.update(snapshot), error => this.update({ error }),
+  );
+  private snapshot: ClientSnapshot = { workspace: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
+    ...this.savedHistory.snapshot,
+    changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   constructor(private readonly bridge: WebviewBridge) {}
   getSnapshot = (): ClientSnapshot => this.snapshot;
   subscribe = (listener: () => void): (() => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -195,46 +138,6 @@ export class WebviewClient {
     if (!sessions || !sessions.loaded || sessions.error === "stale" || sessionActionsBlocked(this.snapshot) || !sessions.entries.some(entry => entry.id === id)) return;
     this.action({ type: "resumeConversation", id });
   };
-  private savedHistoryBlocked(): boolean {
-    const { workspace, savedHistory, savedHistoryPendingPage, error } = this.snapshot;
-    return this.disposed || !!error || !workspace || workspace.status !== "eligible" || workspace.choice === null
-      || workspace.busy || availability(this.snapshot).sessionTransitioning || !savedHistory?.available
-      || savedHistory.phase === "loading" || savedHistoryPendingPage !== null;
-  }
-  getSavedHistory = (page: number): void => {
-    const history = this.snapshot.savedHistory;
-    const last = Math.max(0, Math.ceil((history?.total ?? 0) / SAVED_HISTORY_PAGE_SIZE) - 1);
-    if (this.savedHistoryBlocked() || !Number.isSafeInteger(page) || page < 0 || page > last) return;
-    this.update({ savedHistoryPendingPage: page, savedHistoryPreview: null });
-    this.action({ type: "getSavedHistory", page });
-  };
-  requestSavedHistoryPreview = (id: string): void => {
-    const history = this.snapshot.savedHistory;
-    if (this.savedHistoryBlocked() || history?.phase !== "idle" || history.error !== null || !history.messages.some(line => line.id === id)) return;
-    this.loadSavedHistoryPreview(id, 0, [], null);
-  };
-  private loadSavedHistoryPreview(id: string, offset: number, previousOffsets: number[], totalChars: number | null): void {
-    if (this.previewCounter >= Number.MAX_SAFE_INTEGER) { this.update({ error: "Preview identifiers exhausted. Reopen the view." }); return; }
-    const requestId = `saved-preview-${++this.previewCounter}`;
-    this.update({ savedHistoryPreview: { id, requestId, offset, nextOffset: offset, previousOffsets, totalChars, text: "", done: false, phase: "loading", error: null } });
-    this.action({ type: "getSavedHistoryPreview", id, requestId, offset });
-  }
-  navigateSavedHistoryPreview = (direction: "first" | "previous" | "next" | "retry"): void => {
-    const preview = this.snapshot.savedHistoryPreview;
-    if (this.savedHistoryBlocked() || !preview || preview.phase === "loading") return;
-    if (direction === "retry") {
-      if (preview.phase === "error") this.loadSavedHistoryPreview(preview.id, preview.offset, preview.previousOffsets, preview.totalChars);
-    } else if (direction === "first") {
-      if (preview.offset > 0) this.loadSavedHistoryPreview(preview.id, 0, [], preview.totalChars);
-    } else if (direction === "previous") {
-      const previous = preview.previousOffsets.at(-1);
-      if (previous !== undefined) this.loadSavedHistoryPreview(preview.id, previous, preview.previousOffsets.slice(0, -1), preview.totalChars);
-    } else if (preview.phase === "idle" && !preview.done) {
-      // Retain positions, never prior text. First chunk remains available beyond this bounded back history.
-      this.loadSavedHistoryPreview(preview.id, preview.nextOffset, [...preview.previousOffsets, preview.offset].slice(-SAVED_PREVIEW_BACK_LIMIT), preview.totalChars);
-    }
-  };
-  closeSavedHistoryPreview = (): void => this.update({ savedHistoryPreview: null });
   toggleHistory = (): void => {
     const open = !this.snapshot.historyOpen;
     this.update({ historyOpen: open, ...(open ? { historyPage: null } : this.historyPreviewReset()) });
@@ -286,7 +189,7 @@ export class WebviewClient {
       // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
       const committedHandoff = message.type === "sessionState" && message.phase === "switching";
       this.pending = null; this.submitted = null;
-      this.update({ workspace: null, attachments: null, sessions: null, savedHistory: null, savedHistoryPendingPage: null, savedHistoryPreview: null,
+      this.update({ workspace: null, attachments: null, sessions: null, ...this.savedHistory.reset(),
         changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
         ...(committedHandoff ? { text: "" } : {}) });
     }
@@ -295,29 +198,11 @@ export class WebviewClient {
     if (message.type === "sessionState") {
       // The host cancels retained-history reads before its native modal and suppresses their replies.
       const cancelsHistoryRead = message.phase === "confirming" || message.phase === "switching";
-      this.update({ sessions: message, ...(cancelsHistoryRead ? { savedHistoryPreview: null } : {}) });
+      this.update({ sessions: message, ...(cancelsHistoryRead ? this.savedHistory.invalidatePreview() : {}) });
       return;
     }
-    if (message.type === "savedHistoryState") {
-      const preview = this.snapshot.savedHistoryPreview;
-      const keepPreview = message.available && message.phase === "idle" && message.error === null
-        && message.page === this.snapshot.savedHistory?.page && preview && message.messages.some(line => line.id === preview.id);
-      this.update({ savedHistory: message, savedHistoryPreview: keepPreview ? preview : null,
-        savedHistoryPendingPage: message.phase === "loading" ? this.snapshot.savedHistoryPendingPage : null });
-      return;
-    }
-    if (message.type === "savedHistoryPreview") {
-      const preview = this.snapshot.savedHistoryPreview;
-      if (!preview || preview.phase !== "loading" || message.requestId !== preview.requestId || message.id !== preview.id) return;
-      if ("code" in message) {
-        this.update({ savedHistoryPreview: { ...preview, phase: "error", error: message.code } });
-        return;
-      }
-      if (message.offset !== preview.offset || message.nextOffset !== message.offset + message.text.length
-        || message.nextOffset > message.totalChars || message.done !== (message.nextOffset === message.totalChars)
-        || (!message.done && message.nextOffset <= message.offset) || (preview.totalChars !== null && preview.totalChars !== message.totalChars)) return;
-      this.update({ savedHistoryPreview: { ...preview, text: message.text, nextOffset: message.nextOffset,
-        totalChars: message.totalChars, done: message.done, phase: "idle", error: null } });
+    if (message.type === "savedHistoryState" || message.type === "savedHistoryPreview") {
+      this.savedHistory.receive(message);
       return;
     }
     if (message.type === "workspaceState") {

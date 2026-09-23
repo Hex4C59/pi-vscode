@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { SavedHistoryStateMessage, SessionStateMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
-import { WebviewClient } from "../client.js";
+import { WebviewClient } from "../webview-client.js";
 import { readyState, attachmentState, uiHarness } from "./react-harness.js";
-import { parseHostMessage } from "../host-messages.js";
+import { parseHostMessage } from "../parse-host-message.js";
 import { readySettings, tick } from "../../extension/tests/harness.js";
 import { parseWebviewMessage } from "../../extension/webviewMessages.js";
 
@@ -69,11 +69,11 @@ test("saved history replaces one page, correlates one literal preview chunk and 
   try {
     h.receive(historyState({ total: 65 }));
     const before = h.sent.length;
-    h.client.requestSavedHistoryPreview("missing");
+    h.client.savedHistory.preview("missing");
     assert.equal(h.sent.length, before);
     h.client.requestPreview("attachment-snapshot");
     const attachmentPreview = h.client.getSnapshot().preview;
-    h.client.requestSavedHistoryPreview("retained-1");
+    h.client.savedHistory.preview("retained-1");
     const first = h.sent.at(-1); assert.ok(first?.type === "getSavedHistoryPreview");
     assert.deepEqual(first, { ...envelope, type: "getSavedHistoryPreview", requestId: first.requestId, id: "retained-1", offset: 0 });
     const response = { ...envelope, type: "savedHistoryPreview", requestId: first.requestId, id: first.id, offset: 0, nextOffset: 5, totalChars: 10, text: "first", done: false };
@@ -84,7 +84,7 @@ test("saved history replaces one page, correlates one literal preview chunk and 
     h.receive(response);
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.text, "first");
     assert.equal(h.sent.at(-1), first, "no automatic unbounded chunk drain");
-    h.client.navigateSavedHistoryPreview("next");
+    h.client.savedHistory.navigatePreview("next");
     const next = h.sent.at(-1); assert.ok(next?.type === "getSavedHistoryPreview");
     assert.equal(next.offset, 5); assert.notEqual(next.requestId, first.requestId);
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.text, "", "do not keep previous chunk text while loading");
@@ -92,24 +92,24 @@ test("saved history replaces one page, correlates one literal preview chunk and 
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.phase, "loading", "immutable total must match");
     h.receive({ ...response, requestId: next.requestId, offset: 5, nextOffset: 10, text: "later", done: true });
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.text, "later");
-    h.client.navigateSavedHistoryPreview("previous");
+    h.client.savedHistory.navigatePreview("previous");
     const previous = h.sent.at(-1); assert.ok(previous?.type === "getSavedHistoryPreview");
     assert.equal(previous.offset, 0);
     h.receive({ ...response, requestId: previous.requestId });
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.text, "first");
-    h.client.getSavedHistory(1);
+    h.client.savedHistory.page(1);
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "getSavedHistory", page: 1 });
     assert.equal(h.client.getSnapshot().savedHistoryPreview, null, "page request closes preview immediately");
     h.receive({ ...response, requestId: previous.requestId });
     h.receive(historyState({ page: 1, total: 65, messages: [{ id: "earlier-1", role: "assistant", text: "Older entry" }] }));
     assert.deepEqual(h.client.getSnapshot().savedHistory?.messages.map(line => line.id), ["earlier-1"]);
     const count = h.sent.length;
-    h.client.requestSavedHistoryPreview("retained-1"); h.client.getSavedHistory(-1); h.client.getSavedHistory(3);
+    h.client.savedHistory.preview("retained-1"); h.client.savedHistory.page(-1); h.client.savedHistory.page(3);
     assert.equal(h.sent.length, count);
     assert.equal(h.client.getSnapshot().preview, attachmentPreview, "saved history never changes attachment previews");
     h.receive({ ...historyState(), viewId: "old-view" }); h.receive(historyState({ generation: 0 }));
     assert.equal(h.client.getSnapshot().savedHistory?.page, 1);
-    h.client.requestSavedHistoryPreview("earlier-1");
+    h.client.savedHistory.preview("earlier-1");
     const obsolete = h.sent.at(-1); assert.ok(obsolete?.type === "getSavedHistoryPreview");
     h.receive({ ...readyState, generation: 2 });
     assert.equal(h.client.getSnapshot().savedHistory, null);
@@ -176,8 +176,8 @@ test("session confirmation and switching block all named history actions but lis
     for (const phase of ["confirming", "switching"] as const) {
       h.receive(sessionPhase(phase));
       const before = h.sent.length;
-      h.client.getSavedHistory(0);
-      h.client.requestSavedHistoryPreview("retained-1");
+      h.client.savedHistory.page(0);
+      h.client.savedHistory.preview("retained-1");
       h.client.action({ type: "getSavedHistory", page: 0 });
       h.client.action({ type: "getSavedHistoryPreview", id: "retained-1", requestId: "manual", offset: 0 });
       assert.equal(h.sent.length, before, phase);
@@ -186,7 +186,7 @@ test("session confirmation and switching block all named history actions but lis
     h.receive(sessionPhase("listing"));
     h.client.action({ type: "sendChat", draftRevision: 0 });
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "sendChat", draftRevision: 0 }, "listing must not silently discard send");
-    h.client.requestSavedHistoryPreview("retained-1");
+    h.client.savedHistory.preview("retained-1");
     assert.equal(h.sent.at(-1)?.type, "getSavedHistoryPreview");
   } finally { h.client.dispose(); }
 });
@@ -274,46 +274,46 @@ test("retained-text paging has bounded backward metadata, replaces chunks and re
   const h = clientHarness();
   try {
     h.receive(historyState());
-    h.client.requestSavedHistoryPreview("retained-1");
+    h.client.savedHistory.preview("retained-1");
     for (let offset = 0; offset < 130; offset++) {
       const request = h.sent.at(-1); assert.ok(request?.type === "getSavedHistoryPreview");
       assert.equal(request.offset, offset);
       h.receive({ ...envelope, type: "savedHistoryPreview", id: request.id, requestId: request.requestId, text: "x", offset, nextOffset: offset + 1, totalChars: 130, done: offset === 129 });
       assert.equal(h.client.getSnapshot().savedHistoryPreview?.text, "x", "chunks are replaced, never accumulated");
       assert.ok((h.client.getSnapshot().savedHistoryPreview?.previousOffsets.length ?? 0) <= 128);
-      if (offset < 129) h.client.navigateSavedHistoryPreview("next");
+      if (offset < 129) h.client.savedHistory.navigatePreview("next");
     }
     const beforeDone = h.sent.length;
-    h.client.navigateSavedHistoryPreview("next");
+    h.client.savedHistory.navigatePreview("next");
     assert.equal(h.sent.length, beforeDone);
     for (let offset = 128; offset >= 1; offset--) {
-      h.client.navigateSavedHistoryPreview("previous");
+      h.client.savedHistory.navigatePreview("previous");
       const request = h.sent.at(-1); assert.ok(request?.type === "getSavedHistoryPreview");
       assert.equal(request.offset, offset);
       h.receive({ ...envelope, type: "savedHistoryPreview", id: request.id, requestId: request.requestId, text: "x", offset, nextOffset: offset + 1, totalChars: 130, done: false });
     }
     assert.deepEqual(h.client.getSnapshot().savedHistoryPreview?.previousOffsets, []);
     const beforePrevious = h.sent.length;
-    h.client.navigateSavedHistoryPreview("previous");
+    h.client.savedHistory.navigatePreview("previous");
     assert.equal(h.sent.length, beforePrevious);
-    h.client.navigateSavedHistoryPreview("first");
+    h.client.savedHistory.navigatePreview("first");
     const first = h.sent.at(-1); assert.ok(first?.type === "getSavedHistoryPreview");
     assert.equal(first.offset, 0, "First chunk recovers older positions beyond the bounded back stack");
     h.receive({ ...envelope, type: "savedHistoryPreview", id: first.id, requestId: first.requestId, code: "cancelled" });
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.error, "cancelled");
-    h.client.navigateSavedHistoryPreview("retry");
+    h.client.savedHistory.navigatePreview("retry");
     const retry = h.sent.at(-1); assert.ok(retry?.type === "getSavedHistoryPreview");
     assert.equal(retry.offset, 0); assert.notEqual(retry.requestId, first.requestId);
     h.receive({ ...envelope, type: "savedHistoryPreview", id: first.id, requestId: first.requestId, code: "unavailable" });
     assert.equal(h.client.getSnapshot().savedHistoryPreview?.phase, "loading");
-    h.client.closeSavedHistoryPreview();
+    h.client.savedHistory.closePreview();
     h.receive({ ...envelope, type: "savedHistoryPreview", id: retry.id, requestId: retry.requestId, text: "x", offset: 0, nextOffset: 1, totalChars: 130, done: false });
     assert.equal(h.client.getSnapshot().savedHistoryPreview, null);
-    h.client.requestSavedHistoryPreview("retained-1");
+    h.client.savedHistory.preview("retained-1");
     h.receive(historyState({ messages: [{ id: "replacement", role: "user", text: "New metadata ID" }] }));
     assert.equal(h.client.getSnapshot().savedHistoryPreview, null, "same page with replaced IDs invalidates the old preview");
     const beforeOldId = h.sent.length;
-    h.client.requestSavedHistoryPreview("retained-1");
+    h.client.savedHistory.preview("retained-1");
     assert.equal(h.sent.length, beforeOldId);
   } finally { h.client.dispose(); }
 });

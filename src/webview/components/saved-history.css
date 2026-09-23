@@ -1,0 +1,20 @@
+/* WI017: bounded restored-history window; independent of live chat/attachments. */
+#saved-history {
+  min-width: 0;
+  margin: 8px 0;
+  padding: 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+  background: var(--ui-surface);
+}
+#saved-history h2 { margin: 0 0 6px; font-size: 13px; }
+#saved-history h3 { margin: 8px 0 5px; font-size: 12px; }
+#saved-history p { margin: 6px 0; font-size: 11px; }
+#saved-history pre { margin: 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+#saved-history button { min-height: 26px; padding: 4px 7px; font-size: 11px; }
+#saved-history .saved-history-actions { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+#saved-history-entries { max-height: 360px; max-height: min(45vh, 360px); overflow-y: auto; overflow-x: hidden; }
+#saved-history [data-saved-history-row] { padding: 7px; margin: 5px 0; border: 1px solid var(--ui-border); border-radius: 4px; }
+#saved-history [data-saved-history-row] > strong { font-size: 11px; color: var(--ui-muted); }
+#saved-history-preview { border-top: 1px solid var(--ui-border); margin-top: 9px; }
+#saved-history #saved-history-preview-text { max-height: 240px; overflow-y: auto; padding: 7px; background: var(--ui-surface-raised); }

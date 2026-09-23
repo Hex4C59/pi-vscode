@@ -1,0 +1,109 @@
+/* Setup, status and error surfaces */
+.card,
+.setup-card,
+.workspace-setup,
+.status-card {
+  margin: 8px 0 14px;
+  padding: 14px;
+  overflow: hidden;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+.card h2,
+.setup-card h2,
+.workspace-setup h2,
+.status-card h2,
+.panel-title {
+  margin: 0 0 6px;
+  color: var(--ui-fg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card p,
+.setup-card p,
+.workspace-setup p,
+.status-card p {
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.banner,
+.error-banner,
+.status-error {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  overflow-wrap: anywhere;
+  color: var(--ui-danger);
+  background: var(--ui-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 55%, var(--ui-border));
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.notice,
+.status-notice {
+  padding: 8px 10px;
+  color: var(--ui-warning);
+  background: var(--ui-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border));
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+#error:empty,
+#chat-error:empty,
+#model-error:empty,
+#model-status-error:empty { display: none; }
+
+/* Buttons and compact control rows */
+.btn-primary,
+.button-primary,
+.btn-secondary,
+.button-secondary,
+.button-quiet,
+.icon-button {
+  min-height: 26px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.btn-primary,
+.button-primary {
+  padding: 4px 10px;
+  color: var(--ui-accent-fg);
+  background: var(--ui-accent);
+}
+
+.btn-primary:hover:not(:disabled),
+.button-primary:hover:not(:disabled) { background: var(--ui-accent-hover); }
+
+.btn-secondary,
+.button-secondary {
+  padding: 4px 10px;
+  color: var(--ui-fg);
+  background: var(--ui-surface-raised);
+  border: 1px solid var(--ui-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled),
+.button-secondary:hover:not(:disabled),
+.button-quiet:hover:not(:disabled),
+.icon-button:hover:not(:disabled) { background: var(--ui-hover); }
+
+.button-quiet,
+.icon-button {
+  padding: 3px 7px;
+  color: var(--ui-muted);
+  background: transparent;
+}
+
+.button-quiet[aria-pressed="true"],
+.btn-secondary[aria-pressed="true"] {
+  color: var(--ui-fg);
+  border-color: var(--ui-focus);
+}

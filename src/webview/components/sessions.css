@@ -1,0 +1,100 @@
+/* WI-017 saved-session catalogue. Keep all selectors scoped to the compact panel. */
+#sessions-panel {
+  min-width: 0;
+  margin: 8px 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+
+#sessions-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 32px;
+  padding: 7px 9px;
+  color: var(--ui-fg);
+  background: transparent;
+  text-align: left;
+  font-weight: 600;
+}
+
+#sessions-toggle:hover { background: var(--ui-hover); }
+
+.sessions-current {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-muted);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessions-chevron {
+  margin-left: auto;
+  color: var(--ui-muted);
+}
+
+.sessions-content {
+  min-width: 0;
+  padding: 0 9px 9px;
+}
+
+.sessions-content > p { margin: 6px 0; }
+
+.sessions-handoff-notice,
+.sessions-notice,
+.sessions-error,
+.sessions-page-status {
+  font-size: 11px;
+}
+
+.sessions-error {
+  padding: 5px 7px;
+  border: 1px solid var(--ui-danger);
+  border-radius: 4px;
+  background: var(--ui-danger-bg);
+}
+
+.sessions-actions,
+.sessions-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0;
+}
+
+.sessions-entries {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sessions-entry {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-surface-raised);
+}
+
+.sessions-entry-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sessions-entry-heading h3 {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.sessions-restore { flex: none; min-height: 26px; padding: 4px 7px; font-size: 11px; }
+.sessions-excerpt { margin: 5px 0 3px; overflow-wrap: anywhere; }
+.sessions-modified { margin: 0; font-size: 11px; }
+.sessions-page-status { color: var(--ui-muted); }

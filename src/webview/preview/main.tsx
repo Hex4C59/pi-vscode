@@ -1,6 +1,8 @@
 import "../styles.css";
+import "./preview.css";
 import { mountApp } from "../mount.js";
-import { PreviewBridge, PREVIEW_SCENARIOS, type PreviewScenario } from "./fixtures.js";
+import { PreviewBridge } from "./preview-bridge.js";
+import { PREVIEW_SCENARIOS, type PreviewScenario } from "./scenarios.js";
 
 type PreviewTheme = "dark" | "light" | "high-contrast";
 type HotModule = { dispose(callback: () => void): void };

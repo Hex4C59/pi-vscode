@@ -1,0 +1,57 @@
+/* Conversation, activity and approvals */
+#chat,
+.conversation,
+.chat-content { min-width: 0; }
+
+#messages,
+.conversation-messages,
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-width: 0;
+}
+
+.msg,
+.message {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+
+.msg-user,
+.message--user,
+.message.user {
+  align-self: flex-end;
+  max-width: 86%;
+  padding: 7px 10px;
+  background: var(--ui-selection);
+  border-radius: 9px 9px 3px 9px;
+}
+
+/* Selection fills are not guaranteed to pair with foreground in high-contrast themes. */
+body.vscode-high-contrast .msg-user,
+body.vscode-high-contrast-light .msg-user,
+:root[data-theme="high-contrast"] .msg-user {
+  background-color: var(--ui-surface);
+  color: var(--ui-fg);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--vscode-contrastBorder, var(--ui-border-strong));
+}
+
+.msg-assistant,
+.message--assistant,
+.message.assistant { align-self: stretch; }
+
+.msg-assistant::before,
+.message--assistant::before {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ui-muted);
+  content: "pi";
+  font-size: 10px;
+  font-weight: 600;
+}

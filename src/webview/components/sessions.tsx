@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from "react";
 import type { SessionError, SessionStateMessage } from "../../extension/webviewProtocol.js";
-import { SESSION_PAGE_SIZE } from "../client.js";
+import { SESSION_PAGE_SIZE } from "../client-state.js";
 
 export interface SessionsProps {
   state: SessionStateMessage | null;

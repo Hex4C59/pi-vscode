@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readAppStyles } from "./react-harness.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { uiHarness, attachmentState, readyState } from "./react-harness.js";
@@ -158,7 +158,7 @@ test("high-contrast messages use the theme surface and foreground as a readable 
   const h = await uiHarness();
   try {
     const style = h.dom.window.document.createElement("style");
-    style.textContent = readFileSync("src/webview/styles.css", "utf8");
+    style.textContent = readAppStyles();
     h.dom.window.document.head.append(style);
     await h.render({ messages: [{ role: "user", text: "Visible user task" }] });
     for (const theme of ["vscode-high-contrast", "vscode-high-contrast-light"]) {
@@ -177,7 +177,7 @@ test("composer context scrolls independently while the input and task controls r
   const h = await uiHarness();
   try {
     const style = h.dom.window.document.createElement("style");
-    style.textContent = readFileSync("src/webview/styles.css", "utf8"); h.dom.window.document.head.append(style);
+    style.textContent = readAppStyles(); h.dom.window.document.head.append(style);
     const context = h.get("#composer-context");
     for (const id of ["controlled-disclosure", "execution-status", "attachment-controls"]) assert.ok(context.contains(h.get(`#${id}`)));
     assert.equal(context.contains(h.get("#composer")), false);

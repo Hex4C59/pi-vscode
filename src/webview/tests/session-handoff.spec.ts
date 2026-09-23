@@ -4,8 +4,8 @@ import type { SessionBackend, SavedSession } from "../../extension/sessionBacken
 import type { HostMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
 import { parseWebviewMessage } from "../../extension/webviewMessages.js";
 import { folder, harness, settingsRuntime, tick } from "../../extension/tests/harness.js";
-import { WebviewClient } from "../client.js";
-import { parseHostMessage } from "../host-messages.js";
+import { WebviewClient } from "../webview-client.js";
+import { parseHostMessage } from "../parse-host-message.js";
 
 const saved: SavedSession = { id: "retained-session", path: "/host-only/session.jsonl", name: "Saved work", firstMessage: "Earlier question", modified: "2026-09-23T00:00:00.000Z" };
 function deferred<T>() {
@@ -210,7 +210,7 @@ test("native confirmation cancels a delayed retained-text preview locally; cance
     const preview = f.store.preview;
     const signals: AbortSignal[] = [];
     f.store.preview = (...args) => { signals.push(args[5]); return signals.length === 1 ? pending.promise : preview(...args); };
-    f.client.requestSavedHistoryPreview(id); await tick();
+    f.client.savedHistory.preview(id); await tick();
     const old = f.sent.at(-1); assert.ok(old?.type === "getSavedHistoryPreview");
     assert.equal(f.client.getSnapshot().savedHistoryPreview?.phase, "loading");
     assert.equal(signals.length, 1);
@@ -223,7 +223,7 @@ test("native confirmation cancels a delayed retained-text preview locally; cance
     assert.equal(f.client.getSnapshot().sessions?.error, "cancelled");
     assert.equal(f.client.getSnapshot().workspace?.generation, generation);
     assert.equal(f.client.getSnapshot().text, "Preserve this cancelled handoff draft");
-    f.client.requestSavedHistoryPreview(id); await tick();
+    f.client.savedHistory.preview(id); await tick();
     const fresh = f.sent.at(-1); assert.ok(fresh?.type === "getSavedHistoryPreview");
     assert.notEqual(fresh.requestId, old.requestId);
     pending.resolve({ ok: true, preview: { text: "Obsolete", offset: 0, nextOffset: 8, totalChars: 8, done: true } }); await tick();

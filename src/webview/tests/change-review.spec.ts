@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ChangeReviewEntry, ChangeReviewStateMessage, WebviewMessage } from "../../extension/webviewProtocol.js";
-import { parseHostMessage } from "../host-messages.js";
-import { WebviewClient } from "../client.js";
+import { parseHostMessage } from "../parse-host-message.js";
+import { WebviewClient } from "../webview-client.js";
 import { attachmentState, uiHarness } from "./react-harness.js";
 
 const envelope = { version: 2, generation: 1, viewId: "view" } as const;

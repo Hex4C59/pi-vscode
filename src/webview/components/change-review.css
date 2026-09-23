@@ -1,0 +1,95 @@
+/* Already-applied change review. Keep this block scoped so the chat and attachment controls remain unchanged. */
+#change-review-panel {
+  min-width: 0;
+  margin: 8px 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+
+#change-review-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 32px;
+  padding: 7px 9px;
+  color: var(--ui-fg);
+  background: transparent;
+  text-align: left;
+  font-weight: 600;
+}
+
+#change-review-toggle:hover { background: var(--ui-hover); }
+
+#change-review-content {
+  min-width: 0;
+  padding: 0 9px 9px;
+}
+
+#change-review-content > p { margin: 6px 0; }
+
+.change-review__retention,
+.change-review__page-status { color: var(--ui-muted); font-size: 11px; }
+
+.change-review__notice,
+.change-review__warning {
+  padding: 5px 7px;
+  border: 1px solid var(--ui-warning);
+  border-radius: 4px;
+  background: var(--ui-warning-bg);
+}
+
+.change-review__warning { border-color: var(--ui-danger); background: var(--ui-danger-bg); }
+
+.change-review__pagination,
+.change-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0;
+}
+
+.change-review__entries {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.change-review__entry {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-surface-raised);
+}
+
+.change-review__entry-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.change-review__path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.change-review__source,
+.change-review__meta { color: var(--ui-muted); font-size: 11px; }
+
+.change-review__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 3px 0;
+}
+
+.change-review__notice,
+.change-review__warning { margin: 5px 0; font-size: 11px; }
+
+.change-review__actions .btn-secondary { min-height: 26px; padding: 4px 7px; font-size: 11px; }

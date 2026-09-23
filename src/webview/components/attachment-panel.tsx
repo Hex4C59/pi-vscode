@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { ATTACHMENT_HISTORY_PAGE_SIZE } from "../client.js";
+import { ATTACHMENT_HISTORY_PAGE_SIZE } from "../client-state.js";
 import type { AttachmentHistoryEntry, AttachmentStateMessage, AttachmentDetails } from "../../extension/webviewProtocol.js";
 
 export interface AttachmentPreview {

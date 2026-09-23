@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
+import { readAppStyles } from "./react-harness.js";
 import { attachmentState, uiHarness } from "./react-harness.js";
 import type { AttachmentHistoryEntry } from "../../extension/webviewProtocol.js";
 
@@ -98,7 +98,7 @@ test("history exhaustion gives a concrete optional recovery action and names all
 test("scrollable history preserves natural card and navigation height instead of flex-clipping controls", async () => {
   const h = await uiHarness();
   try {
-    const style = h.dom.window.document.createElement("style"); style.textContent = readFileSync("src/webview/styles.css", "utf8"); h.dom.window.document.head.append(style);
+    const style = h.dom.window.document.createElement("style"); style.textContent = readAppStyles(); h.dom.window.document.head.append(style);
     await h.click("#attachment-history"); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(128) });
     for (const child of h.get("#attachment-history-list").children) assert.equal(h.dom.window.getComputedStyle(child).flexShrink, "0");
     // Browser geometry separately verifies complete cards and controls are scroll-reachable.

@@ -1,10 +1,10 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import test, { type TestContext } from "node:test";
 import { JSDOM } from "jsdom";
 import { act } from "react";
 import type { HostMessage } from "../../extension/webviewProtocol.js";
-import { parseHostMessage } from "../host-messages.js";
-import { PreviewBridge } from "../preview/fixtures.js";
+import { parseHostMessage } from "../parse-host-message.js";
+import { PreviewBridge } from "../preview/preview-bridge.js";
 
 async function previewHarness(t: TestContext) {
   t.mock.timers.enable({ apis: ["setTimeout"] });

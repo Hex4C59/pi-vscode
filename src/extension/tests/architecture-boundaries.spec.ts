@@ -9,7 +9,7 @@ test("host and browser modules preserve the runtime and capability boundaries", 
     "src/extension/webviewMessages.ts",
     "src/webview/main.tsx",
     "src/webview/bridge.ts",
-    "src/webview/client.ts",
+    "src/webview/webview-client.ts",
   ]) {
     assert.doesNotMatch(readFileSync(path, "utf8"), /from\s+["'][^"']*(?:adapter|pi-coding-agent|child_process|node:fs)|SecretStorage|globalState|workspaceState\.update|trust\.json/);
   }
