@@ -47,6 +47,12 @@ test('user-visible Build requires traceability and a linked substantive requirem
   assert.deepEqual(checkPrdGate(prd(), current('建造', '用户可见：打开文件夹')), []);
 });
 
+test('pending acceptance in trace status does not make substantive scope a placeholder', () => {
+  const trace = '| WI-015 | REQ-001/002/004/005/006 existing UI slices and REQ-003 T014-01 only; visual refresh above | Sole current WI; T015-01–06 Build approved and implemented, verification/handoff in ACTIVE; product/ADR acceptance pending |';
+  const active = current('Build', 'user-visible: visual refresh').replace('WI-003', 'WI-015');
+  assert.deepEqual(checkPrdGate(prd(trace), active), []);
+});
+
 test('placeholder REQ rows fail even during Prepare', () => {
   assert.ok(checkPrdGate(prd(undefined, '| REQ-003 | <!-- placeholder --> |'), current('准备', '待定')).some((e) => e.code === 'prd-placeholder'));
 });

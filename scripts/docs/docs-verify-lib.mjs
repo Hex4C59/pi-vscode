@@ -84,7 +84,8 @@ export function checkPrdGate(prd, active) {
     // A technical-only WI has no user-visible PRD slice, but must explain why.
   } else if (/^(?:用户可见|user-visible)\s*[:：]\s*\S/i.test(assessment)) {
     const row = prd.split(/\r?\n/).find((line) => new RegExp(`^\\|\\s*${wi}\\s*\\|`).test(line));
-    if (!row || /\*\(none|pending|待定|（无|暂无|<!--/i.test(row) || !/REQ-\d+/.test(row)) {
+    const scope = row?.split('|')[2]?.trim() ?? '';
+    if (!row || /\*\(none|pending|待定|（无|暂无|<!--/i.test(scope) || !/REQ-\d+/.test(row)) {
       errors.push({ code: 'prd-trace-missing', message: `${wi}: user-visible Build requires a traceability row with a REQ ID` });
     }
     const linkedIds = row?.match(/REQ-\d+/g) ?? [];
