@@ -17,7 +17,7 @@ const extensionBuild = {
 
 /** @type {esbuild.BuildOptions} */
 const spikeBuild = {
-  entryPoints: ["src/spike-runtime.ts"],
+  entryPoints: ["scripts/spikes/spike-runtime.mjs"],
   bundle: true,
   outfile: "dist/spike-runtime.js",
   format: "cjs",

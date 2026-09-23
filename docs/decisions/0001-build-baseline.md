@@ -22,7 +22,7 @@ The maintainer accepted F5 visual check and the runtime spike on **2026-09-19**.
 2. **Sidebar chat shell**: Register `WebviewViewProvider` on `viewsContainers.secondarySidebar` (`pi-vscode` container, view `pi-vscode.chat`); placeholder HTML with strict CSP, **no scripts**, **no secrets**, **no pi SDK in webview**; `enableScripts: false` for WI-001.
 3. **Runtime host (spike / future adapter)**: For WI-001 proof and initial adapter direction, use **subprocess RPC**—spawn `@earendil-works/pi-coding-agent` `dist/bundle/cli.js` with `--mode rpc --no-session`, one **`get_state`** command over LF-only JSONL, then **SIGTERM** within timeout (see `src/adapter/pi-rpc-probe.ts`, `npm run spike:runtime`). Do **not** embed pi’s agent loop in the extension host.
 4. **Pinned dependency**: **`@earendil-works/pi-coding-agent@0.85.1`** (npm registry; no undeclared `file:` link to `../pi` in production builds).
-5. **Source layout**: `src/extension/`, `src/webview/`, `src/adapter/` per architecture doc; spike script entry `src/spike-runtime.ts` → `dist/spike-runtime.js`.
+5. **Source layout**: `src/extension/`, `src/webview/`, `src/adapter/` per architecture doc; spike script entry originally `src/spike-runtime.ts` → `dist/spike-runtime.js`. On 2026-09-23, the maintainer moved the entry to [`scripts/spikes/spike-runtime.mjs`](../../scripts/spikes/spike-runtime.mjs); esbuild still produces `dist/spike-runtime.js` for `npm run spike:runtime`. The probe implementation and runtime behavior are unchanged.
 
 ## Out of scope (explicit)
 

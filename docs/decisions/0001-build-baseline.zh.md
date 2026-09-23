@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[0001-build-baseline.md](0001-build-baseline.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-19
+- 最近同步：2026-09-23
 
 - 类型：Decision
 - 状态：Accepted
@@ -27,7 +27,7 @@ WI-001 要求可 **F5 调试** 的 VS Code 扩展，pi 聊天位于 **辅助侧�
 2. **侧栏聊天壳**：在 `viewsContainers.secondarySidebar` 注册 `WebviewViewProvider`（容器 `pi-vscode`，视图 `pi-vscode.chat`）；占位 HTML、严格 CSP、**无脚本**、**无密钥**、**webview 内无 pi SDK**；WI-001 阶段 `enableScripts: false`。
 3. **Runtime host（spike / 后续 adapter 方向）**：WI-001 证据与初始 adapter 方向采用 **子进程 RPC**——启动 `@earendil-works/pi-coding-agent` 的 `dist/bundle/cli.js`，参数 `--mode rpc --no-session`，经 LF-only JSONL 发送一次 **`get_state`**，超时内 **SIGTERM**（见 `src/adapter/pi-rpc-probe.ts`、`npm run spike:runtime`）。**不得** 在 extension host 内重写 pi agent 循环。
 4. **固定依赖**：**`@earendil-works/pi-coding-agent@0.85.1`**（npm  registry；生产构建不得依赖未声明的 `file:` 指向 `../pi`）。
-5. **源码布局**：按架构文档 `src/extension/`、`src/webview/`、`src/adapter/`；spike 入口 `src/spike-runtime.ts` → `dist/spike-runtime.js`。
+5. **源码布局**：按架构文档 `src/extension/`、`src/webview/`、`src/adapter/`；spike 原入口为 `src/spike-runtime.ts` → `dist/spike-runtime.js`。2026-09-23，维护者将入口迁至 [`scripts/spikes/spike-runtime.mjs`](../../scripts/spikes/spike-runtime.mjs)；esbuild 仍生成 `dist/spike-runtime.js`，供 `npm run spike:runtime` 执行。探针实现与运行行为不变。
 
 ## 明确不在范围
 
