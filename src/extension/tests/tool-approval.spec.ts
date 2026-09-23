@@ -17,18 +17,28 @@ test('readonly realpath policy rejects escapes, junctions and ambiguous Windows 
     for(const p of ['C:relative','file:ads','NUL','foo.','\\\\?\\C:\\foo'])assert.equal(unambiguousPath(p),false);
   }finally{await rm(root,{recursive:true,force:true});}
 });
-test('approval deny timeout cancellation late replies and exact session grant revoke',async()=>{
+test('approval deny timeout cancellation late replies and exact session grant revoke', { timeout: 5000 }, async t => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
   const root=await mkdtemp(path.join(tmpdir(),'approval-state-'));
-  try {await writeFile(path.join(root,'file'),'x');let notify:()=>void=()=>{};const manager=new ToolApprovals(()=>notify(),30);
-    const requested=async(id:string)=>{const changed=new Promise<void>(r=>notify=r);const result=manager.request(call(root,id));await changed;return {result};};
+  let notify:()=>void=()=>{};
+  const manager=new ToolApprovals(()=>notify(),1000);
+  try {await writeFile(path.join(root,'file'),'x');
+    const requested=async(id:string)=>{
+      const changed=new Promise<void>(r=>notify=r);
+      const result=manager.request(call(root,id));
+      // Scope inspection does real filesystem I/O. Expiry must not race it or
+      // leave this test waiting for a card that was never offered.
+      assert.equal(await Promise.race([changed.then(()=>"offered"),result.then(()=>"settled")]),"offered");
+      return {result};
+    };
     let p=await requested('one');assert.equal(manager.cards().length,1);manager.decide('one','deny');assert.equal(await p.result,false);assert.equal(manager.decide('one','once'),false);
-    p=await requested('timeout');assert.equal(await p.result,false);
+    p=await requested('timeout');t.mock.timers.tick(1001);assert.equal(await p.result,false);
     p=await requested('cancel');manager.cancel();assert.equal(await p.result,false);assert.equal(manager.decide('cancel','once'),false);
     p=await requested('grant');manager.decide('grant','session');assert.equal(await p.result,true);assert.equal(await manager.request(call(root,'reuse')),true);
     const grant=manager.scopes()[0];assert.ok(grant);manager.revoke(grant.id);assert.equal(manager.scopes().length,0);
     p=await requested('again');manager.cancel(true);assert.equal(await p.result,false);
     assert.equal(await manager.request({...call(root),input:{content:'x'.repeat(40000)}}),false);
-  }finally{await rm(root,{recursive:true,force:true});}
+  }finally{manager.cancel(true);await rm(root,{recursive:true,force:true});}
 });
 
 test('approval protocol rejects wrong versions unknown tools and extra webview capabilities',()=>{
