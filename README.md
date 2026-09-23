@@ -40,7 +40,7 @@ Run the Vite preview when working on the React frontend:
 npm run preview:webview
 ```
 
-Open the local URL printed by Vite. The preview mounts the production application with a synthetic host and offers fixture scenarios, theme choices and sidebar widths. It supports browser hot refresh, but it does not start pi, use the VS Code API, read workspace files or make provider requests. Preview behavior is not F5 or installed-VSIX acceptance.
+Open the local URL printed by Vite. The development root is `src/webview/preview/`, whose `index.html` loads its own `main.tsx`; production still builds from `src/webview/main.tsx`. Preview scenario data and factories live in `scenarios.ts`, simulated interactions in `preview-bridge.ts`, and developer-shell styling in `preview.css`. Shared `styles.css` only assembles global and component styles in cascade order. The preview mounts the production application with a synthetic host and offers fixture scenarios, theme choices and sidebar widths. It supports browser hot refresh, but it does not start pi, use the VS Code API, read workspace files or make provider requests. Preview behavior is not F5 or installed-VSIX acceptance.
 
 `npm run watch` watches the extension host and approval gate with esbuild and rebuilds the production Webview output. It is a production rebuild watcher; it does not start the browser preview server or provide browser HMR. Use `npm run preview:webview` for that.
 

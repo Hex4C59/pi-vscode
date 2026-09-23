@@ -69,7 +69,7 @@ flowchart TD
 2. **聊天**：webview 发用户输入 → host → adapter → pi 流式 → host 转发有界展示投影到 webview（过滤不保证任意输出完全无敏感信息）。
 3. **视图释放与运行时关闭**：释放或替换 Webview 时，`PiChatViewProvider.clearView()` 清理视图监听及视图绑定操作，不停止运行时，也不清空宿主聊天／待选设置；重建视图后从宿主重新同步。Provider 释放（含扩展清理）时，取消运行时事件订阅，清空聊天／待选设置及审批／授权，请求 `runtime.stop()`，并释放视图／工作区监听。Adapter 负责有超时边界的子进程关闭；这不保证取消所有后代进程。
 
-**已实现 WI-015 前端边界（待验收）：** `src/extension/webviewHtml.ts` 持有最小资源壳；浏览器入口为 `src/webview/main.tsx`。`webviewProtocol.ts` 保存共享纯 DTO 类型，`webviewMessages.ts` 保留特权端入站 allowlist 校验。浏览器 `bridge.ts` 管理传输／监听寿命；`client.ts` 协调 host 投影、view／generation 身份及已确认草稿；React 组件持有呈现、展开及临时控件状态。浏览器模块不导入 Node、VS Code 或 pi 运行时代码。执行、审批及附件策略仍由 host 决定。Vite 构建浏览器资源；esbuild 构建扩展与捆绑审批扩展。仅开发预览在同一应用入口替换合成 host，不进入生产入口。[ADR 0003](../decisions/0003-react-webview.zh.md) 保持 Draft；[ACTIVE](../../ACTIVE.md) 记录检查与剩余验收。
+**已实现 WI-015 前端边界（待验收）：** `src/extension/webviewHtml.ts` 持有最小资源壳；浏览器入口为 `src/webview/main.tsx`。`webviewProtocol.ts` 保存共享纯 DTO 类型，`webviewMessages.ts` 保留特权端入站 allowlist 校验。浏览器 `bridge.ts` 管理传输／监听寿命；`webview-client.ts` 协调 host 投影、view／generation 身份及已确认草稿；`saved-history-client.ts` 拥有保留历史分页及请求关联的分块预览状态；`client-state.ts` 拥有展示类型、限制与可用状态推导，不依赖传输实现。React 组件持有呈现、展开及临时控件状态。浏览器模块不导入 Node、VS Code 或 pi 运行时代码。执行、审批及附件策略仍由 host 决定。Vite 构建浏览器资源；esbuild 构建扩展与捆绑审批扩展。仅开发预览在同一应用入口替换合成 host，不进入生产入口。[ADR 0003](../decisions/0003-react-webview.zh.md) 保持 Draft；[ACTIVE](../../ACTIVE.md) 记录检查与剩余验收。
 
 **Planned WI-013 关系（Paused，未交付；2026-09-22）：** 维护者曾暂停 WI-014、优先 WI-015 前端迁移；迁移实现验证后，[ACTIVE](../../ACTIVE.md) 已恢复附件工作。交互提案保留，未完成。 [Draft ADR 0002](../decisions/0002-interaction-contract-route.zh.md) 记录历史文档路线批准及 9 月 22 日修订：使用有文档的公开 API，在未修改发行版 pi 上评估限定加载／标准交互；上游增强可选，不是基线交付前提。产品范围归 [REQ-009](../product-requirements.zh.md#req-009--代表性-pi-兼容)。[Planned 交互契约](../reference/webview-messages.zh.md#planned-wi-013-本地交互契约) 持有 host 资格、adapter 证据及视图意图候选，不改变这些层级或当前受控聊天实现。针对所选切片解决加载／审批、支持操作及所有权丢失恢复缺口；文档批准不是 Build 或 ADR 接受。
 
@@ -80,6 +80,7 @@ flowchart TD
 ## 7. 受控执行所有权（WI-010 已关闭，2026-09-21）
 
 - **宿主策略：** `src/extension/toolApproval.ts` 拥有待审批卡与会话授权。仅工作区内 canonical 普通文件 `read` 自动允许。搜索／列目录询问；不存在／无法解析目标仅允许一次。既有文件授权绑定工具 + canonical 路径；shell 绑定工具 + canonical cwd + 完整输入。不持久化授权，不提供自由执行模式。规范化不能防止所有检查／使用竞态。
+- **契约所有权：** `src/extension/approvalProtocol.ts` 拥有纯捆绑 gate envelope 类型与校验器；adapter 消费这一宿主契约，不导入审批策略。`src/adapter/runtime-errors.ts` 拥有运行时错误归一化与长度限制。`toolApproval.ts` 保留授权决策及文件系统范围检查。
 - **执行边界：** `src/adapter/approvalGate.ts` 打包为 `dist/approval-gate.mjs`（构建与 package 声明已包含）。公开异步 `tool_call` hook 通过 `ctx.ui.confirm` 等待；产品 v1 协议绑定 runtime／cwd、request／tool-call ID 与完整输入。`src/adapter/pi-rpc-runtime.ts` 拥有对话回复并校验 hello／就绪。不存在通用审批 RPC 或按标题授权。文件缺失拒绝启动；hello/get_state 失败停止启动，不是可用的无工具回退。
 - **独占配置：** CLI 使用 `--tools read,write,edit,bash,powershell,grep,find,ls --no-extensions -e <bundled gate>`，并保留资源 flag。即使同意资源，也禁用第三方扩展发现。其他上下文／资源类别不因此全部排除。自带扩展以用户代码权限运行；不是沙箱，不承诺完整约束 shell／网络。
 - **投影与生命周期：** `runtimeLifecycle.ts` 定义活动／最终消息／运行时错误事件及窄 `abortTask`／审批 handler 注入。`activityProjection.ts` 按消息／内容索引关联真实 thinking，按 tool-call ID 关联工具，替换累计输出并限制展示字段。`PiChatViewProvider` 拥有投影时间线、执行状态与审批生命周期。Stop 在 adapter `clear_queue` + `abort` 前取消待审批；未 settled／失败则关闭运行时并明确报错。成功 Stop 保留同一运行会话授权；替换／断开清除。延后设置等待 settled 及停止完成。不回滚副作用、不自动重试任务。
@@ -93,7 +94,7 @@ flowchart TD
 
 ## 8. 模型设置所有权（WI-008／WI-009）
 
-`PiChatViewProvider` 拥有已应用设置与独立的 `pendingModel`／`pendingThinkingLevel`。空闲时立即应用，活动回复期间分别记录最新意图；当前会话 `agent_settled` 后，在 `modelBusy` 下串行修改模型、刷新能力、校验并修改 thinking。失败回读实际状态，不自动重试修改。代次／运行时 session／目录 token 拒绝过期完成；意图跨视图重建保留，工作区／资格变化、运行时替换及 provider 释放会清除。
+`ModelSettings`（`src/extension/modelSettings.ts`）拥有已应用设置、独立的 `pendingModel`／`pendingThinkingLevel` 与在途操作失效管理。`PiChatViewProvider` 提供运行时／工作区身份与执行资格，在生命周期变化时调用重置／取消，并将只读模型快照合入 Webview 投影。空闲时立即应用，活动回复期间分别记录最新意图；当前会话 `agent_settled` 后，在 `modelBusy` 下串行修改模型、刷新能力、校验并修改 thinking。失败回读实际状态，不自动重试修改。代次／运行时 session／目录 token 拒绝过期完成；意图跨视图重建保留，工作区／资格变化、运行时替换及 provider 释放会清除。
 
 Webview 仅展示已应用／待应用状态并发送允许列表意图；adapter 映射公开 RPC。具体错误、Stop 交错及清理语义见[消息契约](../reference/webview-messages.zh.md)，界面要求见 [REQ-002](../product-requirements.zh.md#req-002--模型就绪)。
 

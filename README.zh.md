@@ -45,7 +45,7 @@ npm run compile
 npm run preview:webview
 ```
 
-打开 Vite 输出的本地 URL。预览使用 synthetic host 挂载生产应用，并提供场景、主题和侧栏宽度选择；支持浏览器热刷新，但不会启动 pi、使用 VS Code API、读取工作区文件或请求 provider。预览行为不等于 F5 或已安装 VSIX 验收。
+打开 Vite 输出的本地 URL。开发根目录为 `src/webview/preview/`，其 `index.html` 加载自己的 `main.tsx`；生产仍从 `src/webview/main.tsx` 构建。预览场景数据和工厂位于 `scenarios.ts`，模拟交互位于 `preview-bridge.ts`，开发外壳样式位于 `preview.css`。共享 `styles.css` 仅按覆盖顺序汇总全局与组件样式。预览使用 synthetic host 挂载生产应用，并提供场景、主题和侧栏宽度选择；支持浏览器热刷新，但不会启动 pi、使用 VS Code API、读取工作区文件或请求 provider。预览行为不等于 F5 或已安装 VSIX 验收。
 
 `npm run watch` 使用 esbuild 监视 extension host 与 approval gate，并重建生产 Webview 输出。它是生产重建 watcher，不会启动浏览器预览服务器或提供浏览器 HMR；需要浏览器预览时运行 `npm run preview:webview`。
 
