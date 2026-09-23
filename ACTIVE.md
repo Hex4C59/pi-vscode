@@ -16,128 +16,117 @@
 - **Gate：** 未经 Accepted ADR 关闭的 gate 不得当作已交付能力。
 - **提交：** 未经维护者明确请求不得创建或修改 Git commit。
 
+## 长期 Goal 授权与执行边界（2026-09-22 UTC）
+
+维护者本次 /goal 明确授权完成前端重构以及 PRD REQ-001～REQ-009 的明确需求和必要构建、打包、测试、文档，允许独立无秘密配置下浏览器／开发宿主／实际 F5／安装版及本机合成服务验证。按依赖串行推进、WIP=1；每次切换 WI 前记录范围、REQ、验证与排除项。此授权取代历史候选“须再次申请常规 Build”与永久暂停措辞，但不接受整份 Draft PRD／ADR／gate，不替代人工验收，不决定尚未确认的产品选择。禁止读取 .local-env／用户凭证、付费模型、相邻仓库修改、发布／外部 tracker、索引／提交／推送／合并操作。
+
+**2026-09-23 维护者要求暂时停止实施、仅收尾记录；本轮结束后不自动启动下一 WI。** WI-017（REQ-008）代码／可执行验证完成，当前停在交接／待维护者验收，未正式关闭；没有正在 Build 的新 WI。WI-018 仅做了公开事件契约的只读调查，尚未登记或实现。2026-09-23 维护者另已批准 UI 交互预览制作，随后依次要求 to-spec 本地 Draft 和 to-tickets 候选拆分；该独立文档会话仅完成计划，预览尚未启动，实际编码前记录串行 WI 交接，不并行推进，也不重复申请已经获得的预览授权。WI-015 前端迁移、WI-014 附件及 WI-016 脏保护／修改审阅的代码与可执行验证完成，维护者体验／ADR／gate 接受仍待确认，不记为正式关闭；这些人工接受不阻塞下一明确需求。恢复实施时再核对当前范围，按依赖串行接续，不并行开新 WI；本次暂停不撤销既有明确授权，也不代表 Goal 已达成。
+
+先前 Goal 固定审查基点为 `4bbf9ec923f2499a88f52a29b8439fb9d9d5396c`，当时 index 为空，既有脏修改按用户所有保留。2026-09-23 维护者随后明确要求整理当前项目全部改动并创建 Git commit，本次据此按关注点暂存／提交，ACTIVE 单独提交；该明确授权取代本次本地提交所涉及的历史索引／提交禁令，不授权推送／合并或恢复产品实施。`dist/goal-evidence-20260923/` 保留恢复基线、测试／包／宿主证据；历史交接已因事实更新被替代，见[归档](docs/archive/2026-09-22-pre-goal-handoffs.zh.md)，不是 WI 关闭。
+
+### 有界需求核对（源码与公开契约，不代表验收）
+
+| 需求 | 已有实现 | 真实剩余缺口 | 验证方式／依赖 |
+|------|----------|--------------|----------------|
+| REQ-001 | host 工作区资格、资源选择、运行时启动，UI 状态／恢复 | 当前发行版资源边界完整实证 | workspace-policy／runtime-chat＋隔离真实 pi／宿主 |
+| REQ-002 | model/thinking、空闲应用、下一轮延后 | 失败／重启／Stop 独立宿主矩阵 | host/UI model-selection＋合成模型宿主 |
+| REQ-003 | 20 项／1MiB 混合附件、逐项确认、精确快照、128 条有界历史／分页，取消／重建／容量边界已实现验证 | 维护者体验接受，非代码延期 | WI-014 检查点 197/197＋浏览器／实际 F5／已安装 VSIX；[历史证据](docs/archive/2026-09-22-goal-frontend-attachment-handoffs.zh.md) |
+| REQ-004 | 文本流、thinking／工具活动／审批 | retry／compaction／completed／stopped 细分；失败／ACK 回归 | runtime-chat／activity projection＋真实 RPC |
+| REQ-005 | Stop、清队列／abort、断连失败；未发送草稿保留 | 断连／恢复／视图重建宿主矩阵；其余 ACK／Stop 边界回归 | host/UI 回归＋合成慢流 |
+| REQ-006 | bundled gate、once／精确 session grants、撤销 | trusted 扩展 profile、空闲切换、失败恢复 | 覆盖审批链路后接续 WI-013；保留信任边界 |
+| REQ-007 | dirty-write guard、可靠 before/after 只读 diff／当前源、报告／观察标签、历史变化／丢失与分页已实现 | 维护者体验接受，非代码延期 | WI-016：229/229＋浏览器／实际 F5／安装版；[历史交接](docs/archive/2026-09-22-goal-change-review-handoff.zh.md) |
+| REQ-008 | 原生 pi 保存、当前项目列表／新建／顺序恢复、锚定长历史／原始附件文本已完成 | 维护者体验接受，非代码延期 | WI-017：308/308＋SDK／终端 CLI／浏览器／实际 F5／普通安装版及包内容；[历史证据](docs/archive/2026-09-23-goal-session-handoff.zh.md) |
+| REQ-009 | 仅 bundled approval，不是一般扩展交互 | 显式加载、标准交互／Stop、五类兼容及真实扩展 | 恢复 WI-013；加载目标选择／校验与交互预算尚待具体决策 |
+
+代码闭环缺口与人工验收分列；任何必要未实现项不会被改写为“仅待人工验收”。
+
 ## 正在做（WIP=1）
+
+当前仅保留 WI-017 交接／待验收入口；按维护者要求暂停实施，没有正在 Build 的新 WI。
 
 | 字段 | 内容 |
 |------|------|
-| **ID** | WI-011 |
-| **标题** | 模块内测试结构重构 |
-| **阶段** | Build 完成，待确认收尾（测试迁移及 2026-09-21 20:33 追加批准的 scripts 分组均完成） |
-| **Gate ID** | none；既有三个 gate 均保持 Open |
-| **Decision** | none；WI-010 遗留 `pending-adr` 保留 |
-| **决策类** | none |
-| **PRD 判定** | 纯技术：测试组织与收集重构，不改变产品行为，不新增需求 |
+| **ID** | WI-017 |
+| **标题** | 当前项目 pi 会话连续性与安全顺序交接 |
+| **阶段** | 代码／可执行验证完成，交接／待维护者体验接受；2026-09-23 按维护者要求暂停实施，仅完成文档收尾，不启动新 Build。 |
+| **Gate ID** | gate-webview-trust／gate-session-streaming／gate-project-trust 保持 Open；本 WI 不自动接受 gate |
+| **Decision** | 沿用 subprocess agent runtime、公开 SDK/RPC 会话 API 和 pi 自有持久化；不解析／重写 session 文件，不加载历史扩展；新 consequential 决策另行提出 |
+| **PRD 判定** | 用户可见：[REQ-008](docs/product-requirements.zh.md#req-008--会话连续性)，关联 REQ-004／005／006 的历史展示、Stop 与 fresh-grant 策略 |
+| **批准状态** | 维护者 2026-09-22 UTC 的长期 Goal 已整体批准明确 REQ-001～009 及依赖实现。本次在 WI-016 代码／可执行验证完成后登记接续；不重新申请常规 Build，不接受整份 Draft PRD／ADR／gate。 |
 
 ### 目标与范围
 
-按批准计划将应用测试迁入 `src/extension/tests/`、`src/adapter/tests/`、`src/webview/tests/`，统一 `.spec.ts`；脚本原位改为 `.spec.mjs`。按 workspace／focus／runtime-chat／model-selection／bounds／protocol／approval／architecture、adapter projection／environment、Webview HTML／workspace／model／execution 拆分，提取局部 harness，保留所有场景和断言。生产源码位置不变。
-
-新增薄 runner 与 import-safe 收集库：递归发现 owner-local specs、排除 helper／fixture／其他层级、不跟随符号链接、保留输出目录；只清理 `dist/tests/`，只执行本次确切清单，空集合／构建／进程失败均失败退出。新增临时夹具回归；同步 package 入口、CI 旧文件引用及双语指南／有效链接。保持 node:test、esbuild、当前 CI 范围、生产打包与依赖不变。
-
-### 追加批准：scripts 按用途分组
-
-维护者 2026-09-21 20:33 批准小重构：文档脚本移至 `scripts/docs/`，runner 移至 `scripts/testing/`，集成探针与信任辅助／测试移至 `scripts/spikes/`，VSIX 校验移至 `scripts/packaging/`。文件名、对外 npm 命令与行为不变，不增加 src/tests 多层目录；同步根路径计算、脚本调用、CI、夹具与有效文档链接。验证原 84 用例、编译／lint／文档检查，并针对移动后的入口做安全的路径验证；不运行付费调用或扩大验收。此次追加不修改原计划文件。
+- **T017-01：** 新建会话与当前项目保存会话列表，通过 pi 公开 API 持久化／枚举，包括终端 pi 产生的会话；只显示可验证的项目身份，不以 runtime generation 冒充保存会话。公开 API 的最小隔离探针只是技术证据，不作为功能完成。
+- **T017-02：** 用户明确选择且确认原入口已退出后顺序恢复；Stop 当前工作并等 settlement，替换时失效旧输出／审批／grant、review 与内存附件状态，按当前资源／受控策略启动。确认不等于独占锁，不加载／安装历史扩展，失败不悄悄改项目或重试任务。
+- **T017-03：** 从公开返回值恢复对话，长历史先近期窗口并可向前渐进加载；工具身份／状态／文本与支持的数据做安全有界展示，遗漏／不支持明确说明。历史附件以可用的原始历史文本展示，信息不足标不可用，绝不把当前文件重读冒充旧快照。UI 窗口不改 pi 模型上下文。
 
 ### 方案与架构核对
 
-所有权：测试按现有 host／adapter／Webview 归属，无生产边界变化。收集：现有平面 glob 漏掉嵌套目录，须与迁移同步修复；类型／lint 已覆盖 `src/**/*.ts`，不新增 tsconfig。风险：遗漏／重复用例、同名输出覆盖、旧 bundle、cwd／VM 语义变化；通过迁移前名称基线与收集器回归验证。WI-010 ADR pending 与既有 gate 不变。
+已读取声明 pi 0.86.1 的公开 RPC／SDK 文档：RPC 有 new_session、switch_session、get_messages／get_entries；SDK 有 SessionManager.list 与公开持久化 API。本次在完全自有配置中已实测 SessionManager.create/list/open、同项目／异项目分离和 AbortSignal，以及 CLI --session、RPC new_session／switch_session／get_messages／get_entries since；原生 Windows Node 24.12.0、pi 0.86.1，未调用模型，两个进程均实际退出。证据在 `dist/goal-evidence-20260923/wi017-t01/`；这是 SDK 合成历史／公开 RPC 技术证据，不是终端 UI、产品会话功能或原生宿主接受。现已按公开活动分支实现 32 行／页和 8192 UTF-16 字符／预览块，契约见 [Webview 消息](docs/reference/webview-messages.zh.md)。SDK／CLI、浏览器、开发宿主、实际 F5 与普通安装版已有分层实证；helper 交错、准备中切换／视图取消等审查发现已修复并复审，最终安装包已验证。详见[交付证据](docs/archive/2026-09-23-goal-session-handoff.zh.md)，不把合成模型或自动化验证当作维护者接受。生产 adapter 继续隔离 runtime；不从本地 sibling 构建，不私读 session 文件，不因技术探针接受架构结论。
 
-### 验收
+Host 继续拥有当前项目、命名意图、交接确认与生命周期；Webview 仅接收有界安全投影和 host 不透明 ID。隐藏路径／公共 API 返回路径只在 host/adapter 之间作为 opaque 参数使用，不给 UI 任意打开／切换能力。依赖的完整流、Stop、草稿确认、延后模型、附件和审批回归必须保留。
 
-迁移前基线已运行：73/73、0 skipped（4 应用＋4 脚本文件）；逐项保留原名称／场景，新增 runner 测试单独计数。验证递归发现、同名隔离、辅助文件排除、空集合失败、旧输出清理且保留其他 dist 产物。运行 npm test／compile／lint／docs:verify／docs:health 及 git diff --check；不将结果算作 F5 或安装包验收。
+### 验收与测试接缝
+
+| 接缝 | 可观察验收 |
+|------|------------|
+| 公开 pi／存储 | 独立终端／RPC 创建的当前项目保存会话可列举和恢复；新建独立；非当前项目、缺失／损坏／不可恢复明确失败；无私读写 session 格式 |
+| host／生命周期 | 活跃任务先 Stop／settled；确认顺序交接；迟到输出、审批、设置及临时快照不跨会话；grant 清空、当前受控策略保持、失败可恢复 |
+| 历史／UI | 真实旧对话可见、近期窗口／向前加载、安全工具后备显示、历史附件不混入当前源；取消选择／视图重建不重复任务 |
+| 生产／实机 | compile／lint／测试及双轴审查；隔离 genuine pi＋合成 provider、浏览器、实际 F5／安装版分别记录；当前资源／VSIX 一致性与进程清理 |
 
 ### 范围外与批准边界
 
-不改生产逻辑／生产目录、依赖或锁文件；不新增 e2e／snapshot／性能通道、CI 矩阵或全套 CI 门禁；不调用真实模型，不关闭旧 WI／gate，不改已批准计划，不创建 Git commit。
-
-## WI-008／WI-009 状态（延后选择主路径 F5 已确认；待收尾、非并行 Build）
-
-- **批准：** 两者 Build 均于 2026-09-21 批准。WI-008 为 REQ-002 模型／thinking Popover 的 RPC／host／协议；WI-009 为 REQ-002／REQ-004 聊天优先重设计，并追加批准流式期间选择仅下一轮生效。Decision `none`；`gate-webview-trust`／`gate-session-streaming` Open。初版样式被重设计覆盖不是关闭依据。
-- **已实现范围：** 紧凑状态头、设置空态卡、右侧用户 pill、助手消息、sticky composer、合并 model · thinking chip、锚定 Popover、可折叠模型列表与离散滑块。固定 `#168BFF` 粗滑块填充／头、无黄色轮廓，保留蓝色键盘焦点；其余主题 token，nonce CSP、`textContent`、无框架外链。不是原生 Quick Pick。
-- **模型契约：** ready、generation 匹配、非 workspace busy／modelBusy 才可选；空闲立即应用，chatBusy 时分别保留最新 pendingModel／pendingThinkingLevel，applied chip 不变。当前 session `agent_settled` 后模型→刷新能力→重新校验 thinking，应用期间禁发／禁选。不支持／失败显示有界错误并回读，不重试修改或虚报成功；回读失败清空未知 applied。无模型可用有界提示，不泄露凭证。
-- **生命周期：** generation／runtime session／catalog token 防迟到；视图重建保留宿主 pending，工作区／资格变化、运行时替换／重启与 dispose 清除。公开 RPC 为 `get_available_models`、`get_available_thinking_levels`、`set_model`、`set_thinking_level`；不重写循环或让 Webview 直连 pi。详见 [PRD](docs/product-requirements.zh.md) 与 [消息契约](docs/reference/webview-messages.zh.md)。
-- **已获维护者 F5 验收：** 空闲模型／thinking 切换后成功流式回复、模型折叠、Esc／键盘、浅色主题、无目录／未信任／资源设置；粗蓝色滑块样式获批准。
-- **追加 F5 确认（2026-09-21 19:44）：** 维护者确认回复过程中更换模型／thinking 不影响当前回复，结束后新配置生效，下一条消息正常使用新配置。此主路径不再待确认，无须重复验收。
-- **证据边界：** 本次确认不扩大为故障注入、RPC 失败回读、重启清理或审批／Stop 交错的完整手动矩阵；这些边界保留已有自动化证据及未独立手测说明，收尾时分别记录。
-- **原范围外保留：** 全局启动默认持久化（仍仅读取既有 defaultProvider/defaultModel）、登录／配置 UI、在线刷新模型、循环按钮替代列表／滑块、编辑区 Panel／Chat Participant、附件／历史／Markdown。Thinking 正文、工具审批与 Stop 由 WI-010 承接，不倒算为旧 WI 交付。
-- **关闭条件：** 汇总已确认 F5 与全量检查，对剩余边界验证明确处理结论，再由维护者确认一起关闭并归档；本次未归档或标为已关闭。pi 当前 `0.86.1`；[WI-004 RPC 证据（0.85.1）](docs/discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md) 保持历史。
+不做全局跨项目发现、并发会话、实时接管／独占锁保证、分支 UI、历史代码回滚、额外附件持久化或自有 session 格式。不自动安装／加载缺失扩展，不绕过资源同意或受控审批。REQ-009 的加载目标选择等真实待决项不在此猜测。
 
 ## 当前焦点与未决项
 
-- [x] WI-010：维护者确认 thinking／状态、文件读取／工具卡正常，拒绝写入无副作用后允许写入正常，长时间无害命令 Stop 正常；已按明确收尾请求关闭限定切片。
-- [x] 既有证据保留：73 tests、compile／lint、九个真实审批夹具、offline loopback 推理、完整 VSIX 独立解压验证；本次文档收尾未重跑。
-- [x] WI-008／WI-009 延后选择主路径 F5：维护者 19:44 确认当前回复不变、结束后应用、下一条使用新设置。
-- [ ] WI-008／WI-009 收尾：汇总已确认验收与自动化证据、保留边界限制，再归档。
-- [ ] 已安装 VSIX 的激活／运行验证仍无证据；开发态 F5 不等于安装包验收或发布。
-- [ ] WI-010 其余手动矩阵：授权复用／撤销／重置、改变范围重新询问、剩余审批／生命周期／键盘主题覆盖未获完整确认；保留为边界验证，不伪装已验收。
-- [ ] 完整边界验证与 ADR（WI-010 `pending-adr`）；三个 gate Open，不因 WI 关闭、自动化或打包通过而关闭。
-- **仍有效限制：** 最终受控策略仅 canonical 工作区普通文件 `read` 自动允许，搜索／列目录询问，不存在目标仅单次授权；缺 gate／握手拒绝启动，不回退可用聊天。无沙箱、无回滚／全部后代进程取消保证；可信用户凭证命令不受工具审批约束。详见 [PRD](docs/product-requirements.zh.md)、[架构](docs/architecture/vscode-extension-architecture.zh.md)、[契约](docs/reference/webview-messages.zh.md) 及 [gate](docs/reference/architecture-gates.zh.md)。[WI-003](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-003)／[WI-004](docs/archive/2026-09-21-closed-wi-history.zh.md#wi-004) 的历史限制仍保留。
+- [x] WI-016 T016-01：代码／可执行验证完成，最终回归 210/210；实际 F5 与普通安装版分别通过 dirty／等待／grant／edit／恢复／Stop 矩阵。Standards 修复两轮测试时序／挂起发现后 0 未解决；Spec 0。没有替代维护者体验接受，WI-016 尚未关闭。
+- [x] WI-016 T016-02：代码／可执行验证完成，229/229、双轴无未解决发现；浏览器／真实 F5／安装版各自记录，当前包与源码一致。维护者体验接受单独保留；[历史交接](docs/archive/2026-09-22-goal-change-review-handoff.zh.md)。
+- [x] WI-017：T017-01～03 代码／可执行验证完成；compile／lint、308/308（0 skipped），Standards／Spec 复审均无未解决项；实际 F5／普通安装版、最终 VSIX 内容与清理分列记录。仍待维护者体验接受，未正式关闭；[完整交接](docs/archive/2026-09-23-goal-session-handoff.zh.md)。
+- [ ] 暂停后的接续候选：REQ-004 retry／compaction／completed／stopped 与可靠终态，其后核对 REQ-001／002／005 余下故障矩阵；WI-018 未启动。只读核对声明 @earendil-works/pi-coding-agent 0.86.1：prompt ACK／agent_end／compaction_end 均不等于终态，agent_settled 才表示自动续行已结束；Stop 先 clear_queue 再 abort。源为安装包 docs/rpc.md 与公开类型，尚无该新切片代码或运行验证。
+- [x] WI-014 T014-01～05：明确 REQ-003 代码／可执行验证完成，T05 检查点 197/197、本轮总回归 229/229；浏览器、真实 pi 合成链路、实际 F5、普通安装版与包一致性分列。维护者仍需确认窄栏／键盘、逐项确认、长历史预览与容量恢复体验；不自动正式关闭。
+- [ ] WI-015 人工体验确认及 ADR 0003 接受仍待；不因前端重构永久暂停后续需求。
+- [ ] WI-008／009：已确认 2026-09-21 的基础／空闲及延后设置主路径；故障／审批／Stop 完整矩阵未整体接受，不重复要求已确认路径。
+- [ ] WI-010 pending-adr／完整边界矩阵及三个 Open gate 保留；有限切片关闭不代表安全沙箱、回滚或全后代取消保证。
+- [ ] WI-013 依赖前置后恢复；加载目标选择／验证及交互队列预算仍有真实待定选择，见[保留调查](docs/discussions/2026-09-22-pi-compatibility.zh.md#wi-013-暂缓提案保留2026-09-22)。到需要时提出最少量具体问题，不重访已确认设计。
+- 当前禁止读取 `.local-env`；历史配置授权不覆盖本 Goal 禁令。F5 存在 code134 间歇启动失败，已有成功隔离验证与失败日志并列；不把 sourceMaps／trace 开关声称为已证明根因修复。
+
+### UI 交互预览授权与限定提案
+
+| 字段 | 内容 |
+|------|------|
+| **当前动作** | 2026-09-23 to-tickets 本地候选拆分；to-spec Draft 已完成。本轮不执行预览代码工作，不新增并行实施 WI。 |
+| **批准记录** | Q1–Q16 后维护者对“理解一致，开始制作交互预览”明确回复“确认”（中断后重申），共同理解确认已完成，预览制作授权持续有效；随后调用 to-spec 和 to-tickets，要求先交付本地方案与候选拆分。 |
+| **目标／范围** | 可操作的窄栏候选预览，演示会话、输入／附件、活动／Stop、审批、修改审阅、基础 Markdown；精确行为归 [PRD 视觉方向](docs/product-requirements.zh.md#视觉重设计方向2026-09-23)。 |
+| **PRD 判定** | 用户可见设计，关联 REQ-001～008 既有工作流；当前交付仅文档，预览不实现未完成的后端需求。 |
+| **方案／风险** | 沿用 React／CSS／client／bridge 边界；候选仅接预览入口，生产根与样式保持隔离。当前共用 App，须验证没有提前影响正式侧栏。技术细节及证据见[限定 Draft](docs/discussions/2026-09-22-webview-framework.zh.md#交互预览限定-draft)。 |
+| **可观察验收** | 五项故事可操作，覆盖空白／对话／执行／审批／附件变更／错误；挂载行为检查＋真实浏览器宽度／主题／键盘检查＋生产排除检查。布局经维护者视觉确认后才能正式接入，F5／安装版证据单独验证。 |
+| **Decision／Gate** | 预览建议决策类 none，Direction；不改变 host 权威或接受 ADR 0003／既有 Open gates。Markdown／链接／复制安全实现与挂载接缝在 Build 内核对。 |
+| **排除项／接续** | 本轮不制作预览、改依赖、发布或提交；正式切换、后端扩展、Plan／并行会话不在预览授权内。恢复代码工作时先串行登记该切片，保留当前 WI 的待验收边界；WI-017 代码／验证完成不等于正式关闭。 |
 
 ## 停车场
 
-- **下一候选：WI-012 — Webview 前端工程化与技术栈评估。** 在 WI-011 明确收尾后进入 Prepare；比较原生 TypeScript 模块化 browser bundle 与 React／Preact／Lit 等候选，评估 CSP、依赖与包体积、流式渲染、可访问性、测试迁移、现有协议／信任边界及渐进迁移风险。先形成可审阅选型与验证计划，不在技术选择获批前直接重写 UI；预期为纯技术，若改变可见行为则另行补 PRD 判定。框架／构建边界选择属于 ADR 候选，验证前保持 `pending-adr`。
-- 编辑区标签聊天（Claude Code 式 panel 默认）、Chat Participant API。
-- 流式 UI 限速／合并 delta（观感优化）。
-- 将模型／thinking 写回 settings.json 启动默认。
-- provider 错误文案进一步友好化（WI-004 已部分覆盖）。
+UI 交互预览的[候选切片 UIP-01～07 与依赖图](docs/discussions/2026-09-22-webview-framework.zh.md#交互预览候选切片)已本地起草，粒度待审阅；这是已授权预览的计划记录，不是第二个实施 WI，也不扩大为正式接入。
+
+编辑区 panel／Chat Participant、全生态或额外平台扩展、无产品依据的 delta 优化、全局启动默认持久化及跳过工具审批仍不自动纳入。REQ-007／008／009 明确需求不是停车场。
 
 ## 最近交接
 
-### 文档审阅交接（2026-09-22）
+2026-09-23 提交整理：按维护者明确请求，将既有工作区修改按文档校验修复、探针迁移、隔离探针、凭证目录忽略、CI、相互依赖的前后端功能、双语文档与本工作记录分别提交；没有开始新功能。提交前实跑 Windows Node compile／lint、308/308 测试（0 skipped）、verify:webview，及 docs:verify／docs:health 均通过；文档保留 4 个既有 Draft ADR 提示，双语 0 error／0 stale。提交检查发现并清理两个源码文件及一份历史归档末尾多余空行，不改变逻辑或文档含义；各批次执行 commit:check。日志和暂存补丁检查证据保留在 `dist/commit-preflight-20260923/`，确认提交及检查证据无需继续保留后可删除；未建临时工作树，未重跑 F5／安装版验收，未推送。历史验收状态和 UI 候选粒度待审阅均保留。
 
-维护者明确要求按 `writing-for-agents` 全面审阅并修正文档，授权范围为本项目文档维护；不新增并行产品 WI。已逐份审阅 59 个 Markdown（含双语、隐藏技能与 PR 模板），另检查两个 Issue 表单及 LICENSE；排除依赖包与生成产物。交叉核对 package／CI、消息类型、宿主与 adapter、测试收集及历史验收；未重做产品运行验证。
+### WI-017 可执行交付与暂停记录（2026-09-23）
 
-以下问题均为 `confirmed`，已在本次文档授权内修复；每个键由规则／路径／主题构成，可供后续复查：
+- **实际交付：** REQ-008 原生保存／列表／新建／顺序恢复与有界长历史；本轮实现阶段 compile／lint 通过、308/308 测试且 0 skipped，双轴复审 0 未解决；F5／普通安装版覆盖草稿确认、长历史、视图替换、主动 Stop、runtime loss、grant 重置与待审批取消。证据／限制见[双语归档](docs/archive/2026-09-23-goal-session-handoff.zh.md)。本次收尾仅修改文档，不重跑或冒充新一轮代码验证。
+- **安装检查点：** `dist/goal-evidence-20260923/wi017-t01/pi-vscode-wi017-final.vsix`，146,608,296 bytes／14,083 entries，SHA-256 `952535225a3b470fb5576823c6ff93169353aa2a9f62302fc9650e124ea241e2`；打包时本地／归档／安装可执行哈希一致，无预览服务器依赖，未发布。后续文档编辑不改变该包证据。可在独立 VS Code profile 使用“Extensions: Install from VSIX...”选择此文件；验证环境不要连接用户凭证或付费模型。
+- **人工验收：** 窄栏／键盘会话列表及长历史分块；Cancel 保留非空草稿、确认 New／Restore 清理临时状态；原入口退出说明；审批／grant 重置和失败恢复。WI-014／015／016 的体验接受与 ADR／gate 仍保留，不被本轮替代。
+- **清理／保留：** 同目录 `cleanup-final.json` 及其引用记录确认自有开发／浏览器／F5／安装进程退出、六端口空闲；隔离 launcher、models／settings／server 与 result 夹具恢复，仓库 launch 未改。保留 Goal evidence／profiles／合成 sessions／VSIX 及 `dist/session-integration-adapter.cjs` 至接受／保留期结束且唯一证据保存；未建 worktree。只读事件调查子代理已关闭。
+- **停止点：** 维护者明确要求暂时做到这里，仅收尾文档；没有开始 WI-018 实现。Goal 仍有必要代码／验证缺口，未达成，也不标记为阻塞或正式关闭。未读取 .local-env／凭证、使用付费模型、改相邻仓库或 Git index／commit。并行 UI 文档与脚本迁移修改保留；脚本迁移历史的两项 picker 失败已被整合后 308/308 覆盖，原日志仍保留。
+- **文档检查：** 收尾 docs:verify／docs:health 通过（0 error，4 个既有 Draft ADR 提示；双语 0 error／0 stale），本轮文档限定 diff check 通过。全工作区 diff check 仍报 src/extension/piChatViewProvider.ts:926 的既有文件尾空行；本次仅文档收尾，保留源码原样，不声称全仓库差异检查通过。日志在 wi017-t01/{docs-closeout.log,docs-health-closeout.json,docs-diff-closeout.log,worktree-diff-closeout.log}。语义核对限 WI-017／ACTIVE／相关归档；未重跑代码构建或行为测试。
 
-| 发现键 | 原问题与依据 | 处置 |
-|--------|--------------|------|
-| freshness/README.md/status | 首页仍称只有占位 UI；与源码及当前 WI 验收冲突 | 分开说明已实现切片、验收与发布缺口，同步 CHANGELOG |
-| freshness/docs/product-requirements.md/deferred-selection | PRD／消息契约仍写延后选择待 F5；ACTIVE 已记录 19:44 确认 | 同步主路径确认，保留边界手测及收尾缺口 |
-| hierarchy/docs/guides/architecture-governance.md/checklist | 603 行混合重复索引、示例与本仓不存在的路径；凭证 UI 条目不符产品 L0 | 保留 19 维度，集中完成条件与证据，使用真实入口并遵循 L0 |
-| duplication/docs/product-requirements.md/evidence | PRD／架构／契约重复测试数、包大小及收尾日志 | 原始结果留在历史，现行文档链接证据；PRD 保留需求，架构保留所有权，契约保留语义 |
-| workflow/docs/guides/agent-collaboration.md/completion | 提案步骤过密，Git 隔离规则多处维护 | 明确阶段完成条件，提交分支详规集中到提交指南；同步本文件契约 |
-| routing/docs/guides/agent/pi-integration.md/version | 历史无聊天结论与当前实现混排；信任探针硬性限定 0.85.1、当前 pin 0.86.1 | 区分版本与证据，明确该探针未对当前版本通过 |
-| hierarchy/docs/guides/agent/testing.md/tiers | 当前收集与未启用测试层级重复穿插 | 当前规则与新增层级分支分开，保留后缀含义、收集及证据要求 |
-| security/SECURITY.md/contact | 漏洞报告引用不存在的 README 私密渠道，行为准则使用 noreply | 按本次维护者答复统一为 GitHub 私密报告链接，并同步 Issue 表单 |
-| routing/docs/README.md/pointers | 索引指向宽泛目录，部分日期仍为模板占位 | 改为具体文档入口，移除未知创建日期占位，记录实际翻译同步日期 |
-| scope/.agents/skills/documentation-health/SKILL.md/acceptance | 工具验收分支容易被普通文档审阅误执行 | 仅工具变更走该分支；文案修复运行文档检查 |
-| portability/.agents/skills/writing-for-agents/SKILL-MECHANICS.md/invocation | 将特定宿主的调用开关和引用限制写成通用事实 | 改为按宿主 schema 核对；保留既有调用策略，补齐技能描述触发范围 |
+### UI 候选预览文档交接（独立授权，未启动 Build）
 
-本次验证：`npm run docs:verify` 与 `npm run docs:health` 均通过，0 errors／warnings／stale notices／review notices；两项技能 `quick_validate.py` 均通过，两个 Issue 表单 YAML 解析通过。补充检查覆盖全部 59 个 Markdown 的 559 个本地链接／锚点，均有效；`git diff --check` 通过，暂存区仍为空。本次不运行应用测试／编译／lint／F5／VSIX，因为没有应用或工具实现改动。安全报告链接由维护者指定；外部服务可用性未作提交报告验证。模板来源的架构治理／判断指南现注明本地修订与未同步状态；engineering-template 和其他相邻仓库未改。保留开工时已有修改，不创建 Git commit；没有创建临时工作区。
-
-**此前交接（WI-011 及相关文档维护，保留原验证时点）：**
-
-- 共享内核可读性整理（2026-09-22）：按维护者批准的 `writing-for-agents` 审阅建议同步双语 `AGENTS.kernel`，明确职责与优先级、合并事实判断和开工流程、澄清只读问答例外、修正可选优化示例、改写安全／架构术语和可核对的交付条件；同步产品入口中的章节引用。保留提交授权、安全禁令、审批及基础阅读要求。本次仅修改本仓副本，engineering-template 未同步；未改变 WI／Gate 状态或生产代码。
-
-- Agent 入口规则可读性补强（2026-09-22）：按维护者明确请求，将双语 `AGENTS` 的压缩“权威栈”改写为“文档职责与冲突优先级”，逐项说明规则／Accepted PRD／架构／ACTIVE／历史材料的职责，定义真实冲突与互补关系并给出处理步骤；把加载地图的术语标签改为实际任务描述，使用中文路线并说明一项任务可匹配多行，加入 Webview 前端工程化示例，并将双语加载地图中的文档路径、架构文档引用及索引统一为可点击的相对 Markdown 链接（不加章节锚点）；再将抽象“上游指针”改为 pi 集成参考与规则，分别说明只读源码、集成指南、当前版本事实、升级重验和既有 RPC 决策边界；将过时“任务完成”短句改为“交付前检查”，按文档／代码／真实宿主列出检查及证据报告要求，区分检查通过与 WI／Gate 验收。随后按 `writing-for-agents` 审阅获批范围清理 WI-001 过时条件、合并开工指引、替换不存在的 boundaries 引用、澄清 Draft PRD 单独获批切片并集中 pi 集成规则，保留安全禁令与审批边界。不改变原优先级、加载义务、依赖版本、安全规则、产品／架构状态或生产代码。
-
-- Gate 参考文档可读性补强（2026-09-22）：按维护者明确请求扩展双语 `architecture-gates`，解释 Gate 与测试／spike／WI／人工验收／ADR 的关系、`Open`／`In spike`／`Accepted` 语义，并为六个 Gate 补充问题、证据和“不代表”边界；随后补充新增 gate 的准入、去重、命名、证据／排除项、ACTIVE 关联、初始状态、ADR 及替代历史规则。未改变任何 Gate 状态、ADR、当前 WI 范围或生产代码。
-
-- 架构文档局部纠偏（2026-09-21）：同步双语 §5，区分 Webview 释放仅清理视图与 provider 释放请求停止运行时；同步 §7／§8 的 19:44 延后选择主路径 F5 确认，保留边界矩阵未完整手测、WI 待收尾及 gate Open。仅修改文档，不改变当前 WI 范围或生产行为。
-
-- 提交隔离工作流补强：双语协作／提交规范现要求开工基线分类、临时 commit map、实现提交排除 `ACTIVE.md`、当前 WI 固定 `docs(active)`、无关维护独立提交及重叠 hunk 的非破坏恢复。新增 `npm run commit:check`，只读检查暂存清单、whitespace，并机械拒绝 `ACTIVE.md` 与实现／构建／CI 路径同批暂存；不安装 hook，也不声称识别语义。10 个隔离 git 仓库回归覆盖空暂存、docs-only、混合路径、rename／Unicode、whitespace、非根 cwd 与 git 失败。全套 `npm test` 94/94（新增 10）、compile／lint／docs:verify／docs:health／diff check 均通过；文档 0 errors／warnings／stale notices。真实暂存区为空时 `commit:check` 按设计失败且不修改 index。
-
-- 追加 scripts 分组完成：19 个文件移入 docs（10）／testing（3）／spikes（5）／packaging（1），同步 npm／CI 入口、URL 根路径、runner 夹具与 VSIX 辅助导入及双语有效链接。对外命令、生产代码与依赖不变。再次验证 84/84、compile／lint／docs:verify／docs:health／diff check 全通过；三个探针与 VSIX 入口语法检查通过。未执行集成探针或 VSIX 重验；原 project-trust 探针仍有 0.85.1 固定版本 guard，与当前 0.86.1 不符，未在目录重构中改动该既有限制。历史归档旧路径保留为当时记录。
-
-- 原 44 应用用例拆入 14 个模块内 spec：extension 32、adapter 4、webview 8；4 个脚本测试改名且内容不变，原 29 脚本用例保留。原 73 个用例名称／断言保留；Webview 模型测试用显式类型化 DTO 替代仅为取状态而启动 provider，VM 交互断言不变。
-- 新 runner 显式收集、保留路径、清理专用输出并传递失败；11 个新增回归覆盖递归／排除／同名／空集合／旧输出／失败及 Unicode、非根 cwd。默认只跑 spec，不启用 e2e 等新层级。CI 仅更新旧文件名，未扩大执行范围；生产逻辑／打包入口／发布白名单／依赖未改。
-- 本次验证：`npm test` 84/84（73 原有＋11 新增，0 skipped）、compile、lint、docs:verify、docs:health、git diff --check 均通过；文档 0 errors／warnings／stale notices。scripts 仍不在 lint 范围，runner 由专门回归验证。无真实模型调用，无 F5／VSIX 重验，无提交；旧 WI／gate／ADR 状态保留。待维护者确认 WI-011 收尾。
-
-### 先前交接（2026-09-21）
-
-**WI-010 限定切片收尾**
-
-- 预览链接兼容修正（2026-09-21）：按维护者反馈，仅移除完成索引 8 个“记录”链接的章节锚点，保留相对路径与历史内容；绕过当前 Cursor 对带锚点相对链接的处理问题。实际预览点击待维护者复验，不改变 WI／gate 状态。
-
-- 按维护者四项 F5 确认及“进入收尾吧”关闭 WI-010；长提案、批准、既有自动化／打包证据和旧交接并入既有双语历史，更新归档索引与完成索引；同步双语 PRD／架构／消息契约的状态与最终范围。
-- 未将四项检查扩大为已安装 VSIX 或完整审批矩阵验收；WI-008／WI-009 延后设置待验收，基础 UI／空闲切换验收保留。PRD Draft、架构 Proposed／Direction、契约 Outline、gate Open、ADR pending 均不提升。
-- 本次仅文档，不改源码、package、已批准计划或 Git commit。语义核对覆盖 WI-010 相关文档、状态与活动 DTO／测试；仓库 README 的旧脚手架状态另记为待后续文档同步，不在本次限定归档中扩大修改。
-- 本次 `npm run docs:verify` 通过：structure／i18n 均 0 errors、0 warnings、0 stale notices；`npm run docs:health` 通过：combined errors 0、review notices 0，扫描 29 文件。首次检查提示空闲交接缺当前项字段，已补齐未指定／未授权的 Prepare 入口后复查通过；未伪造新 WI。此前 73/73、compile／lint、审批／offline／VSIX 均为已有报告，非本次重跑。
-
-**测试约定采用与后缀补齐**
-
-- 维护者批准双语 [testing playbook](docs/guides/agent/testing.zh.md)、加载地图／索引／TypeScript 指引及后缀解释；纯技术文档，不新增并行 WI，不关闭 gate。保留当前 `*.test.ts`／`*.test.mjs` 布局与 runner，不新增 Cursor rules，不迁移框架。
-- 指南区分当前收集与未来模块内 tests 迁移；解释 `.spec`、`.e2e`、`.expected.e2e`、`.snapshot`、`.bench`、`.perf` 及 host/client/compat，未来端到端统一 `.e2e.ts`；明确收集排除、前置条件、首次启用／跳过证据。此前 61/61、compile／lint／docs 检查通过，后缀纯文档会话未重跑代码测试／F5。此前 ACTIVE 长度警告是历史检查结果，后续压缩重复内容已处理。
+2026-09-23 UI to-tickets：在已完成的限定 Draft 上新增双语 UIP-01～07 候选纵向切片，各自包含行为闭环、验收、需求来源、直接依赖和排除项；预览制作授权保留在上方，粒度审阅仅确认计划。前六项分别交付可用聊天、格式化回复／活动、会话、附件、审批／授权和审阅，最后一项核对组合状态／视觉证据；依赖为 01 → 02～06 → 07，按 WIP=1 串行，不新建外部工单／分支、不改代码／索引／提交。检查：双语依赖一致，7 个节点／10 条直接依赖，无环或传递冗余；本次差异／空白检查通过。npm run docs:verify 的结构检查为 0 error、4 个既有 Draft ADR 提示；全库双语检查因本次未修改的新归档 docs/archive/2026-09-23-goal-session-handoff.zh.md 缺少四项翻译元数据而失败，未覆盖该处进行中的工作。随后本 Goal 文档收尾已补齐这四项元数据，最终全库检查结果见上方 WI-017 交接；此处保留原次检查事实。本轮仅文档，未运行代码构建／行为测试；正式侧栏接入仍等待预览视觉确认。
 
 ## 已完成 WI 索引
 
@@ -153,3 +142,5 @@
 | WI-006 | 工作区与项目资源选择 UI | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
 | WI-007 | 根据资源选择启动 pi RPC | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
 | WI-010 | thinking／受控工具／Stop 四项 F5 已确认；限定切片关闭，ADR pending／gate Open | 2026-09-21 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-011 | 模块内测试迁移、递归 runner 与 scripts 分组；限定技术切片收尾 | 2026-09-22 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
+| WI-012 | 最小 P1–P3 探针切片关闭；P3／完整兼容缺口保留，不是产品验收 | 2026-09-22 | [记录](docs/archive/2026-09-21-closed-wi-history.zh.md) |
