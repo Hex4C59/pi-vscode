@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { sameNativePath } from "./pathIdentity.js";
 import { access } from "node:fs/promises";
-import { parseGateEnvelope, type GateCall } from "../extension/toolApproval.js";
+import { parseGateEnvelope, type GateCall } from "../extension/approvalProtocol.js";
 import { ActivityProjection, displayText } from "./activityProjection.js";
 import { controlledEnvironment } from './controlledEnvironment.js';
 import { CONTROLLED_TOOLS } from "./approvalGate.js";
@@ -20,7 +20,7 @@ import type {
   RuntimeEvent,
   RuntimeStartResult,
 } from "../extension/runtimeLifecycle.js";
-import { boundUserFacingDetail, formatRuntimeError } from "../extension/chatBounds.js";
+import { boundUserFacingDetail, formatRuntimeError } from "./runtime-errors.js";
 import {
   formatModelLabel,
   parseModelCatalog,

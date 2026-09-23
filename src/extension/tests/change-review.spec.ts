@@ -5,7 +5,7 @@ import fileSystem from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type * as vscode from "vscode";
-import type { GateCall } from "../toolApproval.js";
+import type { GateCall } from "../approvalProtocol.js";
 import type { ChangeReviewStateMessage, WorkspaceStateMessage } from "../webviewProtocol.js";
 import { folder, settingsRuntime, tick, harness } from "./harness.js";
 import { ChangeReview } from "../changeReview.js";

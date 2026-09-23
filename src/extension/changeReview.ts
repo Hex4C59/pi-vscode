@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type * as vscode from "vscode";
 import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "./webviewProtocol.js";
-import type { GateCall } from "./toolApproval.js";
+import type { GateCall } from "./approvalProtocol.js";
 import { unambiguousPath } from "./toolApproval.js";
 import { resolveWriteTargetPath } from "./writeProtection.js";
 

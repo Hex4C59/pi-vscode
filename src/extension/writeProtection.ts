@@ -3,7 +3,7 @@ import path from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import type * as vscode from "vscode";
-import type { GateCall } from "./toolApproval.js";
+import type { GateCall } from "./approvalProtocol.js";
 
 /** pi 0.86.1 write/edit use these spellings before node:path resolution.
  * Local policy mapping only; no private SDK import or replacement tool implementation.

@@ -3,7 +3,7 @@ import type { SessionStateMessage, SessionError } from "./webviewProtocol.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot } from "./webviewHtml.js";
-import { findCatalogEntry } from "./modelCatalog.js";
+import { ModelSettings, type ModelSettingsSnapshot } from "./modelSettings.js";
 import type { PiRuntimeLifecycle, RuntimeEvent } from "./runtimeLifecycle.js";
 import { parseWebviewMessage, type WorkspaceStateMessage, type AttachmentStateMessage, type AttachmentHistoryEntry, type AttachmentDetails, type SelectionRange } from "./webviewMessages.js";
 
@@ -41,7 +41,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private operation: object | undefined;
   private workspaceUpdatePending = false;
   private reconcileToken = 0;
-  private catalogToken = 0;
+  private readonly models: ModelSettings;
   private runtimeSession = 0;
   private promptToken = 0;
   private stoppingTask = false;
@@ -87,136 +87,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
     return true;
   }, (call, allowed) => { if (!allowed) this.review.discardWrite(call.toolCallId); });
-  private state: WorkspaceStateMessage = {
+  private state: Omit<WorkspaceStateMessage, keyof ModelSettingsSnapshot> = {
     version: 2, type: "workspaceState", viewId: opaqueId(), generation: 0, status: "no-folder",
     folder: null, choice: null, busy: false, error: null, runtime: "not-started", runtimeDetail: null,
-    messages: [], chatBusy: false, chatError: null, chatModel: null,
-    thinkingLevel: null, thinkingLevels: [], availableModels: [], modelBusy: false, modelError: null,
-    pendingModel: null, pendingThinkingLevel: null,
+    messages: [], chatBusy: false, chatError: null,
     activities: [], approvals: [], grants: [], execution:'idle', controlledExecution:true,
   };
-
-  private emptyModelFields(): Pick<
-    WorkspaceStateMessage,
-    "chatModel" | "thinkingLevel" | "thinkingLevels" | "availableModels" | "modelBusy" | "modelError" | "pendingModel" | "pendingThinkingLevel"
-  > {
-    return {
-      chatModel: null,
-      thinkingLevel: null,
-      thinkingLevels: [],
-      availableModels: [],
-      modelBusy: false,
-      modelError: null,
-      pendingModel: null,
-      pendingThinkingLevel: null,
-    };
-  }
-
-  private canChangeModelSettings(): boolean {
-    return !this.sessionTransitionBusy() && this.state.runtime === "ready" && !this.state.busy && !this.state.modelBusy;
-  }
-
-  /** Serialize next-turn intent only after the session-level settled event. */
-  private async applyPendingSettings(): Promise<void> {
-    if (this.disposed || this.stoppingTask || !this.canChangeModelSettings() || this.state.chatBusy) return;
-    const model = this.state.pendingModel;
-    const level = this.state.pendingThinkingLevel;
-    if (!model && !level) return;
-    const token = ++this.catalogToken;
-    const generation = this.state.generation;
-    const session = this.runtimeSession;
-    const current = (): boolean => {
-      if (this.disposed) return false;
-      this.refresh();
-      return token === this.catalogToken && generation === this.state.generation
-        && session === this.runtimeSession && this.state.runtime === "ready";
-    };
-    this.state = { ...this.state, modelBusy: true, modelError: null };
-    this.publish();
-    let error = "Could not apply model settings. Select again to retry.";
-    const accept = (result: Awaited<ReturnType<PiRuntimeLifecycle["getModelProjection"]>>): boolean => {
-      if (!result.ok) return false;
-      this.state = { ...this.state, chatModel: result.modelLabel, thinkingLevel: result.thinkingLevel,
-        thinkingLevels: result.thinkingLevels, availableModels: result.models };
-      return true;
-    };
-    try {
-      if (model) {
-        const result = await this.runtime.setModel(model.provider, model.modelId);
-        if (!current()) return;
-        if (!accept(result)) throw new Error();
-        // setModel returns a fresh get_state + available-levels projection.
-      }
-      if (level) {
-        if (!this.state.thinkingLevels.includes(level)) {
-          error = "Requested thinking level is not supported by the selected model. It was not applied.";
-          throw new Error();
-        }
-        const result = await this.runtime.setThinkingLevel(level);
-        if (!current()) return;
-        if (!accept(result)) throw new Error();
-        if (this.state.thinkingLevel !== level) {
-          error = "Requested thinking level was not applied by the runtime. Select again to retry.";
-          throw new Error();
-        }
-      }
-    } catch {
-      if (!current()) return;
-      // A failed mutation/refresh may have changed upstream state; read back,
-      // never retry a mutation or claim that the requested value was applied.
-      try {
-        const result = await this.runtime.getModelProjection();
-        if (!current()) return;
-        if (!accept(result)) this.state = { ...this.state, chatModel: null, thinkingLevel: null, thinkingLevels: [] };
-      } catch {
-        if (!current()) return;
-        this.state = { ...this.state, chatModel: null, thinkingLevel: null, thinkingLevels: [] };
-      }
-      this.state = { ...this.state, modelError: error };
-    } finally {
-      if (current()) {
-        this.state = { ...this.state, modelBusy: false, pendingModel: null, pendingThinkingLevel: null };
-        this.publish();
-      }
-    }
-  }
-
-  private async syncModelCatalog(): Promise<void> {
-    const token = ++this.catalogToken;
-    if (this.state.runtime !== "ready" || this.disposed) return;
-    if (!this.state.modelBusy) {
-      this.state = { ...this.state, modelBusy: true, modelError: null };
-      this.publish();
-    }
-    const generation = this.state.generation;
-    const session = this.runtimeSession;
-    const result = await this.runtime.getModelProjection().catch(() => ({ ok: false as const, detail: "Could not load model settings." }));
-    if (token !== this.catalogToken || this.disposed) return;
-    if (this.state.generation !== generation || this.runtimeSession !== session || this.state.runtime !== "ready") {
-      this.state = { ...this.state, modelBusy: false };
-      this.publish();
-      return;
-    }
-    if (!result.ok) {
-      this.state = {
-        ...this.state,
-        modelBusy: false,
-        modelError: "Could not load model settings. Restart runtime to retry.",
-      };
-      this.publish();
-      return;
-    }
-    this.state = {
-      ...this.state,
-      modelBusy: false,
-      modelError: null,
-      chatModel: result.modelLabel,
-      thinkingLevel: result.thinkingLevel,
-      thinkingLevels: result.thinkingLevels,
-      availableModels: result.models,
-    };
-    this.publish();
-  }
 
   constructor(
     private readonly api: Pick<typeof vscode, "workspace" | "env" | "window" | "commands" | "Uri" | "RelativePattern" | "EventEmitter">,
@@ -224,6 +100,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private readonly extensionUri: vscode.Uri,
     private readonly sessionBackend: SessionBackend = unavailableSessionBackend,
   ) {
+    this.models = new ModelSettings(runtime, () => {
+      if (!this.disposed) this.refresh();
+      return { generation: this.state.generation, session: this.runtimeSession, ready: this.state.runtime === "ready",
+        disposed: this.disposed, blocked: this.state.busy || this.sessionTransitionBusy(),
+        chatBusy: this.state.chatBusy, stopping: this.stoppingTask };
+    }, () => this.publish());
     this.savedHistory = new SavedHistory(sessionBackend, () => ({
       cwd: this.state.folder?.path,
       key: this.state.generation + ":" + this.state.viewId,
@@ -261,10 +143,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     else if (this.attachments.length || this.history.length) this.attachmentResult = "runtime-lost";
     this.attachments = []; this.history = []; this.retainedBytes = 0; this.lastSubmission = null;
     this.awaitingAck = false; this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
-    this.catalogToken += 1;
+    this.models.reset();
     this.toolApprovals.cancel(true);
     this.stoppingTask = false;
-    this.state = { ...this.state, messages: [], activities:[], execution:'idle', chatBusy: false, chatError: null, ...this.emptyModelFields() };
+    this.state = { ...this.state, messages: [], activities:[], execution:'idle', chatBusy: false, chatError: null };
     this.runtimeSession = 0;
   }
 
@@ -280,8 +162,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       if (this.lastSubmission) { this.lastSubmission.delivery = "unknown"; this.lastSubmission.outcome = "interrupted"; }
       this.publishAttachments();
       this.stoppingTask=false;
-      this.toolApprovals.cancel(true); this.catalogToken++; this.promptToken++;
-      this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:'failed',pendingModel:null,pendingThinkingLevel:null,modelBusy:false,activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
+      this.toolApprovals.cancel(true); this.models.cancelPending(); this.promptToken++;
+      this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:'failed',activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
     }
     if (event.kind === 'activity') {
       const activities=[...this.state.activities];const index=activities.findIndex(i=>i.id===event.item.id);
@@ -334,7 +216,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         ? this.state.chatError
         : "No assistant response. In pi, use /model and Ctrl+S to save a startup model, then restart runtime here.",
     };
-    void this.applyPendingSettings();
+    void this.models.applyPending();
     this.publish();
   }
 
@@ -359,7 +241,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const prevStatus = this.state.status;
     this.state = {
       ...this.state, generation: this.state.generation + 1, choice: null, busy: false, error: null,
-      runtime: "not-started", runtimeDetail: null, ...this.emptyModelFields(),
+      runtime: "not-started", runtimeDetail: null,
       status: remote ? "remote" : folders.length === 0 ? "no-folder" : folders.length > 1 ? "multi-root"
         : folder?.uri.scheme !== "file" ? "non-file" : !trusted ? "untrusted" : "eligible",
       folder: folder ? { name: folder.name, path: folder.uri.scheme === "file" ? folder.uri.fsPath : folder.uri.toString() } : null,
@@ -416,15 +298,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         ...this.state,
         runtime: "ready",
         runtimeDetail: null,
-        chatModel: result.modelLabel,
         messages: [],
-        thinkingLevel: null,
-        thinkingLevels: [],
-        availableModels: [],
-        modelBusy: true,
-        modelError: null,
       };
-      void this.syncModelCatalog();
+      void this.models.load(result.modelLabel);
     }
     this.publishSessions(); this.publish();
   }
@@ -477,8 +353,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       const result = await this.runtime.abortTask?.().catch(() => ({ ok: false as const, detail: "Could not stop task." }));
       if (session !== this.runtimeSession || generation !== this.state.generation || this.disposed) return { ok: false, preparationRevision };
       this.stoppingTask = false;
-      if (result?.ok) { this.state = { ...this.state, execution: "idle", chatBusy: false }; if (!this.sessionTransitionBusy()) void this.applyPendingSettings(); }
-      else { this.toolApprovals.cancel(true); this.state = { ...this.state, runtime: "error", execution: "failed", chatBusy: false, chatError: result?.detail ?? "Stop is unavailable.", pendingModel: null, pendingThinkingLevel: null }; }
+      if (result?.ok) { this.state = { ...this.state, execution: "idle", chatBusy: false }; if (!this.sessionTransitionBusy()) void this.models.applyPending(); }
+      else { this.toolApprovals.cancel(true); this.models.cancelPending(); this.state = { ...this.state, runtime: "error", execution: "failed", chatBusy: false, chatError: result?.detail ?? "Stop is unavailable." }; }
       this.publish(); return { ok: result?.ok === true, preparationRevision };
     })();
     this.stopOperation = operation;
@@ -603,7 +479,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     finally { if (token === this.attachmentToken) { this.preparation = "idle"; this.publishAttachments(); } }
   }
 
-  private attachmentEligible(): boolean { return !this.sessionTransitionBusy() && this.state.status === "eligible" && this.state.runtime === "ready" && !this.state.busy && !this.state.chatBusy && !this.state.modelBusy && !this.stoppingTask && !this.awaitingAck; }
+  private attachmentEligible(): boolean { return !this.sessionTransitionBusy() && this.state.status === "eligible" && this.state.runtime === "ready" && !this.state.busy && !this.state.chatBusy && !this.models.snapshot.modelBusy && !this.stoppingTask && !this.awaitingAck; }
 
   private async confirmAttachment(view: vscode.WebviewView, attachmentId: string, snapshotId: string, kind: "file" | "selection"): Promise<void> {
     const a = this.attachments.find(item => item.attachmentId === attachmentId);
@@ -722,7 +598,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
           ? "Runtime rejected the prompt. Check model/provider configuration before deliberately sending again; no retry was made."
           : "Prompt delivery was not confirmed. Inspect delivery status and restart the runtime before retrying; no retry was made.";
         this.review.endTask();
-        this.state = { ...this.state, chatBusy: false, execution: "failed", chatError, pendingModel: null, pendingThinkingLevel: null };
+        this.models.cancelPending();
+        this.state = { ...this.state, chatBusy: false, execution: "failed", chatError };
       } else if (this.lastSubmission && ["settled", "interrupted"].includes(this.lastSubmission.outcome)) { this.finishSettledTask(); }
       this.publish(); this.publishAttachments();
     } catch (error) {
@@ -742,7 +619,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private publish(): void {
-    if (this.view && !this.disposed) this.post(this.view, { ...this.state });
+    if (this.view && !this.disposed) this.post(this.view, { ...this.state, ...this.models.snapshot });
   }
 
   private post(view: vscode.WebviewView, message: unknown): void {
@@ -851,22 +728,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       return;
     }
     if (message.type === "setThinkingLevel" || message.type === "setChatModel") {
-      if (!this.canChangeModelSettings()) {
-        this.publish();
-        return;
-      }
-      if (message.type === "setThinkingLevel" && !this.state.thinkingLevels.includes(message.level)) {
-        this.publish();
-        return;
-      }
-      if (message.type === "setChatModel" && !findCatalogEntry(this.state.availableModels, message.provider, message.modelId)) {
-        this.publish();
-        return;
-      }
-      this.state = message.type === "setThinkingLevel"
-        ? { ...this.state, pendingThinkingLevel: message.level, modelError: null }
-        : { ...this.state, pendingModel: findCatalogEntry(this.state.availableModels, message.provider, message.modelId) ?? null, modelError: null };
-      void this.applyPendingSettings();
+      await this.models.select(message);
       this.publish();
       return;
     }

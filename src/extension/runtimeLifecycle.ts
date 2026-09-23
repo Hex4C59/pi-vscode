@@ -38,7 +38,7 @@ export type ModelMutationResult =
   }
   | { ok: false; detail: string };
 
-import type { GateCall } from "./toolApproval.js";
+import type { GateCall } from "./approvalProtocol.js";
 import type { ActivityItem } from "./webviewProtocol.js";
 export type { ActivityItem } from "./webviewProtocol.js";
 

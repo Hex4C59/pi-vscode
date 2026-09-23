@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import type * as vscode from "vscode";
-import type { GateCall } from "../toolApproval.js";
+import type { GateCall } from "../approvalProtocol.js";
 import { folder, harness, settingsRuntime, tick } from "./harness.js";
 
 const writeCall = (cwd: string, request: string, target = "file.ts"): GateCall => ({ cwd, runtime: "fixture", request, toolCallId: request, tool: "write", input: { path: target, content: "tool text" } });

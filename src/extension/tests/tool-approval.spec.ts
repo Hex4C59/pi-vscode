@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, mkdir, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { ToolApprovals, inspectScope, unambiguousPath, parseGateEnvelope, type GateCall } from '../toolApproval.js';
+import { ToolApprovals, inspectScope, unambiguousPath } from '../toolApproval.js';
+import { parseGateEnvelope, type GateCall } from '../approvalProtocol.js';
 import { parseWebviewMessage } from '../webviewMessages.js';
 const call=(cwd:string,request='a'):GateCall=>({cwd,runtime:'runtime',request,toolCallId:request,tool:'write',input:{path:'file',content:'new'}});
 test('readonly realpath policy rejects escapes, junctions and ambiguous Windows paths',async()=>{
