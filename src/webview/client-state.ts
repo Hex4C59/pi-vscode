@@ -1,29 +1,9 @@
-import type { AttachmentHistoryEntry, AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage, WebviewMessage, WorkspaceStateMessage } from "../extension/contracts/webviewProtocol.js";
-import type { SavedHistorySnapshot } from "./saved-history-client.js";
 
-type WithoutEnvelope<T> = T extends { generation: number; viewId: string } ? Omit<T, "generation" | "viewId" | "version"> : never;
-export type Intent = WithoutEnvelope<WebviewMessage>;
+import type { ClientSnapshot } from "./types.js";
+export type { ClientSnapshot, Intent, Preview } from "./types.js";
 export const ATTACHMENT_HISTORY_PAGE_SIZE = 16;
 export const CHANGE_REVIEW_PAGE_SIZE = 16;
 export const SESSION_PAGE_SIZE = 16;
-export type Preview = { snapshotId: string; requestId: string; offset: number; text: string; error: string | null };
-export type ClientSnapshot = SavedHistorySnapshot & {
-  workspace: WorkspaceStateMessage | null;
-  attachments: AttachmentStateMessage | null;
-  sessions: SessionStateMessage | null;
-  changeReview: ChangeReviewStateMessage | null;
-  changeReviewOpen: boolean;
-  changeReviewPage: number;
-  text: string;
-  synchronizing: boolean;
-  submitting: boolean;
-  stopRequested: boolean;
-  history: AttachmentHistoryEntry[];
-  historyOpen: boolean;
-  historyPage: number | null;
-  preview: Preview | null;
-  error: string | null;
-};
 export function attachmentError(code: string, kind?: "file" | "selection"): string {
   if (code === "source-changed" && kind === undefined) return "Sources changed. Send checks all attachments; confirm each marked snapshot or remove and reattach.";
   if (code === "source-changed" && kind === "selection") return "Source changed. Selection text stays fixed; Send checks the source before you choose Use old snapshot, or remove and reattach.";

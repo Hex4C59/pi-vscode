@@ -5,7 +5,7 @@ import type {
   SavedHistoryStateMessage,
   SessionStateMessage,
   WorkspaceStateMessage,
-} from "../../extension/contracts/webviewProtocol.js";
+} from "../../extension/contracts/index.js";
 
 export const PREVIEW_SCENARIOS = [
   "ready",

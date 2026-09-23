@@ -1,30 +1,10 @@
 import type { ReactElement } from "react";
 import { ATTACHMENT_HISTORY_PAGE_SIZE } from "../client-state.js";
-import type { AttachmentHistoryEntry, AttachmentStateMessage, AttachmentDetails } from "../../extension/contracts/webviewProtocol.js";
+import type { AttachmentHistoryEntry, AttachmentStateMessage, AttachmentDetails } from "../../extension/contracts/index.js";
+import type { AttachmentPanelProps } from "./types.js";
+export type { AttachmentPreview, AttachmentPanelProps } from "./types.js";
 
-export interface AttachmentPreview {
-  snapshotId: string;
-  text: string;
-  error: string | null;
-}
 
-export interface AttachmentPanelProps {
-  state: AttachmentStateMessage | null;
-  history: AttachmentHistoryEntry[];
-  historyOpen: boolean;
-  historyPage: number | null;
-  preview: AttachmentPreview | null;
-  disabled: boolean;
-  status: string;
-  onAdd: () => void;
-  onAddSelection: () => void;
-  onRemove: (attachmentId: string) => void;
-  onConfirm: (attachmentId: string) => void;
-  onHistory: () => void;
-  onHistoryPage: (page: number) => void;
-  onPreview: (snapshotId: string) => void;
-  onClosePreview: () => void;
-}
 
 function kindLabel(attachment: AttachmentDetails): string {
   if (attachment.kind === "file") return "whole file";

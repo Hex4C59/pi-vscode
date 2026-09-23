@@ -1,6 +1,6 @@
 import type { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
-import type { PromptInput } from "../../extension/contracts/runtimeLifecycle.js";
+import type { PromptInput } from "../../extension/contracts/index.js";
 
 /** Host-only prompt encoding; body and explicit context have independent budgets. */
 export function serializePromptFrame(id: string, input: PromptInput): string {

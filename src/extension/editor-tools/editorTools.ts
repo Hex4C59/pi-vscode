@@ -1,20 +1,12 @@
 import type * as vscode from "vscode";
-import type { GateCall } from "../contracts/approvalProtocol.js";
-import type { WebviewMessage } from "../bridge/webviewMessages.js";
-import type { ApprovalCard, SessionGrant, ChangeReviewStateMessage } from "../contracts/webviewProtocol.js";
+import type { GateCall } from "../contracts/index.js";
+import type { WebviewMessage } from "../contracts/index.js";
 import { ToolApprovals } from "./toolApproval.js";
 import { checkWriteTarget } from "./writeProtection.js";
 import { ChangeReview } from "./changeReview.js";
 
-type ToolContext = Readonly<{
-  generation: number; session: number; cwd: string | undefined;
-  ready: boolean; chatBusy: boolean; stopping: boolean; disposed: boolean;
-}>;
-type ToolProjection = { approvals: ApprovalCard[]; grants: SessionGrant[] };
-type ReviewProjection = Omit<ChangeReviewStateMessage, "version" | "generation" | "viewId" | "type">;
-
-/** Internal composition options, not a Webview capability or a public extension API. */
-export type EditorToolOptions = { changeReview?: boolean };
+import type { EditorToolContext, EditorToolOptions, EditorToolProjection, EditorReviewProjection } from "./types.js";
+export type { EditorToolOptions } from "./types.js";
 
 /** Owns editor-aware execution policy and optional review resources behind pi's approval hook. */
 export class EditorTools implements vscode.Disposable {
@@ -25,9 +17,9 @@ export class EditorTools implements vscode.Disposable {
 
   constructor(
     api: ConstructorParameters<typeof ChangeReview>[0],
-    private readonly context: () => ToolContext,
-    private readonly changed: (projection: ToolProjection) => void,
-    private readonly reviewChanged: (projection: ReviewProjection) => void,
+    private readonly context: () => EditorToolContext,
+    private readonly changed: (projection: EditorToolProjection) => void,
+    private readonly reviewChanged: (projection: EditorReviewProjection) => void,
     private readonly failed: (message: string) => void,
     options: EditorToolOptions = {},
   ) {

@@ -1,14 +1,10 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { attachmentError, availability } from "./client-state.js";
 import { type WebviewClient } from "./webview-client.js";
-import { WorkspaceSetup } from "./components/workspace-setup.js";
-import { Conversation } from "./components/conversation.js";
-import { ModelPicker } from "./components/model-picker.js";
-import { Approvals } from "./components/approvals.js";
-import { AttachmentPanel } from "./components/attachment-panel.js";
-import { ChangeReview } from "./components/change-review.js";
-import { Sessions } from "./components/sessions.js";
-import { SavedHistory } from "./components/saved-history.js";
+import {
+  WorkspaceSetup, Conversation, ModelPicker, Approvals,
+  AttachmentPanel, ChangeReview, Sessions, SavedHistory,
+} from "./components/index.js";
 
 const runtimeLabels = { "not-started": "Not running", starting: "Starting…", ready: "Connected", stopping: "Stopping…", error: "Runtime error" };
 const executionLabels = { idle: "Ready", waiting: "Waiting for response…", thinking: "Thinking…", "awaiting-approval": "Waiting for tool approval",

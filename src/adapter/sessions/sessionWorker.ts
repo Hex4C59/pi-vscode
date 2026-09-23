@@ -1,9 +1,9 @@
 import { stat as fsStat, realpath as fsRealpath } from "node:fs/promises";
 import path from "node:path";
-import { sameNativePath } from "../pathIdentity.js";
+import { sameNativePath } from "../index.js";
 import type { Readable, Writable } from "node:stream";
 
-import type { SavedHistoryPage, SavedHistoryPreview } from "../../extension/contracts/sessionBackend.js";
+import type { SavedHistoryPage, SavedHistoryPreview } from "../../extension/contracts/index.js";
 import { projectSavedHistory, projectSavedHistoryPreview } from "./session-history-projection.js";
 
 const WORKER_ARG = "--pi-vscode-session-worker";
@@ -36,35 +36,8 @@ type WorkerSuccess =
   | { version: typeof PROTOCOL_VERSION; ok: true; action: "history"; history: SavedHistoryPage }
   | { version: typeof PROTOCOL_VERSION; ok: true; action: "preview"; preview: SavedHistoryPreview };
 
-export type SessionInfoLike = {
-  id: string;
-  path: string;
-  cwd: string;
-  name?: string;
-  modified: Date;
-  firstMessage: string;
-};
-export type SessionManagerHandleLike = {
-  getCwd(): string;
-  getSessionId(): string;
-  getSessionFile(): string | undefined;
-  getBranch(): unknown[];
-};
-type SessionListProgress = (loaded: number, total: number, partialSessions?: readonly SessionInfoLike[]) => void;
-export type SessionManagerApi = {
-  list(cwd: string, sessionDir?: string, onProgress?: SessionListProgress, signal?: AbortSignal): Promise<readonly SessionInfoLike[]>;
-  findById(cwd: string, id: string, sessionDir?: string): string | undefined;
-  open(path: string, sessionDir?: string, cwdOverride?: string): SessionManagerHandleLike;
-};
-type StatLike = { isDirectory(): boolean; isFile(): boolean };
-type FileSystemApi = { stat(path: string): Promise<StatLike>; realpath(path: string): Promise<string> };
-type HistoryPreviewProjector = (branch: unknown[], index: number, offset: number) => SavedHistoryPreview;
-export type SessionWorkerEnvironment = {
-  sessionManager?: SessionManagerApi;
-  projectHistory?: (branch: unknown[], page?: number) => SavedHistoryPage;
-  projectHistoryPreview?: HistoryPreviewProjector;
-  fileSystem?: FileSystemApi;
-};
+import type { SessionInfoLike, SessionManagerApi, SessionWorkerEnvironment, SessionListProgress, FileSystemApi, HistoryPreviewProjector } from "./types.js";
+export type { SessionInfoLike, SessionManagerHandleLike, SessionManagerApi, SessionWorkerEnvironment } from "./types.js";
 
 function failure(code: WorkerFailure["code"] = "unavailable"): WorkerFailure {
   return { version: PROTOCOL_VERSION, ok: false, code };

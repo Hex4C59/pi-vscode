@@ -1,12 +1,6 @@
 import { findCatalogEntry } from "./modelCatalog.js";
-import type { PiRuntimeLifecycle } from "../contracts/runtimeLifecycle.js";
-import type { WorkspaceStateMessage } from "../contracts/webviewProtocol.js";
-
-export type ModelSettingsSnapshot = Pick<WorkspaceStateMessage,
-  "chatModel" | "thinkingLevel" | "thinkingLevels" | "availableModels" | "modelBusy" | "modelError" | "pendingModel" | "pendingThinkingLevel">;
-type Selection = { type: "setChatModel"; provider: string; modelId: string } | { type: "setThinkingLevel"; level: string };
-type Context = { generation: number; session: number; ready: boolean; disposed: boolean; blocked: boolean; chatBusy: boolean; stopping: boolean };
-type Runtime = Pick<PiRuntimeLifecycle, "getModelProjection" | "setModel" | "setThinkingLevel">;
+import type { ModelSettingsSnapshot, ModelSettingsSelection, ModelSettingsContext, ModelSettingsRuntime } from "./types.js";
+export type { ModelSettingsSnapshot } from "./types.js";
 const empty = (): ModelSettingsSnapshot => ({
   chatModel: null, thinkingLevel: null, thinkingLevels: [], availableModels: [],
   modelBusy: false, modelError: null, pendingModel: null, pendingThinkingLevel: null,
@@ -16,7 +10,7 @@ const empty = (): ModelSettingsSnapshot => ({
 export class ModelSettings {
   private value = empty();
   private revision = 0;
-  constructor(private readonly runtime: Runtime, private readonly context: () => Context, private readonly changed: () => void) {}
+  constructor(private readonly runtime: ModelSettingsRuntime, private readonly context: () => ModelSettingsContext, private readonly changed: () => void) {}
   get snapshot(): Readonly<ModelSettingsSnapshot> { return this.value; }
 
   // The coordinator publishes after the complete cross-feature transition.
@@ -25,10 +19,10 @@ export class ModelSettings {
     this.revision++;
     this.value = { ...this.value, modelBusy: false, pendingModel: null, pendingThinkingLevel: null };
   }
-  private canSelect(context: Context): boolean {
+  private canSelect(context: ModelSettingsContext): boolean {
     return !context.disposed && context.ready && !context.blocked && !this.value.modelBusy;
   }
-  async select(selection: Selection): Promise<void> {
+  async select(selection: ModelSettingsSelection): Promise<void> {
     if (!this.canSelect(this.context())) return;
     if (selection.type === "setThinkingLevel") {
       if (!this.value.thinkingLevels.includes(selection.level)) return;
@@ -61,7 +55,7 @@ export class ModelSettings {
     this.value = { ...this.value, modelBusy: true, modelError: null };
     this.changed();
     let error = "Could not apply model settings. Select again to retry.";
-    const accept = (result: Awaited<ReturnType<PiRuntimeLifecycle["getModelProjection"]>>): boolean => {
+    const accept = (result: Awaited<ReturnType<ModelSettingsRuntime["getModelProjection"]>>): boolean => {
       if (!result.ok) return false;
       this.value = { ...this.value, chatModel: result.modelLabel, thinkingLevel: result.thinkingLevel,
         thinkingLevels: result.thinkingLevels, availableModels: result.models };

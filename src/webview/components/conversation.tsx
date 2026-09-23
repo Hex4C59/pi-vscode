@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
-import type { ActivityItem } from "../../extension/contracts/webviewProtocol.js";
+import type { ActivityItem } from "../../extension/contracts/index.js";
+import type { ConversationProps } from "./types.js";
+export type { ConversationProps } from "./types.js";
 
-export interface ConversationProps {
-  messages: WorkspaceStateMessage["messages"];
-  activities: WorkspaceStateMessage["activities"];
-}
 
 const terminalStatuses = new Set<ActivityItem["status"]>(["complete", "failed", "interrupted"]);
 

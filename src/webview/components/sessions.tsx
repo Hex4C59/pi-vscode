@@ -1,15 +1,9 @@
 import { useState, type ReactElement } from "react";
-import type { SessionError, SessionStateMessage } from "../../extension/contracts/webviewProtocol.js";
+import type { SessionError, SessionStateMessage } from "../../extension/contracts/index.js";
 import { SESSION_PAGE_SIZE } from "../client-state.js";
+import type { SessionsProps } from "./types.js";
+export type { SessionsProps } from "./types.js";
 
-export interface SessionsProps {
-  state: SessionStateMessage | null;
-  onOpen: () => void;
-  onRefresh: () => void;
-  onPage: (page: number) => void;
-  onNew: () => void;
-  onResume: (id: string) => void;
-}
 
 const errorCopy: Record<SessionError, string> = {
   unavailable: "Saved conversations are unavailable. Refresh to try again.",

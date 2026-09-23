@@ -3,13 +3,13 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { resolveWriteTargetPath } from "./writeProtection.js";
 
-import type { ApprovalCard } from "../contracts/webviewProtocol.js";
-export type { ApprovalCard } from "../contracts/webviewProtocol.js";
-import type { SessionGrant } from "../contracts/webviewProtocol.js";
-export type { SessionGrant } from "../contracts/webviewProtocol.js";
-import type { ApprovalDecision } from "../contracts/webviewProtocol.js";
-export type { ApprovalDecision } from "../contracts/webviewProtocol.js";
-import type { GateCall } from "../contracts/approvalProtocol.js";
+import type { ApprovalCard } from "../contracts/index.js";
+export type { ApprovalCard } from "../contracts/index.js";
+import type { SessionGrant } from "../contracts/index.js";
+export type { SessionGrant } from "../contracts/index.js";
+import type { ApprovalDecision } from "../contracts/index.js";
+export type { ApprovalDecision } from "../contracts/index.js";
+import type { GateCall } from "../contracts/index.js";
 /** Reject Windows device/ADS/drive-relative/ambiguous names even on other hosts. */
 export function unambiguousPath(value: string): boolean {
   return value.length > 0 && !/^[~@]/.test(value) && ![...value].some(c => c.charCodeAt(0) < 32) && !/^(?:\\\\[?.]\\|[a-z]:(?![\\/]))/i.test(value)

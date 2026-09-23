@@ -59,6 +59,8 @@ flowchart TD
 | `src/adapter/runtime/` | 实时 pi RPC 进程、分帧、模型解析及活动／错误投影 |
 | `src/adapter/sessions/` | 公开 pi 会话 API helper 与历史投影 |
 
+目录 `index.ts` 对跨模块目录的调用者暴露所需操作与纯类型契约。模块自有类型放在本目录 `types.ts`，跨层 Webview DTO、运行时生命周期和会话接口仍以 `src/extension/contracts/` 为单一宿主权威。模块内部仍可直接导入实现文件。`src/extension.ts` 装配宿主与适配层入口。浏览器代码仅以类型方式导入宿主拥有的契约；单独打包的 session-worker 和 approval-gate 入口保持明确的实现文件路径。
+
 `piChatViewProvider.ts` 留在宿主根目录承担协调。适配层根目录保留独立打包的 `approvalGate.ts` 及运行时／会话集成共同使用的环境和路径辅助模块。契约仍归宿主拥有；浏览器消费纯共享类型，不导入特权实现。模块测试放在各模块的 `tests/`；层级 `tests/` 保留跨模块协调测试和共享夹具。构建产物位置不变。
 
 ## 3. UI 布局（产品默认）

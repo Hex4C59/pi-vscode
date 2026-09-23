@@ -1,10 +1,7 @@
-import type { WebviewMessage } from "../extension/contracts/webviewProtocol.js";
 
 /** A private presentation transport. It exposes no host capabilities beyond named intents. */
-export interface WebviewBridge {
-  postMessage(message: WebviewMessage): void;
-  subscribe(listener: (message: unknown) => void): () => void;
-}
+import type { WebviewBridge } from "./types.js";
+export type { WebviewBridge } from "./types.js";
 
 export function createWebviewBridge(api: Pick<WebviewBridge, "postMessage">, target: Window = window): WebviewBridge {
   return {

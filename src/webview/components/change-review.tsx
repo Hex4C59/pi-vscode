@@ -1,16 +1,9 @@
 import type { ReactElement } from "react";
 import { CHANGE_REVIEW_PAGE_SIZE } from "../client-state.js";
-import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "../../extension/contracts/webviewProtocol.js";
+import type { ChangeReviewEntry, ReviewReason } from "../../extension/contracts/index.js";
+import type { ChangeReviewProps } from "./types.js";
+export type { ChangeReviewProps } from "./types.js";
 
-export interface ChangeReviewProps {
-  state: ChangeReviewStateMessage | null;
-  open: boolean;
-  page: number;
-  onToggle: () => void;
-  onPage: (page: number) => void;
-  onDiff: (id: string) => void;
-  onSource: (id: string) => void;
-}
 
 const reasonLabels: Record<ReviewReason, string> = {
   "outside-project": "Outside the selected project",

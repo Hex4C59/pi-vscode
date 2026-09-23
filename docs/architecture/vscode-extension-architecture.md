@@ -54,6 +54,8 @@ Directories group existing responsibilities within each layer; they are not sepa
 | `src/adapter/runtime/` | Live pi RPC process, framing, model parsing and activity/error projection |
 | `src/adapter/sessions/` | Public pi session API helper and history projection |
 
+Directory `index.ts` files expose operations and type-only contracts consumed across module directories. Module-owned types live in local `types.ts` files, while cross-layer Webview DTOs, runtime lifecycle and session interfaces retain their single host-owned source in `src/extension/contracts/`. Imports within a module can still target its implementation files. `src/extension.ts` assembles host and adapter entries. Browser code imports host-owned contracts only as types; standalone session-worker and approval-gate build entries remain explicit implementation files.
+
 `piChatViewProvider.ts` remains at the host root as coordinator. The adapter root retains the independently bundled `approvalGate.ts` and the environment/path helpers used by both runtime and session integration. Contracts remain host-owned; browser consumers use pure shared types, not privileged implementations. Module tests live in each module's `tests/`; layer `tests/` directories retain cross-module coordination tests and shared fixtures. Build output locations are unchanged.
 
 ## 3. UI placement (product default)

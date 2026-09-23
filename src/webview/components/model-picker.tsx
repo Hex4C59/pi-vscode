@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
+import type { ModelPickerProps } from "./types.js";
+export type { ModelPickerProps } from "./types.js";
 
-export interface ModelPickerProps {
-  state: WorkspaceStateMessage;
-  disabled: boolean;
-  onModel: (provider: string, modelId: string) => void;
-  onThinking: (level: string) => void;
-}
 
 export function ModelPicker({ state, disabled, onModel, onThinking }: ModelPickerProps): ReactElement {
   const triggerRef = useRef<HTMLButtonElement>(null);

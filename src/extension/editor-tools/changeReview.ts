@@ -2,8 +2,8 @@ import { open, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type * as vscode from "vscode";
-import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "../contracts/webviewProtocol.js";
-import type { GateCall } from "../contracts/approvalProtocol.js";
+import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "../contracts/index.js";
+import type { GateCall } from "../contracts/index.js";
 import { unambiguousPath } from "./toolApproval.js";
 import { resolveWriteTargetPath } from "./writeProtection.js";
 

@@ -1,4 +1,4 @@
-import type { HostMessage } from "../extension/contracts/webviewProtocol.js";
+import type { HostMessage } from "../extension/contracts/index.js";
 
 type DataRecord = Record<string, unknown>;
 

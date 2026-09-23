@@ -1,21 +1,8 @@
-import type { HostMessage, SavedHistoryStateMessage, WebviewMessage } from "../extension/contracts/webviewProtocol.js";
 
 export const SAVED_HISTORY_PAGE_SIZE = 32;
 const SAVED_PREVIEW_BACK_LIMIT = 128;
-export type SavedHistoryPreview = {
-  id: string; requestId: string; offset: number; nextOffset: number; totalChars: number | null;
-  text: string; done: boolean; phase: "loading" | "idle" | "error";
-  error: SavedHistoryStateMessage["error"]; previousOffsets: number[];
-};
-
-export type SavedHistorySnapshot = {
-  savedHistory: SavedHistoryStateMessage | null;
-  savedHistoryPendingPage: number | null;
-  savedHistoryPreview: SavedHistoryPreview | null;
-};
-type HistoryMessage = Extract<HostMessage, { type: "savedHistoryState" | "savedHistoryPreview" }>;
-type HistoryIntent = (Omit<Extract<WebviewMessage, { type: "getSavedSessions" | "getSavedHistory" }>, "version" | "generation" | "viewId"> & { type: "getSavedHistory" })
-  | Omit<Extract<WebviewMessage, { type: "getSavedHistoryPreview" }>, "version" | "generation" | "viewId">;
+import type { SavedHistorySnapshot, HistoryMessage, HistoryIntent } from "./types.js";
+export type { SavedHistoryPreview, SavedHistorySnapshot } from "./types.js";
 const empty = (): SavedHistorySnapshot => ({ savedHistory: null, savedHistoryPendingPage: null, savedHistoryPreview: null });
 
 /** Owns the retained-history reading window and one correlated chunk preview. */

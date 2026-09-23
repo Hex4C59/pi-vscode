@@ -1,4 +1,4 @@
-import type { WebviewBridge } from "../bridge.js";
+import type { WebviewBridge } from "../index.js";
 import type {
   AttachmentHistoryEntry,
   AttachmentPreviewMessage,
@@ -11,7 +11,7 @@ import type {
   SessionStateMessage,
   WebviewMessage,
   WorkspaceStateMessage,
-} from "../../extension/contracts/webviewProtocol.js";
+} from "../../extension/contracts/index.js";
 import {
   type PreviewScenario,
   THINKING_LEVELS,

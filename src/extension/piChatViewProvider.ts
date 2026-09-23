@@ -1,15 +1,16 @@
-import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/sessionBackend.js";
-import type { SessionStateMessage, SessionError } from "./contracts/webviewProtocol.js";
+import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/index.js";
+import type { SessionStateMessage, SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
-import { getWebviewHtml, getWebviewResourceRoot } from "./bridge/webviewHtml.js";
-import { ModelSettings, type ModelSettingsSnapshot } from "./models/modelSettings.js";
-import type { PiRuntimeLifecycle, RuntimeEvent } from "./contracts/runtimeLifecycle.js";
-import { parseWebviewMessage, type WorkspaceStateMessage } from "./bridge/webviewMessages.js";
+import { getWebviewHtml, getWebviewResourceRoot } from "./bridge/index.js";
+import { ModelSettings, type ModelSettingsSnapshot } from "./models/index.js";
+import type { PiRuntimeLifecycle, RuntimeEvent } from "./contracts/index.js";
+import { parseWebviewMessage } from "./bridge/index.js";
+import type { WorkspaceStateMessage } from "./contracts/index.js";
 
-import { SavedHistory } from "./sessions/savedHistory.js";
-import { EditorTools, type EditorToolOptions } from "./editor-tools/editorTools.js";
-import { DraftSubmission } from "./draft/draftSubmission.js";
+import { SavedHistory } from "./sessions/index.js";
+import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
+import { DraftSubmission } from "./draft/index.js";
 
 const opaqueId = () => randomBytes(16).toString("hex");
 

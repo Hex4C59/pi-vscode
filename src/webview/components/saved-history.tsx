@@ -1,18 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
-import type { SavedHistoryStateMessage } from "../../extension/contracts/webviewProtocol.js";
-import { SAVED_HISTORY_PAGE_SIZE, type SavedHistoryPreview } from "../saved-history-client.js";
+import { SAVED_HISTORY_PAGE_SIZE } from "../saved-history-client.js";
+import type { SavedHistoryProps } from "./types.js";
 
-interface SavedHistoryProps {
-  state: SavedHistoryStateMessage;
-  pendingPage: number | null;
-  preview: SavedHistoryPreview | null;
-  disabled: boolean;
-  onPage: (page: number) => void;
-  onPreview: (id: string) => void;
-  onPreviewPage: (direction: "first" | "previous" | "next" | "retry") => void;
-  onClosePreview: () => void;
-  onInteract: () => void;
-}
 
 const errors = {
   unavailable: "Retained history is unavailable. Retry when the conversation is ready.",

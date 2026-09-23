@@ -1,10 +1,6 @@
 import { randomBytes } from "node:crypto";
-import type { SessionBackend, SavedHistoryPage } from "../contracts/sessionBackend.js";
-import type { HostEnvelope, SavedHistoryStateMessage, SavedHistoryPreviewMessage } from "../contracts/webviewProtocol.js";
-
-type State = Omit<SavedHistoryStateMessage, keyof HostEnvelope>;
-type Preview = Omit<Extract<SavedHistoryPreviewMessage, { code: string }>, keyof HostEnvelope> | Omit<Extract<SavedHistoryPreviewMessage, { text: string }>, keyof HostEnvelope>;
-type Context = { cwd: string | undefined; key: string; enabled: boolean; startable: boolean; settled: Promise<void> };
+import type { SessionBackend, SavedHistoryPage } from "../contracts/index.js";
+import type { SavedHistoryState as State, SavedHistoryResult as Preview, SavedHistoryContext as Context } from "./types.js";
 const empty = (): State => ({ type: "savedHistoryState", available: false, phase: "idle", messages: [], page: 0, total: 0, error: null });
 
 /** One render window and one owned public-SDK read; never stores or opens original workspace files. */

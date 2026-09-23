@@ -1,14 +1,8 @@
 import { useEffect, useState, type ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
-import type { ApprovalDecision, ApprovalCard, SessionGrant } from "../../extension/contracts/webviewProtocol.js";
+import type { ApprovalDecision, ApprovalCard, SessionGrant } from "../../extension/contracts/index.js";
+import type { ApprovalsProps } from "./types.js";
+export type { ApprovalsProps } from "./types.js";
 
-export interface ApprovalsProps {
-  cards: WorkspaceStateMessage["approvals"];
-  grants: WorkspaceStateMessage["grants"];
-  disabled: boolean;
-  onDecision: (id: string, decision: ApprovalDecision) => void;
-  onRevoke: (id: string) => void;
-}
 
 const decisions: readonly [ApprovalDecision, string][] = [
   ["once", "Allow once"],

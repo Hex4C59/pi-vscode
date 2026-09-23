@@ -1,12 +1,11 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { sameNativePath } from "../pathIdentity.js";
 import { access } from "node:fs/promises";
-import { parseGateEnvelope, type GateCall } from "../../extension/contracts/approvalProtocol.js";
+import type { PiRpcRuntimeEnvironment } from "./types.js";
+import { parseGateEnvelope, type GateCall } from "../../extension/contracts/index.js";
 import { ActivityProjection, displayText } from "./activityProjection.js";
-import { controlledEnvironment } from '../controlledEnvironment.js';
-import { CONTROLLED_TOOLS } from "../approvalGate.js";
+import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../index.js";
 import type { Readable } from "node:stream";
 
 import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./jsonl.js";
@@ -19,7 +18,7 @@ import type {
   ProjectTrustFlag,
   RuntimeEvent,
   RuntimeStartResult,
-} from "../../extension/contracts/runtimeLifecycle.js";
+} from "../../extension/contracts/index.js";
 import { boundUserFacingDetail, formatRuntimeError } from "./runtime-errors.js";
 import {
   formatModelLabel,
@@ -51,12 +50,7 @@ type RpcResponse = {
   finalError?: string;
 };
 
-export function createPiRpcRuntime(environment: {
-  spawn?: typeof spawn;
-  startupModel?: typeof readPiStartupModelArg;
-  cliPath?: typeof resolvePiCliPath;
-  gateAccess?: typeof access;
-} = {}): PiRuntimeLifecycle {
+export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): PiRuntimeLifecycle {
   let child: ChildProcess | null = null;
   let detachReader: (() => void) | null = null;
   let startToken = 0;

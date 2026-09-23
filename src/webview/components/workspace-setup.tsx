@@ -1,15 +1,9 @@
 import type { ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
+import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
+import type { WorkspaceSetupProps } from "./types.js";
+export type { WorkspaceSetupAction, WorkspaceSetupProps } from "./types.js";
 
-export type WorkspaceSetupAction =
-  | { type: "openFolder" }
-  | { type: "manageTrust" }
-  | { type: "chooseResources"; choice: "allow" | "decline" };
 
-export interface WorkspaceSetupProps {
-  state: WorkspaceStateMessage;
-  onAction: (action: WorkspaceSetupAction) => void;
-}
 
 const blockedCopy: Partial<Record<WorkspaceStateMessage["status"], readonly [string, string]>> = {
   "multi-root": ["Single folder only", "Multiple workspace folders are not supported. Open a single local folder."],

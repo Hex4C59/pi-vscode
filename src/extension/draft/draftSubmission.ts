@@ -1,20 +1,10 @@
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
-import type { PiRuntimeLifecycle } from "../contracts/runtimeLifecycle.js";
-import type { WebviewMessage, AttachmentStateMessage, AttachmentHistoryEntry, AttachmentDetails, SelectionRange } from "../bridge/webviewMessages.js";
+import type { PiRuntimeLifecycle } from "../contracts/index.js";
+import type { WebviewMessage, AttachmentStateMessage, AttachmentHistoryEntry, AttachmentDetails, SelectionRange } from "../contracts/index.js";
 import { AttachmentFailure, captureFile, captureSelection, revalidateFile, validateEditorSnapshot, selectionSourceRevision, sameSelectionSource, validateSelectionDocument, type SelectionSourceRevision, type AttachmentCode, type FileSnapshot } from "./fileAttachment.js";
 
-type DraftContext = Readonly<{
-  generation: number; session: number; viewId: string; view: vscode.WebviewView | undefined;
-  cwd: string | undefined; disposed: boolean; ready: boolean; eligible: boolean;
-}>;
-type SubmissionEvents = {
-  accepted(body: string): void;
-  attempted(submissionId: string): void;
-  failed(message: string): void;
-  settled(): void;
-  changed(): void;
-};
+import type { DraftContext, DraftSubmissionEvents } from "./types.js";
 
 type DraftAttachment = { attachmentId: string; snapshotId: string; source: FileSnapshot; state: "attached" | "changed" | "confirmation-required" | "unavailable" } & (
   { kind: "file" } | { kind: "selection"; originalRange: SelectionRange; stale: boolean; authorized: SelectionSourceRevision; observed?: SelectionSourceRevision }
@@ -47,7 +37,7 @@ export class DraftSubmission implements vscode.Disposable {
     private readonly runtime: Pick<PiRuntimeLifecycle, "preparePrompt">,
     private readonly context: (refresh?: boolean) => DraftContext,
     private readonly send: (message: unknown) => void,
-    private readonly events: SubmissionEvents,
+    private readonly events: DraftSubmissionEvents,
   ) {
     this.subscriptions = [
       api.workspace.onDidChangeTextDocument(event => {

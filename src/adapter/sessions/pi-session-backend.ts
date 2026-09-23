@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 
 import type {
@@ -7,8 +7,8 @@ import type {
   SavedSession,
   SessionBackend,
   SessionBackendFailure,
-} from "../../extension/contracts/sessionBackend.js";
-import { controlledEnvironment } from "../controlledEnvironment.js";
+} from "../../extension/contracts/index.js";
+import { controlledEnvironment } from "../index.js";
 
 export const SESSION_WORKER_ARG = "--pi-vscode-session-worker";
 export const SESSION_WORKER_PROTOCOL_VERSION = 1;
@@ -61,16 +61,8 @@ type ParsedWorkerResponse =
   | { ok: true; kind: "preview"; preview: PreviewProjection }
   | SessionBackendFailure;
 
-export type PiSessionBackendEnvironment = {
-  spawn?: (command: string, args: readonly string[], options: SpawnOptions) => ChildProcess;
-  execPath?: string;
-  env?: NodeJS.ProcessEnv;
-  timeoutMs?: number;
-  terminationGraceMs?: number;
-  requestLimitBytes?: number;
-  stdoutLimitBytes?: number;
-  stderrLimitBytes?: number;
-};
+import type { PiSessionBackendEnvironment } from "./types.js";
+export type { PiSessionBackendEnvironment } from "./types.js";
 
 type CloseResult = { code: number | null; signal: NodeJS.Signals | null };
 type WorkerExit =

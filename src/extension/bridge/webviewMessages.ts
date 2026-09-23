@@ -1,9 +1,9 @@
 export const WEBVIEW_MESSAGE_VERSION = 2;
-export type * from "../contracts/webviewProtocol.js";
-import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/webviewProtocol.js";
+export type * from "../contracts/index.js";
+import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/index.js";
 
 import { MAX_CHAT_MESSAGE_CHARS } from "./chatBounds.js";
-import { isValidModelRef, isValidThinkingLevel } from "../models/modelCatalog.js";
+import { isValidModelRef, isValidThinkingLevel } from "../models/index.js";
 
 
 

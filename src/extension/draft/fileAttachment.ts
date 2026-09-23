@@ -2,8 +2,8 @@ import type * as vscode from "vscode";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type { AttachmentCode, SelectionRange } from "../contracts/webviewProtocol.js";
-export type { AttachmentCode } from "../contracts/webviewProtocol.js";
+import type { AttachmentCode, SelectionRange } from "../contracts/index.js";
+export type { AttachmentCode } from "../contracts/index.js";
 export class AttachmentFailure extends Error {
   constructor(readonly code: AttachmentCode) { super(code); }
 }

@@ -1,6 +1,6 @@
 import { StringDecoder } from "node:string_decoder";
-import type { ChatLine } from "../../extension/contracts/webviewProtocol.js";
-import type { SavedHistoryPage, SavedHistoryPreview } from "../../extension/contracts/sessionBackend.js";
+import type { ChatLine } from "../../extension/contracts/index.js";
+import type { SavedHistoryPage, SavedHistoryPreview } from "../../extension/contracts/index.js";
 
 function record(value: unknown): Record<string, unknown> | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return;

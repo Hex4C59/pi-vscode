@@ -1,4 +1,4 @@
-import type { ActivityItem } from "../../extension/contracts/runtimeLifecycle.js";
+import type { ActivityItem } from "../../extension/contracts/index.js";
 const LIMIT = 16_384;
 export function displayText(value: string): string { return value.replace(/\b(Bearer\s+)[\w.+/=-]+/gi,'$1[redacted]').replace(/((?:api[_-]?key|password|secret|access[_-]?token)\s*["']?\s*[:=]\s*["']?)[^\s"',;}]+/gi,'$1[redacted]'); }
 export class ActivityProjection {

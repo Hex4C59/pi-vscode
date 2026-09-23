@@ -3,9 +3,9 @@ import {
   MAX_MODEL_ID_CHARS,
   MAX_MODEL_LABEL_CHARS,
   MAX_MODEL_PROVIDER_CHARS,
-  type ModelCatalogEntry,
   isValidThinkingLevel,
-} from "../../extension/models/modelCatalog.js";
+} from "../../extension/models/index.js";
+import type { ModelCatalogEntry } from "../../extension/contracts/index.js";
 
 export function formatModelLabel(data: unknown): string | null {
   if (!data || typeof data !== "object") return null;

@@ -1,6 +1,6 @@
 import { createWebviewBridge } from "./bridge.js";
 import { mountApp } from "./mount.js";
-import type { WebviewMessage } from "../extension/contracts/webviewProtocol.js";
+import type { WebviewMessage } from "../extension/contracts/index.js";
 import "./styles.css";
 
 declare function acquireVsCodeApi(): { postMessage(message: WebviewMessage): void };
