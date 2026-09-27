@@ -110,6 +110,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       const text=finalMessage.content.filter((p:Record<string,unknown>)=>p.type==='text'&&typeof p.text==='string').map((p:Record<string,unknown>)=>p.text).join('').slice(0,65536);
       emit({kind:'message_final',session,messageId:activity.currentMessageId(),text:displayText(text)});
     }
+    if (parsed.type === "message_end" && finalMessage?.role === "assistant" && finalMessage.stopReason === "error") {
+      emit({ kind: "stream_error", session, detail: formatRuntimeError(typeof finalMessage.errorMessage === "string" && finalMessage.errorMessage.trim() ? finalMessage.errorMessage : "Assistant request failed.") });
+    }
     if (parsed.type === "message_update") {
       const assistantMessageEvent = parsed.assistantMessageEvent as Record<string, unknown> | undefined;
       if (assistantMessageEvent?.type === "text_delta" && typeof assistantMessageEvent.delta === "string") {
@@ -117,7 +120,27 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       }
       return;
     }
+    const compactionReason = parsed.reason === "manual" || parsed.reason === "threshold" || parsed.reason === "overflow";
+    if (parsed.type === "compaction_start" && compactionReason) {
+      emit({ kind: "workflow", session, phase: "compacting" });
+      return;
+    }
+    if (parsed.type === "compaction_end" && compactionReason && typeof parsed.aborted === "boolean" && typeof parsed.willRetry === "boolean") {
+      if (typeof parsed.errorMessage === "string" && parsed.errorMessage.trim() && !parsed.willRetry && !parsed.aborted) {
+        emit({ kind: "stream_error", session, detail: formatRuntimeError(parsed.errorMessage) });
+      } else emit({ kind: "workflow", session, phase: "waiting" });
+      return;
+    }
+    if (parsed.type === "auto_retry_start" && Number.isSafeInteger(parsed.attempt) && (parsed.attempt as number) >= 1 && Number.isSafeInteger(parsed.maxAttempts) && (parsed.maxAttempts as number) >= (parsed.attempt as number) && typeof parsed.delayMs === "number" && Number.isFinite(parsed.delayMs) && parsed.delayMs >= 0) {
+      emit({ kind: "workflow", session, phase: "retrying" });
+      return;
+    }
+    if (parsed.type === "auto_retry_end" && parsed.success === true) {
+      emit({ kind: "workflow", session, phase: "waiting" });
+      return;
+    }
     if (parsed.type === "auto_retry_end" && parsed.success === false) {
+      if (aborting && parsed.finalError === "Retry cancelled") return;
       const detail = typeof parsed.finalError === "string" && parsed.finalError.trim()
         ? parsed.finalError
         : "Assistant request failed.";

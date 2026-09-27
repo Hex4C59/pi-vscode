@@ -17,12 +17,19 @@ function fixture(state: unknown = identity, reportedCwd?: string) {
    if (command.type === "get_state") queueMicrotask(() => {
     stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: reportedCwd ?? options.cwd }) }) + "\n");
     stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, data: state }) + "\n");
+   });
+   if (command.type === "clear_queue" || command.type === "abort") queueMicrotask(() => {
+    if (command.type === "abort") {
+     stdout.write(JSON.stringify({type:"auto_retry_end",success:false,attempt:1,finalError:"Retry cancelled"})+"\n");
+     stdout.write(JSON.stringify({type:"agent_settled"})+"\n");
+    }
+    stdout.write(JSON.stringify({type:"response",id:command.id,success:true})+"\n");
    }); return true;
   } });
   return Object.assign(child, { stdout, stdin, stderr: new PassThrough() }) as unknown as ChildProcess;
  }) as unknown as typeof spawn;
  const runtime = createPiRpcRuntime({ spawn: fakeSpawn, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined });
- return { runtime, commands, launches, replies, gateCall(cwd: string) { output.write(JSON.stringify({type:"extension_ui_request",method:"confirm",id:"gate-call",message:JSON.stringify({protocol:"pi-vscode-approval",version:1,kind:"call",...gate,cwd,request:"request",toolCallId:"tool",tool:"read",input:{path:"sample.ts"}})})+"\n"); }, get kills() { return kills; } };
+ return { runtime, commands, launches, replies, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); }, gateCall(cwd: string) { output.write(JSON.stringify({type:"extension_ui_request",method:"confirm",id:"gate-call",message:JSON.stringify({protocol:"pi-vscode-approval",version:1,kind:"call",...gate,cwd,request:"request",toolCallId:"tool",tool:"read",input:{path:"sample.ts"}})})+"\n"); }, get kills() { return kills; } };
 }
 test("new runtime uses pi persistence and exposes only validated conversation identity", async () => {
  const f = fixture(); try {
@@ -71,4 +78,53 @@ test("restoration rejects a different session-file component case but permits Wi
    if (sessionFile === foreign) { assert.equal(f.runtime.getSession(), 0); assert.equal(f.kills, 1); }
   } finally { await f.runtime.stop(); }
  }
+});
+
+test("public retry events remain a running phase until agent settlement", async () => {
+ const f=fixture(); const events: unknown[]=[]; const unsubscribe=f.runtime.subscribe(event=>events.push(event));
+ try {
+  assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
+  const session=f.runtime.getSession();
+  f.frame({type:"auto_retry_start",attempt:1,maxAttempts:3,delayMs:100,errorMessage:"synthetic retry"});
+  assert.deepEqual(events.at(-1),{kind:"workflow",session,phase:"retrying"});
+  f.frame({type:"auto_retry_end",success:true,attempt:1});
+  assert.deepEqual(events.at(-1),{kind:"workflow",session,phase:"waiting"});
+  assert.equal(events.some(event=>(event as {kind:string}).kind==="agent_settled"),false);
+  f.frame({type:"agent_settled"});
+  assert.deepEqual(events.at(-1),{kind:"agent_settled",session});
+ } finally {unsubscribe();await f.runtime.stop();}
+});
+test("compaction end never invents settlement and malformed phase frames are ignored", async () => {
+ const f=fixture(); const events: unknown[]=[]; const unsubscribe=f.runtime.subscribe(event=>events.push(event));
+ try {
+  assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
+  const session=f.runtime.getSession();
+  f.frame({type:"compaction_start",reason:"overflow"});
+  assert.deepEqual(events.at(-1),{kind:"workflow",session,phase:"compacting"});
+  f.frame({type:"compaction_end",reason:"overflow",aborted:false,willRetry:true,result:{summary:"synthetic"}});
+  assert.deepEqual(events.at(-1),{kind:"workflow",session,phase:"waiting"});
+  const before=events.length;
+  for(const frame of [{type:"compaction_start",reason:"invented"},{type:"compaction_end",reason:"overflow",aborted:"false",willRetry:true},{type:"auto_retry_start",attempt:-1,maxAttempts:3,delayMs:100},{type:"auto_retry_start",attempt:1,maxAttempts:0,delayMs:100}]) f.frame(frame);
+  assert.equal(events.length,before);
+  assert.equal(events.some(event=>(event as {kind:string}).kind==="agent_settled"),false);
+ } finally {unsubscribe();await f.runtime.stop();}
+});
+test("assistant failure is observable even when automatic retry is disabled", async () => {
+ const f=fixture(); const events: unknown[]=[]; const unsubscribe=f.runtime.subscribe(event=>events.push(event));
+ try {
+  assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
+  f.frame({type:"message_end",message:{role:"assistant",content:[],stopReason:"error",errorMessage:"Synthetic non-retryable provider failure"}});
+  assert.deepEqual(events.at(-1),{kind:"stream_error",session:f.runtime.getSession(),detail:"Synthetic non-retryable provider failure"});
+ } finally {unsubscribe();await f.runtime.stop();}
+});
+
+test("Stop cancelling automatic retry does not manufacture a provider failure", async () => {
+ const f=fixture(); const events: unknown[]=[]; const unsubscribe=f.runtime.subscribe(event=>events.push(event));
+ try {
+  assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
+  f.frame({type:"auto_retry_start",attempt:1,maxAttempts:3,delayMs:100,errorMessage:"synthetic"});
+  assert.equal((await f.runtime.abortTask?.())?.ok,true);
+  assert.equal(events.some(event=>(event as {kind:string}).kind==="stream_error"),false);
+  assert.ok(events.some(event=>(event as {kind:string}).kind==="agent_settled"));
+ } finally {unsubscribe();await f.runtime.stop();}
 });

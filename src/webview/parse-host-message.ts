@@ -206,7 +206,7 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
         || typeof message.busy !== "boolean" || typeof message.chatBusy !== "boolean" || typeof message.modelBusy !== "boolean"
         || message.controlledExecution !== true
         || !oneOf(message.runtime, ["not-started", "starting", "ready", "stopping", "error"])
-        || !oneOf(message.execution, ["idle", "waiting", "thinking", "awaiting-approval", "executing", "replying", "stopping", "failed"])
+        || !oneOf(message.execution, ["idle", "waiting", "thinking", "awaiting-approval", "executing", "replying", "retrying", "compacting", "completed", "stopped", "stopping", "failed"])
         || ![message.error, message.runtimeDetail, message.chatError, message.chatModel, message.thinkingLevel, message.pendingThinkingLevel, message.modelError].every(nullableString)) return;
 
       const folder = message.folder === null ? null : parseFolder(message.folder);

@@ -36,6 +36,7 @@ export type ModelMutationResult =
   | { ok: false; detail: string };
 
 export type RuntimeEvent =
+  | { kind: "workflow"; session: number; phase: "retrying" | "compacting" | "waiting" }
   | { kind: "tool_finished"; session: number; toolCallId: string; failed: boolean }
   | { kind: "activity"; session: number; item: ActivityItem }
   | { kind: "message_final"; session: number; messageId: string; text: string }

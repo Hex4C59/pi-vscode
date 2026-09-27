@@ -37,6 +37,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private runtimeSession = 0;
   private promptToken = 0;
   private stoppingTask = false;
+  private taskFailed = false;
+  private settledOutcome: "completed" | "stopped" | "failed" | undefined;
   private readonly draft: DraftSubmission;
   private readonly tools: EditorTools;
   private readonly savedHistory: SavedHistory;
@@ -93,6 +95,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
           && !this.state.busy && !this.state.chatBusy && !this.models.snapshot.modelBusy && !this.stoppingTask };
     }, message => { if (this.view && !this.disposed) this.post(this.view, message); }, {
       accepted: body => {
+        this.taskFailed = false;
+        this.settledOutcome = undefined;
         this.state = { ...this.state, messages: [...this.state.messages, { role: "user" as const, text: body.trim() }].slice(-32), chatBusy: true, execution: "waiting", chatError: null };
       },
       attempted: submissionId => this.tools.beginTask(submissionId),
@@ -120,6 +124,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.draft.reset(preserveSessionTransition);
     this.models.reset();
     this.stoppingTask = false;
+    this.taskFailed = false;
+    this.settledOutcome = undefined;
     this.state = { ...this.state, messages: [], activities:[], execution:'idle', chatBusy: false, chatError: null };
     this.runtimeSession = 0;
   }
@@ -134,19 +140,31 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       this.draft.runtimeLost();
       this.stoppingTask=false;
       this.models.cancelPending(); this.promptToken++;
-      this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:'failed',activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
+      this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:this.settledOutcome ?? 'failed',activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
+    }
+    if (event.kind === "workflow") {
+      if (!this.state.chatBusy || this.stoppingTask || this.settledOutcome) return;
+      if (event.phase === "retrying" || event.phase === "compacting") {
+        this.taskFailed = false;
+        this.state = { ...this.state, chatError: null };
+      }
+      this.state = { ...this.state, execution: this.state.approvals.length ? "awaiting-approval" : event.phase };
+      this.publish(); return;
     }
     if (event.kind === 'activity') {
+      if (!this.state.chatBusy || this.settledOutcome) return;
       const activities=[...this.state.activities];const index=activities.findIndex(i=>i.id===event.item.id);
       if(index>=0)activities[index]=event.item;else if(activities.length<64)activities.push(event.item);
       this.state={...this.state,activities,execution:this.state.execution==='stopping'?'stopping':this.state.approvals.length?'awaiting-approval':event.item.kind==='thinking'?'thinking':event.item.status==='executing'?'executing':'waiting'};this.publish();return;
     }
     if(event.kind==='message_final') {
+      if (!this.state.chatBusy || this.settledOutcome) return;
       const messages=[...this.state.messages];const index=messages.findIndex(m=>m.id===event.messageId);
       if(index>=0)messages[index]={role:'assistant',id:event.messageId,text:event.text};else if(event.text)messages.push({role:'assistant',id:event.messageId,text:event.text});
       this.state={...this.state,messages:messages.slice(-32)};this.publish();return;
     }
     if (event.kind === "text_delta") {
+      if (!this.state.chatBusy || this.settledOutcome) return;
       const messages = [...this.state.messages];
       const last = messages.at(-1);
       if (last?.role === "assistant" && (!event.messageId || last.id===event.messageId)) {
@@ -159,14 +177,17 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       return;
     }
     if (event.kind === "stream_error") {
+      if (!this.state.chatBusy || this.settledOutcome) return;
+      this.taskFailed = true;
       this.state = { ...this.state, chatError: event.detail };
       this.publish();
       return;
     }
     if (event.kind === "tool_finished") { this.tools.finishTool(event.toolCallId, event.failed); return; }
     if (event.kind === "agent_settled" && this.state.chatBusy) {
+      this.settledOutcome ??= this.taskFailed ? "failed" : this.stoppingTask ? "stopped" : "completed";
       this.tools.endTask();
-      if (!this.draft.settle(this.stoppingTask)) return;
+      if (!this.draft.settle(this.stoppingTask, this.taskFailed)) return;
       this.finishSettledTask();
     }
   }
@@ -177,7 +198,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.state = {
       ...this.state,
       chatBusy: false,
-      execution: this.stoppingTask ? 'stopping' : 'idle',
+      execution: this.stoppingTask ? 'stopping' : this.settledOutcome ?? (this.taskFailed ? 'failed' : 'completed'),
       chatError: hasAssistant || this.state.activities.length || this.stoppingTask || this.state.chatError
         ? this.state.chatError
         : "No assistant response. In pi, use /model and Ctrl+S to save a startup model, then restart runtime here.",
@@ -318,8 +339,14 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       const result = await this.runtime.abortTask?.().catch(() => ({ ok: false as const, detail: "Could not stop task." }));
       if (session !== this.runtimeSession || generation !== this.state.generation || this.disposed) return { ok: false, preparationRevision };
       this.stoppingTask = false;
-      if (result?.ok) { this.state = { ...this.state, execution: "idle", chatBusy: false }; if (!this.sessionTransitionBusy()) void this.models.applyPending(); }
-      else { this.tools.cancelApprovals(true); this.models.cancelPending(); this.state = { ...this.state, runtime: "error", execution: "failed", chatBusy: false, chatError: result?.detail ?? "Stop is unavailable." }; }
+      if (result?.ok) { this.settledOutcome ??= this.taskFailed ? "failed" : "stopped"; this.state = { ...this.state, execution: this.settledOutcome, chatBusy: false }; if (!this.sessionTransitionBusy()) void this.models.applyPending(); }
+      else {
+        this.settledOutcome ??= "failed";
+        this.draft.settle(false, this.settledOutcome === "failed");
+        this.draft.runtimeLost();
+        this.tools.reset(); this.models.cancelPending();
+        this.state = { ...this.state, runtime: "error", execution: this.settledOutcome, chatBusy: false, chatError: result?.detail ?? "Stop is unavailable." };
+      }
       this.publish(); return { ok: result?.ok === true, preparationRevision };
     })();
     this.stopOperation = operation;

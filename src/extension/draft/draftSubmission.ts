@@ -75,7 +75,10 @@ export class DraftSubmission implements vscode.Disposable {
     this.submissionEpoch++;
     this.closeView(); this.attachments = []; this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
     this.history = []; this.retainedBytes = 0; this.awaitingAck = false; this.attachmentResult = "runtime-lost";
-    if (this.lastSubmission) { this.lastSubmission.delivery = "unknown"; this.lastSubmission.outcome = "interrupted"; }
+    if (this.lastSubmission) {
+      if (!["rpc-accepted", "rpc-rejected", "not-sent"].includes(this.lastSubmission.delivery)) this.lastSubmission.delivery = "unknown";
+      if (this.lastSubmission.outcome === "pending") this.lastSubmission.outcome = "interrupted";
+    }
     this.publish();
   }
   cancelPreparation(): number | undefined {
@@ -86,9 +89,9 @@ export class DraftSubmission implements vscode.Disposable {
     return this.draftRevision;
   }
   /** Settlement and RPC acknowledgement are independent; admit no new task until both finish. */
-  settle(interrupted: boolean): boolean {
-    if (this.lastSubmission) {
-      this.lastSubmission.outcome = interrupted ? "interrupted" : "settled";
+  settle(interrupted: boolean, failed = false): boolean {
+    if (this.lastSubmission?.outcome === "pending") {
+      this.lastSubmission.outcome = failed ? "failed" : interrupted ? "interrupted" : "settled";
       for (const record of this.history.filter(item => item.submissionId === this.lastSubmission?.submissionId)) record.outcome = this.lastSubmission.outcome;
       this.publish();
     }
@@ -327,7 +330,7 @@ export class DraftSubmission implements vscode.Disposable {
           ? "Runtime rejected the prompt. Check model/provider configuration before deliberately sending again; no retry was made."
           : "Prompt delivery was not confirmed. Inspect delivery status and restart the runtime before retrying; no retry was made.";
         this.events.failed(chatError);
-      } else if (this.lastSubmission && ["settled", "interrupted"].includes(this.lastSubmission.outcome)) { this.events.settled(); }
+      } else if (this.lastSubmission && ["settled", "interrupted", "failed"].includes(this.lastSubmission.outcome)) { this.events.settled(); }
       this.events.changed(); this.publish();
     } catch (error) {
       if (token === this.attachmentToken) {

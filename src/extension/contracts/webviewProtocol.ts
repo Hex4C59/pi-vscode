@@ -59,7 +59,7 @@ export type WorkspaceStateMessage = {
   activities: ActivityItem[];
   approvals: ApprovalCard[];
   grants: SessionGrant[];
-  execution: "idle" | "waiting" | "thinking" | "awaiting-approval" | "executing" | "replying" | "stopping" | "failed";
+  execution: "idle" | "waiting" | "thinking" | "awaiting-approval" | "executing" | "replying" | "retrying" | "compacting" | "completed" | "stopped" | "stopping" | "failed";
   controlledExecution: true;
 };
 

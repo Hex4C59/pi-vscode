@@ -89,7 +89,7 @@ test('Stop holds deferred settings until cancellation completes and runtime loss
   v.action('sendChat',{text:'work'});v.action('setThinkingLevel',{level:'high'});v.action('stopChat');await tick();
   assert.equal(v.state().execution,'stopping');assert.deepEqual(r.calls,['prompt']);
   v.action('sendChat',{text:'blocked'});assert.deepEqual(r.calls,['prompt']);finish();await tick();assert.ok(r.calls.includes('level:high'));
-  r.events.fire({kind:'runtime_error',session:r.runtime.getSession(),detail:'Disconnected'});assert.equal(v.state().runtime,'error');assert.equal(v.state().execution,'failed');assert.equal(v.state().pendingThinkingLevel,null);h.provider.dispose();
+  r.events.fire({kind:'runtime_error',session:r.runtime.getSession(),detail:'Disconnected'});assert.equal(v.state().runtime,'error');assert.equal(v.state().execution,'stopped');assert.equal(v.state().pendingThinkingLevel,null);const calls=[...r.calls];v.action('sendChat',{text:'blocked after runtime loss'});assert.deepEqual(r.calls,calls);h.provider.dispose();
 });
 
 test("early settlement keeps admission blocked until prompt acknowledgement resolves", async () => {
@@ -106,7 +106,7 @@ test("early settlement keeps admission blocked until prompt acknowledgement reso
   finish({ ok: true }); await tick();
   assert.equal(v.state().chatBusy, false);
   assert.equal(v.state().thinkingLevel, "high");
-  assert.equal(v.state().execution, "idle", "early settlement must end waiting after the ACK");
+  assert.equal(v.state().execution, "completed", "early settlement must end waiting after the ACK");
   assert.equal(v.attachments().draft.text, "next");
   h.provider.dispose();
 });
@@ -150,7 +150,7 @@ test("a late Stop resynchronizes settled host state instead of leaving the view 
     const replies = v.sent.slice(count);
     assert.ok(replies.some(message => (message as { type: string }).type === "workspaceState"));
     assert.equal(v.state().chatBusy, false);
-    assert.equal(v.state().execution, "idle");
+    assert.equal(v.state().execution, "completed");
     assert.deepEqual(r.calls, ["prompt"]);
   } finally { h.provider.dispose(); }
 });
@@ -169,5 +169,181 @@ test("late prompt acknowledgement cannot turn a disconnected runtime back into i
     assert.equal(v.attachments().lastSubmission?.delivery, "unknown");
     assert.equal(v.attachments().lastSubmission?.outcome, "interrupted");
     assert.equal(v.state().chatBusy, false);
+  } finally { h.provider.dispose(); }
+});
+test("retry projects a running state without admitting a new task or applying deferred settings", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "retry fixture" }); await tick();
+    v.action("setThinkingLevel", { level: "high" });
+    r.events.fire({ kind: "workflow", session: r.runtime.getSession(), phase: "retrying" });
+    assert.equal(v.state().execution, "retrying");
+    assert.equal(v.state().chatBusy, true);
+    v.action("sendChat", { text: "must wait" });
+    assert.deepEqual(r.calls, ["prompt"]);
+    r.events.fire({ kind: "workflow", session: r.runtime.getSession(), phase: "waiting" });
+    assert.equal(v.state().chatBusy, true);
+    assert.equal(v.state().thinkingLevel, "medium");
+  } finally { h.provider.dispose(); }
+});
+test("failed stream settlement preserves accepted delivery and newer draft instead of reporting success", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "failure fixture" }); await tick();
+    v.action("updateDraft", { draftRevision: v.attachments().draft.revision, editSequence: 3, text: "newer unsent draft" });
+    r.events.fire({ kind: "stream_error", session: r.runtime.getSession(), detail: "Synthetic retry exhausted" });
+    assert.equal(v.state().chatBusy, true, "only reliable settlement ends the task");
+    r.settled();
+    assert.equal(v.state().execution, "failed");
+    assert.equal(v.state().chatBusy, false);
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+    assert.equal(v.attachments().lastSubmission?.outcome, "failed");
+    assert.equal(v.attachments().draft.text, "newer unsent draft");
+    r.settled(); assert.equal(v.state().execution, "failed");
+  } finally { h.provider.dispose(); }
+});
+test("reliable settlement displays completed while Stop remains stopping until cancellation finishes", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "complete fixture" }); await tick();
+    r.events.fire({ kind: "text_delta", session: r.runtime.getSession(), delta: "Synthetic answer" });
+    r.settled(); assert.equal(v.state().execution, "completed");
+    let finish!: () => void;
+    r.runtime.abortTask = async () => { r.settled(); await new Promise<void>(resolve => { finish = resolve; }); return { ok: true }; };
+    v.action("sendChat", { text: "stop fixture" }); await tick();
+    v.action("stopChat"); await tick();
+    assert.equal(v.state().execution, "stopping");
+    finish(); await tick();
+    assert.equal(v.state().execution, "stopped");
+    assert.equal(v.attachments().lastSubmission?.outcome, "interrupted");
+  } finally { h.provider.dispose(); }
+});
+test("a recoverable error followed by public retry completes only after settlement and ACK", async () => {
+  const { r, h, v } = await readySettings();
+  let acknowledge!: (value: { ok: true }) => void;
+  r.runtime.prompt = () => new Promise(resolve => { acknowledge = resolve; });
+  try {
+    v.action("sendChat", { text: "recover fixture" });
+    r.events.fire({ kind: "stream_error", session: r.runtime.getSession(), detail: "Synthetic transient failure" });
+    r.events.fire({ kind: "workflow", session: r.runtime.getSession(), phase: "retrying" });
+    assert.equal(v.state().chatError, null);
+    r.events.fire({ kind: "text_delta", session: r.runtime.getSession(), delta: "Recovered" });
+    r.settled(); assert.equal(v.state().chatBusy, true);
+    acknowledge({ ok: true }); await tick();
+    assert.equal(v.state().execution, "completed");
+    assert.equal(v.attachments().lastSubmission?.outcome, "settled");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+  } finally { h.provider.dispose(); }
+});
+test("late workflow and content events cannot revive a settled task in the same runtime", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "late fixture" }); await tick();
+    r.events.fire({ kind: "text_delta", session: r.runtime.getSession(), delta: "Final answer" });
+    r.settled(); const messages = v.state().messages;
+    for (const event of [
+      { kind: "workflow", phase: "compacting" },
+      { kind: "text_delta", delta: "late text" },
+      { kind: "message_final", messageId: "late", text: "late final" },
+      { kind: "stream_error", detail: "late error" },
+    ] as const) r.events.fire({ ...event, session: r.runtime.getSession() });
+    assert.equal(v.state().execution, "completed");
+    assert.equal(v.state().chatBusy, false);
+    assert.deepEqual(v.state().messages, messages);
+  } finally { h.provider.dispose(); }
+});
+test("late prompt ACK preserves an already settled Stop outcome", async () => {
+  const { r, h, v } = await readySettings(); let acknowledge!: (value: { ok: true }) => void;
+  r.runtime.prompt = () => new Promise(resolve => { acknowledge = resolve; });
+  r.runtime.abortTask = async () => { r.settled(); return { ok: true }; };
+  try {
+    v.action("sendChat", { text: "stop before ACK" }); await tick();
+    v.action("stopChat"); await tick(); assert.equal(v.state().execution, "stopped");
+    acknowledge({ ok: true }); await tick();
+    assert.equal(v.state().execution, "stopped");
+    assert.equal(v.attachments().lastSubmission?.outcome, "interrupted");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+  } finally { h.provider.dispose(); }
+});
+test("settled failure is frozen while waiting for ACK and rejects late phase or content", async () => {
+  const { r, h, v } = await readySettings(); let acknowledge!: (value: { ok: true }) => void;
+  r.runtime.prompt = () => new Promise(resolve => { acknowledge = resolve; });
+  try {
+    v.action("sendChat", { text: "early failed fixture" });
+    r.events.fire({ kind: "stream_error", session: r.runtime.getSession(), detail: "Synthetic final failure" });
+    r.settled(); assert.equal(v.state().chatBusy, true);
+    r.events.fire({ kind: "workflow", session: r.runtime.getSession(), phase: "compacting" });
+    r.events.fire({ kind: "text_delta", session: r.runtime.getSession(), delta: "late text" });
+    assert.equal(v.state().chatError, "Synthetic final failure");
+    assert.equal(v.state().messages.some(message => message.text.includes("late text")), false);
+    acknowledge({ ok: true }); await tick();
+    assert.equal(v.state().execution, "failed");
+    assert.equal(v.attachments().lastSubmission?.outcome, "failed");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+  } finally { h.provider.dispose(); }
+});
+test("runtime loss preserves confirmed accepted delivery while ending the unfinished task", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "accepted then lost" }); await tick();
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+    r.events.fire({ kind: "runtime_error", session: r.runtime.getSession(), detail: "Synthetic disconnect after ACK" });
+    assert.equal(v.state().execution, "failed");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+    assert.equal(v.attachments().lastSubmission?.outcome, "interrupted");
+  } finally { h.provider.dispose(); }
+});
+test("duplicate settlement cannot rewrite completed task history during a late Stop and pending ACK", async () => {
+  const { r, h, v } = await readySettings(); let acknowledge!: (value: { ok: true }) => void;
+  r.runtime.prompt = () => new Promise(resolve => { acknowledge = resolve; });
+  r.runtime.abortTask = async () => { r.settled(); return { ok: true }; };
+  try {
+    v.action("sendChat", { text: "completed before ACK" });
+    r.events.fire({ kind: "text_delta", session: r.runtime.getSession(), delta: "Complete answer" });
+    r.settled(); assert.equal(v.attachments().lastSubmission?.outcome, "settled");
+    v.action("stopChat"); await tick();
+    acknowledge({ ok: true }); await tick();
+    assert.equal(v.state().execution, "completed");
+    assert.equal(v.attachments().lastSubmission?.outcome, "settled");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+  } finally { h.provider.dispose(); }
+});
+test("explicit Stop failure ends pending task history but preserves confirmed delivery and newer draft", async () => {
+  const { r, h, v } = await readySettings();
+  r.runtime.abortTask = async () => ({ ok: false, detail: "Synthetic Stop failure; runtime shut down" });
+  try {
+    v.action("sendChat", { text: "failed Stop fixture" }); await tick();
+    v.action("updateDraft", { draftRevision: v.attachments().draft.revision, editSequence: 4, text: "new draft after send" });
+    v.action("stopChat"); await tick();
+    assert.equal(v.state().runtime, "error");
+    assert.equal(v.state().execution, "failed");
+    assert.equal(v.attachments().lastSubmission?.outcome, "failed");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
+    assert.equal(v.attachments().draft.text, "new draft after send");
+  } finally { h.provider.dispose(); }
+});
+
+test("explicit Stop failure releases the active change-review watcher", async () => {
+  const { r, h, v } = await readySettings();
+  r.runtime.abortTask = async () => ({ ok: false, detail: "Synthetic Stop failure" });
+  try {
+    v.action("sendChat", { text: "review owner fixture" }); await tick();
+    assert.equal(h.fileChange.listeners.size, 1);
+    v.action("stopChat"); await tick();
+    assert.equal(v.state().runtime, "error");
+    assert.equal(h.fileChange.listeners.size, 0, "failed task must stop observing later workspace edits");
+  } finally { h.provider.dispose(); }
+});
+
+test("runtime disconnection does not rewrite a reliably completed task as failed", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "settle before runtime loss" }); await tick(); r.settled();
+    assert.equal(v.state().execution, "completed");
+    r.events.fire({ kind: "runtime_error", session: r.runtime.getSession(), detail: "Synthetic subsequent disconnect" });
+    assert.equal(v.state().runtime, "error");
+    assert.equal(v.state().execution, "completed");
+    assert.equal(v.attachments().lastSubmission?.outcome, "settled");
+    assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
   } finally { h.provider.dispose(); }
 });

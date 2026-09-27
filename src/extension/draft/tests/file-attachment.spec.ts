@@ -789,6 +789,10 @@ test("long live history survives the chat window and source deletion, restores a
     const oldMessages = f.v.sent.length;
     f.v.action("getAttachmentPreview", { requestId: "old-view", snapshotId: history.entries[0].snapshotId, offset: 0 });
     assert.equal(f.v.sent.length, oldMessages, "superseded view cannot retrieve retained data");
+    // Streaming belongs to an admitted new task, not late frames after the prior settlement.
+    recreated.action("sendChat", { text: "live task after recreation" }); await tick();
+    const newer = recreated.attachments().draft;
+    recreated.action("updateDraft", { draftRevision: newer.revision, editSequence: newer.acceptedEditSequence + 1, text: "keep this acknowledged draft" });
     const before = recreated.sent.length;
     for (let index = 0; index < 10; index++) f.r.events.fire({ kind: "text_delta", session: f.r.runtime.getSession(), messageId: "later-live", delta: "delta" });
     assert.equal(recreated.sent.length - before, 10); assert.ok(recreated.sent.slice(before).every(m => (m as { type: string }).type === "workspaceState"));

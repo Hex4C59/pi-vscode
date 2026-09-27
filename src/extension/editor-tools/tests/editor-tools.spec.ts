@@ -85,7 +85,7 @@ test("host composition without change review still sends, streams and stops a co
     assert.equal(v.state().messages.at(-1)?.text, "reply");
     v.action("stopChat"); await tick();
     assert.equal(v.state().chatBusy, false);
-    assert.equal(v.state().execution, "idle");
+    assert.equal(v.state().execution, "stopped");
     assert.equal(h.contentProviders.size, 0);
     assert.equal(h.fileChange.listeners.size, 0);
     assert.equal(v.state().controlledExecution, true);

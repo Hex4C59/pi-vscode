@@ -62,7 +62,7 @@ ID 非空且最多 100 字符。沿用精确自身字段校验、活动视图、
 - `activities`：最多 64 个宿主拥有的 `ActivityItem`：`{ id, kind: "thinking" | "tool", messageId, contentIndex?, toolCallId?, tool?, text, input?, status, truncated }`。Status 为 `thinking`、`preparing`、`executing`、`complete`、`failed` 或 `interrupted`。Thinking 按消息／内容索引关联，工具按 tool-call ID 关联。每项文本和展示参数最多 16,384 字符（项数限制同时约束总量）。文本或参数超限设置 `truncated`，工具更新保留该标记。64 项上限内预留稳定 `activity-overflow` 提示：额外活动只省略展示，不跳过执行／审批检查。UI 展示截断提示并按稳定 ID 增量更新 details，保留展开／焦点／滚动。`tool_execution_start` 投影为 `preparing`，不是副作用确认。`partialResult` 替换累计输出。`message_end` 校正最终正文／thinking；没有 thinking 时不合成。
 - `approvals`：最多 8 个 `{ id, toolCallId, tool, input, scope: string | null, expiresAt }` 卡片。`input` 是完整 JSON 参数快照，最多 32,768 字符；过大或含凭证类字段在投影前拒绝。宿主／gate 默认超时 120 秒。拒绝、过期、取消及迟到回复均不授予权限。
 - `grants`：最多 64 个 `{ id, scope }`。既有普通文件范围编码为 `[tool, canonicalPath]`；shell 为 `[tool, canonicalCwd, completeInput]`。精确匹配，不隐式授权目录／命令前缀。不存在／无法解析目标的 scope 为 null。查看／撤销影响后续调用，不撤销过去副作用。
-- `execution`：`idle`、`waiting`、`thinking`、`awaiting-approval`、`executing`、`replying`、`stopping` 或 `failed`；这是展示状态，不是沙箱证据。`controlledExecution` 表示所选配置，不证明运行时就绪或 gate 已关闭。
+- `execution`：`idle`、`waiting`、`thinking`、`awaiting-approval`、`executing`、`replying`、`retrying`、`compacting`、`completed`、`stopped`、`stopping` 或 `failed`；这是展示状态，不是沙箱证据。`controlledExecution` 表示所选配置，不证明运行时就绪或 gate 已关闭。
 
 `toolApproval.ts` 仅自动允许 canonical 路径位于工作区内的普通文件 `read`。搜索／列目录、编辑／写入、shell、外部路径仍询问；未知工具失败关闭。Windows 歧义路径不自动授权；realpath 检查覆盖符号链接／junction 越界，但不能消除检查与使用之间的竞态。同一运行会话的授权跨视图重建、普通 settled 与成功 Stop 保留；工作区／资格变化、运行时替换／断开、provider 释放取消请求并清空授权。
 
@@ -71,6 +71,8 @@ ID 非空且最多 100 字符。沿用精确自身字段校验、活动视图、
 Adapter 仅接受自带 gate 的产品封装 `protocol: "pi-vscode-approval", version: 1`，runtime／cwd 须匹配当前子进程，就绪前通过 notify 收到 `kind: "hello"`。Call 包含 `request`、`toolCallId`、`tool`、`input`；自带异步 `tool_call` handler 通过公开 `ctx.ui.confirm` 等待，确认后再次检查完整参数快照。RPC 对话 ID 关联 `extension_ui_response`；标题文字不是授权依据。这不是通用 `approve_tool_call` RPC。受控工具 allowlist 为 `read,write,edit,bash,powershell,grep,find,ls`，使用 `--no-extensions -e <bundled gate>`；两种项目资源选择均禁用第三方扩展发现。自带文件缺失阻止启动；缺少 hello／就绪则终止，不承诺可用的无工具回退。离线加载失败夹具单独使用 `--no-tools`。
 
 仅转发有界展示字段，不发送原始 RPC 对象／stderr、签名或凭证存储。模式过滤尽力而为，不能保证任意 thinking／工具输出无敏感信息。运行权限及环境覆盖见[架构 §7](../architecture/vscode-extension-architecture.zh.md)；验证记录见下方证据边界。
+
+WI-021 复用 pi 0.86.1 的公开 auto_retry／compaction 事件投影阶段，不拥有重试或压缩算法。可靠的 agent_settled 冻结本轮 completed／stopped／failed；无法取得 settled 时，显式 Stop／runtime 失败冻结 failed，但不改写已经可靠的终态。Stop 操作尚未结束时仍显示 stopping。终态已冻结但 prompt ACK 未到时，投递等待与任务结束分开：拒绝晚阶段／内容事件，ACK 不改写冻结结果。已经确认的 rpc-accepted／rpc-rejected／not-sent 投递不因后续断连变 unknown；未知投递不得自动重放。
 
 ## 延后模型／thinking 设置（WI-008 / WI-009）
 
