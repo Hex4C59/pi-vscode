@@ -13,7 +13,10 @@ English | [中文](product-requirements.zh.md)
 **Implementation authorization update (2026-09-22 UTC):** the maintainer's long-running Goal authorizes serial implementation of the explicit REQ-001–REQ-009 scope, beginning with WI-015 integration, then resuming eligible paused work. [ACTIVE](../ACTIVE.md) owns the current WI, exact approval boundaries and evidence. This does not accept the Draft PRD, choose unresolved product options, accept ADRs/gates, or replace maintainer acceptance.
 
 
-**WI-019 UI-language addition (approved September 27, 2026):** The candidate toolbar in the chat header gains an Interface settings gear with English / 简体中文. Default English; changes apply immediately and survive preview Reset within the current page, but not a page reload. Translate interface labels, notices and accessible names only; message/code/tool/approval/history source text and upstream error details stay literal. Switching must preserve draft, current conversation, running task, model settings and expanded details. Language packs must allow another language without changing individual controls. No host preference/protocol, new persistence, later UIP slice or formal-sidebar switch is authorized. Verify mounted client/bridge behavior and real-browser keyboard, narrow themes and Reset.
+**WI-019 UI-language addition (approved September 27, 2026):** The candidate toolbar in the chat header gains an Interface settings gear with English / 简体中文. Default English; changes apply immediately and survive preview Reset within the current page, but not a page reload. Translate interface labels, notices and accessible names only; message/code/tool/approval/history source text and upstream error details stay literal. Switching must preserve draft, current conversation, running task, model settings and expanded details. Language packs must allow another language without changing individual controls. This language-addition authorization introduced no host preference/protocol or persistence. Its earlier restriction to that UIP session has been superseded by the September 27 renewed implementation authorization below; formal cutover still requires Q16 confirmation. Verify mounted client/bridge behavior and real-browser keyboard, narrow themes and Reset.
+
+
+**Renewed implementation authorization (September 27, 2026):** The maintainer authorizes resumed approved work, including WI-019 UIP-05–07, necessary formal integration after candidate experience/architecture conditions, and explicit REQ-001–REQ-009 implementation and verification gaps. ACTIVE owns the serial WI, starting baseline, completion table and evidence. This supersedes session-specific later-UIP/backend pauses, but does not accept this Draft, choose unresolved loading/interaction/recovery policy, approve visual cutover before Q16, or accept ADRs/gates.
 
 ## Product direction (agreed)
 
@@ -126,6 +129,11 @@ This intermediate acceptance does not accept all REQ-003 or remove latest-file c
 ### REQ-004 — Observable task execution
 
 Send a text task and render streamed responses and tool activity. Distinguish running, awaiting approval, retrying, compacting, completed, stopped and failed states when relevant. Show tool identity, target and result with bounded output and protected secrets. An accepted prompt is not a completed task; do not display completion while queued continuation or automatic retry remains.
+
+
+#### WI-021 approved remainder — execution states
+
+The September 27, 2026 renewed implementation authorization covers this explicit REQ-004 gap: project public pi retry/compaction events without replacing their logic, and distinguish completed, stopped and failed only at the reliable settlement boundary. Retry/compaction end and prompt acknowledgement alone are not task completion. Stop remains pending until settlement or explicit failure; failed task outcome does not rewrite accepted delivery, and newer drafts survive. Empty/no-task remains Ready. Public-runtime, host-message and validated-client regression checks plus isolated real-runtime/host evidence remain distinct from human acceptance. ACTIVE owns current work and remaining conditions; the streaming gate stays Open.
 
 #### WI-004 accepted slice — Text streaming
 

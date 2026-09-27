@@ -30,7 +30,7 @@ Initial proposals and unexplained spike failures retain their pending state and 
 
 ## Draft ADRs
 
-- [0003 — React and TypeScript Webview frontend](0003-react-webview.md): framework direction confirmed for WI-015 Prepare; visual refresh and browser preview requested. Build and required verification pending; WI-014 Paused, gates remain Open.
+- [0003 — React and TypeScript Webview frontend](0003-react-webview.md): React/Vite direction and WI-015 Build approved; migration slices are implemented with executable verification recorded in ACTIVE. Maintainer experience and ADR acceptance remain pending; WI-014 technical slices are implemented, not permanently paused. Gates remain Open.
 
 - [0002 — Local interaction contract and upstream capability proposal](0002-interaction-contract-route.md): document route approved on 2026-09-22, then amended to prioritize unmodified released pi; upstream enhancement is optional. Detailed scoped design, implementation and required verification pending. WI-013 Paused, not completed; ADR remains Draft and gates remain Open. Does not resolve WI-010's pending ADR.
 

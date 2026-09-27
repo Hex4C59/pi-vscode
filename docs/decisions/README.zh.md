@@ -35,7 +35,7 @@
 
 ## Draft ADR
 
-- [0003 — React 与 TypeScript Webview 前端](0003-react-webview.zh.md)：WI-015 Prepare 的框架方向已确认，需要外观整理与浏览器预览；Build 和必要验证待完成，WI-014 Paused，gate 保持 Open。
+- [0003 — React 与 TypeScript Webview 前端](0003-react-webview.zh.md)：React/Vite 方向与 WI-015 Build 已批准；迁移切片已实现，可执行验证记录于 ACTIVE。维护者体验及 ADR 接受仍待；WI-014 技术切片已实现，并非永久暂停。gate 保持 Open。
 
 - [0002 — 本地交互契约与上游能力提案](0002-interaction-contract-route.zh.md)：文档路线于 2026-09-22 批准，随后修订为优先使用未修改发行版 pi，上游增强可选。详细限定设计、实现及所需验证待完成。WI-013 Paused，未完成；ADR 仍 Draft，gate 保持 Open；不解决 WI-010 遗留 pending ADR。
 
