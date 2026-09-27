@@ -119,3 +119,15 @@ test("long-history synthetic plain chat remains within the real message projecti
     assert.equal(f.state().draft.text, "literal preview request"); assert.equal(f.state().historyCount, 128);
   } finally { f.bridge.dispose(); }
 });
+
+test("synthetic activity failure records failed outcome without rewriting accepted delivery", t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const f = fixture("activity");
+  try {
+    for (let step = 0; step < 40; step++) t.mock.timers.tick(420);
+    f.body(); f.send({ type: "sendChat", draftRevision: f.state().draft.revision });
+    for (let step = 0; step < 40; step++) t.mock.timers.tick(420);
+    assert.equal(f.state().lastSubmission?.delivery, "rpc-accepted");
+    assert.equal(f.state().lastSubmission?.outcome, "failed");
+  } finally { f.bridge.dispose(); }
+});

@@ -18,7 +18,7 @@ export function attachmentState(patch: Partial<AttachmentStateMessage> = {}): At
   return { version: 2, type: "attachmentState", viewId: "view", generation: 1, draft: { revision: 0, text: "", acceptedEditSequence: 0, attachments: [] },
     preparation: "idle", result: null, historyCount: 0, retainedBytes: 0, lastSubmission: null, ...patch };
 }
-export async function uiHarness(initial = true) {
+export async function uiHarness(initial = true, candidate = false) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });
   const previous = new Map<string, PropertyDescriptor | undefined>();
   const globals: Record<string, unknown> = { window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
@@ -32,7 +32,13 @@ export async function uiHarness(initial = true) {
   const root = dom.window.document.getElementById("root"); assert.ok(root);
   const { mountApp } = await import("../mount.js");
   let dispose: () => void = () => undefined;
-  await act(async () => { dispose = mountApp(root, bridge); });
+  await act(async () => {
+    if (candidate) {
+      const { mountCandidate } = await import("../preview/candidate.js");
+      const { createPreviewLanguage } = await import("../preview/ui-language.js");
+      dispose = mountCandidate(root, bridge, createPreviewLanguage());
+    } else dispose = mountApp(root, bridge);
+  });
   const receive = async (value: unknown) => { await act(async () => { for (const listener of [...listeners]) listener(value); }); };
   const render = (patch: Partial<WorkspaceStateMessage> = {}) => receive({ ...readyState, ...patch });
   const get = <T extends HTMLElement = HTMLElement>(selector: string): T => { const el = root.querySelector<T>(selector); assert.ok(el, `Missing ${selector}`); return el; };

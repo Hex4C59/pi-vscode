@@ -3,6 +3,7 @@ import { createPreviewLanguage } from "./ui-language.js";
 import "../styles.css";
 import "./preview.css";
 import "./candidate.css";
+import "./candidate-review.css";
 import { mountCandidatePreview } from "./candidate-preview.js";
 import { PREVIEW_SCENARIOS, type PreviewScenario } from "./scenarios.js";
 
@@ -18,6 +19,7 @@ const scenarioLabels: Record<PreviewScenario, UiText> = {
   "safe-output": "Untrusted output (synthetic)",
   activity: "Activity before reply (synthetic)",
   approval: "Approval",
+  "approval-queue": "Approval queue (synthetic)",
   attachment: "Attachment",
   "attachment-unavailable": "Attachment source unavailable (synthetic)",
   "attachment-layout": "Long context and literal content (synthetic)",
@@ -94,11 +96,11 @@ function renderToolbar(): void {
   const title = document.createElement("div");
   title.className = "preview-toolbar__title";
   const name = document.createElement("strong");
-  name.textContent = "Pi · UIP-04";
+  name.textContent = "Pi · UIP-05–07";
   const note = document.createElement("span");
   const scenario = selectControl(PREVIEW_SCENARIOS, item => scenarioLabels[item], "empty");
   scenario.setAttribute("aria-label", "Scenario");
-  const supported = new Set<PreviewScenario>(["attachment-unavailable", "attachment-layout", "attachment", "source-changed", "long-history", "attachment-failure", "attachment-capacity", "attachment-uncertain", "sessions", "sessions-empty", "sessions-error", "ready", "empty", "loading", "streaming", "formatted", "safe-output", "activity", "error", "no-folder", "untrusted", "unavailable-model", "blocked"]);
+  const supported = new Set<PreviewScenario>(["approval", "approval-queue", "change-review", "attachment-unavailable", "attachment-layout", "attachment", "source-changed", "long-history", "attachment-failure", "attachment-capacity", "attachment-uncertain", "sessions", "sessions-empty", "sessions-error", "ready", "empty", "loading", "streaming", "formatted", "safe-output", "activity", "error", "no-folder", "untrusted", "unavailable-model", "blocked"]);
   for (const option of scenario.options) if (!supported.has(option.value as PreviewScenario)) {
     option.disabled = true;
     option.textContent += " (later slice)";
@@ -138,6 +140,15 @@ function renderToolbar(): void {
   const sourceButton = document.createElement("button");
   sourceButton.className = "preview-toolbar__reset"; sourceButton.type = "button";
   sourceButton.addEventListener("click", () => preview?.changeSources());
+  const simulations: [UiText, () => void][] = [
+    ["Simulate pending approvals", () => preview?.queueApprovals()],
+    ["Simulate captured changes", () => preview?.completeReview()],
+    ["Simulate review loss", () => preview?.loseReview()],
+  ];
+  const simulationButtons = simulations.map(([label, action]) => {
+    const button = document.createElement("button"); button.className = "preview-toolbar__reset"; button.type = "button";
+    button.textContent = label; button.addEventListener("click", action); return { label, button };
+  });
   const fields = document.createElement("div");
   fields.className = "preview-toolbar__fields";
   const scenarioLabel = controlLabel("Scenario", scenario);
@@ -146,13 +157,18 @@ function renderToolbar(): void {
   fields.append(
     scenarioLabel, themeLabel, widthLabel,
     resetButton,
-    recoverButton, sourceButton,
+    recoverButton, sourceButton, ...simulationButtons.map(item => item.button),
   );
-  toolbarRoot.append(title, fields);
+  const options = document.createElement("details"); options.className = "preview-control-options";
+  const optionsSummary = document.createElement("summary"); optionsSummary.textContent = "Preview controls";
+  options.append(optionsSummary, fields);
+  toolbarRoot.append(title, options);
   const localize = () => {
     const { locale, text: t } = language.getSnapshot();
     document.documentElement.lang = locale;
+    for (const { label, button } of simulationButtons) button.textContent = t(label);
     note.textContent = t("Synthetic host · candidate preview");
+    optionsSummary.textContent = t("Preview controls");
     const labels: [HTMLSelectElement, HTMLLabelElement, UiText, UiText][] = [
       [scenario, scenarioLabel, "Scenario", "Scenario"], [theme, themeLabel, "Theme", "Theme"], [width, widthLabel, "Sidebar", "Sidebar width"],
     ];

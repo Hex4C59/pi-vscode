@@ -140,7 +140,7 @@
 .candidate__current { flex: 1; min-width: 0; align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-muted); font-size: 11px; }
 .candidate #saved-history { flex: none; }
 
-/* Keep the existing approval surface reachable; UIP-05 redesign is not part of this slice. */
+/* The candidate keeps approval decisions above the composer. */
 .candidate__shared-operations { max-height: min(30vh, 180px); overflow: auto; margin-bottom: 6px; }
 
 .candidate-settings {
@@ -198,7 +198,7 @@
 .candidate-context__path summary { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-weight: 500; }
 .candidate-context__path summary::before { content: "▸ "; }
 .candidate-context__path[open] summary::before { content: "▾ "; }
-/* Shared approvals keep their existing UI. Only the combined UIP-04 height budget changes. */
+/* Shared host/client ownership, with a candidate-only height budget. */
 .candidate__footer:has(.candidate__shared-operations) { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
 .candidate__footer:has(.candidate__shared-operations) .candidate__composer { display: flex; flex-direction: column; flex: none; min-height: 0; }
 .candidate__footer:has(.candidate__shared-operations) .candidate-context__content { flex: none; min-height: 0; max-height: min(100px, 14dvh); }
@@ -210,3 +210,54 @@
 @media (max-height: 540px) {
   .candidate__footer:has(.candidate__shared-operations) textarea { max-height: 60px; }
 }
+
+/* UIP-05: one selected request; only literal details scroll, not decision controls. */
+.candidate .approval-selector { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.candidate .approval-selector__list { display: flex; gap: 4px; max-height: 34px; overflow: auto; }
+.candidate .approval-selector__list button { flex: none; padding: 4px 7px; }
+.candidate .approval-selector__list [aria-pressed="true"] { border-color: var(--ui-focus); background: var(--ui-hover); }
+.candidate #approvals { margin-top: 0; gap: 5px; }
+.candidate .approval h2 { margin: 0 0 5px; font-size: 12px; overflow-wrap: anywhere; }
+.candidate .approval-details { max-height: min(100px, 16dvh); overflow: auto; overscroll-behavior: contain; }
+.candidate .approval-details pre { max-height: none; margin: 3px 0 5px; }
+.candidate .approval-actions { margin-top: 6px; gap: 4px; }
+.candidate .approval-actions button { flex: 1 1 auto; padding: 4px 6px; font-size: 11px; }
+.candidate #session-grants { margin-top: 4px; }
+.candidate #grants { max-height: 90px; overflow: auto; }
+.candidate__footer:has(.candidate__shared-operations) .candidate__shared-operations { max-height: min(300px, 44dvh); min-height: 0; }
+.candidate__footer:has(.candidate-context__reader) .candidate__shared-operations { max-height: min(260px, 38dvh); }
+/* Short viewports reserve the selector and decisions; the details absorb shrinking. */
+.candidate__footer .candidate__shared-operations { display: flex; flex-direction: column; overflow: hidden; }
+.candidate .candidate__shared-operations #approvals { flex: 1 1 auto; min-height: 0; }
+.candidate .approval-selector { flex: none; }
+.candidate .approval { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.candidate .approval h2, .candidate .approval-actions { flex: none; }
+.candidate .approval-details { flex: 1 1 auto; min-height: 20px; }
+.candidate #session-grants { flex: none; max-height: 100px; overflow: auto; }
+.candidate-permissions { font-size: 10px; color: var(--ui-muted); margin: 0 0 4px; }
+.candidate-permissions > summary { cursor: pointer; width: fit-content; }
+.candidate-permissions__content { max-height: min(160px, 25dvh); overflow: auto; color: var(--ui-fg); }
+.candidate .approval-target, .candidate .approval-command { margin: 2px 0 4px; padding: 3px; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; font-size: 11px; }
+.candidate-permissions { position: absolute; right: 48px; bottom: 15px; margin: 0; z-index: 2; }
+.candidate-permissions > summary { display: grid; place-items: center; width: 22px; height: 22px; font-size: 16px; list-style: none; }
+.candidate-permissions > summary::-webkit-details-marker { display: none; }
+.candidate-permissions__content { position: absolute; bottom: 28px; right: -30px; width: min(290px, calc(100vw - 50px)); padding: 10px; border: 1px solid var(--ui-border-strong); border-radius: 6px; background: var(--ui-surface-raised); box-shadow: 0 3px 12px #0004; }
+.candidate__composer-actions .candidate__model { padding-right: 24px; }
+.candidate__footer:has(.approval:not([hidden])) .candidate__shared-operations { min-height: 165px; flex-shrink: 0; }
+@media (max-height: 540px) {
+  .candidate__footer:has(.approval:not([hidden])) .candidate__composer textarea { height: 36px !important; min-height: 36px; }
+}
+.candidate .approval { margin: 0; padding: 5px 7px; }
+.candidate .approval-selector { flex-direction: row; align-items: center; gap: 6px; }
+.candidate .approval-selector > span { flex: none; max-width: 85px; }
+.candidate .approval-selector__list { min-width: 0; flex: 1; }
+.candidate__footer:has(.approval:not([hidden])) .candidate__shared-operations { flex: 0 1 184px; min-height: 184px; }
+@media (max-height: 540px) {
+  .candidate:has(.approval:not([hidden])) .candidate__messages { padding-top: 0; padding-bottom: 0; }
+  .candidate:has(.approval:not([hidden])) .candidate__progress { margin-bottom: 4px; }
+}
+.candidate .approval-critical { display: flex; align-items: flex-start; gap: 6px; min-width: 0; margin-bottom: 3px; }
+.candidate .approval-critical > .activity-label { flex: 0 0 68px; font-size: 10px; }
+.candidate .approval-critical > pre { flex: 1; min-width: 0; max-height: 32px; padding: 2px 3px; margin: 0; }
+.candidate .approval-details > details { font-size: 11px; }
+.candidate .approval-details > details > summary { cursor: pointer; }

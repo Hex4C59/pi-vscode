@@ -16,6 +16,7 @@ export const PREVIEW_SCENARIOS = [
   "safe-output",
   "activity",
   "approval",
+  "approval-queue",
   "attachment",
   "attachment-failure",
   "attachment-capacity",
@@ -190,7 +191,7 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
     for (let index = 0; index < 6; index++) initialMessages.push({ role: "assistant", id: `prior-${index}`, text: `Earlier preview reply ${index + 1}\n\n${"Retained conversation context. ".repeat(12)}` });
   }
   const streaming = scenario === "streaming";
-  const approval = scenario === "approval";
+  const approval = scenario === "approval" || scenario === "approval-queue";
   const status = blockedStatus ?? (noFolder ? "no-folder" : untrusted ? "untrusted" : "eligible");
   const runtime = noFolder || untrusted || blockedStatus ? "not-started" : error ? "error" : "ready";
   const chatModel = unavailable || noFolder || untrusted || blockedStatus ? null : "Claude Sonnet";
@@ -235,7 +236,12 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
       status: "preparing",
       truncated: false,
     }] : [],
-    approvals: approval ? [{
+    approvals: scenario === "approval-queue" ? Array.from({ length: 8 }, (_, index) => ({
+      id: `approval-preview-${index + 1}`, toolCallId: `tool-call-preview-${index + 1}`, tool: "bash",
+      input: JSON.stringify({ command: `echo request-${index + 1} <literal>`, cwd: "/workspace/pi-vscode" }),
+      scope: index === 7 ? null : JSON.stringify(["bash", "/workspace/pi-vscode", `echo request-${index + 1} <literal>`]),
+      expiresAt: Date.now() + (index === 0 ? 20000 : 120000),
+    })) : approval ? [{
       id: "approval-preview-1",
       toolCallId: "tool-call-preview-1",
       tool: "read",

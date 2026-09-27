@@ -3,7 +3,7 @@ import test from "node:test";
 import { act } from "react";
 import type { ActivityItem } from "../../extension/contracts/runtimeLifecycle.js";
 import type { ApprovalCard } from "../../extension/editor-tools/toolApproval.js";
-import { uiHarness } from "./react-harness.js";
+import { uiHarness, readAppStyles } from "./react-harness.js";
 
 const thinking: ActivityItem = { id: "t1", kind: "thinking", messageId: "m1", text: "Actual upstream text", status: "thinking", truncated: false };
 const tool: ActivityItem = { id: "tool1", kind: "tool", messageId: "m1", tool: "write", input: '{"path":"a"}', text: "first", status: "preparing", truncated: false };
@@ -183,5 +183,56 @@ test("thinking node keeps focus and expansion when the first assistant text arri
     assert.equal(h.get('[data-activity-id="t1"]'), details);
     assert.equal(h.dom.window.document.activeElement, summary);
     assert.equal(details.open, true);
+  } finally { await h.close(); }
+});
+test("candidate displays validated retry, compaction and terminal states without hiding Stop or clearing drafts", async () => {
+  const h = await uiHarness(true, true);
+  try {
+    await h.input("new candidate draft", ".candidate__composer textarea");
+    for (const [execution, label] of [["retrying", "Retrying"], ["compacting", "Compacting context"]] as const) {
+      await h.render({ chatBusy: true, execution });
+      assert.match(h.get(".candidate__progress").textContent ?? "", new RegExp(label));
+      assert.equal(h.get<HTMLButtonElement>(".candidate__send").disabled, false);
+      assert.equal(h.get<HTMLButtonElement>(".candidate__send").getAttribute("aria-label"), "Stop current task");
+    }
+    for (const [execution, label] of [["completed", "Task completed"], ["stopped", "Task stopped"], ["failed", "Task failed"]] as const) {
+      await h.render({ chatBusy: false, execution });
+      assert.match(h.get(".candidate__progress").textContent ?? "", new RegExp(label));
+      assert.equal(h.get<HTMLTextAreaElement>(".candidate__composer textarea").value, "new candidate draft");
+    }
+  } finally { await h.close(); }
+});
+
+test("open model settings are not clipped by the composer's footer boundary", async () => {
+  const h = await uiHarness();
+  try {
+    const style = h.dom.window.document.createElement("style");
+    style.textContent = readAppStyles();
+    h.dom.window.document.head.append(style);
+    await h.render({ chatBusy: true, execution: "replying", messages: [{ id: "stream", role: "assistant", text: "Streaming response" }] });
+    await h.click("#model-effort-trigger");
+    const dialog = h.get<HTMLElement>('[role="dialog"][aria-label="Model and thinking level"]');
+    assert.equal(dialog.hidden, false);
+    const footer = dialog.closest("footer"); assert.ok(footer);
+    assert.notEqual(h.dom.window.getComputedStyle(footer).overflowY, "hidden", "a settings menu above the composer must not be clipped by its footer");
+  } finally { await h.close(); }
+});
+
+test("runtime loss keeps the newer draft readable without admitting actions or exposing retained chat", async () => {
+  const h = await uiHarness();
+  try {
+    await h.input("Newer unsent draft after runtime loss");
+    await h.render({ runtime: "error", runtimeDetail: "Runtime disconnected", chatBusy: false, execution: "failed" });
+    const input = h.get<HTMLTextAreaElement>("#chat-input");
+    assert.equal(input.value, "Newer unsent draft after runtime loss");
+    assert.equal(input.readOnly, true);
+    assert.equal(input.disabled, false, "the retained draft must remain focusable for copying");
+    assert.match(h.get("#execution-status").textContent ?? "", /failed/);
+    assert.equal(h.root.querySelector("#chat"), null);
+    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
+    const before = h.sent.length;
+    await h.click("#send-chat");
+    assert.equal(h.sent.length, before);
+    input.focus(); assert.equal(h.dom.window.document.activeElement, input);
   } finally { await h.close(); }
 });

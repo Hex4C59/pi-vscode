@@ -76,11 +76,15 @@ export class PreviewBridge implements WebviewBridge {
   private preparationToken = 0;
   private snapshotSequence = 1;
   private submittedMessages = 0;
+  private approvalSequence = 0;
+  private reviewCaptured = false;
+  private reviewLost = false;
 
   constructor(readonly scenario: PreviewScenario, private readonly confirmHandoff?: (restoring: boolean) => Promise<HandoffOutcome>) {
     bridgeNumber += 1;
     this.viewId = `preview-view-${bridgeNumber}`;
     this.workspace = { ...baseWorkspace(scenario), viewId: this.viewId };
+    this.reviewCaptured = scenario === "change-review";
     this.attachment = { ...baseAttachmentState(scenario), viewId: this.viewId };
     this.session = baseSessionState(scenario, this.viewId);
     this.savedHistory = baseSavedHistoryState(this.viewId);
@@ -111,6 +115,7 @@ export class PreviewBridge implements WebviewBridge {
       this.workspace = { ...this.workspace, messages: Array.from({ length: 32 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, text: "Synthetic recent message " + (index + 33) })) };
     }
     if (scenario === "streaming" || scenario === "formatted" || scenario === "activity") this.startStream();
+    if (scenario === "approval-queue") this.scheduleApprovalExpiry();
     if (scenario === "loading") this.schedule(() => this.recover(), 900);
   }
 
@@ -218,6 +223,39 @@ export class PreviewBridge implements WebviewBridge {
     return () => this.listeners.delete(listener);
   }
 
+  /** Developer controls inject deterministic projections, never actual editor/tool effects. */
+  completeReview(): void {
+    if (this.disposed) return;
+    this.reviewCaptured = true; this.reviewLost = false; this.emitReview();
+  }
+
+  loseReview(): void {
+    if (this.disposed) return;
+    this.reviewCaptured = false; this.reviewLost = true; this.emitReview("unavailable");
+  }
+
+  queueApprovals(): void {
+    if (this.disposed || this.workspace.runtime !== "ready" || this.workspace.execution === "stopping" || this.workspace.approvals.length) return;
+    this.clearTimers(this.streamTimers);
+    this.streamToken++; // A replaced pending queue also revokes its old delayed continuation.
+    this.approvalSequence++;
+    const approvals = baseWorkspace("approval-queue").approvals.map((card, index) => ({ ...card,
+      id: `approval-synthetic-${this.approvalSequence}-${index + 1}`, toolCallId: `tool-synthetic-${this.approvalSequence}-${index + 1}` }));
+    this.workspace = { ...this.workspace, chatBusy: true, execution: "awaiting-approval", approvals };
+    this.scheduleApprovalExpiry(); this.emitWorkspace();
+  }
+
+  private scheduleApprovalExpiry(): void {
+    const generation = this.workspace.generation;
+    for (const card of this.workspace.approvals) this.schedule(() => {
+      if (generation !== this.workspace.generation || !this.workspace.approvals.some(item => item.id === card.id)) return;
+      this.workspace = { ...this.workspace, approvals: this.workspace.approvals.filter(item => item.id !== card.id),
+        ...(this.workspace.approvals.length === 1 ? { chatBusy: false, execution: "failed", chatError: "The simulated approval expired. No action was allowed." } : {}) };
+      this.emitWorkspace();
+      if (!this.workspace.approvals.length) this.settleSubmission("failed");
+    }, Math.max(0, card.expiresAt - Date.now()));
+  }
+
   /** A synthetic editor edit: no native document, filesystem or automatic save. */
   changeSources(): void {
     if (this.disposed || !this.attachment.draft.attachments.length) return;
@@ -268,7 +306,7 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private emitReview(error: ChangeReviewStateMessage["error"] = null): void {
-    const entries: ChangeReviewStateMessage["entries"] = this.scenario === "change-review" ? Array.from({ length: 33 }, (_, index) => ({
+    const entries: ChangeReviewStateMessage["entries"] = this.reviewCaptured ? Array.from({ length: 33 }, (_, index) => ({
       id: "review-preview-" + index, taskId: "task-preview-" + Math.floor(index / 8),
       path: index === 2 ? null : "src/preview/" + (index === 0 ? "long-path-".repeat(12) : "changed-") + index + ".ts",
       source: index % 3 === 1 ? "observed" as const : "tool" as const,
@@ -279,7 +317,7 @@ export class PreviewBridge implements WebviewBridge {
       sourceChanged: index === 0, overlap: index === 3,
     })) : [];
     this.emit({ version: 2, type: "changeReviewState", viewId: this.viewId, generation: this.workspace.generation,
-      entries, retainedBytes: entries.length ? 2048 : 0, limited: false, reset: false, error });
+      entries, retainedBytes: entries.length ? 2048 : 0, limited: false, reset: this.reviewLost, error: this.reviewLost ? "unavailable" : error });
   }
 
   private emitWorkspace(): void {
@@ -428,6 +466,7 @@ export class PreviewBridge implements WebviewBridge {
       retainedBytes: 0,
       lastSubmission: null,
     };
+    this.reviewCaptured = false; this.reviewLost = false;
     this.savedHistoryPreviews.clear();
     if (target) {
       for (let index = 1; index <= SYNTHETIC_HISTORY_COUNT; index++) {
@@ -443,6 +482,7 @@ export class PreviewBridge implements WebviewBridge {
     this.emitAttachment();
     this.emitSession();
     this.emitSavedHistory();
+    this.emitReview();
   }
 
   private getSavedHistory(message: Extract<WebviewMessage, { type: "getSavedSessions" | "getSavedHistory" }>): void {
@@ -681,7 +721,7 @@ export class PreviewBridge implements WebviewBridge {
     }, 420, this.streamTimers);
   }
 
-  private settleSubmission(outcome: "settled" | "interrupted"): void {
+  private settleSubmission(outcome: "settled" | "interrupted" | "failed"): void {
     const submission = this.attachment.lastSubmission;
     if (!submission || submission.outcome !== "pending") return;
     for (const entry of this.history) if (entry.submissionId === submission.submissionId) entry.outcome = outcome;
@@ -690,9 +730,9 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private finishStream(): void {
-    this.settleSubmission(this.scenario === "activity" ? "interrupted" : "settled");
+    this.settleSubmission(this.scenario === "activity" ? "failed" : "settled");
     this.clearTimers(this.streamTimers);
-    this.workspace = { ...this.workspace, chatBusy: false, execution: this.scenario === "activity" ? "failed" : "idle", chatError: this.scenario === "activity" ? "Preview tool failed. Output was truncated; this is not a complete result." : null };
+    this.workspace = { ...this.workspace, chatBusy: false, execution: this.scenario === "activity" ? "failed" : "completed", chatError: this.scenario === "activity" ? "Preview tool failed. Output was truncated; this is not a complete result." : null };
     this.emitWorkspace();
     if (this.workspace.pendingModel || this.workspace.pendingThinkingLevel) this.applyPendingSettings();
   }
@@ -727,24 +767,26 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private decideApproval(message: Extract<WebviewMessage, { type: "decideApproval" }>): void {
-    if (!this.workspace.approvals.some(approval => approval.id === message.id)) return;
-    if (message.decision === "deny") {
-      this.workspace = {
-        ...this.workspace,
-        approvals: [],
-        chatBusy: false,
-        execution: "failed",
-        chatError: "The requested action was declined.",
-      };
+    const card = this.workspace.approvals.find(approval => approval.id === message.id);
+    if (!card || card.expiresAt <= Date.now() || this.workspace.execution === "stopping"
+      || (message.decision === "session" && card.scope === null)) return;
+    const approvals = this.workspace.approvals.filter(item => item.id !== card.id);
+    const grants = message.decision === "session" && card.scope !== null
+      ? [...this.workspace.grants, { id: "grant-" + card.id, scope: card.scope }]
+      : this.workspace.grants;
+    if (approvals.length) {
+      this.workspace = { ...this.workspace, approvals, grants, execution: "awaiting-approval" };
       this.emitWorkspace();
-      // This deterministic fixture ends its task on Deny; real pi may continue after a refusal.
+      return;
+    }
+    if (message.decision === "deny") {
+      this.workspace = { ...this.workspace, approvals, grants, chatBusy: false, execution: "failed", chatError: "The requested action was declined." };
+      this.emitWorkspace();
+      // This deterministic fixture ends its task on final Deny; real pi may continue after refusal.
       this.settleSubmission("interrupted");
       return;
     }
-    const grants = message.decision === "session"
-      ? [{ id: "grant-preview-1", scope: "[\"read\",\"/workspace/pi-vscode/src/preview/example.ts\"]" }]
-      : this.workspace.grants;
-    this.workspace = { ...this.workspace, approvals: [], grants, execution: "executing" };
+    this.workspace = { ...this.workspace, approvals, grants, execution: "executing" };
     this.emitWorkspace();
     const actionToken = this.streamToken;
     this.schedule(() => {
@@ -784,7 +826,7 @@ export class PreviewBridge implements WebviewBridge {
     this.schedule(() => {
       this.workspace = {
         ...this.workspace,
-        execution: "failed",
+        execution: "stopped",
         chatError: "Task stopped. Completed side effects remain unchanged.",
         activities: this.workspace.activities.map(item => item.status === "thinking" || item.status === "preparing" || item.status === "executing" ? { ...item, status: "interrupted" } : item),
       };

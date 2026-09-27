@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type {
   WorkspaceStateMessage, ApprovalDecision, AttachmentHistoryEntry,
   AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage,
@@ -7,6 +8,9 @@ import type { SavedHistoryPreview } from "../index.js";
 
 /** Props are presentation-only; host intents and projections are owned by extension/contracts. */
 export interface ApprovalsProps {
+  /** Candidate presentation: select one request; authorization stays host-owned. */
+  compact?: boolean;
+  showGrants?: boolean;
   cards: WorkspaceStateMessage["approvals"];
   grants: WorkspaceStateMessage["grants"];
   disabled: boolean;
@@ -40,6 +44,8 @@ export interface AttachmentPanelProps {
 }
 
 export interface ChangeReviewProps {
+  caption?: string;
+  introduction?: ReactNode;
   pageSize: number;
   state: ChangeReviewStateMessage | null;
   open: boolean;

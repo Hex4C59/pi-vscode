@@ -184,7 +184,7 @@ test("composer context scrolls independently while the input and task controls r
     assert.equal(context.parentElement, h.get("#composer").parentElement);
     assert.equal(h.dom.window.getComputedStyle(context).overflowY, "auto");
     assert.equal(h.dom.window.getComputedStyle(context).minHeight, "0px");
-    assert.equal(h.dom.window.getComputedStyle(h.get("#composer-wrap")).overflowY, "hidden");
+    assert.equal(h.dom.window.getComputedStyle(h.get("#composer-wrap")).overflowY, "visible", "only the context clips scrolling; model settings must open above the footer");
     // Actual viewport geometry and keyboard access are checked in browser/native evidence.
   } finally { await h.close(); }
 });

@@ -135,3 +135,5 @@ body.preview-page #app {
 .preview-toolbar__field:first-child { flex-basis: 100%; }
 .preview-toolbar__field > span { flex: none; }
 .preview-toolbar__select { flex: 1; width: 100%; min-width: 0; }
+.preview-control-options > summary { cursor: pointer; width: fit-content; font-size: 11px; color: var(--ui-muted); }
+.preview-control-options[open] .preview-toolbar__fields { padding-top: 6px; }

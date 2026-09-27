@@ -1,3 +1,4 @@
+import { CandidateReview } from "./candidate-review.js";
 import { CandidateContext } from "./candidate-context.js";
 import { NoFolderPrompt } from "./no-folder-prompt.js";
 import { InterfaceSettings } from "./interface-settings.js";
@@ -8,7 +9,13 @@ import { CandidateConversation } from "./candidate-conversation.js";
 import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { WebviewClient, availability, type WebviewBridge } from "../index.js";
-import { ModelPicker, WorkspaceSetup, SavedHistory, Approvals, UiTextProvider, useUiText } from "../components/index.js";
+import { ModelPicker, WorkspaceSetup, SavedHistory, Approvals, SessionGrants, UiTextProvider, useUiText } from "../components/index.js";
+
+function subscribeViewport(listener: () => void): () => void {
+  window.addEventListener("resize", listener);
+  return () => window.removeEventListener("resize", listener);
+}
+function shortViewport(): boolean { return window.innerHeight <= 540; }
 
 /** Candidate-only composition. Host eligibility, draft identity and intents stay in the real client. */
 function Candidate({ client, language }: { client: WebviewClient; language: PreviewLanguage }): ReactElement {
@@ -16,6 +23,19 @@ function Candidate({ client, language }: { client: WebviewClient; language: Prev
   const snapshot = useSyncExternalStore(client.subscribe, client.getSnapshot);
   const state = snapshot.workspace;
   const controls = availability(snapshot);
+  const short = useSyncExternalStore(subscribeViewport, shortViewport);
+  const prioritizeApprovals = short && !!state?.approvals.length;
+  const priorPriority = useRef(false);
+  const footer = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (prioritizeApprovals && !priorPriority.current && snapshot.changeReviewOpen) {
+      const content = footer.current?.querySelector("#change-review-content");
+      const hidesFocus = !!content?.contains(content.ownerDocument.activeElement);
+      client.toggleChangeReview();
+      if (hidesFocus) footer.current?.querySelector<HTMLButtonElement>("#change-review-toggle")?.focus({ preventScroll: true });
+    }
+    priorPriority.current = prioritizeApprovals;
+  }, [prioritizeApprovals, snapshot.changeReviewOpen, client]);
   const noFolder = state?.status === "no-folder";
   const [folderPrompt, setFolderPrompt] = useState(false);
   const promptVisible = folderPrompt && noFolder;
@@ -77,6 +97,11 @@ function Candidate({ client, language }: { client: WebviewClient; language: Prev
     if (node) { node.style.height = "auto"; node.style.height = `${Math.min(node.scrollHeight, 140)}px`; }
   }, [snapshot.text]);
   const progress = controls.stopping ? t("Stopping… Waiting for the task to settle.")
+    : state?.execution === "retrying" ? t("Retrying…")
+    : state?.execution === "compacting" ? t("Compacting context…")
+    : state?.execution === "completed" ? t("Task completed")
+    : state?.execution === "stopped" ? t("Task stopped · Side effects are not rolled back.")
+    : state?.execution === "failed" ? t("Task failed")
     : state?.chatBusy ? state.execution === "replying" ? t("Replying…") : t("Working…") : null;
   return <section lang={locale} className="candidate" aria-label={t("Candidate chat")} onKeyDown={event => {
     if (!historyOpen || event.key !== "Escape" || event.defaultPrevented || event.nativeEvent.isComposing) return;
@@ -132,9 +157,11 @@ function Candidate({ client, language }: { client: WebviewClient; language: Prev
         </>}
       </>}
     </div>
-    <footer className="candidate__footer">
-      {state && (state.approvals.length > 0 || state.grants.length > 0) && <div className="candidate__shared-operations">
-        <Approvals key={identity} cards={state.approvals} grants={state.grants} disabled={controls.stopping || !!snapshot.error}
+    <footer ref={footer} className="candidate__footer">
+      {state && <CandidateReview key={`review-${identity}`} pageSize={16} state={snapshot.changeReview} open={snapshot.changeReviewOpen} page={snapshot.changeReviewPage}
+        onToggle={client.toggleChangeReview} onPage={client.navigateChangeReview} onDiff={client.openReviewDiff} onSource={client.openReviewSource} />}
+      {state && state.approvals.length > 0 && <div className="candidate__shared-operations">
+        <Approvals compact showGrants={false} key={identity} cards={state.approvals} grants={state.grants} disabled={controls.stopping || !!snapshot.error}
           onDecision={(id, decision) => client.action({ type: "decideApproval", id, decision })}
           onRevoke={id => client.action({ type: "revokeGrant", id })} />
       </div>}
@@ -142,6 +169,15 @@ function Candidate({ client, language }: { client: WebviewClient; language: Prev
       {progress && <p className="candidate__progress" role="status"><span className="candidate__pulse" aria-hidden="true" />{progress}</p>}
       {state?.chatError && state.runtime !== "error" && <p className="candidate__error" role="status">{state.chatError}</p>}
       <form className="candidate__composer" onSubmit={event => { event.preventDefault(); submit(); }}>
+        {canBrowse && state && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
+          if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+        }}>
+          <summary aria-label={t("Permissions ({count})", { count: state.grants.length })} title={t("Permissions ({count})", { count: state.grants.length })}>⚿</summary>
+          <div className="candidate-permissions__content">
+            <p>{state.controlledExecution ? t("Controlled execution: covered tools ask for approval; this is not a sandbox.") : t("Execution policy is unavailable. No additional permission is implied.")}</p>
+            <SessionGrants grants={state.grants} disabled={controls.stopping || !!snapshot.error} onRevoke={id => client.action({ type: "revokeGrant", id })} />
+          </div>
+        </details>}
         <CandidateContext historyDisabled={!canBrowse || controls.sessionTransitioning} key={identity} pageSize={16} history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} onHistory={client.toggleHistory} onHistoryPage={client.navigateHistory} state={snapshot.attachments} disabled={controls.attachmentDisabled} onAdd={client.addAttachment} onAddSelection={client.addSelection} onRemove={client.removeAttachment} onConfirm={client.confirmAttachment} onPreview={client.requestPreview} onClosePreview={client.closePreview} preview={snapshot.preview} />
         <textarea ref={input} aria-label={t("Message")} placeholder={t("Ask pi anything…")} rows={2} maxLength={8000} value={snapshot.text}
           disabled={!!snapshot.error || (noFolder ? !!state.busy : !canCompose || !snapshot.attachments)}

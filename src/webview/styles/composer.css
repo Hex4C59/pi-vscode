@@ -11,8 +11,9 @@
   gap: 5px;
   padding: 8px 14px 12px;
   background: var(--ui-bg);
-  overflow-x: hidden;
-  overflow-y: hidden;
+  /* Settings open above this footer; only context and input own scroll clipping. */
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 #composer-context {

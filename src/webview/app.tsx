@@ -9,7 +9,7 @@ import {
 
 const runtimeLabels = { "not-started": "Not running", starting: "Starting…", ready: "Connected", stopping: "Stopping…", error: "Runtime error" };
 const executionLabels = { idle: "Ready", waiting: "Waiting for response…", thinking: "Thinking…", "awaiting-approval": "Waiting for tool approval",
-  executing: "Executing tool…", replying: "Replying…", stopping: "Stopping… Waiting for task to settle; side effects are not rolled back.", failed: "Task failed / interrupted" };
+  completed: "Task completed", stopped: "Task stopped · Side effects are not rolled back.", retrying: "Retrying…", compacting: "Compacting context…", executing: "Executing tool…", replying: "Replying…", stopping: "Stopping… Waiting for task to settle; side effects are not rolled back.", failed: "Task failed / interrupted" };
 
 export function App({ client }: { client: WebviewClient }) {
   const snapshot = useSyncExternalStore(client.subscribe, client.getSnapshot);
@@ -32,6 +32,7 @@ export function App({ client }: { client: WebviewClient }) {
     if (node) { node.style.height = "auto"; node.style.height = `${Math.min(node.scrollHeight, 140)}px`; }
   }, [snapshot.text]);
   const chatVisible = !!state && ((state.runtime === "ready" && !state.busy) || state.chatBusy || a.stopping);
+  const composerVisible = chatVisible || (!!state && state.status === "eligible" && state.choice !== null && state.runtime === "error" && !!snapshot.attachments);
   const status = snapshot.synchronizing ? "Synchronizing draft (unacknowledged edits can be lost on view reload)."
     : snapshot.attachments?.result ? attachmentError(snapshot.attachments.result.code, snapshot.attachments.draft.attachments.length === 1 ? snapshot.attachments.draft.attachments[0].kind : undefined)
     : snapshot.attachments?.preparation !== "idle" ? "Preparing attachment… Stop cancels preparation." : "Draft synchronized.";
@@ -80,7 +81,7 @@ export function App({ client }: { client: WebviewClient }) {
         </div>}
       </div>}
     </main>
-    {chatVisible && state && <footer id="composer-wrap">
+    {composerVisible && state && <footer id="composer-wrap">
       <div id="composer-context">
       <details id="controlled-disclosure"><summary>Controlled execution · Ask before actions</summary>
         <p>Only the bundled approval extension is loaded. Third-party extensions are disabled. Tools run with your user permissions, not in a sandbox. Stop does not roll back side effects. Tool output may contain sensitive information.</p>
@@ -92,7 +93,7 @@ export function App({ client }: { client: WebviewClient }) {
       </div>
       <div id="composer">
         <textarea id="chat-input" ref={input} rows={1} placeholder="Message pi…" aria-label="Message" value={snapshot.text}
-          disabled={!snapshot.attachments || !!snapshot.error || state.runtime === "error"} onChange={event => client.edit(event.currentTarget.value)}
+          readOnly={state.runtime === "error"} disabled={!snapshot.attachments || !!snapshot.error} onChange={event => client.edit(event.currentTarget.value)}
           onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); client.submit(); } }} />
         <div id="composer-footer">
           <ModelPicker key={`${state.viewId}-${state.generation}`} state={state} disabled={a.settingsDisabled}
