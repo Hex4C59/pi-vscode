@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { getEventListeners } from 'node:events';
 import test from 'node:test';
 import { isolatedFixture, preflight, startIfEligible, withProcess } from './project-trust-lib.mjs';
@@ -78,4 +81,29 @@ test('pre-cancelled operation never creates a child', async () => {
   let called = false;
   await assert.rejects(withProcess([], { signal: controller.signal }, () => { called = true; }));
   assert.equal(called, false);
+});
+
+test('registered resource probe verifies the current pinned release without model requests', { timeout: 360000 }, async () => {
+  const metadata = JSON.parse(await readFile(new URL('../../node_modules/@earendil-works/pi-coding-agent/package.json', import.meta.url), 'utf8'));
+  const env = { PATH: path.dirname(process.execPath), LANG: 'C.UTF-8', TERM: 'dumb' };
+  for (const key of ['SystemRoot', 'WINDIR', 'COMSPEC']) if (process.env[key]) env[key] = process.env[key];
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('./spike-project-trust.mjs', import.meta.url))], {
+    env, encoding: 'utf8', timeout: 300000, maxBuffer: 1024 * 1024,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.version, metadata.version);
+  assert.equal(report.scenarios.length, 6);
+  const allow = report.scenarios.find(value => value.choice === '--approve' && value.defaultProjectTrust === 'always');
+  const decline = report.scenarios.find(value => value.choice === '--no-approve' && !value.savedTrust);
+  assert.ok(allow.startup.includes('fixture-a'));
+  assert.equal(decline.startup.includes('fixture-a'), false);
+  assert.equal(allow.afterSwitch.includes('fixture-a'), false);
+  assert.ok(allow.afterSwitch.includes('fixture-b'));
+  assert.ok(decline.observations.every(value => value.contextA || value.contextB));
+  for (const scenario of report.scenarios) {
+    const approved = scenario.choice === '--approve' || (scenario.choice === 'global-default-baseline' && scenario.defaultProjectTrust === 'always');
+    assert.equal(scenario.settings.startup, approved ? 'off' : 'medium');
+    assert.equal(scenario.settings.afterSwitch, approved ? 'low' : 'medium');
+  }
 });

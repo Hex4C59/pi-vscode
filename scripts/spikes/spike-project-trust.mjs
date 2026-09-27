@@ -6,7 +6,7 @@ import { isolatedFixture, withProcess } from './project-trust-lib.mjs';
 
 const packageDir = fileURLToPath(new URL('../../node_modules/@earendil-works/pi-coding-agent/', import.meta.url));
 const metadata = JSON.parse(await readFile(path.join(packageDir, 'package.json'), 'utf8'));
-assert.equal(metadata.version, '0.85.1', 'Re-review public APIs before upgrading this spike');
+assert.equal(metadata.version, '0.86.1', 'Re-review public APIs before upgrading this spike');
 // Verify the installed public isolation contract BEFORE importing/executing pi.
 const readme = await readFile(path.join(packageDir, 'README.md'), 'utf8');
 assert.match(readme, /PI_CODING_AGENT_DIR.*Override config directory/);
@@ -36,14 +36,20 @@ async function scenario(choice, savedTrust = false, defaultProjectTrust = 'alway
     const b = path.join(root, 'b');
     const agent = env.PI_CODING_AGENT_DIR;
     const observations = path.join(root, 'observations.jsonl');
-    await put(path.join(agent, 'settings.json'), JSON.stringify({ defaultProjectTrust }));
+    const globalSettings = { defaultProjectTrust, defaultProvider: 'fixture', defaultModel: 'reasoning', defaultThinkingLevel: 'medium', cacheWarming: 'off' };
+    await put(path.join(agent, 'models.json'), JSON.stringify({ providers: { fixture: {
+      baseUrl: 'http://127.0.0.1:1/v1', api: 'openai-completions', apiKey: 'synthetic-unused',
+      models: [{ id: 'reasoning', name: 'Synthetic unused model', reasoning: true, input: ['text'],
+        contextWindow: 10000, maxTokens: 1000, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }]
+    } } }));
+    await put(path.join(agent, 'settings.json'), JSON.stringify(globalSettings));
     for (const [cwd, label] of [[a, 'a'], [b, 'b']]) {
       await put(path.join(cwd, '.pi/extensions/marker.ts'), extension(`fixture-${label}`));
       await put(path.join(cwd, '.pi/prompts', `fixture-prompt-${label}.md`), 'Harmless fixture prompt.');
       await put(path.join(cwd, '.pi/skills', `fixture-skill-${label}`, 'SKILL.md'), `---\nname: fixture-skill-${label}\ndescription: Harmless fixture\n---\nDo nothing.\n`);
       await put(path.join(cwd, 'AGENTS.md'), `CONTEXT_FIXTURE_${label.toUpperCase()}`);
       await put(path.join(cwd, '.pi/APPEND_SYSTEM.md'), `SYSTEM_FIXTURE_${label.toUpperCase()}`);
-      await put(path.join(cwd, '.pi/settings.json'), JSON.stringify({ thinkingLevel: 'off' }));
+      await put(path.join(cwd, '.pi/settings.json'), JSON.stringify({ defaultThinkingLevel: label === 'a' ? 'off' : 'low' }));
     }
     const observer = `import { appendFileSync } from 'node:fs';
 export default function(pi) {
@@ -85,22 +91,24 @@ process.stdin.once('data', () => console.log(JSON.stringify({ type: 'response', 
       }
       // Remove the hook so explicit overrides are tested against saved state alone.
       await put(path.join(agent, 'extensions/remember.ts'), 'export default function() {}');
-      await put(path.join(agent, 'settings.json'), JSON.stringify({ defaultProjectTrust: 'never' }));
+      await put(path.join(agent, 'settings.json'), JSON.stringify({ ...globalSettings, defaultProjectTrust: 'never' }));
       for (const [cwd, label] of [[a, 'a'], [b, 'b']]) {
         const baseline = await withProcess([cli, '--mode', 'rpc', '--no-session'], { cwd, env, signal: controller.signal },
           ({ request }) => request('get_commands'));
         assert.ok(baseline.commands.some(command => command.name === `fixture-${label}`), 'saved trust must override never without the hook');
       }
-      await put(path.join(agent, 'settings.json'), JSON.stringify({ defaultProjectTrust }));
+      await put(path.join(agent, 'settings.json'), JSON.stringify(globalSettings));
     }
     await writeFile(observations, '');
     const args = [cli, '--mode', 'rpc', '--no-session', ...(choice ? [choice] : [])];
     const result = await withProcess(args, { cwd: a, env, signal: controller.signal }, async ({ request }) => {
       const startup = await request('get_commands');
+      const startupState = await request('get_state');
       const switched = await request('switch_session', { sessionPath: fixture.sessionPath });
       assert.equal(switched.cancelled, false);
       const afterSwitch = await request('get_commands');
-      return { startup, afterSwitch };
+      const switchedState = await request('get_state');
+      return { startup, afterSwitch, settings: { startup: startupState.thinkingLevel, afterSwitch: switchedState.thinkingLevel } };
     });
     const events = (await readFile(observations, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
     const names = data => data.commands.map(command => command.name).filter(name => name.startsWith('fixture-') || name.startsWith('skill:fixture-')).sort();
@@ -127,7 +135,7 @@ process.stdin.once('data', () => console.log(JSON.stringify({ type: 'response', 
       assert.equal(event.systemB, approved && !inA);
     }
     return { choice: choice ?? 'global-default-baseline', defaultProjectTrust, savedTrust,
-      savedTrustVerifiedWithoutHook: savedTrust, startup, afterSwitch,
+      savedTrustVerifiedWithoutHook: savedTrust, startup, afterSwitch, settings: result.settings,
       observations: events.map(({ cwd, ...event }) => ({ ...event, cwd: cwd === a ? 'a' : 'b' })) };
   });
 }
@@ -141,9 +149,9 @@ try {
   console.log(JSON.stringify({ version: metadata.version, isolation: 'public PI_CODING_AGENT_DIR + PI_OFFLINE=1 + PI_TELEMETRY=0 + minimal environment + temporary cwd/HOME',
     scenarios, limitations: [
       'No OS network sandbox: no model/network requests or package installs are initiated by this harness; outbound traffic is not independently audited.',
-      'Project settings effect and themes are not independently observed; project packages are intentionally not installed.',
+      'Thinking defaults are observed through public get_state at startup and cwd switch; themes are not independently observed and project packages are intentionally not installed.',
       'Context/system prompt observations are snapshots from the public session_start/getSystemPrompt API, not model payload verification.',
-      'No real user trust or credentials are read or modified. Gate remains Open; product UI is not connected.'
+      'No real user trust or credentials are read or modified. This probe does not exercise the controlled product profile or its UI; the gate remains Open.'
     ], cleanup: 'All owned processes closed and temporary fixtures removed' }, null, 2));
 } finally {
   process.off('SIGINT', cancel);
