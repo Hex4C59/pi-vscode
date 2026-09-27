@@ -1,20 +1,34 @@
+import type { UiText } from "../components/index.js";
+import { createPreviewLanguage } from "./ui-language.js";
 import "../styles.css";
 import "./preview.css";
-import { mountApp } from "../index.js";
-import { PreviewBridge } from "./preview-bridge.js";
+import "./candidate.css";
+import { mountCandidatePreview } from "./candidate-preview.js";
 import { PREVIEW_SCENARIOS, type PreviewScenario } from "./scenarios.js";
 
 type PreviewTheme = "dark" | "light" | "high-contrast";
 type HotModule = { dispose(callback: () => void): void };
 
-const scenarioLabels: Record<PreviewScenario, string> = {
-  ready: "Ready",
+const scenarioLabels: Record<PreviewScenario, UiText> = {
+  ready: "Conversation",
+  empty: "New conversation",
+  loading: "Loading",
   streaming: "Streaming",
+  formatted: "Formatted reply (synthetic)",
+  "safe-output": "Untrusted output (synthetic)",
+  activity: "Activity before reply (synthetic)",
   approval: "Approval",
   attachment: "Attachment",
+  "attachment-unavailable": "Attachment source unavailable (synthetic)",
+  "attachment-layout": "Long context and literal content (synthetic)",
+  "attachment-uncertain": "Attachment delivery uncertain (synthetic)",
+  "attachment-capacity": "Attachment capacity rejection (synthetic)",
+  "attachment-failure": "Attachment preparation failure (synthetic)",
   "source-changed": "Source changed",
   "long-history": "Long live history",
   sessions: "Saved sessions (synthetic)",
+  "sessions-error": "Saved sessions error (synthetic; Refresh recovers)",
+  "sessions-empty": "No saved sessions (synthetic)",
   "change-review": "Captured review (synthetic)",
   error: "Runtime error",
   "no-folder": "No folder",
@@ -29,8 +43,9 @@ if (!app || !toolbar) throw new Error("Preview shell is missing its root element
 const appRoot = app;
 const toolbarRoot = toolbar;
 
-let bridge: PreviewBridge | undefined;
-let disposeApp: (() => void) | undefined;
+const language = createPreviewLanguage();
+let preview: ReturnType<typeof mountCandidatePreview> | undefined;
+let toolbarUnsubscribe: (() => void) | undefined;
 let pagehideHandler: (() => void) | undefined;
 
 function option<T extends string>(value: T, label: string): HTMLOptionElement {
@@ -59,22 +74,19 @@ function selectControl<T extends string>(values: readonly T[], labels: (value: T
 }
 
 function reset(nextScenario: PreviewScenario): void {
-  disposeApp?.();
-  bridge?.dispose();
+  preview?.dispose();
   appRoot.replaceChildren();
-  bridge = new PreviewBridge(nextScenario);
-  disposeApp = mountApp(appRoot, bridge);
+  preview = mountCandidatePreview(appRoot, nextScenario, language);
 }
 
 function cleanup(): void {
+  toolbarUnsubscribe?.(); toolbarUnsubscribe = undefined;
   if (pagehideHandler) {
     window.removeEventListener("pagehide", pagehideHandler);
     pagehideHandler = undefined;
   }
-  disposeApp?.();
-  disposeApp = undefined;
-  bridge?.dispose();
-  bridge = undefined;
+  preview?.dispose();
+  preview = undefined;
 }
 
 function renderToolbar(): void {
@@ -82,29 +94,31 @@ function renderToolbar(): void {
   const title = document.createElement("div");
   title.className = "preview-toolbar__title";
   const name = document.createElement("strong");
-  name.textContent = "Pi preview";
+  name.textContent = "Pi · UIP-04";
   const note = document.createElement("span");
-  const scenario = selectControl(PREVIEW_SCENARIOS, item => scenarioLabels[item], "ready");
-  const updateScenarioNote = () => {
-    note.textContent = scenario.value === "sessions"
-      ? "Synthetic host · session handoffs simulated"
-      : "Synthetic host";
-  };
-  updateScenarioNote();
+  const scenario = selectControl(PREVIEW_SCENARIOS, item => scenarioLabels[item], "empty");
+  scenario.setAttribute("aria-label", "Scenario");
+  const supported = new Set<PreviewScenario>(["attachment-unavailable", "attachment-layout", "attachment", "source-changed", "long-history", "attachment-failure", "attachment-capacity", "attachment-uncertain", "sessions", "sessions-empty", "sessions-error", "ready", "empty", "loading", "streaming", "formatted", "safe-output", "activity", "error", "no-folder", "untrusted", "unavailable-model", "blocked"]);
+  for (const option of scenario.options) if (!supported.has(option.value as PreviewScenario)) {
+    option.disabled = true;
+    option.textContent += " (later slice)";
+  }
+  note.textContent = "Synthetic host · candidate preview";
   title.append(name, note);
   scenario.addEventListener("change", () => {
-    updateScenarioNote();
     reset(scenario.value as PreviewScenario);
   });
 
   const themes = ["dark", "light", "high-contrast"] as const;
   const theme = selectControl(themes, item => item === "high-contrast" ? "High contrast" : item[0].toUpperCase() + item.slice(1), "dark");
+  theme.setAttribute("aria-label", "Theme");
   theme.addEventListener("change", () => {
     document.documentElement.dataset.theme = theme.value as PreviewTheme;
   });
 
-  const widths = ["280", "360", "600"] as const;
+  const widths = ["280", "320", "360", "400", "600"] as const;
   const width = selectControl(widths, item => `${item}px`, "360");
+  width.setAttribute("aria-label", "Sidebar width");
   width.addEventListener("change", () => {
     document.documentElement.style.setProperty("--preview-sidebar-width", `${width.value}px`);
   });
@@ -115,15 +129,44 @@ function renderToolbar(): void {
   resetButton.textContent = "Reset";
   resetButton.addEventListener("click", () => reset(scenario.value as PreviewScenario));
 
+  const recoverButton = document.createElement("button");
+  recoverButton.className = "preview-toolbar__reset";
+  recoverButton.type = "button";
+  recoverButton.textContent = "Simulate recovery";
+  recoverButton.addEventListener("click", () => preview?.recover());
+
+  const sourceButton = document.createElement("button");
+  sourceButton.className = "preview-toolbar__reset"; sourceButton.type = "button";
+  sourceButton.addEventListener("click", () => preview?.changeSources());
   const fields = document.createElement("div");
   fields.className = "preview-toolbar__fields";
+  const scenarioLabel = controlLabel("Scenario", scenario);
+  const themeLabel = controlLabel("Theme", theme);
+  const widthLabel = controlLabel("Sidebar", width);
   fields.append(
-    controlLabel("Scenario", scenario),
-    controlLabel("Theme", theme),
-    controlLabel("Sidebar", width),
+    scenarioLabel, themeLabel, widthLabel,
     resetButton,
+    recoverButton, sourceButton,
   );
   toolbarRoot.append(title, fields);
+  const localize = () => {
+    const { locale, text: t } = language.getSnapshot();
+    document.documentElement.lang = locale;
+    note.textContent = t("Synthetic host · candidate preview");
+    const labels: [HTMLSelectElement, HTMLLabelElement, UiText, UiText][] = [
+      [scenario, scenarioLabel, "Scenario", "Scenario"], [theme, themeLabel, "Theme", "Theme"], [width, widthLabel, "Sidebar", "Sidebar width"],
+    ];
+    for (const [control, label, caption, accessible] of labels) {
+      if (label.firstElementChild) label.firstElementChild.textContent = t(caption);
+      control.setAttribute("aria-label", t(accessible));
+    }
+    for (const option of scenario.options) option.textContent = t(scenarioLabels[option.value as PreviewScenario]) + (option.disabled ? t(" (later slice)") : "");
+    for (const option of theme.options) option.textContent = t(option.value === "high-contrast" ? "High contrast" : option.value === "light" ? "Light" : "Dark");
+    sourceButton.textContent = t("Simulate source edit");
+    resetButton.textContent = t("Reset"); recoverButton.textContent = t("Simulate recovery");
+  };
+  localize();
+  toolbarUnsubscribe?.(); toolbarUnsubscribe = language.subscribe(localize);
 }
 
 renderToolbar();
@@ -131,7 +174,7 @@ document.documentElement.dataset.theme = "dark";
 document.documentElement.style.setProperty("--preview-sidebar-width", "360px");
 pagehideHandler = () => cleanup();
 window.addEventListener("pagehide", pagehideHandler);
-reset("ready");
+reset("empty");
 
 const hot = (import.meta as ImportMeta & { hot?: HotModule }).hot;
 hot?.dispose(() => cleanup());

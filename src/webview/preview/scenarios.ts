@@ -9,12 +9,24 @@ import type {
 
 export const PREVIEW_SCENARIOS = [
   "ready",
+  "empty",
+  "loading",
   "streaming",
+  "formatted",
+  "safe-output",
+  "activity",
   "approval",
   "attachment",
+  "attachment-failure",
+  "attachment-capacity",
+  "attachment-uncertain",
+  "attachment-layout",
+  "attachment-unavailable",
   "source-changed",
   "long-history",
   "sessions",
+  "sessions-empty",
+  "sessions-error",
   "change-review",
   "error",
   "no-folder",
@@ -48,6 +60,34 @@ export const STREAM_CHUNKS = [
   "the next step is intentionally small. ",
   "I would keep the change focused and verify it before proceeding.",
 ];
+export const FORMATTED_STREAM_CHUNKS = [
+  '# Formatted reply\n\n- First step\n- Second step\n\n1. Inspect\n2. Verify\n\n```ts\nconst greeting = "<hello>',
+  '&";\n  console.log(greeting);',
+  '\n```\n\nRead [the guide](https://example.com/guide).',
+];
+export const ACTIVITY_STREAM_CHUNKS = [
+  '# Activity-first reply\n\nThe tool details remain available while this reply streams.',
+  '\n\nThis is a deterministic preview, not a model-generated activity summary.',
+  '\n\nThe bounded output below must not be mistaken for a complete successful result.',
+];
+export const ACTIVITY_THINKING = Array.from({ length: 60 }, (_, index) => `Observed reasoning line ${index + 1}: checking the preview fixture, not workspace files.`).join('\n');
+export const SAFETY_REPLY = [
+  '# Untrusted reply',
+  '<img src="https://example.com/tracker" onerror="alert(1)">',
+  '<script>alert(1)</script>',
+  '![remote image](https://example.com/image.png)',
+  '[script](javascript:alert%281%29)',
+  '[encoded](java&#x73;cript:alert%281%29)',
+  '[data](data:text/html,unsafe)',
+  '[command](command:workbench.action.files.openFile)',
+  '[file](file:///etc/passwd)',
+  '[relative](/local-path)',
+  '[credentials](https://user:pass@example.com/)',
+  '[safe guide](https://example.com/guide)',
+  '```text\n' + 'long preview token '.repeat(40) + '\n```',
+].join('\n\n');
+export const LAYOUT_PATH = "src/" + "long-directory/".repeat(35) + "example.ts";
+export const LITERAL_ATTACHMENT_TEXT = '<img src="https://example.com/attachment.png" onerror="throw 1">\n<script>throw 1</script>\n![embedded](https://example.com/image.png)';
 export const SELECTION_TEXT = "return `Hello, ${name}`;";
 export const SESSION_PAGE_SIZE = 16;
 export const SAVED_HISTORY_PAGE_SIZE = 32;
@@ -76,7 +116,7 @@ export const SYNTHETIC_SESSION_ENTRIES: SessionEntry[] = Array.from({ length: SY
     excerpt: "Synthetic browser preview catalogue entry; native session state is not used.",
     modified: `2026-09-${String(Math.min(30, index + 1)).padStart(2, "0")}T00:00:00.000Z`,
   };
-});
+}).sort((left, right) => right.modified.localeCompare(left.modified) || right.id.localeCompare(left.id));
 
 export function syntheticHistoryMessages(page: number): SavedHistoryStateMessage["messages"] {
   const end = SYNTHETIC_HISTORY_COUNT - page * SAVED_HISTORY_PAGE_SIZE;
@@ -84,9 +124,11 @@ export function syntheticHistoryMessages(page: number): SavedHistoryStateMessage
   return Array.from({ length: Math.max(0, end - start) }, (_, offset) => {
     const number = start + offset + 1;
     return {
-      id: `synthetic-history-${number}`,
+      ...(number === 63 ? {} : { id: `synthetic-history-${number}` }),
       role: number % 2 === 0 ? "assistant" as const : "user" as const,
-      text: `Synthetic restored history message ${String(number).padStart(2, "0")}. This bounded row is for browser preview only.`,
+      text: `Synthetic restored history message ${String(number).padStart(2, "0")}. This bounded row is for browser preview only.`
+        + (number === 64 ? "\n[Truncated for display. Open retained text for the available original.]" : "")
+        + (number === 63 ? '\n[Unsupported historical content; original attachment text is unavailable.] <img src="https://example.com/history.png">' : ""),
     };
   });
 }
@@ -138,12 +180,15 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
   const error = scenario === "error";
   const noFolder = scenario === "no-folder";
   const untrusted = scenario === "untrusted";
-  const initialMessages = noFolder || untrusted || blockedStatus
+  const initialMessages = (scenario === "empty" || scenario === "attachment-failure" || scenario === "attachment-capacity" || scenario === "attachment-uncertain" || scenario === "attachment-layout") || scenario === "loading" || noFolder || untrusted || blockedStatus
     ? []
     : [
       { role: "user" as const, id: "message-user-1", text: "Inspect the current workspace and outline the next safe step." },
-      { role: "assistant" as const, id: "message-assistant-1", text: "The workspace is ready. I can help inspect files, explain a change, or prepare a focused edit." },
+      { role: "assistant" as const, id: "message-assistant-1", text: scenario === "safe-output" ? SAFETY_REPLY : "The workspace is ready. I can help inspect files, explain a change, or prepare a focused edit." },
     ];
+  if (scenario === "activity") {
+    for (let index = 0; index < 6; index++) initialMessages.push({ role: "assistant", id: `prior-${index}`, text: `Earlier preview reply ${index + 1}\n\n${"Retained conversation context. ".repeat(12)}` });
+  }
   const streaming = scenario === "streaming";
   const approval = scenario === "approval";
   const status = blockedStatus ?? (noFolder ? "no-folder" : untrusted ? "untrusted" : "eligible");
@@ -157,9 +202,9 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
     status,
     folder: noFolder ? null : READY_FOLDER,
     choice: noFolder || untrusted || blockedStatus ? null : "allow",
-    busy: false,
+    busy: scenario === "loading",
     error: error ? "The preview runtime reported a recoverable failure." : null,
-    runtime,
+    runtime: scenario === "loading" ? "starting" : runtime,
     runtimeDetail: error ? "Synthetic runtime failure" : null,
     messages: initialMessages,
     chatBusy: streaming || approval,
@@ -236,8 +281,8 @@ export function baseSavedHistoryState(viewId: string, generation = 1): SavedHist
 }
 
 export function baseAttachmentState(scenario: PreviewScenario): AttachmentStateMessage {
-  const attached = scenario === "attachment" || scenario === "source-changed";
-  const attachment = attached ? draftAttachment(scenario === "source-changed" ? "changed" : "attached") : null;
+  const attached = scenario === "attachment" || scenario === "source-changed" || scenario === "attachment-unavailable";
+  const attachment = attached ? draftAttachment(scenario === "source-changed" ? "changed" : scenario === "attachment-unavailable" ? "unavailable" : "attached") : null;
   return {
     version: 2,
     type: "attachmentState",

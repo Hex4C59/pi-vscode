@@ -1,5 +1,4 @@
 import type { ReactElement } from "react";
-import { CHANGE_REVIEW_PAGE_SIZE } from "../client-state.js";
 import type { ChangeReviewEntry, ReviewReason } from "../../extension/contracts/index.js";
 import type { ChangeReviewProps } from "./types.js";
 export type { ChangeReviewProps } from "./types.js";
@@ -60,12 +59,12 @@ function ReviewEntry({ entry, onDiff, onSource }: Pick<ChangeReviewProps, "onDif
   );
 }
 
-export function ChangeReview({ state, open, page, onToggle, onPage, onDiff, onSource }: ChangeReviewProps): ReactElement {
+export function ChangeReview({ pageSize, state, open, page, onToggle, onPage, onDiff, onSource }: ChangeReviewProps): ReactElement {
   const entries = state?.entries ?? [];
-  const lastPage = Math.max(0, Math.ceil(entries.length / CHANGE_REVIEW_PAGE_SIZE) - 1);
+  const lastPage = Math.max(0, Math.ceil(entries.length / pageSize) - 1);
   const currentPage = Math.min(Math.max(0, page), lastPage);
-  const offset = currentPage * CHANGE_REVIEW_PAGE_SIZE;
-  const visibleEntries = entries.slice(offset, offset + CHANGE_REVIEW_PAGE_SIZE);
+  const offset = currentPage * pageSize;
+  const visibleEntries = entries.slice(offset, offset + pageSize);
   const pageStatus = state === null
     ? "Review data will load when this panel is opened."
     : entries.length === 0

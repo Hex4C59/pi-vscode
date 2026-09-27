@@ -1,6 +1,5 @@
 import { useState, type ReactElement } from "react";
 import type { SessionError, SessionStateMessage } from "../../extension/contracts/index.js";
-import { SESSION_PAGE_SIZE } from "../client-state.js";
 import type { SessionsProps } from "./types.js";
 export type { SessionsProps } from "./types.js";
 
@@ -24,11 +23,11 @@ function phaseNotice(state: SessionStateMessage | null): string | null {
   return null;
 }
 
-export function Sessions({ state, onOpen, onRefresh, onPage, onNew, onResume }: SessionsProps): ReactElement {
+export function Sessions({ pageSize, state, onOpen, onRefresh, onPage, onNew, onResume }: SessionsProps): ReactElement {
   const [open, setOpen] = useState(false);
   const busy = isBusy(state);
   const currentName = state?.current?.name?.trim() || "New conversation";
-  const lastPage = Math.max(0, Math.ceil((state?.total ?? 0) / SESSION_PAGE_SIZE) - 1);
+  const lastPage = Math.max(0, Math.ceil((state?.total ?? 0) / pageSize) - 1);
   const loading = state === null || state.phase === "listing" || (!state.loaded && state.error === null);
   const pageReady = !!state && state.loaded;
   const showEntries = pageReady && state.entries.length > 0;

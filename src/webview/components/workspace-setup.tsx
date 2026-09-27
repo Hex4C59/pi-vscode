@@ -1,3 +1,4 @@
+import { useUiText, type UiText } from "./ui-text.js";
 import type { ReactElement } from "react";
 import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
 import type { WorkspaceSetupProps } from "./types.js";
@@ -5,7 +6,7 @@ export type { WorkspaceSetupAction, WorkspaceSetupProps } from "./types.js";
 
 
 
-const blockedCopy: Partial<Record<WorkspaceStateMessage["status"], readonly [string, string]>> = {
+const blockedCopy: Partial<Record<WorkspaceStateMessage["status"], readonly [UiText, UiText]>> = {
   "multi-root": ["Single folder only", "Multiple workspace folders are not supported. Open a single local folder."],
   remote: ["Remote not supported", "Remote extension hosts are not supported, including remote file workspaces."],
   "non-file": ["Local folder required", "Non-file workspaces are not supported. Open a local folder."],
@@ -16,15 +17,16 @@ function actionDisabled(state: WorkspaceStateMessage): boolean {
 }
 
 export function WorkspaceSetup({ state, onAction }: WorkspaceSetupProps): ReactElement | null {
+  const { text: t } = useUiText();
   const disabled = actionDisabled(state);
 
   if (state.status === "no-folder") {
     return (
       <section id="setup-no-folder" className="card">
-        <h2>No workspace folder</h2>
-        <p>Open a local folder to start a pi session.</p>
+        <h2>{t("No workspace folder")}</h2>
+        <p>{t("Open a local folder to start a pi session.")}</p>
         <button id="open-folder" className="btn-primary" type="button" disabled={disabled} onClick={() => onAction({ type: "openFolder" })}>
-          Open folder
+          {t("Open folder")}
         </button>
       </section>
     );
@@ -34,8 +36,8 @@ export function WorkspaceSetup({ state, onAction }: WorkspaceSetupProps): ReactE
   if (blocked) {
     return (
       <section id="setup-blocked" className="card">
-        <h2 id="blocked-title">{blocked[0]}</h2>
-        <p id="blocked-detail">{blocked[1]}</p>
+        <h2 id="blocked-title">{t(blocked[0])}</h2>
+        <p id="blocked-detail">{t(blocked[1])}</p>
       </section>
     );
   }
@@ -43,10 +45,10 @@ export function WorkspaceSetup({ state, onAction }: WorkspaceSetupProps): ReactE
   if (state.status === "untrusted") {
     return (
       <section id="setup-trust" className="card">
-        <h2>Workspace not trusted</h2>
-        <p>Grant workspace trust in VS Code before choosing pi resources.</p>
+        <h2>{t("Workspace not trusted")}</h2>
+        <p>{t("Grant workspace trust in VS Code before choosing pi resources.")}</p>
         <button id="manage-trust" className="btn-primary" type="button" disabled={disabled} onClick={() => onAction({ type: "manageTrust" })}>
-          Manage workspace trust
+          {t("Manage workspace trust")}
         </button>
       </section>
     );
@@ -63,10 +65,10 @@ export function WorkspaceSetup({ state, onAction }: WorkspaceSetupProps): ReactE
 
   return (
     <section id="setup-resources" className="card">
-      <h2 id="folder-name-heading">{folderName ? `Project resources — ${folderName}` : "Project resources"}</h2>
+      <h2 id="folder-name-heading">{folderName ? t("Project resources — {folder}", { folder: folderName }) : t("Project resources")}</h2>
       <p id="folder-path" className="muted" style={{ overflowWrap: "anywhere" }}>{state.folder?.path ?? ""}</p>
       <p>
-        Choose project resource consent. Controlled execution loads only the bundled approval extension; third-party extensions are disabled regardless of this choice. This is not a sandbox or tool authorization.
+        {t("Choose project resource consent. Controlled execution loads only the bundled approval extension; third-party extensions are disabled regardless of this choice. This is not a sandbox or tool authorization.")}
       </p>
       <div>
         <button
@@ -77,7 +79,7 @@ export function WorkspaceSetup({ state, onAction }: WorkspaceSetupProps): ReactE
           disabled={disabled}
           onClick={() => onAction({ type: "chooseResources", choice: "allow" })}
         >
-          Allow resources
+          {t("Allow resources")}
         </button>
         <button
           id="decline"
@@ -87,10 +89,10 @@ export function WorkspaceSetup({ state, onAction }: WorkspaceSetupProps): ReactE
           disabled={disabled}
           onClick={() => onAction({ type: "chooseResources", choice: "decline" })}
         >
-          Continue without
+          {t("Continue without")}
         </button>
       </div>
-      <p id="choice-status" className="muted" role="status" style={{ marginTop: 8 }}>{choiceStatus}</p>
+      <p id="choice-status" className="muted" role="status" style={{ marginTop: 8 }}>{t(choiceStatus)}</p>
     </section>
   );
 }

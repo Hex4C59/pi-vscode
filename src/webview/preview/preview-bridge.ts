@@ -1,3 +1,4 @@
+import type { HandoffOutcome } from "./handoff-confirmation.js";
 import type { WebviewBridge } from "../index.js";
 import type {
   AttachmentHistoryEntry,
@@ -18,7 +19,10 @@ import {
   READY_FOLDER,
   PREVIEW_TEXT,
   STREAM_CHUNKS,
-  SELECTION_TEXT,
+  FORMATTED_STREAM_CHUNKS,
+  ACTIVITY_STREAM_CHUNKS,
+  ACTIVITY_THINKING,
+  SELECTION_TEXT, LAYOUT_PATH, LITERAL_ATTACHMENT_TEXT,
   SESSION_PAGE_SIZE,
   SAVED_HISTORY_PAGE_SIZE,
   SAVED_HISTORY_PREVIEW_CHUNK_SIZE,
@@ -48,6 +52,7 @@ export class PreviewBridge implements WebviewBridge {
   readonly viewId: string;
   private readonly listeners = new Set<(message: unknown) => void>();
   private readonly timers = new Set<Timer>();
+  private readonly sessionTimers = new Set<Timer>();
   private readonly streamTimers = new Set<Timer>();
   private readonly previews = new Map<string, string>([
     ["snapshot-preview-1", PREVIEW_TEXT],
@@ -61,30 +66,32 @@ export class PreviewBridge implements WebviewBridge {
   private session: SessionStateMessage;
   private savedHistory: SavedHistoryStateMessage;
   private sessionOperationToken = 0;
+  private historyOperationToken = 0;
+  private catalogueFailed = false;
   private disposed = false;
   private streamText = "";
   private streamIndex = 0;
   private streamToken = 0;
+  private afterStop: (() => void) | undefined;
   private preparationToken = 0;
   private snapshotSequence = 1;
+  private submittedMessages = 0;
 
-  constructor(readonly scenario: PreviewScenario) {
+  constructor(readonly scenario: PreviewScenario, private readonly confirmHandoff?: (restoring: boolean) => Promise<HandoffOutcome>) {
     bridgeNumber += 1;
     this.viewId = `preview-view-${bridgeNumber}`;
     this.workspace = { ...baseWorkspace(scenario), viewId: this.viewId };
     this.attachment = { ...baseAttachmentState(scenario), viewId: this.viewId };
     this.session = baseSessionState(scenario, this.viewId);
     this.savedHistory = baseSavedHistoryState(this.viewId);
-    this.history = scenario === "attachment" || scenario === "source-changed"
+    this.history = scenario === "attachment" || scenario === "source-changed" || scenario === "attachment-unavailable"
       ? [
         historyEntry("submission-preview-1", "snapshot-history-1", "src/preview/earlier.ts"),
         historyEntry("submission-preview-2", "snapshot-history-2", "src/preview/checked.ts"),
       ] : [];
-    if (scenario === "sessions") {
-      for (let index = 1; index <= SYNTHETIC_HISTORY_COUNT; index++) {
-        const text = syntheticHistoryText(`synthetic-history-${index}`);
-        if (text !== undefined) this.savedHistoryPreviews.set(`synthetic-history-${index}`, text);
-      }
+    for (const entry of this.history) {
+      const text = this.previews.get(entry.snapshotId);
+      if (text !== undefined) entry.utf8Bytes = new TextEncoder().encode(text).byteLength;
     }
     if (scenario === "long-history") {
       for (let index = 0; index < 128; index++) {
@@ -103,7 +110,8 @@ export class PreviewBridge implements WebviewBridge {
         draft: { ...this.attachment.draft, text: "Keep this current draft while browsing retained history." } };
       this.workspace = { ...this.workspace, messages: Array.from({ length: 32 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, text: "Synthetic recent message " + (index + 33) })) };
     }
-    if (scenario === "streaming") this.startStream();
+    if (scenario === "streaming" || scenario === "formatted" || scenario === "activity") this.startStream();
+    if (scenario === "loading") this.schedule(() => this.recover(), 900);
   }
 
   postMessage(message: WebviewMessage): void {
@@ -210,10 +218,41 @@ export class PreviewBridge implements WebviewBridge {
     return () => this.listeners.delete(listener);
   }
 
+  /** A synthetic editor edit: no native document, filesystem or automatic save. */
+  changeSources(): void {
+    if (this.disposed || !this.attachment.draft.attachments.length) return;
+    const interrupted = this.attachment.preparation !== "idle";
+    if (interrupted) this.preparationToken++;
+    this.attachment = { ...this.attachment, preparation: "idle", result: { code: "source-changed" }, draft: { ...this.attachment.draft, revision: this.attachment.draft.revision + (interrupted ? 1 : 0), attachments: this.attachment.draft.attachments.map(a => a.kind === "selection" ? { ...a, state: "changed", stale: true } : { ...a, state: "changed" }) } };
+    this.emitAttachment();
+  }
+
+  /** Developer-only recovery fixture, not a Webview or native-host capability. */
+  recover(): void {
+    if (this.disposed) return;
+    // Recovery abandons a handoff, not read-only requests for the unchanged identity.
+    if (this.session.phase === "confirming" || this.session.phase === "switching") {
+      this.sessionOperationToken++;
+      this.session = { ...this.session, phase: "idle", error: "cancelled" };
+      this.emitSession();
+    }
+    this.afterStop = undefined;
+    this.clearTimers(this.timers);
+    this.clearTimers(this.streamTimers);
+    this.streamToken++;
+    this.preparationToken++;
+    this.workspace = { ...baseWorkspace("empty"), viewId: this.viewId, generation: this.workspace.generation, messages: this.workspace.messages };
+    this.attachment = { ...this.attachment, preparation: "idle", result: null };
+    this.emitWorkspace();
+    this.emitAttachment();
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.afterStop = undefined;
     this.clearTimers(this.timers);
+    this.clearTimers(this.sessionTimers);
     this.clearTimers(this.streamTimers);
     this.listeners.clear();
   }
@@ -273,8 +312,8 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private getSavedSessions(message: Extract<WebviewMessage, { type: "getSavedSessions" | "getSavedHistory" }>): void {
-    if (this.scenario !== "sessions") return;
-    const lastPage = Math.max(0, Math.ceil(SYNTHETIC_SESSION_ENTRIES.length / SESSION_PAGE_SIZE) - 1);
+    const entries = this.scenario === "sessions-empty" ? [] : SYNTHETIC_SESSION_ENTRIES;
+    const lastPage = Math.max(0, Math.ceil(entries.length / SESSION_PAGE_SIZE) - 1);
     if (!Number.isSafeInteger(message.page) || message.page < 0 || message.page > lastPage) return;
     const token = ++this.sessionOperationToken;
     const generation = this.workspace.generation;
@@ -282,38 +321,73 @@ export class PreviewBridge implements WebviewBridge {
     this.emitSession();
     this.schedule(() => {
       if (token !== this.sessionOperationToken || generation !== this.workspace.generation) return;
+      if (this.scenario === "sessions-error" && !this.catalogueFailed) {
+        this.catalogueFailed = true;
+        this.session = { ...this.session, phase: "error", error: "unavailable" };
+        this.emitSession();
+        return;
+      }
       const start = message.page * SESSION_PAGE_SIZE;
       this.session = {
         ...this.session,
         phase: "idle",
         loaded: true,
-        entries: SYNTHETIC_SESSION_ENTRIES.slice(start, start + SESSION_PAGE_SIZE),
+        entries: entries.slice(start, start + SESSION_PAGE_SIZE),
         page: message.page,
-        total: SYNTHETIC_SESSION_ENTRIES.length,
+        total: entries.length,
         error: null,
       };
       this.emitSession();
-    }, SESSION_LIST_DELAY);
+    }, SESSION_LIST_DELAY, this.sessionTimers);
   }
 
   private beginSessionSwitch(id?: string): void {
-    if (this.scenario !== "sessions" || this.session.phase === "confirming" || this.session.phase === "switching") return;
+    if (this.session.phase === "confirming" || this.session.phase === "switching") return;
     const target = id === undefined ? null : SYNTHETIC_SESSION_ENTRIES.find(entry => entry.id === id);
     if (id !== undefined && !target) {
       this.session = { ...this.session, phase: "error", error: "stale" };
       this.emitSession();
       return;
     }
+    let revision = this.attachment.draft.revision;
     const token = ++this.sessionOperationToken;
     this.session = { ...this.session, phase: "confirming", error: null };
     this.emitSession();
-    this.schedule(() => {
-      if (token !== this.sessionOperationToken || this.session.phase !== "confirming") return;
+    const generation = this.workspace.generation;
+    const current = () => !this.disposed && token === this.sessionOperationToken && generation === this.workspace.generation;
+    const finish = () => {
+      if (!current()) return;
+      if (revision !== this.attachment.draft.revision) {
+        this.session = { ...this.session, phase: "idle", error: "cancelled" }; this.emitSession();
+        if (!this.workspace.chatBusy && this.workspace.execution !== "stopping") this.applyPendingSettings();
+        return;
+      }
       this.commitSessionSwitch(target ?? null);
-    }, SESSION_HANDOFF_DELAY);
+    };
+    const commit = () => {
+      if (revision !== this.attachment.draft.revision) { finish(); return; }
+      if (this.confirmHandoff && (this.workspace.chatBusy || this.workspace.execution === "stopping" || this.attachment.preparation !== "idle")) {
+        this.session = { ...this.session, phase: "switching" }; this.emitSession();
+        // Adopt only Stop's own preparation-cancellation bump, never a later user edit.
+        if (this.attachment.preparation !== "idle") revision += 1;
+        this.stopChat(finish);
+      } else this.schedule(() => {
+        if (current() && this.session.phase === "confirming") finish();
+      }, SESSION_HANDOFF_DELAY, this.sessionTimers);
+    };
+    if (!this.confirmHandoff) commit();
+    else void this.confirmHandoff(id !== undefined).then(result => {
+      if (!current()) return;
+      if (result === "confirm") commit();
+      else { this.session = { ...this.session, phase: result === "cancel" ? "idle" : "error", error: result === "cancel" ? null : result }; this.emitSession(); }
+    }).catch(() => {
+      if (!current()) return;
+      this.session = { ...this.session, phase: "error", error: "unavailable" }; this.emitSession();
+    });
   }
 
   private commitSessionSwitch(target: SessionEntry | null): void {
+    this.clearTimers(this.sessionTimers);
     this.clearTimers(this.timers);
     this.clearTimers(this.streamTimers);
     this.streamToken += 1;
@@ -354,6 +428,13 @@ export class PreviewBridge implements WebviewBridge {
       retainedBytes: 0,
       lastSubmission: null,
     };
+    this.savedHistoryPreviews.clear();
+    if (target) {
+      for (let index = 1; index <= SYNTHETIC_HISTORY_COUNT; index++) {
+        const text = syntheticHistoryText(`synthetic-history-${index}`);
+        if (text !== undefined) this.savedHistoryPreviews.set(`synthetic-history-${index}`, text);
+      }
+    }
     this.savedHistory = target
       ? { ...baseSavedHistoryState(this.viewId, generation), available: true, messages: syntheticHistoryMessages(0), page: 0, total: SYNTHETIC_HISTORY_COUNT }
       : baseSavedHistoryState(this.viewId, generation);
@@ -365,22 +446,22 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private getSavedHistory(message: Extract<WebviewMessage, { type: "getSavedSessions" | "getSavedHistory" }>): void {
-    if (this.scenario !== "sessions" || !this.savedHistory.available) return;
+    if (!this.savedHistory.available) return;
     const lastPage = Math.max(0, Math.ceil(SYNTHETIC_HISTORY_COUNT / SAVED_HISTORY_PAGE_SIZE) - 1);
     if (!Number.isSafeInteger(message.page) || message.page < 0 || message.page > lastPage) return;
-    const token = ++this.sessionOperationToken;
+    const token = ++this.historyOperationToken;
     const generation = this.workspace.generation;
     this.savedHistory = { ...this.savedHistory, phase: "loading", page: message.page, error: null };
     this.emitSavedHistory();
     this.schedule(() => {
-      if (token !== this.sessionOperationToken || generation !== this.workspace.generation || !this.savedHistory.available) return;
+      if (token !== this.historyOperationToken || generation !== this.workspace.generation || !this.savedHistory.available) return;
       this.savedHistory = { ...this.savedHistory, phase: "idle", messages: syntheticHistoryMessages(message.page), page: message.page, total: SYNTHETIC_HISTORY_COUNT, error: null };
       this.emitSavedHistory();
-    }, SAVED_HISTORY_DELAY);
+    }, SAVED_HISTORY_DELAY, this.sessionTimers);
   }
 
   private sendSavedHistoryPreview(message: Extract<WebviewMessage, { type: "getSavedHistoryPreview" }>): void {
-    if (this.scenario !== "sessions" || !this.savedHistory.available || this.savedHistory.phase !== "idle"
+    if (!this.savedHistory.available || this.savedHistory.phase !== "idle"
       || !this.savedHistory.messages.some(line => line.id === message.id)) return;
     const text = this.savedHistoryPreviews.get(message.id);
     if (text === undefined || message.offset > text.length) {
@@ -401,7 +482,7 @@ export class PreviewBridge implements WebviewBridge {
       done: nextOffset === text.length,
       totalChars: text.length,
     };
-    this.schedule(() => this.emit(chunk), SAVED_HISTORY_DELAY);
+    this.schedule(() => this.emit(chunk), SAVED_HISTORY_DELAY, this.sessionTimers);
   }
 
   private openFolder(): void {
@@ -479,7 +560,7 @@ export class PreviewBridge implements WebviewBridge {
       const candidates = attachments.map(attachment => {
         if (attachment.state !== "changed") return attachment;
         if (attachment.kind === "selection") return { ...attachment, state: "confirmation-required" as const };
-        const text = PREVIEW_TEXT + "\n// Updated synthetic source.";
+        const text = (this.previews.get(attachment.snapshotId) ?? PREVIEW_TEXT) + "\n// Updated synthetic source.";
         const snapshotId = "snapshot-preview-" + (++this.snapshotSequence);
         this.previews.set(snapshotId, text);
         return { ...attachment, state: "confirmation-required" as const, snapshotId, utf8Bytes: new TextEncoder().encode(text).byteLength };
@@ -488,20 +569,23 @@ export class PreviewBridge implements WebviewBridge {
       this.emitAttachment(); return;
     }
     if (attachments.some(a => a.state === "confirmation-required" || a.state === "unavailable")) return;
-    if (this.scenario === "approval") {
-      this.startApproval();
-      return;
-    }
     if (this.history.length + attachments.length > 128) {
       this.attachment = { ...this.attachment, result: { code: "history-full" } };
       this.emitAttachment(); return;
     }
+    if (this.scenario === "attachment-uncertain") {
+      this.admitSubmission("write-failed");
+      this.workspace = { ...this.workspace, modelBusy: true, chatError: "Delivery uncertain. No retry was made. Reset the preview before retrying." };
+      this.emitWorkspace(); return;
+    }
     this.admitSubmission();
+    if (this.scenario === "approval") { this.startApproval(); return; }
     this.startStream();
   }
 
-  private admitSubmission(): void {
+  private admitSubmission(delivery = "rpc-accepted"): void {
     const draft = this.attachment.draft;
+    this.workspace = { ...this.workspace, messages: [...this.workspace.messages, { role: "user" as const, id: `message-user-preview-${++this.submittedMessages}`, text: draft.text }].slice(-32) };
     const submissionId = `submission-preview-${this.history.length + 3}`;
     for (const attached of draft.attachments) {
       this.history.push({
@@ -511,8 +595,8 @@ export class PreviewBridge implements WebviewBridge {
         ...(attached.kind === "selection" ? { kind: "selection", originalRange: attached.originalRange, stale: attached.stale } as const : { kind: "file" } as const),
         utf8Bytes: attached.utf8Bytes,
         unsaved: attached.unsaved,
-        delivery: "rpc-accepted",
-        outcome: "pending",
+        delivery,
+        outcome: delivery === "write-failed" ? "uncertain" : "pending",
       });
     }
     this.attachment = {
@@ -523,10 +607,10 @@ export class PreviewBridge implements WebviewBridge {
       lastSubmission: {
         submissionId,
         draftRevision: draft.revision,
-        delivery: "rpc-accepted",
-        outcome: "pending",
+        delivery,
+        outcome: delivery === "write-failed" ? "uncertain" : "pending",
       },
-      result: null,
+      result: delivery === "write-failed" ? { code: "write-failed" } : null,
     };
     this.emitAttachment();
   }
@@ -536,8 +620,8 @@ export class PreviewBridge implements WebviewBridge {
     const streamToken = ++this.streamToken;
     this.streamText = "";
     this.streamIndex = 0;
-    const messages = this.workspace.messages.filter(message => message.id !== "message-assistant-stream");
-    messages.push({ role: "assistant", id: "message-assistant-stream", text: "" });
+    const messages = [...this.workspace.messages];
+    if (this.scenario !== "activity") messages.push({ role: "assistant", id: `message-assistant-stream-${this.streamToken}`, text: "" });
     this.workspace = {
       ...this.workspace,
       messages: messages.slice(-32),
@@ -545,11 +629,11 @@ export class PreviewBridge implements WebviewBridge {
       chatError: null,
       execution: "thinking",
       approvals: [],
-      activities: [{
-        id: "activity-thinking-1",
+      activities: [...this.workspace.activities.filter(item => messages.slice(-32).some(message => message.id === item.messageId)), {
+        id: `activity-thinking-${streamToken}`,
         kind: "thinking",
-        messageId: "message-assistant-stream",
-        text: "Reviewing the request...",
+        messageId: `message-assistant-stream-${this.streamToken}`,
+        text: this.scenario === "activity" ? ACTIVITY_THINKING : "Reviewing the request...",
         status: "thinking",
         truncated: false,
       }],
@@ -562,39 +646,53 @@ export class PreviewBridge implements WebviewBridge {
 
   private streamNext(streamToken: number): void {
     if (!this.workspace.chatBusy || streamToken !== this.streamToken) return;
-    if (this.streamIndex >= STREAM_CHUNKS.length) {
+    const chunks = this.scenario === "formatted" ? FORMATTED_STREAM_CHUNKS : this.scenario === "activity" ? ACTIVITY_STREAM_CHUNKS : STREAM_CHUNKS;
+    if (this.streamIndex >= chunks.length) {
       this.finishStream();
       return;
     }
-    this.streamText += STREAM_CHUNKS[this.streamIndex];
+    this.streamText += chunks[this.streamIndex];
     this.streamIndex += 1;
-    const messages = this.workspace.messages.map(message => message.id === "message-assistant-stream"
+    const messages = this.workspace.messages.map(message => message.id === `message-assistant-stream-${this.streamToken}`
       ? { ...message, text: this.streamText }
       : message);
+    if (!messages.some(message => message.id === `message-assistant-stream-${this.streamToken}`)) messages.push({ role: "assistant", id: `message-assistant-stream-${this.streamToken}`, text: this.streamText });
+    const boundedMessages = messages.slice(-32);
+    const currentActivities = this.workspace.activities.filter(item => item.messageId === `message-assistant-stream-${streamToken}`);
+    const previousActivities = this.workspace.activities.filter(item => item.messageId !== `message-assistant-stream-${streamToken}` && boundedMessages.some(message => message.id === item.messageId));
     const activities = this.streamIndex > 1 ? [
-      { ...this.workspace.activities[0], status: "complete" as const },
+      ...currentActivities.filter(item => item.kind === "thinking").map(item => ({ ...item, status: "complete" as const })),
       {
-        id: "activity-tool-1",
+        id: `activity-tool-${streamToken}`,
         kind: "tool" as const,
-        messageId: "message-assistant-stream",
+        messageId: `message-assistant-stream-${this.streamToken}`,
         toolCallId: "tool-call-stream-1",
         tool: "read",
-        text: this.streamIndex >= STREAM_CHUNKS.length ? "Read the preview fixture." : "Reading the preview fixture...",
+        text: this.streamIndex >= chunks.length ? this.scenario === "activity" ? "Preview tool failed. <script>inert output</script>" : "Read the preview fixture." : "Reading the preview fixture...",
         input: '{"path":"src/preview/example.ts"}',
-        status: this.streamIndex >= STREAM_CHUNKS.length ? "complete" as const : "executing" as const,
-        truncated: false,
+        status: this.streamIndex >= chunks.length ? this.scenario === "activity" ? "failed" as const : "complete" as const : "executing" as const,
+        truncated: this.scenario === "activity" && this.streamIndex >= chunks.length,
       },
-    ] : this.workspace.activities;
-    this.workspace = { ...this.workspace, messages, activities, execution: this.streamIndex >= STREAM_CHUNKS.length ? "replying" : "thinking" };
+    ] : currentActivities;
+    this.workspace = { ...this.workspace, messages: boundedMessages, activities: [...previousActivities, ...activities], execution: this.streamIndex >= chunks.length ? "replying" : "thinking" };
     this.emitWorkspace();
     this.schedule(() => {
       if (streamToken === this.streamToken) this.streamNext(streamToken);
     }, 420, this.streamTimers);
   }
 
+  private settleSubmission(outcome: "settled" | "interrupted"): void {
+    const submission = this.attachment.lastSubmission;
+    if (!submission || submission.outcome !== "pending") return;
+    for (const entry of this.history) if (entry.submissionId === submission.submissionId) entry.outcome = outcome;
+    this.attachment = { ...this.attachment, lastSubmission: { ...submission, outcome } };
+    this.emitAttachment();
+  }
+
   private finishStream(): void {
+    this.settleSubmission(this.scenario === "activity" ? "interrupted" : "settled");
     this.clearTimers(this.streamTimers);
-    this.workspace = { ...this.workspace, chatBusy: false, execution: "idle" };
+    this.workspace = { ...this.workspace, chatBusy: false, execution: this.scenario === "activity" ? "failed" : "idle", chatError: this.scenario === "activity" ? "Preview tool failed. Output was truncated; this is not a complete result." : null };
     this.emitWorkspace();
     if (this.workspace.pendingModel || this.workspace.pendingThinkingLevel) this.applyPendingSettings();
   }
@@ -602,6 +700,7 @@ export class PreviewBridge implements WebviewBridge {
   private startApproval(): void {
     this.workspace = {
       ...this.workspace,
+      chatError: null,
       chatBusy: true,
       execution: "awaiting-approval",
       approvals: [{
@@ -638,6 +737,8 @@ export class PreviewBridge implements WebviewBridge {
         chatError: "The requested action was declined.",
       };
       this.emitWorkspace();
+      // This deterministic fixture ends its task on Deny; real pi may continue after a refusal.
+      this.settleSubmission("interrupted");
       return;
     }
     const grants = message.decision === "session"
@@ -651,20 +752,33 @@ export class PreviewBridge implements WebviewBridge {
     }, 360);
   }
 
-  private stopChat(): void {
+  private stopChat(afterSettlement?: () => void): void {
+    if (this.workspace.execution === "stopping") {
+      if (afterSettlement) this.afterStop = afterSettlement;
+      return;
+    }
+    this.afterStop = afterSettlement;
     if (!this.workspace.chatBusy && this.attachment.preparation === "idle") return;
     this.clearTimers(this.timers);
     this.clearTimers(this.streamTimers);
     this.streamToken += 1;
     this.preparationToken += 1;
+    // Preserve a reply that stopped before its first text delta; activity still belongs to that message.
+    const messages = [...this.workspace.messages];
+    for (const { messageId } of this.workspace.activities) {
+      if (!messages.some(message => message.id === messageId)) messages.push({ id: messageId, role: "assistant", text: "" });
+    }
+    const retainedMessages = messages.slice(-32);
     this.workspace = {
       ...this.workspace,
+      messages: retainedMessages,
+      activities: this.workspace.activities.filter(item => retainedMessages.some(message => message.id === item.messageId)),
       chatBusy: false,
       execution: "stopping",
       approvals: [],
       chatError: null,
     };
-    this.attachment = { ...this.attachment, draft: { ...this.attachment.draft, revision: this.attachment.draft.revision + (this.attachment.preparation === "idle" ? 0 : 1) }, preparation: "idle" };
+    this.attachment = { ...this.attachment, result: this.attachment.preparation === "idle" ? this.attachment.result : { code: "preparation-cancelled" }, draft: { ...this.attachment.draft, revision: this.attachment.draft.revision + (this.attachment.preparation === "idle" ? 0 : 1) }, preparation: "idle" };
     this.emitWorkspace();
     this.emitAttachment();
     this.schedule(() => {
@@ -672,8 +786,13 @@ export class PreviewBridge implements WebviewBridge {
         ...this.workspace,
         execution: "failed",
         chatError: "Task stopped. Completed side effects remain unchanged.",
+        activities: this.workspace.activities.map(item => item.status === "thinking" || item.status === "preparing" || item.status === "executing" ? { ...item, status: "interrupted" } : item),
       };
       this.emitWorkspace();
+      this.settleSubmission("interrupted");
+      const settled = this.afterStop; this.afterStop = undefined;
+      if (settled) settled();
+      else this.applyPendingSettings();
     }, 420);
   }
 
@@ -734,12 +853,14 @@ export class PreviewBridge implements WebviewBridge {
     this.emitAttachment();
     this.schedule(() => {
       if (preparationToken !== this.preparationToken) return;
+      if (this.scenario === "attachment-capacity") { this.attachment = { ...this.attachment, preparation: "idle", result: { code: "total-too-large" } }; this.emitAttachment(); return; }
+      if (this.scenario === "attachment-failure") { this.attachment = { ...this.attachment, preparation: "idle", result: { code: "unavailable" } }; this.emitAttachment(); return; }
       const sequence = ++this.snapshotSequence;
       const snapshotId = `snapshot-preview-${sequence}`;
-      const text = kind === "selection" ? SELECTION_TEXT : PREVIEW_TEXT;
+      const text = kind === "selection" ? SELECTION_TEXT : this.scenario === "attachment-layout" ? LITERAL_ATTACHMENT_TEXT : PREVIEW_TEXT;
       this.previews.set(snapshotId, text);
       const details = kind === "selection" ? { kind, originalRange: { start: { line: 2, character: 2 }, end: { line: 2, character: 2 + SELECTION_TEXT.length } }, stale: this.scenario === "source-changed" } : { kind };
-      const attachment: DraftAttachment = { ...draftAttachment(this.scenario === "source-changed" ? "changed" : "attached"), ...details, attachmentId: `attachment-preview-${sequence}`, snapshotId, utf8Bytes: new TextEncoder().encode(text).byteLength };
+      const attachment: DraftAttachment = { ...draftAttachment(this.scenario === "source-changed" ? "changed" : "attached"), ...details, ...(this.scenario === "attachment-layout" ? { relativePath: LAYOUT_PATH } : {}), attachmentId: `attachment-preview-${sequence}`, snapshotId, utf8Bytes: new TextEncoder().encode(text).byteLength };
       this.attachment = {
         ...this.attachment,
         preparation: "idle",

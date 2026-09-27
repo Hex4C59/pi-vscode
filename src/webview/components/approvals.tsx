@@ -1,22 +1,24 @@
+import { useUiText, type UiText, type UiTranslator } from "./ui-text.js";
 import { useEffect, useState, type ReactElement } from "react";
 import type { ApprovalDecision, ApprovalCard, SessionGrant } from "../../extension/contracts/index.js";
 import type { ApprovalsProps } from "./types.js";
 export type { ApprovalsProps } from "./types.js";
 
 
-const decisions: readonly [ApprovalDecision, string][] = [
+const decisions: readonly [ApprovalDecision, UiText][] = [
   ["once", "Allow once"],
   ["session", "Allow this session"],
   ["deny", "Deny"],
 ];
 
-function scopeText(card: ApprovalCard): string {
+function scopeText(card: ApprovalCard, t: UiTranslator): string {
   return card.scope === null
-    ? "Session authorization unavailable: no reliably matchable scope. Review full input before allowing once."
-    : `Exact session scope (no directory or command-prefix grant): ${card.scope}`;
+    ? t("Session authorization unavailable: no reliably matchable scope. Review full input before allowing once.")
+    : t("Exact session scope (no directory or command-prefix grant): {scope}", { scope: card.scope });
 }
 
 export function Approvals({ cards, grants, disabled, onDecision, onRevoke }: ApprovalsProps): ReactElement {
+  const { text: t } = useUiText();
   const [decided, setDecided] = useState<ReadonlySet<string>>(() => new Set());
   const [clock, setClock] = useState(() => Date.now());
 
@@ -40,17 +42,17 @@ export function Approvals({ cards, grants, disabled, onDecision, onRevoke }: App
 
   return (
     <>
-      <div id="approvals" aria-label="Tool approvals">
+      <div id="approvals" aria-label={t("Tool approvals")}>
         {cards.map(card => {
           const expired = clock >= card.expiresAt;
           const sent = decided.has(card.id);
           return (
             <section key={card.id} className="card approval" data-approval-id={card.id}>
-              <h2>Approval required · {card.tool}</h2>
-              <div className="activity-label">Full input</div>
+              <h2>{t("Approval required · {tool}", { tool: card.tool })}</h2>
+              <div className="activity-label">{t("Full input")}</div>
               <pre className="approval-input">{card.input}</pre>
-              <div className="activity-label">Session scope</div>
-              <pre className="grant-scope">{scopeText(card)}</pre>
+              <div className="activity-label">{t("Session scope")}</div>
+              <pre className="grant-scope">{scopeText(card, t)}</pre>
               <div className="approval-actions">
                 {decisions.map(([decision, label]) => {
                   const unavailableSession = decision === "session" && card.scope === null;
@@ -67,7 +69,7 @@ export function Approvals({ cards, grants, disabled, onDecision, onRevoke }: App
                         onDecision(card.id, decision);
                       }}
                     >
-                      {label}
+                      {t(label)}
                     </button>
                   );
                 })}
@@ -77,12 +79,12 @@ export function Approvals({ cards, grants, disabled, onDecision, onRevoke }: App
         })}
       </div>
       <details id="session-grants">
-        <summary id="grants-summary">Session grants ({grants.length}) · inspect / revoke</summary>
+        <summary id="grants-summary">{t("Session grants ({count}) · inspect / revoke", { count: grants.length })}</summary>
         <div id="grants">
           {grants.map((grant: SessionGrant) => (
             <div key={grant.id} className="activity" data-grant-id={grant.id}>
               <pre className="grant-scope">{grant.scope}</pre>
-              <button className="btn-secondary" type="button" data-grant-action="revoke" disabled={disabled} onClick={() => onRevoke(grant.id)}>Revoke</button>
+              <button className="btn-secondary" type="button" data-grant-action="revoke" disabled={disabled} onClick={() => onRevoke(grant.id)}>{t("Revoke")}</button>
             </div>
           ))}
         </div>

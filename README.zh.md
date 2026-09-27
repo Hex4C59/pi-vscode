@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-23
+- 最近同步：2026-09-27
 
 面向 [pi](https://github.com/earendil-works/pi) coding agent 的 VS Code 扩展：边写代码边在侧栏聊天。左侧保留 Explorer，Pi 优先使用右侧辅助侧栏。
 
@@ -39,13 +39,17 @@ npm run compile
 
 ### 浏览器前端预览
 
+在候选聊天顶部点击齿轮 → **界面设置 → 语言**，即可即时切换 **English／简体中文**。默认英文；本页内切换场景或 Reset 保留语言，刷新页面恢复英文。开发预览工具栏同步切换。草稿、流式任务、模型设置与活动展开状态保持不变；消息、代码、工具／审批输入、历史原文和上游错误详情保持原文。这是候选界面设置，不是 VS Code／host 偏好。增加语言时，在 `src/webview/preview/ui-zh-cn.ts` 旁添加完整的 `UiText` 语言包并注册到 `ui-language.ts`；共享展示组件通过默认英文 Context 取文案，不导入候选语言包。
+
+**无文件夹**场景现在显示普通欢迎页，可以先输入草稿，不再前置设置卡片。点击发送／Enter 后才显示“无法发送消息”提示；确定、关闭或 Escape 保留草稿。弹窗中保留“打开文件夹”，之后仍走既有资源选择。不会自动发送，无文件夹仍不能启动任务。
+
 开发 React 前端时运行 Vite 预览：
 
 ```bash
 npm run preview:webview
 ```
 
-打开 Vite 输出的本地 URL。开发根目录为 `src/webview/preview/`，其 `index.html` 加载自己的 `main.tsx`；生产仍从 `src/webview/main.tsx` 构建。预览场景数据和工厂位于 `scenarios.ts`，模拟交互位于 `preview-bridge.ts`，开发外壳样式位于 `preview.css`。共享 `styles.css` 仅按覆盖顺序汇总全局与组件样式。预览使用 synthetic host 挂载生产应用，并提供场景、主题和侧栏宽度选择；支持浏览器热刷新，但不会启动 pi、使用 VS Code API、读取工作区文件或请求 provider。预览行为不等于 F5 或已安装 VSIX 验收。
+打开 Vite 输出的本地 URL。开发根目录为 `src/webview/preview/`，其 `index.html` 加载自己的 `main.tsx`；生产仍从 `src/webview/main.tsx` 构建。预览场景数据和工厂位于 `scenarios.ts`，模拟交互位于 `preview-bridge.ts`，开发外壳样式位于 `preview.css`。共享 `styles.css` 仅按覆盖顺序汇总全局与组件样式。预览现通过 `candidate-preview.ts` 和 `candidate.tsx` 挂载独立 UIP-01～04 候选，使用仅预览加载的 `candidate.css`。复用生产 client 和模型／thinking 控件，而非生产 App。工具栏提供空白／对话、加载、流式及阻断／错误夹具、主题、宽度、Reset 和明确标注的模拟恢复。Formatted reply 夹具流式展示标题、列表、安全链接、未闭合代码块与 Copy；Untrusted output 展示惰性 HTML／图片与危险 URL 拒绝；Activity before reply 展示每条消息的紧凑活动、两级详情及明确的失败／截断。链接仅在浏览器新标签打开绝对 HTTP(S) 地址；复制拒绝／不可用／超时有可见反馈。用户消息、工具详情、审批输入和附件快照保持原文。UIP-03 空白页不再展示最近会话，顶部仅保留紧凑历史／新建图标；历史默认收起，按需展开当前项目分页列表，以标题＋日期的紧凑行展示，点击整行请求 Restore，提示中可看摘要和完整时间。列表仅替换消息区；草稿、流式与 Stop 保持可用，历史图标／Back／Escape 关闭列表并恢复阅读位置和键盘焦点。Saved sessions、No saved sessions、Saved sessions error 为确定性夹具（Refresh 可恢复列表错误）。New／Restore 打开明确标识的模拟交接对话框，提供确认、取消、恢复失败与 Stop 失败选择；仅交接提交后清空当前工作。恢复历史复用有界分页、原文分块及可见限制提示。既有审批控件保留在被替换消息区之外，不代表 UIP-05 重设计。UIP-04 接入可操作的 + 上下文菜单（文件／选区）、紧凑元数据与按需完整路径、字面预览、逐项移除及最新文件／旧选区分别确认；确认绝不自动发送。附件历史在流式期间仍可分页与查看保留快照。已启用附件、来源变化、长实时历史，以及准备失败、容量拒绝、不确定投递、来源不可用、长路径／字面内容夹具；“模拟来源编辑”重新校验确认，不接触编辑器。准备／快照／预算／接纳仍归既有 client／host Interface。UIP-05～07 尚未实现，审批／审阅重设计夹具仍禁用。支持浏览器热刷新，但不会启动 pi、使用 VS Code API、读取工作区文件或请求 provider。预览行为不等于 F5 或已安装 VSIX 验收。
 
 `npm run watch` 使用 esbuild 监视 extension host 与 approval gate，并重建生产 Webview 输出。它是生产重建 watcher，不会启动浏览器预览服务器或提供浏览器 HMR；需要浏览器预览时运行 `npm run preview:webview`。
 

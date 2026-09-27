@@ -1,5 +1,4 @@
 import type { ReactElement } from "react";
-import { ATTACHMENT_HISTORY_PAGE_SIZE } from "../client-state.js";
 import type { AttachmentHistoryEntry, AttachmentStateMessage, AttachmentDetails } from "../../extension/contracts/index.js";
 import type { AttachmentPanelProps } from "./types.js";
 export type { AttachmentPreview, AttachmentPanelProps } from "./types.js";
@@ -21,6 +20,7 @@ function historyLabel(entry: AttachmentHistoryEntry): string {
 }
 
 export function AttachmentPanel({
+  pageSize,
   state,
   history,
   historyOpen,
@@ -40,9 +40,9 @@ export function AttachmentPanel({
   const attachments = state?.draft.attachments ?? [];
   const preparing = state?.preparation !== undefined && state.preparation !== "idle";
 
-  const lastPage = Math.max(0, Math.ceil(history.length / ATTACHMENT_HISTORY_PAGE_SIZE) - 1);
-  const offset = (historyPage ?? 0) * ATTACHMENT_HISTORY_PAGE_SIZE;
-  const visibleHistory = historyPage === null ? [] : history.slice(offset, offset + ATTACHMENT_HISTORY_PAGE_SIZE);
+  const lastPage = Math.max(0, Math.ceil(history.length / pageSize) - 1);
+  const offset = (historyPage ?? 0) * pageSize;
+  const visibleHistory = historyPage === null ? [] : history.slice(offset, offset + pageSize);
   const submissions = new Map<string, number>();
   for (const entry of history) if (!submissions.has(entry.submissionId)) submissions.set(entry.submissionId, submissions.size + 1);
   return (

@@ -27,6 +27,7 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 | Record | Contents |
 |--------|----------|
 | [Closed work-item history — WI-001–007 and WI-010–012](2026-09-21-closed-wi-history.md) | Closed scope, acceptance evidence and retained limits; WI-008/WI-009 remain open in ACTIVE |
+| [WI-020 public entries and type contracts](2026-09-26-wi-020-public-entries.md) | Accepted September 26; P2 repair and technical evidence; other acceptance and gates unchanged |
 
 ## Superseded handoffs
 

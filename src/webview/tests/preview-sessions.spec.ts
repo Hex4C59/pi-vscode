@@ -93,7 +93,7 @@ test("synthetic sessions fixture lists a labelled 16-entry catalogue and enforce
     await h.advance(80);
     assert.equal(h.root.querySelectorAll(".sessions-entry").length, 16);
     assert.match(h.get("#sessions-page-status").textContent ?? "", /Page 1 of 3 · 33 saved conversations/);
-    assert.match(h.get(".sessions-entry").textContent ?? "", /Synthetic saved session 01/);
+    assert.match(h.get(".sessions-entry").textContent ?? "", /Synthetic saved session 33/);
     assert.match(h.get(".sessions-excerpt").textContent ?? "", /browser preview/i);
     assert.equal(h.get<HTMLButtonElement>("#sessions-previous").disabled, true);
 
@@ -142,7 +142,7 @@ test("synthetic New and Restore confirm before committing a generation and then 
 
     await h.input("draft retained until restore commits");
     const beforeRestore = h.latest("workspaceState").generation;
-    await h.click('[data-session-action="restore"][data-session-id="preview-session-01"]');
+    await h.click('[data-session-action="restore"][data-session-id="preview-session-33"]');
     assert.match(h.get("#sessions-phase").textContent ?? "", /native confirmation/);
     assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "draft retained until restore commits");
     const restoreSwitchStart = h.messages.length;
@@ -152,7 +152,7 @@ test("synthetic New and Restore confirm before committing a generation and then 
     assert.ok(restoreSwitchingIndex >= 0);
     assert.ok(restoreAttachmentIndex > restoreSwitchingIndex, "restore must clear attachments only after generation switching");
     assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "");
-    assert.match(h.get("#sessions-current").textContent ?? "", /Synthetic saved session 01/);
+    assert.match(h.get("#sessions-current").textContent ?? "", /Synthetic saved session 33/);
     assert.equal(h.root.querySelectorAll("[data-saved-history-row]").length, 32);
   } finally {
     await h.close();
@@ -164,7 +164,7 @@ test("restored synthetic history keeps literal HTML inert and navigates bounded 
   try {
     await h.click("#sessions-toggle");
     await h.advance(80);
-    await h.click('[data-session-action="restore"][data-session-id="preview-session-01"]');
+    await h.click('[data-session-action="restore"][data-session-id="preview-session-33"]');
     await h.advance(120);
 
     assert.match(h.get("#saved-history-page-status").textContent ?? "", /Entries 34–65 of 65\. Page 1 of 3\./);

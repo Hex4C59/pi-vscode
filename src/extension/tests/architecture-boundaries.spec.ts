@@ -18,14 +18,42 @@ test("host and browser modules preserve the runtime and capability boundaries", 
   assert.equal(pkg.capabilities.untrustedWorkspaces.supported, "limited");
 });
 
+const sourceRoot = path.resolve("src");
+const modules = new Set([
+  "adapter", "adapter/runtime", "adapter/sessions", "extension", "extension/bridge",
+  "extension/contracts", "extension/draft", "extension/editor-tools", "extension/models",
+  "extension/sessions", "webview", "webview/components",
+].map(directory => path.join(sourceRoot, directory)));
+
+// Report the same public-entry violations for source fixtures and the application scan.
+function moduleEntryViolations(file: string, source: string): string[] {
+  const violations: string[] = [];
+  for (const match of source.matchAll(/\bfrom\s*["'](\.{1,2}\/[^"']+\.js)["']/g)) {
+    const target = path.resolve(path.dirname(file), match[1]);
+    const targetModule = path.dirname(target);
+    if (!modules.has(targetModule) || path.dirname(file) === targetModule) continue;
+    if (target !== path.join(targetModule, "index.js")) violations.push(match[1]);
+  }
+  return violations;
+}
+
+test("public-entry checks allow legal imports and reject presentation imports bypassing their parent entry", () => {
+  const file = path.join(sourceRoot, "webview/components/example.tsx");
+  assert.deepEqual(moduleEntryViolations(file, `
+    import type { SavedHistoryPreview } from "../index.js";
+    import type { SessionsProps } from "./types.js";
+    import type { SessionStateMessage } from "../../extension/contracts/index.js";
+    import { useState } from "react";
+  `), []);
+  assert.deepEqual(moduleEntryViolations(file, `
+    import type { SavedHistoryPreview } from "../types.js";
+    import { SESSION_PAGE_SIZE } from "../client-state.js";
+    import { SAVED_HISTORY_PAGE_SIZE } from "../saved-history-client.js";
+  `), ["../types.js", "../client-state.js", "../saved-history-client.js"]);
+});
+
 // Cross-directory consumers use a deliberately small directory entry; internal files may remain direct.
 test("application module consumers use public directory entries", () => {
-  const sourceRoot = path.resolve("src");
-  const modules = new Set([
-    "adapter", "adapter/runtime", "adapter/sessions", "extension", "extension/bridge",
-    "extension/contracts", "extension/draft", "extension/editor-tools", "extension/models",
-    "extension/sessions", "webview", "webview/components",
-  ].map(directory => path.join(sourceRoot, directory)));
   const sources = (directory: string): string[] => readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     if (entry.name === "tests") return [];
     const absolute = path.join(directory, entry.name);
@@ -33,14 +61,7 @@ test("application module consumers use public directory entries", () => {
   });
   for (const file of sources(sourceRoot)) {
     const source = readFileSync(file, "utf8");
-    for (const match of source.matchAll(/\bfrom\s*["'](\.{1,2}\/[^"']+\.js)["']/g)) {
-      const target = path.resolve(path.dirname(file), match[1]);
-      const targetModule = path.dirname(target);
-      if (!modules.has(targetModule) || path.dirname(file) === targetModule) continue;
-      // Presentation components consume helpers owned by their parent UI module.
-      if (targetModule === path.join(sourceRoot, "webview") && file.startsWith(path.join(targetModule, "components") + path.sep)) continue;
-      assert.equal(target, path.join(targetModule, "index.js"), `${path.relative(sourceRoot, file)} should import ${match[1]} through its module entry`);
-    }
+    assert.deepEqual(moduleEntryViolations(file, source), [], `${path.relative(sourceRoot, file)} should import through its module entries`);
     if (file.startsWith(path.join(sourceRoot, "webview") + path.sep)) {
       for (const match of source.matchAll(/\bimport\s+(type\s+)?[^;]+?from\s*["']([^"']*extension\/contracts\/index\.js)["']/gs)) {
         assert.equal(match[1], "type ", `${file}: Webview may only import host-owned contracts as types`);

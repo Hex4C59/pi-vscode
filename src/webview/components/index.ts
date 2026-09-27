@@ -8,3 +8,5 @@ export { ChangeReview } from "./change-review.js";
 export { Sessions } from "./sessions.js";
 export { SavedHistory } from "./saved-history.js";
 export type { ApprovalsProps, AttachmentPreview, AttachmentPanelProps, ChangeReviewProps, ConversationProps, ModelPickerProps, SessionsProps, WorkspaceSetupAction, WorkspaceSetupProps, SavedHistoryProps } from "./types.js";
+export { UiTextProvider, useUiText, englishUi, formatUiText } from "./ui-text.js";
+export type { UiText, UiTranslator, UiLanguage } from "./ui-text.js";

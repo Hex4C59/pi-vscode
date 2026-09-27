@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import { attachmentError, availability } from "./client-state.js";
+import { attachmentError, availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE } from "./client-state.js";
+import { SAVED_HISTORY_PAGE_SIZE } from "./saved-history-client.js";
 import { type WebviewClient } from "./webview-client.js";
 import {
   WorkspaceSetup, Conversation, ModelPicker, Approvals,
@@ -50,6 +51,7 @@ export function App({ client }: { client: WebviewClient }) {
       {!state && !snapshot.error && <p className="empty-state" role="status">Connecting to the extension host…</p>}
       {state && <div key={`${state.viewId}-${state.generation}`}>
         {state.status === "eligible" && state.choice !== null && <Sessions
+          pageSize={SESSION_PAGE_SIZE}
           state={snapshot.sessions}
           onOpen={client.openSessions}
           onRefresh={() => client.getSavedSessions(0)}
@@ -58,6 +60,7 @@ export function App({ client }: { client: WebviewClient }) {
           onResume={client.resumeConversation}
         />}
         {state.status === "eligible" && state.choice !== null && snapshot.savedHistory && (snapshot.savedHistory.available || snapshot.savedHistory.error) && <SavedHistory
+          pageSize={SAVED_HISTORY_PAGE_SIZE}
           state={snapshot.savedHistory} pendingPage={snapshot.savedHistoryPendingPage} preview={snapshot.savedHistoryPreview}
           disabled={!!snapshot.error || state.busy || a.sessionTransitioning}
           onPage={client.savedHistory.page} onPreview={client.savedHistory.preview} onPreviewPage={client.savedHistory.navigatePreview}
@@ -68,7 +71,7 @@ export function App({ client }: { client: WebviewClient }) {
         {chatVisible && <div id="chat">
            <Conversation messages={state.messages} activities={state.activities} />
            {!state.messages.length && !state.chatBusy && !snapshot.savedHistory?.available && <p className="empty-state">What would you like to work on?</p>}
-           <ChangeReview state={snapshot.changeReview} open={snapshot.changeReviewOpen} page={snapshot.changeReviewPage}
+           <ChangeReview pageSize={CHANGE_REVIEW_PAGE_SIZE} state={snapshot.changeReview} open={snapshot.changeReviewOpen} page={snapshot.changeReviewPage}
              onToggle={client.toggleChangeReview} onPage={client.navigateChangeReview} onDiff={client.openReviewDiff} onSource={client.openReviewSource} />
            <Approvals cards={state.approvals} grants={state.grants} disabled={a.stopping || !!snapshot.error}
             onDecision={(id, decision) => client.action({ type: "decideApproval", id, decision })}
@@ -83,7 +86,7 @@ export function App({ client }: { client: WebviewClient }) {
         <p>Only the bundled approval extension is loaded. Third-party extensions are disabled. Tools run with your user permissions, not in a sandbox. Stop does not roll back side effects. Tool output may contain sensitive information.</p>
       </details>
       <p id="execution-status" role="status">{a.stopping ? executionLabels.stopping : executionLabels[state.execution]}</p>
-      <AttachmentPanel state={snapshot.attachments} history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} preview={snapshot.preview}
+      <AttachmentPanel pageSize={ATTACHMENT_HISTORY_PAGE_SIZE} state={snapshot.attachments} history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} preview={snapshot.preview}
         disabled={a.attachmentDisabled} status={status} onAdd={client.addAttachment} onAddSelection={client.addSelection} onRemove={client.removeAttachment} onConfirm={client.confirmAttachment}
         onHistory={client.toggleHistory} onHistoryPage={client.navigateHistory} onPreview={client.requestPreview} onClosePreview={client.closePreview} />
       </div>

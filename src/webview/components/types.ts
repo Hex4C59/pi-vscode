@@ -3,7 +3,7 @@ import type {
   AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage,
   SavedHistoryStateMessage,
 } from "../../extension/contracts/index.js";
-import type { SavedHistoryPreview } from "../types.js";
+import type { SavedHistoryPreview } from "../index.js";
 
 /** Props are presentation-only; host intents and projections are owned by extension/contracts. */
 export interface ApprovalsProps {
@@ -21,6 +21,7 @@ export interface AttachmentPreview {
 }
 
 export interface AttachmentPanelProps {
+  pageSize: number;
   state: AttachmentStateMessage | null;
   history: AttachmentHistoryEntry[];
   historyOpen: boolean;
@@ -39,6 +40,7 @@ export interface AttachmentPanelProps {
 }
 
 export interface ChangeReviewProps {
+  pageSize: number;
   state: ChangeReviewStateMessage | null;
   open: boolean;
   page: number;
@@ -54,6 +56,10 @@ export interface ConversationProps {
 }
 
 export interface ModelPickerProps {
+  /** Opt into candidate entry/exit motion; the production default stays immediate. */
+  animatePopover?: boolean;
+  /** Continuous pointer feedback; release still commits one supported thinking level. */
+  continuousThinkingDrag?: boolean;
   state: WorkspaceStateMessage;
   disabled: boolean;
   onModel: (provider: string, modelId: string) => void;
@@ -61,6 +67,7 @@ export interface ModelPickerProps {
 }
 
 export interface SessionsProps {
+  pageSize: number;
   state: SessionStateMessage | null;
   onOpen: () => void;
   onRefresh: () => void;
@@ -80,6 +87,7 @@ export interface WorkspaceSetupProps {
 }
 
 export interface SavedHistoryProps {
+  pageSize: number;
   state: SavedHistoryStateMessage;
   pendingPage: number | null;
   preview: SavedHistoryPreview | null;
