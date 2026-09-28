@@ -62,7 +62,7 @@ export type PreviewBridgeOptions = {
 function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection {
   const ready: ProviderConfigProjection = {
     busy: false, error: null,
-    defaultProvider: "synthetic", defaultModelId: "sonnet",
+    defaultProvider: "synthetic", defaultModelId: "sonnet", defaultThinkingLevel: "medium", thinkingLevels: ["off", "minimal", "low", "medium", "high"],
     providers: [
       { providerId: "synthetic", displayName: "Synthetic provider", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
       { providerId: "other", displayName: "Other provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
@@ -74,10 +74,10 @@ function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection 
   };
   if (fixture === "loading") return { ...ready, busy: true };
   if (fixture === "error") return { ...ready, error: "Could not refresh provider configuration." };
-  if (fixture === "empty") return { busy: false, error: null, defaultProvider: null, defaultModelId: null, providers: [], catalog: [] };
+  if (fixture === "empty") return { busy: false, error: null, defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], providers: [], catalog: [] };
   if (fixture === "unconfigured") {
     return {
-      ...ready, defaultProvider: null, defaultModelId: null, catalog: [],
+      ...ready, defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], catalog: [],
       providers: ready.providers.map(provider => ({ ...provider, configured: false, authLabel: null, canLogout: false })),
     };
   }
@@ -243,6 +243,13 @@ export class PreviewBridge implements WebviewBridge {
       case "chooseExecutionProfile":
         this.executionProfile = { ...this.executionProfile, profile: message.profile, phase: "idle", canSwitch: true };
         this.emitProfile();
+        break;
+      case "setDefaultThinkingLevel":
+        if (message.provider === this.providerConfig.defaultProvider && message.modelId === this.providerConfig.defaultModelId
+          && this.providerConfig.thinkingLevels.includes(message.level)) {
+          this.providerConfig = { ...this.providerConfig, defaultThinkingLevel: message.level };
+          this.emitSettings();
+        }
         break;
       case "setDefaultModel":
         this.providerConfig = { ...this.providerConfig, defaultProvider: message.provider, defaultModelId: message.modelId };

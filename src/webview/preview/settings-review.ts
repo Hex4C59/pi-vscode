@@ -15,6 +15,7 @@ const root = document.getElementById("review");
 if (!root) throw new Error("Missing review mount");
 
 const states = [
+  ["pre-session", "Pre-session model / strength"],
   ["ready", "Configured"],
   ["loading", "Loading"],
   ["error", "Error"],
@@ -27,7 +28,8 @@ const states = [
   ["resources", "Project resources"],
 ] as const;
 
-function fixtureFor(value: string): { scenario: PreviewScenario; options: PreviewBridgeOptions; open: "settings" | "prompt" | "none" } {
+function fixtureFor(value: string): { scenario: PreviewScenario; options: PreviewBridgeOptions; open: "settings" | "prompt" | "model" | "none" } {
+  if (value === "pre-session") return { scenario: "no-folder", options: { settings: params.get("long") === "true" ? "long" : "ready" }, open: "model" };
   if (value === "no-folder") return { scenario: "no-folder", options: {}, open: "prompt" };
   if (value === "resources") return { scenario: "empty", options: { resourcesPending: true }, open: "prompt" };
   const settings = (["ready", "loading", "error", "empty", "unconfigured", "mismatch", "switching", "long"].includes(value)
@@ -74,6 +76,7 @@ if (!params.has("panel")) {
   const synthetic = new PreviewBridge(fixture.scenario, confirmation.confirm, fixture.options);
   const dispose = mountChat(view, synthetic, { language, preview: true });
   const open = () => {
+    if (fixture.open === "model") { view.querySelector<HTMLButtonElement>("#model-effort-trigger")?.click(); return; }
     if (fixture.open === "settings") {
       view.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')?.click();
       return;

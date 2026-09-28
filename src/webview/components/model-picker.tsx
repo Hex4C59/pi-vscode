@@ -1,10 +1,16 @@
 import { useUiText } from "./ui-text.js";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
-import type { ModelPickerProps } from "./types.js";
+import type { ModelPickerProps, ModelPickerViewProps } from "./types.js";
 export type { ModelPickerProps } from "./types.js";
 
 
-export function ModelPicker({ state, disabled, onModel, onThinking, continuousThinkingDrag = false, animatePopover = false }: ModelPickerProps): ReactElement {
+export function ModelPicker(props: ModelPickerProps): ReactElement {
+  const { state, disabled } = props;
+  return <ModelPickerView {...props} disabled={disabled || state.busy || state.runtime !== "ready" || state.execution === "stopping"} />;
+}
+
+/** Shared presentation only: the caller owns live-session or saved-default semantics. */
+export function ModelPickerView({ state, disabled, onModel, onThinking, onSettings, loading = false, continuousThinkingDrag = false, animatePopover = false }: ModelPickerViewProps): ReactElement {
   const { text: t } = useUiText();
   const thinkingText = (level: string) => {
     switch (level) {
@@ -43,7 +49,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [popoverOpen, animatePopover]);
 
-  const settingsDisabled = disabled || state.busy || state.modelBusy || state.runtime !== "ready" || state.execution === "stopping";
+  const settingsDisabled = disabled || state.modelBusy;
   // Native disabled controls lose focus in Chromium while the host applies an idle
   // selection. Restore only our own selection's focus, never a newer user target.
   useEffect(() => {
@@ -152,7 +158,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
         type="button"
         aria-expanded={popoverOpen}
         aria-controls="model-popover"
-        disabled={settingsDisabled}
+        disabled={disabled || (state.modelBusy && !onSettings)}
         title={t("Applied: {model} · {thinking}", { model: modelLabel, thinking: thinkingLabel })}
         onClick={togglePopover}
       >
@@ -161,6 +167,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
       <div id="model-popover" className="popover" role="dialog" aria-label={t("Model and thinking level")} hidden={!popoverOpen}
         data-animated={animatePopover ? "true" : undefined} aria-hidden={!popoverOpen} inert={!popoverOpen}>
         <p className="popover-title">{t("Model")}</p>
+        {loading && <p role="status">{t("Loading model settings…")}</p>}
         <button
           id="model-current"
           className="menu-item"
@@ -236,6 +243,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
         <p id="thinking-level-label" className="sr-only" aria-live="polite">
           {t("Applied: {thinking}", { thinking: thinkingLabel })}{state.pendingThinkingLevel ? t(" · Next turn (pending): {thinking}", { thinking: thinkingText(state.pendingThinkingLevel) }) : ""}
         </p>
+        {onSettings && <button className="menu-item" type="button" data-provider-settings onClick={() => { closePopover(); onSettings(); }}>{t("Open provider settings")}</button>}
         <div id="model-error" className="banner" role="alert">{state.modelError ?? ""}</div>
       </div>
       <p id="pending-settings" className={pendingSettings.length > 0 ? "sr-only" : "muted"} role="status" hidden={pendingSettings.length === 0 && !state.modelBusy}>

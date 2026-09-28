@@ -86,7 +86,7 @@ export async function runTests(rootDir, options = {}) {
     outbase, outdir,
     bundle: true, platform: 'node', format: 'cjs', target: 'node22', jsx: 'automatic',
     // React's async act detects Node through module.require; bundling it forces a leaking MessageChannel fallback.
-    external: ['jsdom', 'react', 'react-dom', '@earendil-works/pi-coding-agent'],
+    external: ['jsdom', 'react', 'react-dom', '@earendil-works/pi-coding-agent', '@earendil-works/pi-ai'],
     logLevel: 'silent',
   });
   const built = inventory.app.map((file) => path.join(outdir, path.relative(outbase, file).replace(/\.ts$/, '.js')));

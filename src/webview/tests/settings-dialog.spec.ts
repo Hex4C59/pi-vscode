@@ -11,7 +11,7 @@ test("settings keep default-model choice distinct from the live session model", 
     await h.render({ chatModel: "GPT-5" });
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt",
+      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
       providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true }],
       catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
     });
@@ -29,7 +29,7 @@ test("provider errors stay beside provider actions and refresh keeps the selecte
   try {
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt",
+      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
       providers: [
         { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
         { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
@@ -44,7 +44,7 @@ test("provider errors stay beside provider actions and refresh keeps the selecte
     });
     await h.receive({
       ...envelope, type: "providerConfigState", busy: true, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt",
+      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
       providers: [
         { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
         { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
@@ -55,7 +55,7 @@ test("provider errors stay beside provider actions and refresh keeps the selecte
     assert.equal(h.get('[data-provider-status]').getAttribute("data-provider-status"), "busy");
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: "Could not refresh provider configuration.",
-      defaultProvider: "openai", defaultModelId: "gpt",
+      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
       providers: [
         { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
         { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },

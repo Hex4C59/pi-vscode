@@ -244,11 +244,13 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
       return message as unknown as HostMessage;
     }
     case "providerConfigState": {
-      if (!hasFields(message, [...envelope, "busy", "error", "defaultProvider", "defaultModelId", "providers", "catalog"])
+      if (!hasFields(message, [...envelope, "busy", "error", "defaultProvider", "defaultModelId", "defaultThinkingLevel", "thinkingLevels", "providers", "catalog"])
         || typeof message.busy !== "boolean"
         || !(message.error === null || string(message.error, 500))
         || !(message.defaultProvider === null || string(message.defaultProvider, 64))
-        || !(message.defaultModelId === null || string(message.defaultModelId, 128))) return;
+        || !(message.defaultModelId === null || string(message.defaultModelId, 128))
+        || !(message.defaultThinkingLevel === null || string(message.defaultThinkingLevel, 16))) return;
+      const thinkingLevels = list(message.thinkingLevels, 16, item => string(item, 16) ? item : undefined);
       const providers = list(message.providers, 64, item => {
         const entry = exactRecord(item, ["providerId", "displayName", "configured", "authLabel", "canAddApiKey", "canLogout"]);
         return entry && string(entry.providerId, 64) && string(entry.displayName, 200)
@@ -256,8 +258,9 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
           && (entry.authLabel === null || string(entry.authLabel, 200)) ? entry : undefined;
       });
       const catalog = list(message.catalog, 64, parseModel);
-      if (!providers || !catalog) return;
-      return { ...message, providers, catalog } as unknown as HostMessage;
+      if (!providers || !catalog || !thinkingLevels
+        || (message.defaultThinkingLevel !== null && !thinkingLevels.includes(message.defaultThinkingLevel as string))) return;
+      return { ...message, providers, catalog, thinkingLevels } as unknown as HostMessage;
     }
     case "pong":
       return hasFields(message, envelope) ? message as unknown as HostMessage : undefined;

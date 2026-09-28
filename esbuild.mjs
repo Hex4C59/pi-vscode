@@ -8,7 +8,7 @@ const extensionBuild = {
   entryPoints: ["src/extension.ts"],
   bundle: true,
   outfile: "dist/extension.js",
-  external: ["vscode", "@earendil-works/pi-coding-agent"],
+  external: ["vscode", "@earendil-works/pi-coding-agent", "@earendil-works/pi-ai"],
   format: "cjs",
   platform: "node",
   target: "node22",

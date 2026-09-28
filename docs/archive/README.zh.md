@@ -66,6 +66,7 @@
 | [Goal会话连续性检查点](2026-09-23-goal-session-handoff.zh.md) | WI-017可执行交付与维护者请求暂停；当时下一实现未开始、验收／gates仍待 |
 | [WI-024暂停提案](2026-09-28-wi-024-paused-proposal.zh.md) | 为WI-025移出ACTIVE的供应商／模型配置范围、交付与被替代交接；WI-024暂停而非关闭，维护者F5仍在ACTIVE停车场待办 |
 | [ACTIVE候选与验证检查点历史](2026-09-27-active-checkpoint-history.zh.md) | 旧入口过程及原始中文；当时WI-019／021验收、F5阻塞及未决由ACTIVE持有 |
+| [WI-025 已替代切片与交接](2026-09-29-wi-025-active-superseded.zh.md) | 第二～五轮完整 Build 记录、第六轮证据与超出两条的交接；WI-025 仍为 Build，当前范围见 ACTIVE |
 
 ## Agent 规则
 

@@ -1,4 +1,5 @@
 import os from "node:os";
+import type { ModelThinkingLevel } from "@earendil-works/pi-ai" with { "resolution-mode": "import" };
 import path from "node:path";
 import type { ProviderConfigEntry, ProviderConfigProjection, ModelCatalogEntry } from "../contracts/index.js";
 import {
@@ -32,7 +33,10 @@ type SdkProvider = {
   getModels(): readonly { id: string; name?: string }[];
 };
 
+type ThinkingOptions = { level: ModelThinkingLevel; levels: ModelThinkingLevel[] };
+
 type ModelRuntimeLike = {
+  thinkingOptions(provider: string, modelId: string, level: ModelThinkingLevel): ThinkingOptions | null;
   getProviders(): readonly SdkProvider[];
   getProviderAuthStatus(providerId: string): ProviderAuthStatus;
   listCredentials(options?: { signal?: AbortSignal }): Promise<readonly { providerId: string; type: string }[]>;
@@ -45,8 +49,13 @@ type ModelRuntimeLike = {
 type SettingsManagerLike = {
   getDefaultProvider(): string | undefined;
   getDefaultModel(): string | undefined;
+  getDefaultThinkingLevel(): ModelThinkingLevel | undefined;
+  getModelThinkingLevel(provider: string, modelId: string): ModelThinkingLevel | undefined;
+  setModelThinkingLevel(provider: string, modelId: string, level: ModelThinkingLevel): void;
   setDefaultModelAndProvider(provider: string, modelId: string): void;
+  reload(): Promise<void>;
   flush(): Promise<void>;
+  drainErrors(): unknown[];
 };
 
 export type ProviderConfigPromptUi = {
@@ -70,7 +79,7 @@ export type ProviderConfigDeps = {
 };
 
 const empty = (): ProviderConfigProjection => ({
-  busy: false, error: null, defaultProvider: null, defaultModelId: null, providers: [], catalog: [],
+  busy: false, error: null, defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], providers: [], catalog: [],
 });
 
 function boundLabel(value: string, limit: number): string {
@@ -107,26 +116,28 @@ export function resolvePiAgentDir(env: NodeJS.ProcessEnv = process.env): string 
   return path.join(os.homedir(), ".pi", "agent");
 }
 
-async function loadSdk(): Promise<{
-  ModelRuntime: { create(options?: { refreshOnCreate?: boolean }): Promise<ModelRuntimeLike> };
-  SettingsManager: { create(cwd: string, agentDir?: string): SettingsManagerLike };
-  getAgentDir(): string;
-}> {
-  return import("@earendil-works/pi-coding-agent") as Promise<{
-    ModelRuntime: { create(options?: { refreshOnCreate?: boolean }): Promise<ModelRuntimeLike> };
-    SettingsManager: { create(cwd: string, agentDir?: string): SettingsManagerLike };
-    getAgentDir(): string;
-  }>;
-}
-
 export function createDefaultProviderConfigDeps(promptUi: ProviderConfigPromptUi): ProviderConfigDeps {
   return {
     async createRuntime() {
-      const { ModelRuntime } = await loadSdk();
-      return ModelRuntime.create({ refreshOnCreate: false });
+      const { ModelRuntime } = await import("@earendil-works/pi-coding-agent");
+      const { getSupportedThinkingLevels, clampThinkingLevel } = await import("@earendil-works/pi-ai");
+      const runtime = await ModelRuntime.create({ refreshOnCreate: false });
+      return {
+        getProviders: () => runtime.getProviders(),
+        getProviderAuthStatus: id => runtime.getProviderAuthStatus(id),
+        listCredentials: options => runtime.listCredentials(options),
+        getModels: id => runtime.getModels(id),
+        getAvailable: id => runtime.getAvailable(id),
+        login: (id, type, interaction) => runtime.login(id, type, interaction),
+        logout: id => runtime.logout(id),
+        thinkingOptions(provider: string, modelId: string, level: ModelThinkingLevel): ThinkingOptions | null {
+          const model = runtime.getModel(provider, modelId);
+          return model ? { level: clampThinkingLevel(model, level), levels: getSupportedThinkingLevels(model) } : null;
+        },
+      };
     },
     async createSettings() {
-      const { SettingsManager, getAgentDir } = await loadSdk();
+      const { SettingsManager, getAgentDir } = await import("@earendil-works/pi-coding-agent");
       let agentDir = resolvePiAgentDir();
       try { agentDir = getAgentDir(); } catch { /* keep resolvePiAgentDir */ }
       return SettingsManager.create(os.homedir(), agentDir);
@@ -145,6 +156,7 @@ export class ProviderConfig {
   private revision = 0;
   private runtime: ModelRuntimeLike | undefined;
   private settings: SettingsManagerLike | undefined;
+  private saving = false;
 
   constructor(
     private readonly deps: ProviderConfigDeps,
@@ -228,9 +240,18 @@ export class ProviderConfig {
       error: null,
       defaultProvider: settings.getDefaultProvider()?.trim() || null,
       defaultModelId: settings.getDefaultModel()?.trim() || null,
+      ...this.thinkingProjection(runtime, settings),
       providers,
       catalog,
     };
+  }
+
+  private thinkingProjection(runtime: ModelRuntimeLike, settings: SettingsManagerLike): Pick<ProviderConfigProjection, "defaultThinkingLevel" | "thinkingLevels"> {
+    const provider = settings.getDefaultProvider();
+    const model = settings.getDefaultModel();
+    const options = provider && model ? runtime.thinkingOptions(provider, model,
+      settings.getModelThinkingLevel(provider, model) ?? settings.getDefaultThinkingLevel() ?? "medium") : null;
+    return { defaultThinkingLevel: options?.level ?? null, thinkingLevels: options?.levels ?? [] };
   }
 
   private async buildCatalog(runtime: ModelRuntimeLike): Promise<ModelCatalogEntry[]> {
@@ -253,12 +274,15 @@ export class ProviderConfig {
   }
 
   async refresh(): Promise<void> {
+    if (this.saving) return;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
     this.changed();
     try {
       const runtime = await this.ensureRuntime();
       const settings = await this.ensureSettings();
+      await settings.reload();
+      if (settings.drainErrors().length) throw new Error("settings unavailable");
       const credentials = await runtime.listCredentials();
       const catalog = await this.buildCatalog(runtime);
       if (token !== this.revision) return;
@@ -271,6 +295,7 @@ export class ProviderConfig {
   }
 
   async openApiKey(providerId: string): Promise<void> {
+    if (this.saving) return;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
     this.changed();
@@ -295,6 +320,7 @@ export class ProviderConfig {
   }
 
   async logout(providerId: string): Promise<void> {
+    if (this.saving) return;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
     this.changed();
@@ -312,13 +338,18 @@ export class ProviderConfig {
   }
 
   async setDefaultModel(provider: string, modelId: string): Promise<void> {
+    if (this.value.busy || this.saving) return;
+    this.saving = true;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
     this.changed();
     try {
       const settings = await this.ensureSettings();
+      const runtime = await this.ensureRuntime();
+      if (settings.drainErrors().length) throw new Error("settings unavailable");
       settings.setDefaultModelAndProvider(provider, modelId);
       await settings.flush();
+      if (settings.drainErrors().length) throw new Error("settings write failed");
       if (token !== this.revision) return;
       this.value = {
         ...this.value,
@@ -326,11 +357,43 @@ export class ProviderConfig {
         error: null,
         defaultProvider: provider,
         defaultModelId: modelId,
+        ...this.thinkingProjection(runtime, settings),
       };
     } catch {
       if (token !== this.revision) return;
       this.value = { ...this.value, busy: false, error: "Could not save the default model." };
-    }
+      this.settings = undefined;
+    } finally { this.saving = false; }
     this.changed();
   }
+
+  async setDefaultThinkingLevel(provider: string, modelId: string, level: string): Promise<void> {
+    if (this.value.busy || this.saving) return;
+    if (provider !== this.value.defaultProvider || modelId !== this.value.defaultModelId
+      || !this.value.thinkingLevels.includes(level)) {
+      this.value = { ...this.value, error: "This thinking level is unavailable for the default model. Refresh model settings." };
+      this.changed();
+      return;
+    }
+    this.saving = true;
+    this.value = { ...this.value, busy: true, error: null };
+    this.changed();
+    try {
+      const settings = await this.ensureSettings();
+      const runtime = await this.ensureRuntime();
+      const options = runtime.thinkingOptions(provider, modelId, settings.getDefaultThinkingLevel() ?? "medium");
+      const supported = options?.levels.find(candidate => candidate === level);
+      if (!supported) throw new Error("unsupported");
+      if (settings.drainErrors().length) throw new Error("settings unavailable");
+      settings.setModelThinkingLevel(provider, modelId, supported);
+      await settings.flush();
+      if (settings.drainErrors().length) throw new Error("settings write failed");
+      this.value = { ...this.value, busy: false, error: null, defaultThinkingLevel: supported };
+    } catch {
+      this.value = { ...this.value, busy: false, error: "Could not save the default thinking level. Refresh model settings and try again." };
+      this.settings = undefined;
+    } finally { this.saving = false; }
+    this.changed();
+  }
+
 }

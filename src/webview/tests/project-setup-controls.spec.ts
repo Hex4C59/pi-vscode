@@ -61,9 +61,10 @@ test("project preparation selects a default model without granting resource cons
   try {
     await h.render({ choice: null, runtime: "not-started" });
     await h.receive({ version: 3, type: "providerConfigState", viewId: "view", generation: 1,
-      busy: false, error: null, defaultProvider: null, defaultModelId: null, providers: [],
+      busy: false, error: null, defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], providers: [],
       catalog: [{ provider: "A", modelId: "one", label: "One" }] });
     await h.click("#model-effort-trigger");
+    await h.click("#model-current");
     await h.click('button[role="menuitemradio"]');
     assert.ok(h.sent.some(m => m.type === "setDefaultModel" && m.modelId === "one"));
     assert.ok(!h.sent.some(m => m.type === "chooseResources" || m.type === "setChatModel"));

@@ -10,7 +10,7 @@ test("interface settings selects a provider and opens API-key intent without sec
   try {
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: null, defaultModelId: null,
+      defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [],
       providers: [
         {
           providerId: "anthropic", displayName: "Anthropic", configured: false,
@@ -50,7 +50,7 @@ test("interface settings keeps the global default-model catalogue", async () => 
   try {
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt",
+      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
       providers: [{
         providerId: "openai", displayName: "OpenAI", configured: true,
         authLabel: null, canAddApiKey: true, canLogout: true,

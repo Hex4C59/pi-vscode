@@ -16,6 +16,8 @@ export type ProviderConfigProjection = {
   error: string | null;
   defaultProvider: string | null;
   defaultModelId: string | null;
+  defaultThinkingLevel: string | null;
+  thinkingLevels: string[];
   providers: ProviderConfigEntry[];
   catalog: ModelCatalogEntry[];
 };
@@ -24,4 +26,5 @@ export type ProviderConfigIntent =
   | { type: "openProviderApiKey"; providerId: string }
   | { type: "logoutProvider"; providerId: string }
   | { type: "setDefaultModel"; provider: string; modelId: string }
+  | { type: "setDefaultThinkingLevel"; provider: string; modelId: string; level: string }
   | { type: "refreshProviderConfig" };

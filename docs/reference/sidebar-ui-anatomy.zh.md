@@ -144,7 +144,7 @@ Pi 聊天侧栏
 - **模型选择器（Model Selector）**：选择使用哪个模型的控件。
 - **推理强度滑条（Reasoning Effort Slider）**：调整所选模型支持的推理档位。轨道（Track）、滑块（Thumb）和档位刻度（Stops）分别是滑条的三个可描述部分。
 
-当前三色渐变与最高档流水属于推理强度滑条的视觉反馈。它表达所选强度，不表示模型此刻正在计算。支持的档位取决于模型能力，介绍时不应固定说成“五档”。准备阶段的默认模型选择弹层与运行会话的模型／推理弹层，也不必具有完全相同的控件。
+当前三色渐变与最高档流水属于推理强度滑条的视觉反馈。它表达所选强度，不表示模型此刻正在计算。支持的档位取决于模型能力，介绍时不应固定说成“五档”。启动前默认模型包装组件与运行会话包装组件共用 `ModelPickerView`，包含上游支持档位的强度滑条。准备阶段按模型保存 pi 默认值；运行会话仍区分已应用与下一轮待生效设置。
 
 ### 设置与确认对话框 — Settings and Confirmation Dialogs
 
@@ -204,7 +204,7 @@ Pi 聊天侧栏
 | 任务状态与操作区 | [task-status.tsx](../../src/webview/chat/task-status.tsx)、[candidate-review.tsx](../../src/webview/chat/candidate-review.tsx)、[approvals.tsx](../../src/webview/components/approvals.tsx)、[extension-interactions.tsx](../../src/webview/chat/extension-interactions.tsx) | 状态行、审批、审阅、扩展交互与恢复提示各自就近维护；区域组合、显示条件与跨区域高度预算仍在主组件 |
 | 消息编辑区 | [message-composer.tsx](../../src/webview/chat/message-composer.tsx) | 负责输入高度、输入交互、工具栏、权限与发送／停止，接收页面快照及客户端意图 |
 | 上下文附件区 | [candidate-context.tsx](../../src/webview/chat/candidate-context.tsx) | 管理附件／菜单状态和焦点，通过内容与操作插槽由编辑区安排位置 |
-| 模型与推理设置 | [model-picker.tsx](../../src/webview/components/model-picker.tsx)、[default-model-picker.tsx](../../src/webview/chat/default-model-picker.tsx) | 运行会话与准备阶段使用不同组件 |
+| 模型与推理设置 | [model-picker.tsx](../../src/webview/components/model-picker.tsx)、[default-model-picker.tsx](../../src/webview/chat/default-model-picker.tsx) | 准备阶段与运行会话共用 ModelPickerView；默认设置与活跃会话仍由各自宿主管理 |
 | 历史会话面板 | [candidate-sessions.tsx](../../src/webview/chat/candidate-sessions.tsx) | 面板框架、正常流返回／标题、列表、反馈和分页集中维护；显示切换、滚动恢复与跨区域焦点仍在主组件 |
 | 设置与确认对话框 | [interface-settings.tsx](../../src/webview/chat/interface-settings.tsx)、[project-resources-prompt.tsx](../../src/webview/chat/project-resources-prompt.tsx)、[no-folder-prompt.tsx](../../src/webview/chat/no-folder-prompt.tsx)、[chat-dialog.tsx](../../src/webview/chat/chat-dialog.tsx) | ChatDialog 拥有原生模态壳、钉住的标题／底部操作和内容区局部滚动；InterfaceSettings 拥有设置入口、分区和宿主意图；确认提示拥有各自文案与同意操作 |
 

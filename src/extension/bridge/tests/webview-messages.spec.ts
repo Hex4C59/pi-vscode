@@ -12,6 +12,7 @@ test("v2 exact actions reject old pages, accessors, paths and invalid identities
     { type: "confirmSelectionAttachment", draftRevision: 0, attachmentId: "a", snapshotId: "s" },
     { type: "getAttachmentPreview", requestId: "r", snapshotId: "s", offset: 0 },
     { type: "updateDraft", draftRevision: 0, editSequence: 1, text: "" },
+    { type: "setDefaultThinkingLevel", provider: "p", modelId: "m", level: "high" },
     { type: "setThinkingLevel", level: "high" }, { type: "setChatModel", provider: "p", modelId: "m" },
   ];
   for (const action of actions) {
@@ -60,5 +61,13 @@ test("selection intents never admit UI text, ranges or source paths", () => {
   for (const action of [{ ...envelope, type: "addSelectionAttachment" }, { ...envelope, type: "confirmSelectionAttachment", attachmentId: "a", snapshotId: "s" }]) {
     assert.ok(parseWebviewMessage(action));
     for (const extra of [{ text: "override" }, { originalRange: { start: { line: 0, character: 0 }, end: { line: 1, character: 0 } } }, { uri: "file:///source.ts" }, { stale: false }]) assert.equal(parseWebviewMessage({ ...action, ...extra }), undefined);
+  }
+});
+
+
+test("default strength intent requires exact model identity and bounded level", () => {
+  const valid = { version: 3, type: "setDefaultThinkingLevel", generation: 1, viewId: "view", provider: "p", modelId: "m", level: "high" };
+  for (const patch of [{ provider: "../p" }, { modelId: "" }, { level: "a".repeat(17) }, { level: null }, { level: "HIGH!" }]) {
+    assert.equal(parseWebviewMessage({ ...valid, ...patch }), undefined);
   }
 });

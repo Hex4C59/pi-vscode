@@ -20,7 +20,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   const actions: Record<string, string[]> = {
     newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
     chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
-    openProviderApiKey: ["providerId"], logoutProvider: ["providerId"], setDefaultModel: ["provider", "modelId"], refreshProviderConfig: [],
+    openProviderApiKey: ["providerId"], logoutProvider: ["providerId"], setDefaultModel: ["provider", "modelId"], setDefaultThinkingLevel: ["provider", "modelId", "level"], refreshProviderConfig: [],
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
@@ -47,14 +47,14 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   }
   if (message.type === "chooseResources" && message.choice !== "allow" && message.choice !== "decline") return undefined;
   if (message.type === "updateDraft" && (typeof message.text !== "string" || message.text.length > MAX_CHAT_MESSAGE_CHARS)) return undefined;
-  if (message.type === "setThinkingLevel") {
+  if ((message.type === "setThinkingLevel" || message.type === "setDefaultThinkingLevel")) {
     if (typeof message.level !== "string" || !isValidThinkingLevel(message.level)) return undefined;
   }
   if (message.type === "setChatModel") {
     if (typeof message.provider !== "string" || typeof message.modelId !== "string") return undefined;
     if (!isValidModelRef(message.provider, message.modelId)) return undefined;
   }
-  if (message.type === "setDefaultModel") {
+  if ((message.type === "setDefaultModel" || message.type === "setDefaultThinkingLevel")) {
     if (typeof message.provider !== "string" || typeof message.modelId !== "string") return undefined;
     if (!isValidModelRef(message.provider, message.modelId)) return undefined;
   }

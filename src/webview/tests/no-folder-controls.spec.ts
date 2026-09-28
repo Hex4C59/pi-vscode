@@ -25,9 +25,10 @@ test("no-folder model picker selects the global default without a running sessio
   try {
     await h.render(noFolder);
     await h.receive({ version: 3, type: "providerConfigState", viewId: "view", generation: 1,
-      busy: false, error: null, defaultProvider: "A", defaultModelId: "one", providers: [],
+      busy: false, error: null, defaultProvider: "A", defaultModelId: "one", defaultThinkingLevel: null, thinkingLevels: [], providers: [],
       catalog: [{ provider: "A", modelId: "one", label: "One" }, { provider: "B", modelId: "two", label: "Two" }] });
     await h.click("#model-effort-trigger");
+    await h.click("#model-current");
     await h.click('button[role="menuitemradio"][aria-checked="false"]');
     assert.deepEqual(h.sent.at(-1), { version: 3, viewId: "view", generation: 1, type: "setDefaultModel", provider: "B", modelId: "two" });
     assert.ok(!h.sent.some(m => m.type === "setChatModel"));
@@ -41,14 +42,14 @@ test("no-folder model loading, errors and empty catalogue keep settings reachabl
     await h.click("#model-effort-trigger");
     assert.match(h.get("#model-popover").textContent ?? "", /Loading model settings/);
     await h.receive({ version: 3, type: "providerConfigState", viewId: "view", generation: 1,
-      busy: false, error: "Could not load provider configuration.", defaultProvider: null, defaultModelId: null, providers: [], catalog: [] });
+      busy: false, error: "Could not load provider configuration.", defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], providers: [], catalog: [] });
     assert.match(h.get("#model-popover").textContent ?? "", /Could not load provider configuration/);
-    await h.click("#model-popover > button");
+    await h.click("[data-provider-settings]");
     assert.ok(h.get<HTMLDialogElement>(".candidate-settings").open);
     await h.click('button[aria-label="Close settings"]');
     await h.click("#model-effort-trigger");
     await act(async () => { h.get("#model-effort-trigger").dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
-    assert.equal(h.root.querySelector("#model-popover"), null);
+    assert.equal(h.get("#model-popover").getAttribute("aria-hidden"), "true");
     assert.equal(h.dom.window.document.activeElement, h.get("#model-effort-trigger"));
   } finally { await h.close(); }
 });
@@ -68,5 +69,31 @@ test("no-folder context cancellation retains draft and other blocked workspaces 
       assert.ok(h.get<HTMLButtonElement>('button[aria-label="Add context"]').disabled);
       assert.ok(h.get<HTMLButtonElement>("#model-effort-trigger").disabled);
     }
+  } finally { await h.close(); }
+});
+
+test("pre-session strength uses the shared picker and survives host refresh without starting a task", async () => {
+  const h = await productionHarness(false);
+  try {
+    await h.render(noFolder);
+    const config = { version: 3 as const, type: "providerConfigState" as const, viewId: "view", generation: 1,
+      busy: false, error: null, defaultProvider: "A", defaultModelId: "one", providers: [],
+      defaultThinkingLevel: "medium", thinkingLevels: ["off", "medium", "high"],
+      catalog: [{ provider: "A", modelId: "one", label: "One" }] };
+    await h.receive(config);
+    await h.click("#model-effort-trigger");
+    const slider = h.get<HTMLInputElement>("#thinking-slider");
+    assert.equal(slider.disabled, false);
+    await act(async () => {
+      slider.focus();
+      slider.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    });
+    assert.deepEqual(h.sent.at(-1), { version: 3, viewId: "view", generation: 1,
+      type: "setDefaultThinkingLevel", provider: "A", modelId: "one", level: "high" });
+    await h.receive({ ...config, defaultThinkingLevel: "high" });
+    await h.click("#model-effort-trigger");
+    await h.click("#model-effort-trigger");
+    assert.equal(h.get<HTMLInputElement>("#thinking-slider").value, "2");
+    assert.ok(!h.sent.some(m => ["setThinkingLevel", "chooseResources", "sendChat"].includes(m.type)));
   } finally { await h.close(); }
 });

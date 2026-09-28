@@ -46,6 +46,7 @@ export function MessageComposer({ snapshot, client, input, canPrepare, canBrowse
         {canPrepare
           ? <DefaultModelPicker config={snapshot.providerConfig} disabled={!!snapshot.error || !!state?.busy}
               onSelect={(provider, modelId) => client.action({ type: "setDefaultModel", provider, modelId })}
+              onThinking={(provider, modelId, level) => client.action({ type: "setDefaultThinkingLevel", provider, modelId, level })}
               onSettings={onSettings} />
           : state
           ? <ModelPicker key={`${state.viewId}-${state.generation}`} state={state} disabled={controls.settingsDisabled} continuousThinkingDrag animatePopover

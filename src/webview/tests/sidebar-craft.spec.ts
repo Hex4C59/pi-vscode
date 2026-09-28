@@ -57,7 +57,7 @@ test("settings dialog uses section headings with an icon refresh and a borderles
   try {
     await h.receive({
       version: 3, generation: 1, viewId: "view", type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt",
+      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
       providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true }],
       catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
     });

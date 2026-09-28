@@ -61,6 +61,17 @@ export interface ConversationProps {
   activities: WorkspaceStateMessage["activities"];
 }
 
+export interface ModelPickerViewProps {
+  state: Pick<WorkspaceStateMessage, "thinkingLevel" | "pendingThinkingLevel" | "thinkingLevels" | "modelBusy" | "chatBusy" | "chatModel" | "pendingModel" | "availableModels" | "modelError">;
+  onSettings?: () => void;
+  loading?: boolean;
+  disabled: boolean;
+  onModel: (provider: string, modelId: string) => void;
+  onThinking: (level: string) => void;
+  continuousThinkingDrag?: boolean;
+  animatePopover?: boolean;
+}
+
 export interface ModelPickerProps {
   /** Opt into candidate entry/exit motion; the production default stays immediate. */
   animatePopover?: boolean;

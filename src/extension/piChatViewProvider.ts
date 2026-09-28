@@ -725,6 +725,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       this.publish();
       return;
     }
+    if (message.type === "setDefaultThinkingLevel") {
+      await this.providerConfig.setDefaultThinkingLevel(message.provider, message.modelId, message.level);
+      this.publish();
+      return;
+    }
     if (message.type === "setDefaultModel") {
       await this.providerConfig.setDefaultModel(message.provider, message.modelId);
       await this.syncSessionModelsAfterProviderConfig(message.provider, message.modelId);

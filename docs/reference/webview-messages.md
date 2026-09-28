@@ -33,12 +33,15 @@ Accept plain/null-prototype objects with exact own enumerable data fields; rejec
 | setChatModel / setThinkingLevel | provider + modelId / level; bounded token and current host catalogue/capability checks |
 | openProviderApiKey / logoutProvider | providerId; host collects API keys only via native password InputBox — never in the webview payload |
 | setDefaultModel | provider + modelId; persists pi default via SettingsManager, then refreshes/applies session model when ready |
+| setDefaultThinkingLevel | provider + modelId + level; current default identity and supported level required; saves per-model defaults without starting a runtime |
 | refreshProviderConfig | None; reloads non-secret provider status and default-model catalogue |
 | chooseExecutionProfile | profile: controlled / trusted; trusted still obtains entry through native picker and consent |
 | answerInteraction / cancelInteraction | id; the former additionally answer matching the active form's exact method |
 | endOwnedRuntime / recoverControlledRuntime | None; exact retained run in this recovery domain only, under ADR0002 receipt rules |
 
 Malformed input has no effect/reply; stale identities cannot execute and the host resynchronizes current projections. Validate the current view, then reread real workspace eligibility/generation. Streaming model/thinking selections record next-turn intent only. Answers contain select optionId, confirm boolean value, or input/editor text (at most32768 characters and UTF-8 bytes), not generic commands/paths/shell/RPC. All host projections carry v3/generation/viewId, including the provider's pong; their state/action semantics follow below.
+
+**WI-025 pre-session defaults:** `providerConfigState` includes `defaultThinkingLevel: string | null` and `thinkingLevels: string[]` (up to 16 entries of at most 16 characters); a non-null level must occur in that list. No configured/known model projects null plus an empty list. The host obtains supported/effective levels using pi-ai 0.86.1 public capability functions; a persisted unsupported value is projected as the upstream-clamped effective value. `setDefaultThinkingLevel` binds the provider/model identity and validates the level against current capabilities before persisting with `SettingsManager.setModelThinkingLevel`. During a default write, further default writes and provider operations are ignored; the UI disables selection. Successful flush and empty `drainErrors()` precede publishing success. Failure preserves the previous applied projection, discards the cached settings manager and exposes a bounded error; explicit refresh reloads authoritative settings. This saves defaults only and does not start or mutate a live session. New-session startup consumes pi defaults; historical-session restoration remains upstream-owned. Host and bundled page evolve together within v3; reload old Webviews after updating this build.
 
 ## Host state projection
 

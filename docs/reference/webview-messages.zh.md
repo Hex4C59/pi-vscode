@@ -38,12 +38,15 @@
 | setChatModel／setThinkingLevel | provider＋modelId／level；须匹配有界token及当前host目录／能力 |
 | openProviderApiKey／logoutProvider | providerId；API 密钥仅经宿主原生密码 InputBox 收集，永不进入 webview 载荷 |
 | setDefaultModel | provider＋modelId；经 SettingsManager 持久化 pi 默认，runtime 就绪时刷新／应用会话模型 |
+| setDefaultThinkingLevel | provider＋modelId＋level；须匹配当前默认模型身份及支持档位；按模型保存默认值，不启动 runtime |
 | refreshProviderConfig | 无；重载无密钥的供应商状态与默认模型目录 |
 | chooseExecutionProfile | profile: controlled／trusted；trusted仍由原生picker与确认取得entry |
 | answerInteraction／cancelInteraction | id；前者另含与活动表单方法精确匹配的answer |
 | endOwnedRuntime／recoverControlledRuntime | 无；只能清理当前恢复域确切运行，遵循ADR0002回执规则 |
 
 畸形输入无效果／回复；过期身份不能执行，host重同步当前投影。先验证当前view，再重新读取真实workspace资格及generation。模型／thinking流式选择只登记下一回合意图。answer的select仅optionId、confirm仅boolean value、input/editor仅text（最多32768字符且UTF-8字节）；无通用命令、路径、shell或RPC桥。所有host投影含v3／generation／viewId，包括provider的pong；字段和动作状态语义归下文。
+
+**WI-025 启动前默认值：** `providerConfigState` 新增 `defaultThinkingLevel: string | null` 与 `thinkingLevels: string[]`（最多 16 项、每项最多 16 字符）；非 null 强度须属于该列表。无已配置／已知模型时投影 null 和空列表。宿主使用 pi-ai 0.86.1 公开能力函数获得支持档位与有效值，已有不支持设置按上游归一化后投影有效档位。`setDefaultThinkingLevel` 绑定 provider/model 身份并验证当前支持档位，再经 `SettingsManager.setModelThinkingLevel` 保存。默认值写入期间忽略其他默认值写入与供应商操作，UI 禁用选择。flush 完成且 `drainErrors()` 为空后才发布成功。失败保留先前已应用投影、丢弃缓存的设置管理器并显示有限错误；显式刷新重载权威设置。只保存默认值，不启动或修改活跃会话；新会话沿用 pi 默认加载，历史恢复仍归上游。宿主与捆绑页面在 v3 内同步演进，更新此构建后须重载旧 Webview。
 
 ## 宿主状态投影
 
