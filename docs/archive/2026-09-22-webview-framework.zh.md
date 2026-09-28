@@ -8,9 +8,13 @@
 - 最近同步：2026-09-27
 
 - 类型：讨论
-- 状态：Open
+- 状态：Archived
 - 创建：2026-09-22
 - 权威：仅调查与历史建议；当前工作、Build 批准与验收以 [ACTIVE](../../ACTIVE.md) 为准；框架方向另见 ADR 0003 Draft；不构成验收声明
+
+> 2026-09-27 更新：原 App 已移到仅测试的 baseline-app；下文为当时迁移调查，当前共享正式界面见架构文档。
+
+> 归档原因（2026-09-27 UTC）：WI-019／WI-015 已委托验收，ADR 0003 已接受。以下调查／候选提案保留为历史，不是当前未决授权；当前权威见 ADR 0003、架构、PRD 与 ACTIVE。
 
 ## 视觉重设计访谈（2026-09-23，已确认）
 
@@ -204,9 +208,9 @@ flowchart TD
 
 ## 仓库证据
 
-迁移前实现现已移除。历史只读检查发现 `src/webview/placeholderHtml.ts` 共 682 行，其中 432 行为 TypeScript 字符串内的 JavaScript。该历史脚本本身没有 TypeScript 检查，集中维护模型控件、附件草稿／预览／历史、按 ID 更新的消息／活动／审批渲染及工作区状态同步。它的按 ID 更新刻意保留节点身份、焦点、展开状态和滚动；当前 React 应用须保留这些行为。当前 host 壳与打包资源加载位于 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)，当前 React 应用位于 [app.tsx](../../src/webview/app.tsx)。
+迁移前实现现已移除。历史只读检查发现 `src/webview/placeholderHtml.ts` 共 682 行，其中 432 行为 TypeScript 字符串内的 JavaScript。该历史脚本本身没有 TypeScript 检查，集中维护模型控件、附件草稿／预览／历史、按 ID 更新的消息／活动／审批渲染及工作区状态同步。它的按 ID 更新刻意保留节点身份、焦点、展开状态和滚动；当前 React 应用须保留这些行为。当前 host 壳与打包资源加载位于 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)，当前 React 应用位于 [app.tsx](../../src/webview/tests/baseline-app.tsx)。
 
-历史上，[esbuild.mjs](../../esbuild.mjs) 有 host、探针及审批 gate 入口，但没有浏览器入口。当前浏览器应用由 Vite 驱动并使用 [app.tsx](../../src/webview/app.tsx)；host HTML／CSP 与资源加载使用 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)。已移除的迁移前 HTML 测试为 `src/webview/tests/placeholder-html.spec.ts`；当前壳／资源检查在 [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts)。迁移前 UI 测试使用手写 DOM 的 VM；当前 [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) 挂载 React 应用。本讨论保存迁移理由，不表示应用、包或宿主检查通过。
+历史上，[esbuild.mjs](../../esbuild.mjs) 有 host、探针及审批 gate 入口，但没有浏览器入口。当前浏览器应用由 Vite 驱动并使用 [app.tsx](../../src/webview/tests/baseline-app.tsx)；host HTML／CSP 与资源加载使用 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)。已移除的迁移前 HTML 测试为 `src/webview/tests/placeholder-html.spec.ts`；当前壳／资源检查在 [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts)。迁移前 UI 测试使用手写 DOM 的 VM；当前 [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) 挂载 React 应用。本讨论保存迁移理由，不表示应用、包或宿主检查通过。
 
 ## 确认前比较的候选
 

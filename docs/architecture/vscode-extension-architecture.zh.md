@@ -5,17 +5,17 @@
 - 翻译状态：Machine Draft
 - 权威原文：[vscode-extension-architecture.md](vscode-extension-architecture.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-26
+- 最近同步：2026-09-28
 
 - 类型：Architecture
-- 状态：Proposed
+- 状态：Accepted
 - 创建：2026-09-19
 - 权威范围：结构、边界与所有者（不表示功能已实现）
 - 相关 gate：[`../reference/architecture-gates.zh.md`](../reference/architecture-gates.zh.md)
 - 同级参考：pi-desktop（Electron 呈现层；pi 集成原则相同，宿主不同）
 - 上游：[pi](https://github.com/earendil-works/pi) coding-agent runtime（开发期只读同级检出 `../pi`）
 
-> 拟议架构。相关 gate 经 spike 与 Accepted ADR 关闭前，不得将能力描述为已交付。
+> ADR0001～0004 已接受的结构边界。实际功能／环境交付仍以对应 WI 证据为限；不代表整份 PRD 接受或发布认证。
 
 ## 1. 背景
 
@@ -69,7 +69,7 @@ flowchart TD
 |------|------|------|
 | **主侧栏** | Explorer、SCM 等 | 不变（文件树在左） |
 | **辅助侧栏** | pi 聊天 **Webview View** | **首选** 停靠（`viewsContainers.secondarySidebar`） |
-| **主侧栏回退** | 同一 webview 容器 | 兼容方向；须验证具体宿主支持，不承诺自动回退 |
+| **主侧栏回退** | 宿主回退位置中已注册的 Pi webview | 1.105.1 的 Explorer 回退已验证；Focus Chat 先发现专用容器是否存在再展开。其他宿主须单独取证。 |
 | **编辑区 Panel** | 整页聊天 | **停车场**（可选，非 MVP 默认） |
 
 命令 `pi-vscode.focusChat` 从编辑器标题或命令面板显示现有容器并聚焦聊天视图。位置兼容性须在目标宿主验证。
@@ -88,13 +88,13 @@ flowchart TD
 2. **聊天**：webview 发用户输入 → host → adapter → pi 流式 → host 转发有界展示投影到 webview（过滤不保证任意输出完全无敏感信息）。
 3. **视图释放与运行时关闭**：释放或替换 Webview 时，`PiChatViewProvider.clearView()` 清理视图监听及视图绑定操作，不停止运行时，也不清空宿主聊天／待选设置；重建视图后从宿主重新同步。Provider 释放（含扩展清理）时，取消运行时事件订阅，清空聊天／待选设置及审批／授权，请求 `runtime.stop()`，并释放视图／工作区监听。Adapter 负责有超时边界的子进程关闭；这不保证取消所有后代进程。
 
-**已实现 WI-015 前端边界（待验收）：** `src/extension/bridge/webviewHtml.ts` 持有最小资源壳；浏览器入口为 `src/webview/main.tsx`。`webviewProtocol.ts` 保存共享纯 DTO 类型，`webviewMessages.ts` 保留特权端入站 allowlist 校验。浏览器 `bridge.ts` 管理传输／监听寿命；`webview-client.ts` 协调 host 投影、view／generation 身份及已确认草稿；`saved-history-client.ts` 拥有保留历史分页及请求关联的分块预览状态；`client-state.ts` 拥有展示类型、限制与可用状态推导，不依赖传输实现。React 组件持有呈现、展开及临时控件状态。浏览器模块不导入 Node、VS Code 或 pi 运行时代码。执行、审批及附件策略仍由 host 决定。Vite 构建浏览器资源；esbuild 构建扩展与捆绑审批扩展。WI-019 由仅浏览器使用的 `preview/candidate-preview.ts` 管理挂载寿命，通过合成 host 和局部 `preview/candidate.css` 挂载 `preview/candidate.tsx`。经公共入口复用 WebviewClient、availability 与展示控件；候选组合和夹具不进入生产入口。重置／卸载释放候选 client／root 及合成 host 的定时器／监听。仅预览使用的 candidate-conversation Module 按助手消息身份归组既有活动，拥有原生展开状态；reply-markdown 只接受助手正文，将 marked lexer token 转为白名单 React 元素，并拥有有界浏览器剪贴板反馈。不插入 HTML／嵌入资源，不增 host 意图，不改变审批／附件原文路径。UIP-03 候选导航仅拥有可见区域、焦点及阅读位置；candidate-sessions 展示既有会话列表投影并调用命名 client 操作。经展示公共入口复用 SavedHistory 与既有 Approvals。预览生命周期拥有明确标注的模拟交接对话框及清理；PreviewBridge 将会话／历史读取与任务 Stop 分离，等待模拟稳定结束后才提交既有 generation 重置。不增加 host 意图或持久化 owner。生产继续使用既有 App／mount 入口；候选 root 替换仍待视觉确认与架构条件。已批准的 WI-021 执行／终态及失联草稿可读改进、composer 裁剪修复接入既有正式 UI，不代表接受候选 root。[ADR 0003](../decisions/0003-react-webview.zh.md) 保持 Draft；[ACTIVE](../../ACTIVE.md) 记录检查与剩余验收。
+**已接受 WI-015／WI-019 前端边界：** host `bridge/webviewHtml.ts` 仅提供资源壳，`main.tsx` 经 `mount.tsx` 与 `chat/index.ts` 挂载共享 React 展示。`chat/types.ts` 定义挂载与页面语言契约。真实 bridge 管理传输寿命，WebviewClient 保持投影、身份与草稿权威；host 保持执行、审批、附件、会话与持久化权威。浏览器不导入 Node、VS Code 或 pi 运行时代码。Vite 构建浏览器，esbuild 构建 host／gate。Q16 由代理按本次委托完成评估后，正式与预览共享 chat 组合、样式、消息／活动／安全 Markdown、会话／历史／审批／审阅控件。预览 owner 仅保留合成 bridge、场景、计时器及开发控件，生产图排除 preview 和 tests。原 App 仅作为 tests/baseline-app 的历史共享控件夹具，不是第二套生产界面。卸载释放 client、root 及监听；合成 owner 另释放自己的定时器。Markdown 仅由白名单 React 元素呈现，不注入 HTML／嵌入资源，不新增 host 意图或改变审批／附件原文。[Accepted ADR 0003](../decisions/0003-react-webview.zh.md) 记录委托验收与独立宿主／安装证据；[ACTIVE](../../ACTIVE.md) 持有剩余工作。
 
-WI-019 候选语言设置仅属于展示：共享组件通过 `components/index.ts` 的 UI 文案 Context 获取文案，默认保留英文。候选语言包、注册表／页面级 locale 状态及原生设置对话框位于 `preview/`。语言变更仅更新既有 React 节点，不替换 client／bridge 或发送 host 意图；场景 Reset 复用本页语言，页面刷新不持久化。只格式化固定 UI 标识符，参数保持字面替换；不翻译 host／用户原文。正式构建复用默认英文展示代码，但不导入候选语言包、设置视图或样式。这不切换正式入口，也不建立 host 偏好契约。
+WI-019 语言设置仅属于展示：共享组件经 components 公共入口的 UI 文案 Context 取文案，默认英文。语言包、注册表、挂载级 locale 与设置视图位于 `chat/`，正式与预览共享。语言变更不替换 client／bridge、不发送 host 意图、不持久化或翻译原始内容。预览 Reset 保留本页语言；重新挂载恢复英文。这不建立 host 偏好契约。
 
-候选无文件夹欢迎页通过既有 client `edit`／版本化 `updateDraft` 编辑草稿（该路径原本独立于运行时就绪状态）。其发送分支只打开 `preview/no-folder-prompt.tsx`，不会在该状态调用任务提交。提示使用既有命名 `openFolder` 意图；工作区／信任／资源资格继续由 host 决定。不另持草稿、不选择工作区、不持久化或重放。原生弹窗寿命与返回焦点归候选展示负责，其他阻断状态及正式 App 保持不变。
+候选无文件夹欢迎页通过既有 client `edit`／版本化 `updateDraft` 编辑草稿（该路径原本独立于运行时就绪状态）。其发送分支只打开 `chat/no-folder-prompt.tsx`，不会在该状态调用任务提交。提示使用既有命名 `openFolder` 意图；工作区／信任／资源资格继续由 host 决定。不另持草稿、不选择工作区、不持久化或重放。原生弹窗寿命与返回焦点归候选展示负责，其他阻断状态保留既有资格规则。
 
-**Planned WI-013 关系（Paused，未交付；2026-09-22）：** 维护者曾暂停 WI-014、优先 WI-015 前端迁移；迁移实现验证后，[ACTIVE](../../ACTIVE.md) 已恢复附件工作。交互提案保留，未完成。 [Draft ADR 0002](../decisions/0002-interaction-contract-route.zh.md) 记录历史文档路线批准及 9 月 22 日修订：使用有文档的公开 API，在未修改发行版 pi 上评估限定加载／标准交互；上游增强可选，不是基线交付前提。产品范围归 [REQ-009](../product-requirements.zh.md#req-009--代表性-pi-兼容)。[Planned 交互契约](../reference/webview-messages.zh.md#planned-wi-013-本地交互契约) 持有 host 资格、adapter 证据及视图意图候选，不改变这些层级或当前受控聊天实现。针对所选切片解决加载／审批、支持操作及所有权丢失恢复缺口；文档批准不是 Build 或 ADR 接受。
+**WI-013已接受边界（2026-09-28 Asia/Shanghai）：** [Accepted ADR0002](../decisions/0002-interaction-contract-route.zh.md)规定显式受信加载、host-owned标准交互、公开adapter seam、被动supervisor与持久恢复fence；精确v3 DTO归[消息契约](../reference/webview-messages.zh.md)。[委托验收](../archive/2026-09-28-wi-013-acceptance.zh.md)分别记录真实扩展、原生F5、安装、多窗口及限制，不表示全生态兼容或三项广泛gates关闭。
 
 ### 宿主内部能力模块
 
@@ -123,14 +123,14 @@ WI-019 候选语言设置仅属于展示：共享组件通过 `components/index.
 - **契约所有权：** `src/extension/contracts/approvalProtocol.ts` 拥有纯捆绑 gate envelope 类型与校验器；adapter 消费这一宿主契约，不导入审批策略。`src/adapter/runtime/runtime-errors.ts` 拥有运行时错误归一化与长度限制。`toolApproval.ts` 保留授权决策及文件系统范围检查。
 - **执行边界：** `src/adapter/approvalGate.ts` 打包为 `dist/approval-gate.mjs`（构建与 package 声明已包含）。公开异步 `tool_call` hook 通过 `ctx.ui.confirm` 等待；产品 v1 协议绑定 runtime／cwd、request／tool-call ID 与完整输入。`src/adapter/runtime/pi-rpc-runtime.ts` 拥有对话回复并校验 hello／就绪。不存在通用审批 RPC 或按标题授权。文件缺失拒绝启动；hello/get_state 失败停止启动，不是可用的无工具回退。
 - **独占配置：** CLI 使用 `--tools read,write,edit,bash,powershell,grep,find,ls --no-extensions -e <bundled gate>`，并保留资源 flag。即使同意资源，也禁用第三方扩展发现。其他上下文／资源类别不因此全部排除。自带扩展以用户代码权限运行；不是沙箱，不承诺完整约束 shell／网络。
-- **投影与生命周期：** `runtimeLifecycle.ts` 定义活动／最终消息／运行时错误事件及窄 `abortTask`／审批 handler 注入。`activityProjection.ts` 按消息／内容索引关联真实 thinking，按 tool-call ID 关联工具，替换累计输出并限制展示字段。`PiChatViewProvider` 拥有投影时间线及执行状态；`EditorTools` 拥有审批生命周期，由协调者通知重置／取消。Stop 在 adapter `clear_queue` + `abort` 前取消待审批；未 settled／失败则关闭运行时并明确报错。成功 Stop 保留同一运行会话授权；替换／断开清除。延后设置等待 settled 及停止完成。不回滚副作用、不自动重试任务。
+- **投影与生命周期：** `runtimeLifecycle.ts` 定义活动／最终消息／运行时错误事件及窄 `abortTask`／审批 handler 注入。`activityProjection.ts` 按消息／内容索引关联真实 thinking，按 tool-call ID 关联工具，替换累计输出并限制展示字段。`PiChatViewProvider` 拥有投影时间线及执行状态；`EditorTools` 拥有审批生命周期，由协调者通知重置／取消。Stop 在 adapter `clear_queue` + `abort` 前取消待审批；未 settled／失败则明确报错并撤销 transport／answer 接纳，按 ADR0002 保留 exact-child 观察；不自动杀死不确定工作。成功 Stop 保留同一运行会话授权；替换／断开清除。延后设置等待 settled 及停止完成。不回滚副作用、不自动重试任务。
 - **契约／安全：** [contract-webview-messages](../reference/webview-messages.zh.md) 记录精确入站动作与有界 DTO。不开放通用命令，不转发原始 runtime／stderr；凭证模式过滤尽力而为，不保证任意输出完全无密钥。增量 UI、逐项及预留总量超限提示、稳定展开／焦点／滚动、完整审批输入、授权撤销与保留草稿的 Stop 已实现并有 UI 测试覆盖。维护者已确认四项开发态 F5：thinking／状态、读取／工具卡、拒绝写入无副作用后允许写入、长时间无害命令 Stop。限定 WI 已关闭；不推断已安装 VSIX 或完整手动矩阵验收。
 
 **WI-016 T016-01 补充：** host `writeProtection.ts` 将声明版本的内置 write/edit 目标映射到活跃 VS Code 文档元数据和文件系统身份。`ToolApprovals` 在提供审批及授权放行前检查，异步过程共用到期点和 epoch；重检 grant 撤销，并仅在保护通过后创建 session grant。沿用有界错误投影解释拒绝，不新增 Webview 文件权限、自动保存、持久化或工具替换。公开执行前 hook 不能提供编辑器／写入原子锁，也不能覆盖不透明 shell／扩展绕过。[消息契约](../reference/webview-messages.zh.md) 管理细节，ACTIVE 管理当前证据；T016-02 `ChangeReview` 管理有界的纯内存快照、合并后的工作区观察和只读虚拟文档 diff。Adapter 完成事件独立于 activity 展示限额。Webview 只接收元数据与不透明 ID；最终授权失败丢弃临时快照，runtime 替换使快照／迟到工作失效。
 
 **环境与覆盖：** [`controlledEnvironment.ts`](../../src/adapter/controlledEnvironment.ts)强制 `PI_OFFLINE=1`／`PI_TELEMETRY=0`，保留可信用户 provider 配置及凭证命令；后者在工具审批范围外。Offline 限制启动网络／缺包安装，不隔离推理或工具网络。
 
-**证据与成熟度：** [WI-010 历史](../archive/2026-09-21-closed-wi-history.zh.md#wi-010)保存版本匹配的真实审批夹具、离线／解压包验证、四项开发态 F5 及其限制。架构保持 Proposed／Direction；已安装 VSIX、外部 provider 全面覆盖及完整边界验证／ADR 仍有缺口，当前条件见 ACTIVE。
+**证据与成熟度：** [原WI-010历史](../archive/2026-09-21-closed-wi-history.zh.md#wi-010)保留其版本与限制。[ADR0004](../decisions/0004-trust-and-lifecycle.zh.md)经当前源码审查、公开pi探针、实际原生F5与安装VSIX验证，另行接受剩余信任／生命周期边界。该范围达到Evolvable，不声称全provider／OS／fork支持。最终WI-010收尾及证据由ACTIVE链接。
 
 ## 8. 模型设置所有权（WI-008／WI-009）
 
@@ -140,6 +140,6 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 维护者已于 2026-09-21 19:44 确认延后选择主路径：当前回复不变，settled 后应用，下一条使用新配置；空闲选择和基础 UI 也已确认。失败回读、重启清理及审批／Stop 交错等边界未获完整独立手测；WI-008／WI-009 仍待汇总及明确收尾。最新验收记录见 [ACTIVE](../../ACTIVE.md)。
 
-### 保存会话 helper（WI-017 Build）
+### 保存会话 helper（WI-017）
 
-Agent 执行仍使用 subprocess RPC；独立短生命周期 adapter helper 导入声明发行版的公开 SessionManager，负责当前项目列表、身份校验与活动分支历史；extension host 不加载 pi SDK、不解析 session 文件。生产包包含 dist/session-worker.mjs 与声明发行依赖。Helper 有输入／输出上限、期限／取消与实际 close 观察。Host 拥有原生交接确认、Stop／settlement、当前资源策略、fresh grants 及不透明 UI 能力。运行时就绪校验请求的公开会话 ID 与路径，不匹配则保持未就绪。UI 历史窗口与不可变保留文本分块不定义模型上下文、不恢复当前工作区文件。参见[消息契约](../reference/webview-messages.zh.md#wi-017-t017-03--有界恢复历史与保留文本build-契约)及 ACTIVE 的实现／验证状态；此 Build 边界不接受 gate／ADR。
+Agent 执行仍使用 subprocess RPC；独立短生命周期 adapter helper 导入声明发行版的公开 SessionManager，负责当前项目列表、身份校验与活动分支历史；extension host 不加载 pi SDK、不解析 session 文件。生产包包含 dist/session-worker.mjs 与声明发行依赖。Helper 有输入／输出上限、期限／取消与实际 close 观察。Host 拥有原生交接确认、Stop／settlement、当前资源策略、fresh grants 及不透明 UI 能力。运行时就绪校验请求的公开会话 ID 与路径，不匹配则保持未就绪。UI 历史窗口与不可变保留文本分块不定义模型上下文、不恢复当前工作区文件。参见[消息契约](../reference/webview-messages.zh.md#wi-017-t017-03--有界恢复历史与保留文本契约)及 ACTIVE 的实现／验证状态；[WI-017委托接受](../archive/2026-09-28-wi-017-session-acceptance.zh.md)不自动接受广泛gate／ADR。

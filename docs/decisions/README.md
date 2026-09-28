@@ -27,12 +27,14 @@ Initial proposals and unexplained spike failures retain their pending state and 
 | ID | Title | Gate | File |
 |----|-------|------|------|
 | 0001 | Build and extension baseline (WI-001) | `gate-extension-host-baseline`, `gate-sidebar-chat-shell`, `gate-runtime-host` | [0001-build-baseline.md](0001-build-baseline.md) |
+| 0002 | Trusted extension interactions and owned-runtime recovery (WI-013) | Related broad gates: separately Accepted by ADR0004 | [0002-interaction-contract-route.md](0002-interaction-contract-route.md) |
+| 0003 | React/TypeScript/Vite Webview frontend (WI-015) | Related gates: separately Accepted by ADR0004 | [0003-react-webview.md](0003-react-webview.md) |
+| 0004 | End-to-end trust and session lifecycle boundaries (WI-010) | `gate-webview-trust`, `gate-project-trust`, `gate-session-streaming` | [0004-trust-and-lifecycle.md](0004-trust-and-lifecycle.md) |
 
 ## Draft ADRs
 
-- [0003 — React and TypeScript Webview frontend](0003-react-webview.md): React/Vite direction and WI-015 Build approved; migration slices are implemented with executable verification recorded in ACTIVE. Maintainer experience and ADR acceptance remain pending; WI-014 technical slices are implemented, not permanently paused. Gates remain Open.
 
-- [0002 — Local interaction contract and upstream capability proposal](0002-interaction-contract-route.md): document route approved on 2026-09-22, then amended to prioritize unmodified released pi; upstream enhancement is optional. Detailed scoped design, implementation and required verification pending. WI-013 Paused, not completed; ADR remains Draft and gates remain Open. Does not resolve WI-010's pending ADR.
+No current Draft ADRs. ADR0004 accepts the remaining WI-010 boundary decisions; WI-010/Goal closure is recorded in the archive linked from ACTIVE.
 
 ## Agent workflow
 

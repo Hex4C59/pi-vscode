@@ -3,9 +3,11 @@
 English | [中文](2026-09-22-pi-compatibility.zh.md)
 
 - Type: Discussion
-- Status: Draft
+- Status: Archived
 - Created: 2026-09-22
 - Authority: research context only; not implementation authorization
+
+> Archived on2026-09-28: the investigation/old proposals are superseded by WI-013/014/017/021 acceptance and [ADR0004](../decisions/0004-trust-and-lifecycle.md). Current/pending/not-run wording below retains its historical date, not current work ownership; use [ACTIVE](../../ACTIVE.md). Historical candidate fixtures are not relabeled as executed evidence; current verification maps to the acceptance records.
 
 ## Current handoff — WI-013 Paused, WI-014 Prepare
 
@@ -34,7 +36,7 @@ Highest practical seam: host intents through the injected VS Code/document API a
 
 **Planning draft only.** Stable `T014-*` IDs identify local candidates, not new WIs, tracker issues or Build approval. [ACTIVE](../../ACTIVE.md) remains the sole WI-014 Prepare/approval record; WI-013 stays Paused. Scope is only [REQ-003](../product-requirements.md#req-003--explicit-editor-context), with existing REQ-001/002/004/005/006 paths preserved. Intermediate restrictions below are explicit candidate delivery boundaries, **not reductions of the final REQ-003 acceptance**. All proposed behavior checks are **Not run**.
 
-**WI-014 planning prerequisite resolved for the proposed first slice (2026-09-22):** the existing [Planned T014-01 contract](../reference/webview-messages.md#planned-t014-01-single-file-attachment-contract) now owns exact intents/projections, revisions, v2 migration, capture/security, encoding, numeric budgets, transport and retention/recovery. It is an implementation-ready approval candidate, not implemented behavior or Build authorization. ACTIVE owns the single pending consolidated approval. Full 1 MiB composition remains later acceptance, not inferred from today's receive limit. No additional ticket, prefactoring/framework work or ADR decision is introduced.
+**WI-014 planning prerequisite resolved for the proposed first slice (2026-09-22):** the existing [Planned T014-01 contract](../archive/2026-09-28-webview-contract-history.md#planned-t014-01-single-file-attachment-contract) now owns exact intents/projections, revisions, v2 migration, capture/security, encoding, numeric budgets, transport and retention/recovery. It is an implementation-ready approval candidate, not implemented behavior or Build authorization. ACTIVE owns the single pending consolidated approval. Full 1 MiB composition remains later acceptance, not inferred from today's receive limit. No additional ticket, prefactoring/framework work or ADR decision is introduced.
 
 **Shared acceptance discipline:** each candidate extends the existing host-intent → injected document API → captured runtime prompt seam, exact-shape validator and VM DOM tests described above, plus adapter serialization/write tests where affected; use ordinary owner-local specs, not a new runner. Each slice needs later Windows VS Code F5 **and installed-VSIX** evidence for its own UI/editor/lifecycle path (keyboard, focus, themes and applicable failures included). Keyless doubles/synthetic text are the default; real-runtime probes, model/network use and credentials require separate authorization, and unavailable evidence stays pending rather than being inferred from mocks. Never use real private keys or credential files as fixtures. Future approved implementation also requires compile/lint/relevant tests under the testing guide. None runs in this drafting task.
 

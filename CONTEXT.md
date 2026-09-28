@@ -41,3 +41,9 @@ _Avoid_: all agent changes.
 
 **Observed workspace change**: A file change observed during a task that may also include user, shell or concurrent activity.
 _Avoid_: agent-only diff without attribution evidence.
+
+**Recovery domain**: The set of product entry points that share an unresolved-runtime recovery obligation. Opening another entry point in that domain does not clear the obligation.
+_Avoid_: security sandbox, saved-session ownership lock.
+
+**Owned-runtime termination**: An explicit request to end the runtime process retained by its owner, distinct from task Stop and from evidence that the process has exited.
+_Avoid_: successful cancellation, rollback, termination of all descendants.

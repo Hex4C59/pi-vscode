@@ -34,7 +34,7 @@ npm run compile
 
 ### Browser frontend preview
 
-Use the gear in the candidate chat header → **Interface settings → Language** to switch between **English** and **简体中文** immediately. English is the default; the choice survives scenario changes and Reset for this page, but a page reload returns to English. The developer toolbar follows the same language. Drafts, streaming, model settings and expanded activity stay in place; messages, code, tool/approval input, saved content and upstream error details remain literal. This is candidate-only, not a VS Code/host preference. For another language, add a complete `UiText` language pack beside `src/webview/preview/ui-zh-cn.ts` and register it in `ui-language.ts`; shared presentation uses an English-default context without importing candidate packs.
+Use the chat header gear → **Interface settings → Language** to switch between **English** and **简体中文** in both the formal sidebar and browser preview. English is the default; language is mount-local and not persisted or sent to the host. Preview scenario changes and Reset retain the page language; reloading resets it. Drafts, streaming, model settings and expanded activity stay in place. Messages, code, tool/approval input, saved content and upstream error details remain literal. Add complete `UiText` packs beside `src/webview/chat/ui-zh-cn.ts` and register them in `ui-language.ts`.
 
 In the **No folder** fixture, the candidate shows the normal welcome page and accepts a draft instead of an upfront setup card. Send/Enter opens a localized “Unable to send message” prompt; OK, Close or Escape preserves the draft. Open folder remains available in that prompt, followed by the existing resource choice. Nothing is sent automatically, and no-folder still cannot start a task.
 
@@ -44,7 +44,7 @@ Run the Vite preview when working on the React frontend:
 npm run preview:webview
 ```
 
-Open the local URL printed by Vite. Expand **Preview controls** to choose a synthetic scenario, width (280/320/360/400/600px), theme, Reset or recovery; collapse those developer controls to inspect the product canvas in a short viewport. The isolated UIP-01–07 candidate mounts through `src/webview/preview/candidate-preview.ts` and `candidate.tsx`, reusing the real production client and shared presentation Modules. Candidate CSS and scenario/bridge fixtures remain browser-only; production still builds from `src/webview/main.tsx` and is not switched before Q16 confirmation.
+Open the local URL printed by Vite. Expand **Preview controls** to choose a synthetic scenario, width (280/320/360/400/600px), theme, Reset or recovery; collapse them for short-viewport inspection. Following delegated Q16 evaluation, production `main.tsx`/`mount.tsx` and the synthetic `preview/candidate-preview.ts` both mount the shared `chat` presentation through its public entry. Production uses the real VS Code bridge; preview alone owns synthetic scenarios, timers and developer controls. Production dependency-graph tests exclude preview and test modules. Current host/package acceptance remains recorded in [ACTIVE](ACTIVE.md).
 
 Shortest review loop:
 

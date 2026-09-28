@@ -7,9 +7,11 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-09-22
 - 类型：讨论
-- 状态：Draft
+- 状态：Archived
 - 创建：2026-09-22
 - 权威：仅作研究上下文，不授权实现
+
+> 2026-09-28 归档：调查及旧提案已由 WI-013／014／017／021 验收和 [ADR0004](../decisions/0004-trust-and-lifecycle.zh.md) 的边界决定替代。下文的当前／待执行／未决均保留原调查时点，不是现在的工作入口；当前状态仅见 [ACTIVE](../../ACTIVE.md)。未执行的历史候选夹具不冒充实际结果，现行验证映射见各验收记录。
 
 ## 当前交接 — WI-013 Paused，WI-014 Prepare
 
@@ -38,7 +40,7 @@
 
 **仅规划草案。** 稳定 `T014-*` ID 标识本地候选，不是新 WI、tracker Issue 或 Build 批准。[ACTIVE](../../ACTIVE.md) 仍是唯一 WI-014 Prepare／批准记录；WI-013 保持 Paused。范围仅 [REQ-003](../product-requirements.zh.md#req-003--显式编辑器上下文)，保留既有 REQ-001／002／004／005／006 路径。下列中间限制是明确的候选交付边界，**不缩减最终 REQ-003 验收**。所有建议行为检查均 **Not run**。
 
-**WI-014 建议首片的规划前置条件已补齐（2026-09-22）：** 既有 [Planned T014-01 契约](../reference/webview-messages.zh.md#planned-t014-01-单文件附件契约)现集中拥有精确意图／投影、revision、v2 迁移、捕获／安全、编码、数字预算、传输及保留／恢复。它是实现就绪的待批准候选，不是已实现行为或 Build 授权；ACTIVE 拥有一次待决集中批准。完整 1 MiB 混合集合仍属后续验收，不从当前接收上限推断。不新增票据、预重构／框架工作或 ADR 决策。
+**WI-014 建议首片的规划前置条件已补齐（2026-09-22）：** 既有 [Planned T014-01 契约](../archive/2026-09-28-webview-contract-history.zh.md#planned-t014-01-单文件附件契约)现集中拥有精确意图／投影、revision、v2 迁移、捕获／安全、编码、数字预算、传输及保留／恢复。它是实现就绪的待批准候选，不是已实现行为或 Build 授权；ACTIVE 拥有一次待决集中批准。完整 1 MiB 混合集合仍属后续验收，不从当前接收上限推断。不新增票据、预重构／框架工作或 ADR 决策。
 
 **共同验收纪律：** 每个候选扩展上方既有 host 意图 → 注入 document API → 捕获 runtime prompt 边界、严格 shape validator 和 VM DOM tests，涉及 adapter 时补序列化／写入测试；使用 owner-local 普通 specs，不另建 runner。每片后续均需 Windows VS Code F5 **及已安装 VSIX** 的对应 UI／编辑器／生命周期证据（包括键盘、焦点、主题及适用失败）。默认无密钥替身／合成文本；真实 runtime 探针、模型／网络和凭证使用须另批，缺证据继续待验，不从 mocks 推断。不得用真实私钥或凭证文件作夹具。未来获批实现还须依测试指南运行 compile／lint／相关 tests。本轮草拟不执行这些检查。
 

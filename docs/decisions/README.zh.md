@@ -32,12 +32,14 @@
 | ID | 标题 | Gate | 文件 |
 |----|------|------|------|
 | 0001 | 构建与扩展 baseline（WI-001） | `gate-extension-host-baseline`、`gate-sidebar-chat-shell`、`gate-runtime-host` | [0001-build-baseline.md](0001-build-baseline.md) |
+| 0002 | 受信扩展交互与自有runtime恢复（WI-013） | 关联三项广泛gates另由ADR0004接受 | [0002-interaction-contract-route.zh.md](0002-interaction-contract-route.zh.md) |
+| 0003 | React／TypeScript／Vite Webview 前端（WI-015） | 关联gates另由ADR0004接受 | [0003-react-webview.zh.md](0003-react-webview.zh.md) |
+| 0004 | 端到端信任与会话生命周期边界（WI-010） | `gate-webview-trust`、`gate-project-trust`、`gate-session-streaming` | [0004-trust-and-lifecycle.zh.md](0004-trust-and-lifecycle.zh.md) |
 
 ## Draft ADR
 
-- [0003 — React 与 TypeScript Webview 前端](0003-react-webview.zh.md)：React/Vite 方向与 WI-015 Build 已批准；迁移切片已实现，可执行验证记录于 ACTIVE。维护者体验及 ADR 接受仍待；WI-014 技术切片已实现，并非永久暂停。gate 保持 Open。
 
-- [0002 — 本地交互契约与上游能力提案](0002-interaction-contract-route.zh.md)：文档路线于 2026-09-22 批准，随后修订为优先使用未修改发行版 pi，上游增强可选。详细限定设计、实现及所需验证待完成。WI-013 Paused，未完成；ADR 仍 Draft，gate 保持 Open；不解决 WI-010 遗留 pending ADR。
+当前无 Draft ADR。ADR0004已接受WI-010剩余边界决定；WI-010／Goal已收尾，归档由ACTIVE链接。
 
 ## Agent 流程
 

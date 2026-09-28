@@ -3,9 +3,13 @@
 English | [中文](2026-09-22-webview-framework.zh.md)
 
 - Type: Discussion
-- Status: Open
+- Status: Archived
 - Created: 2026-09-22
-- Authority: investigation and historical proposals only; current work, Build approval and acceptance are owned by [ACTIVE](../../ACTIVE.md); framework direction is recorded in Draft ADR 0003; no acceptance claim
+- Authority: investigation and historical proposals only; current work, Build approval and acceptance are owned by [ACTIVE](../../ACTIVE.md); framework direction is recorded in Accepted ADR 0003; no acceptance claim
+
+> 2026-09-27 update: the former App moved to the test-only baseline-app fixture. The investigation below is historical; current shared production composition is specified by the architecture document.
+
+> Archived September 27, 2026 UTC: WI-019/WI-015 are accepted under delegation and ADR 0003 is Accepted. The investigation/candidate proposals below remain historical, not pending authorization. Current authority is ADR 0003, architecture, PRD and ACTIVE.
 
 ## Visual redesign interview (2026-09-23, confirmed)
 
@@ -199,9 +203,9 @@ The maintainer confirmed long-term component composition/state maintenance, then
 
 ## Repository evidence
 
-The pre-migration implementation is now removed. Historical read-only inspection found 682 lines in `src/webview/placeholderHtml.ts`, including 432 lines of inline JavaScript inside a TypeScript string. That historical script had no TypeScript checking. It combined model controls, attachment draft/preview/history coordination, keyed message/activity/approval rendering and workspace-state reconciliation. Its keyed updates deliberately retained node identity, focus, expanded details and scroll; the current React application must preserve those behaviors. The current host shell and packaged resource loading live in [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts), and the current React application lives in [app.tsx](../../src/webview/app.tsx).
+The pre-migration implementation is now removed. Historical read-only inspection found 682 lines in `src/webview/placeholderHtml.ts`, including 432 lines of inline JavaScript inside a TypeScript string. That historical script had no TypeScript checking. It combined model controls, attachment draft/preview/history coordination, keyed message/activity/approval rendering and workspace-state reconciliation. Its keyed updates deliberately retained node identity, focus, expanded details and scroll; the current React application must preserve those behaviors. The current host shell and packaged resource loading live in [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts), and the current React application lives in [app.tsx](../../src/webview/tests/baseline-app.tsx).
 
-Historically, [esbuild.mjs](../../esbuild.mjs) had host, probe and approval-gate entries but no browser entry. The current browser application is Vite-driven and uses [app.tsx](../../src/webview/app.tsx); host HTML/CSP and resource loading use [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts). The removed pre-migration HTML test was `src/webview/tests/placeholder-html.spec.ts`; current shell/resource checks are in [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts). The pre-migration UI tests used a VM with a hand-built DOM; the current [execution UI specs](../../src/webview/tests/execution-ui.spec.ts) mount the React application. This discussion records the migration rationale, not a passing application, package or host result.
+Historically, [esbuild.mjs](../../esbuild.mjs) had host, probe and approval-gate entries but no browser entry. The current browser application is Vite-driven and uses [app.tsx](../../src/webview/tests/baseline-app.tsx); host HTML/CSP and resource loading use [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts). The removed pre-migration HTML test was `src/webview/tests/placeholder-html.spec.ts`; current shell/resource checks are in [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts). The pre-migration UI tests used a VM with a hand-built DOM; the current [execution UI specs](../../src/webview/tests/execution-ui.spec.ts) mount the React application. This discussion records the migration rationale, not a passing application, package or host result.
 
 ## Alternatives considered before confirmation
 

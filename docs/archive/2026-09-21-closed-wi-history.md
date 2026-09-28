@@ -15,7 +15,7 @@ Versions, script paths and pending acceptance below are snapshots at each record
 <a id="wi-012"></a>
 ## WI-012 — Minimal public-API compatibility probes (closed 2026-09-22)
 
-Archived after the maintainer explicitly confirmed closure of the **minimal probe slice**, followed by WI-013 standard-interaction/Stop Prepare only. [ACTIVE](../../ACTIVE.md) owns that replacement proposal. The [live compatibility investigation](../discussions/2026-09-22-pi-compatibility.md) retains the exact execution command, staged observations and still-unexecuted broader CF matrix; it is not archived wholesale. Closure accepts the investigation's bounded findings and gaps, not product compatibility, an ADR or any gate.
+Archived after the maintainer explicitly confirmed closure of the **minimal probe slice**, followed by WI-013 standard-interaction/Stop Prepare only. [ACTIVE](../../ACTIVE.md) owns that replacement proposal. The [live compatibility investigation](../archive/2026-09-22-pi-compatibility.md) retains the exact execution command, staged observations and still-unexecuted broader CF matrix; it is not archived wholesale. Closure accepts the investigation's bounded findings and gaps, not product compatibility, an ADR or any gate.
 
 ### Approved proposal and approval sequence
 

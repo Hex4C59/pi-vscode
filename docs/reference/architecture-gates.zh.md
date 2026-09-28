@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[architecture-gates.md](architecture-gates.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-22
+- 最近同步：2026-09-28
 - 类型：Reference
 - 状态：Living
 - 创建：2026-09-19
@@ -56,9 +56,9 @@ Gate 不是测试、工作项，也不等同于功能完成：
 | `gate-extension-host-baseline` | 扩展能否在支持的 VS Code extension host 基线中构建、激活和运行？ | `Accepted` | [0001](../decisions/0001-build-baseline.zh.md) | — |
 | `gate-sidebar-chat-shell` | Pi Webview View 能否贡献并显示在辅助侧栏，并保留已记录的回退方向？ | `Accepted` | [0001](../decisions/0001-build-baseline.zh.md) | — |
 | `gate-runtime-host` | pi 采用哪种宿主边界，能否启动、完成一次 RPC 往返并在有界时间内关闭？ | `Accepted` | [0001](../decisions/0001-build-baseline.zh.md) | — |
-| `gate-webview-trust` | 低信任 Webview ↔ 高权限 extension host 的边界是否已完整定义并得到充分验证？ | `Open` | — | — |
-| `gate-project-trust` | VS Code 工作区信任、pi 项目资源同意和工具审批是否已分离，并通过公开 API 正确映射？ | `Open` | — | — |
-| `gate-session-streaming` | 端到端聊天流及其完成、取消、替换和失败生命周期是否已得到充分验证？ | `Open` | — | — |
+| `gate-webview-trust` | 低信任 Webview ↔ 高权限 extension host 的边界是否已完整定义并得到充分验证？ | `Accepted` | [0004](../decisions/0004-trust-and-lifecycle.zh.md) | — |
+| `gate-project-trust` | VS Code 工作区信任、pi 项目资源同意和工具审批是否已分离，并通过公开 API 正确映射？ | `Accepted` | [0004](../decisions/0004-trust-and-lifecycle.zh.md) | — |
+| `gate-session-streaming` | 端到端聊天流及其完成、取消、替换和失败生命周期是否已得到充分验证？ | `Accepted` | [0004](../decisions/0004-trust-and-lifecycle.zh.md) | — |
 
 ## Gate 详细说明
 
@@ -92,7 +92,7 @@ Gate 不是测试、工作项，也不等同于功能完成：
 
 **预期证据。** 契约及解析器测试、畸形／未知／超限／过期消息覆盖、CSP 与资源加载检查、密钥隔离审查、生命周期清理检查，以及适用的 F5 或打包宿主验证。所有权必须保持为 `src/webview/` 只表达 UI 意图，`src/extension/` 持有高权限校验与状态。见 [`webview-messages.zh.md`](webview-messages.zh.md)。
 
-**当前状态与限制。** 已有大量协议、CSP、代次、有界投影和 UI 证据，但契约仍为 `Outline`，架构记录仍保留未完成的真实宿主／分叉及生命周期／安全边界验证，也没有 Accepted ADR 接受完整信任结论。因此该 gate 保持 `Open`；不能把已有聊天行为外推为完整 Webview 信任验证。
+**当前状态与限制。** 2026-09-28 由 [ADR0004](../decisions/0004-trust-and-lifecycle.zh.md) 按明确委托接受：现行 Living v3 契约、exact 校验／producer 修复、CSP／local assets／DTO 观测、stale／清理测试与分别执行的原生 F5／安装包证据覆盖准确问题。不提供任意输出绝无秘密、其他 OS／fork 或全部辅助技术认证；源码隔离与测试不能仅由截图替代。
 
 ### `gate-project-trust`
 
@@ -100,7 +100,7 @@ Gate 不是测试、工作项，也不等同于功能完成：
 
 **预期证据。** 支持的 pi 资源 flag／行为的公开 API 证据、宿主状态和过期操作测试、真实 VS Code 信任／重载与目录转换检查，以及明确说明 allow 和 decline 授权什么、不授权什么的决策。
 
-**当前状态与限制。** 工作区资格和内存内资源选择已在限定切片中实现并测试，但真实宿主覆盖和完整边界决策仍未完成。允许资源不等于工具授权；拒绝资源也不表示所有项目上下文均被排除。两种选择都不是文件系统／网络沙箱。该 gate 保持 `Open`。
+**当前状态与限制。** 2026-09-28 由 [ADR0004](../decisions/0004-trust-and-lifecycle.zh.md) 按明确委托接受：公开 pi0.86.1 六场景资源矩阵、host 资格／stale 测试及实际信任／文件夹迁移。remote／非 file URI 的拒绝通过 host seam 验证，不声称 remote 产品支持。allow 不等于工具批准，decline 不排除全部上下文，两者都不是 OS 沙箱；既有 exact child 可显式清理但不得借此取得新执行授权。
 
 ### `gate-session-streaming`
 
@@ -108,7 +108,7 @@ Gate 不是测试、工作项，也不等同于功能完成：
 
 **预期证据。** Adapter 与 host 对事件顺序、迟到完成、取消及替换的测试；上游语义的真实 runtime 探针；流式／Stop／失败可观察行为的 F5 检查；适用的打包宿主证据；以及固定完成边界与所有权的 Accepted 决策。
 
-**当前状态与限制。** 纯文本流式、活动投影、`agent_settled`、受控执行和 Stop 已有有界实现及记录的自动化／探针／F5 证据。但已安装 VSIX 验证、外部 provider 广度、完整生命周期交错和待决边界 ADR 仍未完成。可见文本 delta 或某个 WI 完成，不能单独接受完整 session 生命周期，因此该 gate 保持 `Open`。
+**当前状态与限制。** 2026-09-28 由 [ADR0004](../decisions/0004-trust-and-lifecycle.zh.md) 按明确委托接受：ACK／settled、retry／compaction／队列／Stop、错误／替换／stale 与 receipt-based recovery 的源码、671测试、公开 pi 探针、真实 F5 与安装版证据分别可追溯。未知工作不自动重放／kill，不保证回滚或全部后代终止。不声称穷尽所有 provider／时序；这不是登记问题所要求的普遍产品支持。
 
 ## 新增或替代 gate
 
@@ -131,4 +131,4 @@ Gate 不是测试、工作项，也不等同于功能完成：
 
 只有在按 gate 精确范围核对当前证据与限制后，才可更新状态。`Accepted` 必须在摘要中链接 Accepted ADR。活动调查或缺失验收条件记录在 `ACTIVE.md`；保留特定版本的探针证据，不得静默把它当成永久事实。
 
-**WI-001：** 上述三个基础 gate 已由 [ADR 0001](../decisions/0001-build-baseline.zh.md) 于 2026-09-19 接受。最终用户聊天仍受保持 Open 的 `gate-webview-trust`、`gate-project-trust` 和 `gate-session-streaming` 结论约束。
+**WI-001：** 三项基础 gates 于2026-09-19由 ADR0001接受；其余三项于2026-09-28由 ADR0004另行接受，不改写旧证据范围。

@@ -5,7 +5,7 @@ English | [中文](architecture-gates.zh.md)
 - Type: Reference
 - Status: Living
 - Created: 2026-09-19
-- Last reviewed: 2026-09-22 (clarified status semantics and gate scopes; no status changes)
+- Last reviewed: 2026-09-28 (ADR0004 delegated acceptance of the three remaining boundaries)
 - Authority: which architectural risks require evidence plus an Accepted ADR before their conclusions may be treated as established
 - Related: [`../architecture/vscode-extension-architecture.md`](../architecture/vscode-extension-architecture.md), [`ACTIVE.md`](../../ACTIVE.md)
 
@@ -52,9 +52,9 @@ Changing a gate to `Accepted` therefore requires both the evidence appropriate t
 | `gate-extension-host-baseline` | Can the extension build, activate and run under the supported VS Code extension-host baseline? | `Accepted` | [0001](../decisions/0001-build-baseline.md) | — |
 | `gate-sidebar-chat-shell` | Can the Pi Webview View be contributed and displayed in the Secondary Side Bar, with the documented fallback direction? | `Accepted` | [0001](../decisions/0001-build-baseline.md) | — |
 | `gate-runtime-host` | Which pi hosting boundary is used, and can it start, complete an RPC round-trip and shut down within a bound? | `Accepted` | [0001](../decisions/0001-build-baseline.md) | — |
-| `gate-webview-trust` | Is the low-trust Webview ↔ privileged extension-host boundary completely specified and sufficiently verified? | `Open` | — | — |
-| `gate-project-trust` | Are VS Code workspace trust, pi project-resource consent and tool approval separated and mapped through public APIs? | `Open` | — | — |
-| `gate-session-streaming` | Is the end-to-end chat stream and its completion, cancellation, replacement and failure lifecycle sufficiently verified? | `Open` | — | — |
+| `gate-webview-trust` | Is the low-trust Webview ↔ privileged extension-host boundary completely specified and sufficiently verified? | `Accepted` | [0004](../decisions/0004-trust-and-lifecycle.md) | — |
+| `gate-project-trust` | Are VS Code workspace trust, pi project-resource consent and tool approval separated and mapped through public APIs? | `Accepted` | [0004](../decisions/0004-trust-and-lifecycle.md) | — |
+| `gate-session-streaming` | Is the end-to-end chat stream and its completion, cancellation, replacement and failure lifecycle sufficiently verified? | `Accepted` | [0004](../decisions/0004-trust-and-lifecycle.md) | — |
 
 ## Gate details
 
@@ -88,7 +88,7 @@ Changing a gate to `Accepted` therefore requires both the evidence appropriate t
 
 **Evidence expected.** Contract and parser tests, malformed/unknown/oversized/stale message coverage, CSP and resource-loading checks, secret-isolation review, lifecycle cleanup checks, and applicable F5 or packaged-host verification. Ownership must remain UI intent in `src/webview/` and privileged validation/state in `src/extension/`. See [`webview-messages.md`](webview-messages.md).
 
-**Current status and limits.** Substantial protocol, CSP, generation, bounded-projection and UI evidence exists, but the contract remains `Outline`, architecture records retain unverified real-host/fork and lifecycle/security boundaries, and no Accepted ADR closes the complete trust conclusion. Therefore this gate remains `Open`; existing chat behavior must not be generalized into full Webview trust verification.
+**Current status and limits.** Accepted on 2026-09-28 under explicit delegation through [ADR0004](../decisions/0004-trust-and-lifecycle.md): Living v3 contract, exact validation/producer corrections, CSP/local-assets/DTO observations, stale/cleanup tests and separate native-F5/installed evidence cover the exact question. This does not guarantee every arbitrary output is secret-free, other OS/forks or universal accessibility certification. Screenshots cannot replace source isolation and tests.
 
 ### `gate-project-trust`
 
@@ -96,7 +96,7 @@ Changing a gate to `Accepted` therefore requires both the evidence appropriate t
 
 **Evidence expected.** Public-API evidence for supported pi resource flags/behavior, host-state and stale-operation tests, real VS Code trust/reload and folder-transition checks, and an explicit decision describing what allow and decline do and do not authorize.
 
-**Current status and limits.** Workspace eligibility and in-memory resource choice are implemented and tested in bounded slices, but real-host coverage and the complete boundary decision remain incomplete. Allowing resources is not tool authorization; declining resources does not imply that all project context is excluded. Neither choice is a filesystem/network sandbox. The gate remains `Open`.
+**Current status and limits.** Accepted on 2026-09-28 under explicit delegation through [ADR0004](../decisions/0004-trust-and-lifecycle.md): public pi0.86.1 six-scenario resource evidence, host eligibility/stale tests and actual trust/folder transitions. Remote/non-file refusal is verified at the public host seam, not remote product support. Allow is not tool approval; decline does not exclude every context file; neither is an OS sandbox. Explicit cleanup of an existing exact child grants no new execution authority.
 
 ### `gate-session-streaming`
 
@@ -104,7 +104,7 @@ Changing a gate to `Accepted` therefore requires both the evidence appropriate t
 
 **Evidence expected.** Adapter and host tests for event ordering, late completion, cancellation and replacement; real-runtime probes for upstream semantics; F5 checks for observable streaming/Stop/failure behavior; applicable packaged-host evidence; and an Accepted decision fixing the completion and ownership boundaries.
 
-**Current status and limits.** Plain-text streaming, activity projection, `agent_settled`, controlled execution and Stop have bounded implementation and recorded automated/spike/F5 evidence. However, installed-VSIX validation, external-provider breadth, exhaustive lifecycle interleavings and the pending boundary ADR remain incomplete. A visible text delta or a completed WI does not by itself accept the full session lifecycle, so this gate remains `Open`.
+**Current status and limits.** Accepted on 2026-09-28 under explicit delegation through [ADR0004](../decisions/0004-trust-and-lifecycle.md): ACK/settled, retry/compaction/queue/Stop, failure/replacement/stale and receipt-based recovery have separately traceable source,671-test, public-pi, real-F5 and installed evidence. Unknown work is not automatically replayed/killed; rollback/all-descendant termination are not guaranteed. This is not exhaustive provider/schedule coverage or universal product support, neither of which is the recorded question.
 
 ## Adding or replacing a gate
 
@@ -127,4 +127,4 @@ When a gate is merged, split, renamed or superseded, do not erase history. Keep 
 
 Only update a gate after checking its exact scope against current evidence and limits. `Accepted` requires an Accepted ADR linked in the summary. Record active investigation or missing acceptance conditions in `ACTIVE.md`; preserve version-specific spike evidence rather than silently treating it as timeless.
 
-**WI-001:** The three baseline gates above were accepted by [ADR 0001](../decisions/0001-build-baseline.md) on 2026-09-19. End-user chat remains constrained by the still-open `gate-webview-trust`, `gate-project-trust` and `gate-session-streaming` conclusions.
+**WI-001:** ADR0001 accepted the three baseline gates on2026-09-19. ADR0004 separately accepted the other three on2026-09-28; it does not rewrite the historical evidence scope.

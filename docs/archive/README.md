@@ -22,12 +22,34 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 2. Ensure the **current** truth lives in PRD (`Accepted`), architecture, gates, ADRs, or `ACTIVE.md`.
 3. Prefer `YYYY-MM-DD-original-name.md` under `docs/archive/` (flat or subfolders by year).
 
+## Contract history
+
+- [Superseded Webview contract snapshot](2026-09-28-webview-contract-history.md): v1/v2, single-file first slice and old acceptance text retained as history; the current v3-only Living contract remains under reference.
+
+## WI-022 investigation history
+
+- [Background console investigation](../archive/2026-09-28-wi-022-background-consoles.md): superseded diagnostic history and abandoned source-build route; current default CLI mitigation is tracked in ACTIVE. This is not full WI closure.
+
 ## Closed WI index
+
+Gate/pending wording below retains each record's historical scope; final current status belongs to the WI-010 closure and ACTIVE, not those historical blockers.
 
 | Record | Contents |
 |--------|----------|
-| [Closed work-item history — WI-001–007 and WI-010–012](2026-09-21-closed-wi-history.md) | Closed scope, acceptance evidence and retained limits; WI-008/WI-009 remain open in ACTIVE |
+| [WI-010 remaining boundaries / original Goal closure](2026-09-28-wi-010-goal-closure.md) | ADR0004/three gates, original queue mapping,671 tests/layered actual evidence, documentation/resources |
+| [WI-008 model/readiness acceptance](2026-09-28-wi-008-model-acceptance.md) | Delegated acceptance, repairs, layered host evidence and retained scope limits |
+| [WI-009 thinking acceptance](2026-09-28-wi-009-thinking-acceptance.md) | Delegated evaluation, actual659 matrices and660 host fixes; later WIs and broad gates remain separate |
+| [WI-014 attachment acceptance](2026-09-28-wi-014-attachment-acceptance.md) | Delegated evaluation; actual F5/installed confirmation, capacity, UTF-8 bounds and short-window interaction; later WIs/gates remain separate |
+| [WI-016 review acceptance](2026-09-28-wi-016-review-acceptance.md) | Delegated dirty/readonly capture/attribution/lifecycle acceptance; actual short-window fix and separate host reruns; WI-017/gates remain separate |
+| [WI-017 session acceptance](2026-09-28-wi-017-session-acceptance.md) | Delegated continuity/history/recovery acceptance; actual trusted-default reset repair,663 package and layered host evidence |
+| [WI-013 delegated acceptance](2026-09-28-wi-013-acceptance.md) | Scoped implementation, layered verification, ADR0002 acceptance and retained limits |
+| [WI-013 superseded candidates](2026-09-28-wi-013-superseded-candidates.md) | Historical route and proposed contract, not current implementation authority |
+| [Closed work-item history — WI-001–007 and WI-010–012](2026-09-21-closed-wi-history.md) | Closed scope, acceptance evidence and retained limits; WI-008/WI-009 were subsequently closed in their separate records |
 | [WI-020 public entries and type contracts](2026-09-26-wi-020-public-entries.md) | Accepted September 26; P2 repair and technical evidence; other acceptance and gates unchanged |
+| [WI-021 execution and native F5 closure](2026-09-27-wi-021-execution-closure.md) | September 27 UTC delegated scoped acceptance; native F5 and installed package separately verified; gates unchanged |
+| [WI-019 formal chat closure](2026-09-27-wi-019-formal-chat.md) | Delegated Q16, shared production presentation, separate native F5/installed validation; other WIs/ADRs/gates unchanged |
+| [WI-015 React/Vite acceptance](2026-09-27-wi-015-react-acceptance.md) | Delegated migration/ADR 0003 acceptance, added installed lifecycle evidence; gates remain Open |
+| [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
 ## Superseded handoffs
 
@@ -37,9 +59,16 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 | [Goal frontend and attachment checkpoints](2026-09-22-goal-frontend-attachment-handoffs.md) | Executable WI-015 / WI-014 handoffs replaced by the next Goal slice; maintainer acceptance and gates remain open |
 | [Goal change-review checkpoint](2026-09-22-goal-change-review-handoff.md) | WI-016 code/executable handoff replaced by session continuity; maintainer acceptance and gates remain open |
 | [Goal session-continuity checkpoint](2026-09-23-goal-session-handoff.md) | WI-017 executable delivery and maintainer-requested pause; next implementation not started, acceptance and gates remain open |
+| [ACTIVE candidate and verification checkpoint history](2026-09-27-active-checkpoint-history.md) | Superseded entry narratives and preserved Chinese source; WI-019/021 acceptance, F5 blockers and pending decisions remain in ACTIVE |
 
 ## Agent rule
 
 If archive text conflicts with current authoritative docs, ignore archive and cite the live file.
 
 At WI close or confirmed document replacement, the agent performs affected archival under [collaboration §7](../guides/agent-collaboration.md#7-agent-obligations), without a separate save/directory question. This is not permission for bulk history cleanup. Record archival reason, historical status and replacement link (or explain why no replacement exists). Preserve still-valid requirements and unresolved questions in active documents before moving; retain a summary/link at the former entry point. Move existing translations together, repair inbound and relative links and indexes, then run `npm run docs:verify` and `npm run docs:health`. Keep ADRs in `docs/decisions/` with status and replacement links. Age or length alone does not justify archival.
+
+## Resolved investigations
+
+- [Compatibility and old candidates](2026-09-22-pi-compatibility.md): preserves historical CF/Prepare states; accepted WIs and ADR0004 own current scope.
+- [Representative extension research](2026-09-27-wi-013-target-research.md): public sources/version and original failures behind WI-013/ADR0002.
+- [Native F5 diagnosis](2026-09-27-wi-021-native-f5.md): failed debugger route and official isolated-host selection; WI-021 is accepted.
