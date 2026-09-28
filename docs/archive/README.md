@@ -60,6 +60,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [Goal frontend and attachment checkpoints](2026-09-22-goal-frontend-attachment-handoffs.md) | Executable WI-015 / WI-014 handoffs replaced by the next Goal slice; maintainer acceptance and gates remain open |
 | [Goal change-review checkpoint](2026-09-22-goal-change-review-handoff.md) | WI-016 code/executable handoff replaced by session continuity; maintainer acceptance and gates remain open |
 | [Goal session-continuity checkpoint](2026-09-23-goal-session-handoff.md) | WI-017 executable delivery and maintainer-requested pause; next implementation not started, acceptance and gates remain open |
+| [WI-024 paused proposal](2026-09-28-wi-024-paused-proposal.md) | Provider/model configuration scope, delivery and superseded handoff moved out of ACTIVE for WI-025; WI-024 is paused, not closed, and its maintainer F5 remains pending in the ACTIVE parking lot |
 | [ACTIVE candidate and verification checkpoint history](2026-09-27-active-checkpoint-history.md) | Superseded entry narratives and preserved Chinese source; WI-019/021 acceptance, F5 blockers and pending decisions remain in ACTIVE |
 
 ## Agent rule
