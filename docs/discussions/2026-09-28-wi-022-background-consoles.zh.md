@@ -1,4 +1,4 @@
-# WI-022：默认CLI规避与剩余验收
+# WI-022：默认CLI规避（已关闭）
 
 [English](2026-09-28-wi-022-background-consoles.md) | 中文
 
@@ -7,8 +7,9 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-09-28
 - Type: Discussion
-- Status: Active
+- Status: Historical
 - Created: 2026-09-28
+- Authority: 已采用 CLI 规避的历史证据；WI 收尾见 [2026-09-28-wi-022-closure.zh.md](../archive/2026-09-28-wi-022-closure.zh.md)
 
 ## 当前决定
 
@@ -28,4 +29,4 @@
 
 ## 归档结论
 
-[长调查与已放弃源码修复路线](../archive/2026-09-28-wi-022-background-consoles.zh.md)已归档。WI-022不标为彻底修复：最初全客户端消息发送验收仍未覆盖。ACTIVE只保留一项简明当前记录，不再保留旧实施提案。本轮未降级、编译源码、重启managed daemon，也未Git提交／推送。
+[长调查与已放弃源码修复路线](../archive/2026-09-28-wi-022-background-consoles.zh.md)仍作为诊断历史保留。2026-09-28 维护者确认 WI-022 已解决并要求更新 ACTIVE；工作项按[维护者确认收尾](../archive/2026-09-28-wi-022-closure.zh.md)关闭。ACTIVE 不再将 WI-022 作为当前项。本文保留规避证据与边界，不宣称上游 Codex 根治 ADR 或产品 gate 变更。

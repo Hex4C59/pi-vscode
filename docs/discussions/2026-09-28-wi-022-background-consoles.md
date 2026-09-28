@@ -1,10 +1,11 @@
-# WI-022: default CLI workaround and remaining acceptance
+# WI-022: default CLI workaround (closed)
 
 English | [中文](2026-09-28-wi-022-background-consoles.zh.md)
 
 - Type: Discussion
-- Status: Active
+- Status: Historical
 - Created: 2026-09-28
+- Authority: historical evidence for the adopted CLI workaround; WI closure is [2026-09-28-wi-022-closure.md](../archive/2026-09-28-wi-022-closure.md)
 
 ## Current decision
 
@@ -24,4 +25,4 @@ Persistent owned files: D:/Users/hex4c59/bin/codex.ps1, codex.cmd, codex-local-l
 
 ## Archival decision
 
-The [long investigation and abandoned source-repair route](../archive/2026-09-28-wi-022-background-consoles.md) are archived. WI-022 is not marked fully fixed: the original all-client message-submit acceptance is unverified. ACTIVE keeps one concise current item, not the old implementation proposal. No downgrade, source build, managed-daemon restart, Git commit or push was performed.
+The [long investigation and abandoned source-repair route](../archive/2026-09-28-wi-022-background-consoles.md) remain archived as diagnostic history. On 2026-09-28 the maintainer confirmed WI-022 is resolved and requested ACTIVE update; the WI is closed under [maintainer-confirmed closure](../archive/2026-09-28-wi-022-closure.md). ACTIVE no longer holds WI-022 as the current item. This discussion retains workaround evidence and limits; it does not claim an upstream Codex root-cause ADR or product-gate change.

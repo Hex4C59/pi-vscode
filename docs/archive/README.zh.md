@@ -32,7 +32,7 @@
 
 ## WI-022调查历史
 
-- [后台控制台调查](2026-09-28-wi-022-background-consoles.zh.md)：已替代的诊断历史与放弃的源码构建路线；当前默认CLI规避见ACTIVE，不表示WI整体关闭。
+- [后台控制台调查](2026-09-28-wi-022-background-consoles.zh.md)：已替代的诊断历史与放弃的源码构建路线；已采用CLI规避证据见[讨论文档](../discussions/2026-09-28-wi-022-background-consoles.zh.md)。2026-09-28 维护者确认关闭，见[WI-022收尾](2026-09-28-wi-022-closure.zh.md)。
 
 ## 已关闭 WI 索引
 
@@ -40,6 +40,7 @@
 
 | 记录 | 内容 |
 |------|------|
+| [WI-022后台终端闪现收尾](2026-09-28-wi-022-closure.zh.md) | 维护者确认关闭默认CLI `--no-daemon`规避；不是上游Codex ADR／gate变更 |
 | [WI-010剩余边界／原Goal收尾](2026-09-28-wi-010-goal-closure.zh.md) | ADR0004及三gate接受、原队列映射、671测试与分层实际证据、文档／资源处置 |
 | [WI-008模型／就绪验收](2026-09-28-wi-008-model-acceptance.zh.md) | 委托接受、修复、分层宿主证据与范围限制 |
 | [WI-009 thinking验收](2026-09-28-wi-009-thinking-acceptance.zh.md) | 委托评估、659实际矩阵与660实机修复；后续WI及广泛gates独立 |

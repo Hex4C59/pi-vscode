@@ -28,7 +28,7 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 
 ## WI-022 investigation history
 
-- [Background console investigation](../archive/2026-09-28-wi-022-background-consoles.md): superseded diagnostic history and abandoned source-build route; current default CLI mitigation is tracked in ACTIVE. This is not full WI closure.
+- [Background console investigation](2026-09-28-wi-022-background-consoles.md): superseded diagnostic history and abandoned source-build route; adopted CLI workaround evidence remains in the [discussion record](../discussions/2026-09-28-wi-022-background-consoles.md). WI closed by maintainer confirmation on 2026-09-28; see [WI-022 closure](2026-09-28-wi-022-closure.md).
 
 ## Closed WI index
 
@@ -36,6 +36,7 @@ Gate/pending wording below retains each record's historical scope; final current
 
 | Record | Contents |
 |--------|----------|
+| [WI-022 background-console closure](2026-09-28-wi-022-closure.md) | Maintainer-confirmed close of default CLI `--no-daemon` workaround; not an upstream Codex ADR/gate change |
 | [WI-010 remaining boundaries / original Goal closure](2026-09-28-wi-010-goal-closure.md) | ADR0004/three gates, original queue mapping,671 tests/layered actual evidence, documentation/resources |
 | [WI-008 model/readiness acceptance](2026-09-28-wi-008-model-acceptance.md) | Delegated acceptance, repairs, layered host evidence and retained scope limits |
 | [WI-009 thinking acceptance](2026-09-28-wi-009-thinking-acceptance.md) | Delegated evaluation, actual659 matrices and660 host fixes; later WIs and broad gates remain separate |

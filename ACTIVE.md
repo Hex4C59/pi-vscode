@@ -15,48 +15,50 @@
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-022 |
-| **标题** | Windows后台终端闪现 |
-| **阶段** | Verify；仓库修复与默认CLI规避完成，未宣称全客户端根治 |
-| **PRD 判定** | 纯技术：启动可见性与本机CLI入口，不改产品权限／pi边界 |
-| **Gate ID** | 无新gate／ADR |
-| **Decision** | 采用官方--no-daemon，不再走自定义源码构建或降级路线 |
-| **批准范围** | 用户要求默认入口在-NoProfile下生效；保留NoProfile，在已有PATH优先目录安装自有启动器，不改用户秘密／npm安装／PATH，不结束现有会话 |
+| **ID** | none |
+| **标题** | 无当前 WI |
+| **阶段** | Idle；等待维护者指定下一 Prepare／Build |
+| **PRD 判定** | 不适用 |
+| **Gate ID** | 无新增；既有 Accepted gates／ADR 见已完成索引说明 |
+| **Decision** | none |
+| **批准范围** | 维护者 2026-09-28 确认 WI-022 已解决并要求更新本文件；不授权新产品实现、探针、付费模型或推送 |
 
 ### 目标与范围
 
-为新CLI调用提供不依赖PowerShell profile的默认no-daemon入口；不把既有客户端会话自动转换。
+当前无活动实现切片。下一工作须经维护者明确选定并写入本区完整提案后再进入 Prepare／Build。
 
 ### 方案与架构核对
 
-本机自有启动器转发未修改的官方npm包，不改变pi产品架构、权限或daemon所有权。
+不适用；无进行中边界变更。
 
 ### 验收
 
-D:/Users/hex4c59/bin中的codex.ps1／codex.cmd通过独立helper向官方npm CLI添加一次--no-daemon，覆盖新CLI调用。参数断言、PS5／7 NoProfile、CMD、resume帮助与错误exit2已验证；实际隔离VS Code终端确认入口解析／版本readback／exit0。npm CLI实际为0.158.0。未付费／调用模型；现有会话、桌面／扩展、显式codex.exe及remote／agents不在该入口覆盖内。原全客户端消息闪窗验收未完成，不强行关闭WI。
+不适用。WI-022 按维护者确认关闭，见[收尾记录](docs/archive/2026-09-28-wi-022-closure.zh.md)。
 
 ### 范围外与批准边界
 
-长调查、失效提案及源码修复路线已移至[历史归档](docs/archive/2026-09-28-wi-022-background-consoles.zh.md)；[当前记录](docs/discussions/2026-09-28-wi-022-background-consoles.zh.md)保留决定、证据、限制与回退。保留此前用户明确要求的VS Code系统ConPTY设置，它与Codex daemon问题独立。禁止读秘密、付费模型、修改邻仓或推送；本轮累计改动的本地提交已获下方明确授权；不降级／自建Codex，不再等待源码部署维护授权。
+不得把停车场想法自动升为当前 WI；不得把已关闭调查当未完成阻塞。本地 CLI `--no-daemon` 规避与证据保留在[讨论记录](docs/discussions/2026-09-28-wi-022-background-consoles.zh.md)；回退仅删除确认自有且无依赖的启动器文件。
 
 ## 当前焦点与未决项
 
-CLI默认入口已验证；全部客户端消息发送与上游Bug根治仍未验收。已归档失效调查，不将WI列入已完成索引。
+- [x] WI-022：维护者确认已解决；默认 CLI 规避收尾并移出当前 WI。
+- [ ] 下一工作项未指定；需要时由维护者选定后再进入 Prepare。
 
 ## 最近交接
+
+### 2026-09-28 — WI-022 维护者确认关闭
+
+- 维护者明确表示 WI-022 已解决，并要求更新 ACTIVE。
+- 按收尾规则：当前 WI 清空为 Idle；提案／限制归档到[WI-022 收尾](docs/archive/2026-09-28-wi-022-closure.zh.md)；完成索引新增一行；讨论标记为已关闭工作项记录。
+- 不宣称上游 Codex 根治 ADR／gate 变更；不修改 PATH／注册表／Codex 二进制；不读取秘密、不付费调用、不推送。
+- 本轮 `npm run docs:verify` 与 `npm run docs:health` 均通过（0 error／0 warning；health 0 error／0 review notice）。未做 compile／lint／测试（仅文档与 ACTIVE 收尾）。未 Git 提交／推送。
 
 ### 2026-09-28 — 累计改动提交授权与验证
 
 - 维护者明确要求提交当前全部改动，取代仅限本轮暂存／本地提交的历史禁令；按实现、侧栏焦点回退、工作区标签边界、后台进程规避、文档归档及ACTIVE记录分开，不授权推送、重写历史或新增产品实施。
 - 本轮compile／lint、npm test（673/673，0 skipped）、verify:webview、docs:verify及docs:health通过；文档检查0错误／警告，健康检查0错误／复核提醒。每个提交分别核对完整暂存补丁并运行commit:check。
 - 提交准备仅额外清理6个源码与3个归档文件末尾空行，并更新本交接；未扩展应用行为。
-- 本轮不新增F5／安装版人工验收证据，不改变WI-022的Verify状态及未验收边界；既有忽略证据与外部启动器保留原清理条件。
-
-### 2026-09-28 — 默认CLI入口生效与历史归档
-
-- 默认启动器已安装，不依赖profile且不改PATH；真实终端通过。失败测试未冒充通过，含异常测试PATHEXT与已撤实验包装的说明保留在当前记录。
-- 持久路径：D:/Users/hex4c59/bin/codex.ps1、codex.cmd及codex-local-launcher/；需要规避时保留，回退仅删除确认自有且无依赖的文件，不删整个bin。证据在dist/wi022-hidden-process-20260928/default-cli-launcher/，唯一证据／profile清理前保留结果并复查进程。
-- 本轮文档／diff检查见证据；无提交／推送，现有用户终端与Codex daemon未停止。
+- 当时不新增F5／安装版人工验收证据；该边界已由后续维护者确认 WI-022 关闭替代，不再作为当前未决项。
 
 ## 停车场
 
@@ -89,3 +91,4 @@ CLI默认入口已验证；全部客户端消息发送与上游Bug根治仍未�
 | WI-016 | 受控dirty保护／准确readonly历史diff、分页及丢失恢复；短窗裁切红→绿 | 2026-09-28 Asia/Shanghai 代理按本次委托完成评估；WI-017与广泛gates仍独立 | [记录](docs/archive/2026-09-28-wi-016-review-acceptance.zh.md) |
 | WI-017 | 当前项目／CLI-origin会话、顺序交接、原文历史与异常恢复；trusted默认重置红→绿 | 2026-09-28 Asia/Shanghai 代理按本次委托完成评估；广泛gates独立 | [记录](docs/archive/2026-09-28-wi-017-session-acceptance.zh.md) |
 | WI-010 剩余边界／原Goal | 三项剩余gate、ADR0004、Living契约、实际分层验证与全局收尾 | 2026-09-28 Asia/Shanghai 代理按本次委托完成评估 | [记录](docs/archive/2026-09-28-wi-010-goal-closure.zh.md) |
+| WI-022 | Windows后台终端闪现；默认CLI `--no-daemon` 规避，维护者确认关闭 | 2026-09-28 维护者确认已解决 | [记录](docs/archive/2026-09-28-wi-022-closure.zh.md) |
