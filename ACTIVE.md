@@ -15,54 +15,68 @@
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | none |
-| **标题** | 无当前 WI |
-| **阶段** | Idle；等待维护者指定下一 Prepare／Build |
-| **PRD 判定** | 不适用 |
-| **Gate ID** | 无新增；既有 Accepted gates／ADR 见已完成索引说明 |
-| **Decision** | none |
-| **批准范围** | 维护者 2026-09-28 确认 WI-022 已解决并要求更新本文件；不授权新产品实现、探针、付费模型或推送 |
+| **ID** | WI-024 |
+| **标题** | 扩展内供应商／模型配置（API Key 首切片） |
+| **阶段** | Build；维护者 2026-09-28 确认计划并授权实现（「Implement the plan」） |
+| **PRD 判定** | 用户可见：收窄 D-04「延后登录 UI」对本个人目标切片，允许扩展内 API Key／默认模型配置；不改审批语义、不把密钥送入 Webview |
+| **Gate ID** | 无新 gate／ADR；沿用 Living 契约与 ADR0001／0004；密钥仍宿主侧 |
+| **Decision** | none（产品收窄已确认；不升格整份 Draft PRD） |
+| **批准范围** | 齿轮设置内供应商状态、宿主 InputBox 写入 `~/.pi/agent/auth.json`、默认模型写入 settings、配置后刷新模型列表；**不**授权 OAuth、自定义 models.json、平行 SecretStorage、付费探针、提交／推送 |
 
 ### 目标与范围
 
-当前无活动实现切片。下一工作须经维护者明确选定并写入本区完整提案后再进入 Prepare／Build。
+维护者希望在**扩展界面**配置供应商与模型，而不是手改 `settings.json`。本切片交付：
+
+1. **齿轮「界面设置」新增「供应商与模型」分区**：列出支持 API Key 的供应商状态（ready／未配置、来源标签）；Add key／Remove；默认模型下拉。
+2. **密钥仅经宿主原生 InputBox（password）**：经公开 `ModelRuntime.login`／`logout` 写入标准 `auth.json`；Webview 只发 `providerId` 意图，永不承载密钥。
+3. **默认模型**经 `SettingsManager.setDefaultModelAndProvider` 持久化；runtime 就绪时刷新／应用既有 `set_model` 投影。
+4. **无模型 banner**引导打开设置配置供应商，替代仅「改 JSON 再 reload」。
 
 ### 方案与架构核对
 
-不适用；无进行中边界变更。
+- 宿主编排 `@earendil-works/pi-coding-agent` 的 `ModelRuntime`／`SettingsManager`；扩展 build 将包标为 external，不经 RPC 写凭证。
+- 新消息：`providerConfigState` 出站；入站 `openProviderApiKey`／`logoutProvider`／`setDefaultModel`／`refreshProviderConfig`。
+- L0：密钥不进 HTML、webview storage、消息体、日志；不重新实现 provider 栈。
+- WI-023 F5 目视仍独立待办，不混验收本 WI。
 
 ### 验收
 
-不适用。WI-022 按维护者确认关闭，见[收尾记录](docs/archive/2026-09-28-wi-022-closure.zh.md)。
+| 项 | 可观察标准 |
+|---|---|
+| 设置入口 | 齿轮内可见供应商列表与默认模型控件 |
+| 密钥路径 | Add key 弹出宿主密码框；成功后 Webview／消息中无密钥 |
+| 模型恢复 | 已开文件夹且 runtime 就绪时，配置后 `ModelPicker` 可出现真实模型 |
+| 回归 | compile／lint／相关 npm test／verify:webview；必要 F5 目视 |
+| 明确未验收 | OAuth、自定义端点、ambient 云凭证、付费调用 |
 
 ### 范围外与批准边界
 
-不得把停车场想法自动升为当前 WI；不得把已关闭调查当未完成阻塞。本地 CLI `--no-daemon` 规避与证据保留在[讨论记录](docs/discussions/2026-09-28-wi-022-background-consoles.zh.md)；回退仅删除确认自有且无依赖的启动器文件。
+不做 OAuth／device-code／PKCE；不做完整 `models.json` 编辑器；不平行 SecretStorage 凭证库；不在 Webview 嵌 API Key 输入框；不付费模型；不提交／推送除非另批。不关闭 WI-023 的 F5 待办。
 
 ## 当前焦点与未决项
 
-- [x] WI-022：维护者确认已解决；默认 CLI 规避收尾并移出当前 WI。
-- [ ] 下一工作项未指定；需要时由维护者选定后再进入 Prepare。
+- [x] WI-024 Prepare／Build 授权：扩展内 API Key＋默认模型。
+- [x] 实现与自动化检查：`compile`／`lint`／`npm test`（679/679）／`verify:webview`／`docs:verify`。
+- [ ] 维护者 F5：设置分区、Add key、模型选择器恢复。
+- [ ] WI-023 遗留：维护者 F5 确认设置布局／模型选择器可见（与本 WI 分开）。
+- [x] 实现提交：维护者授权（不含 `.vscode/launch.json`）。
 
 ## 最近交接
 
-### 2026-09-28 — WI-022 维护者确认关闭
+### 2026-09-28 — WI-024 Build 实现
 
-- 维护者明确表示 WI-022 已解决，并要求更新 ACTIVE。
-- 按收尾规则：当前 WI 清空为 Idle；提案／限制归档到[WI-022 收尾](docs/archive/2026-09-28-wi-022-closure.zh.md)；完成索引新增一行；讨论标记为已关闭工作项记录。
-- 不宣称上游 Codex 根治 ADR／gate 变更；不修改 PATH／注册表／Codex 二进制；不读取秘密、不付费调用、不推送。
-- 本轮 `npm run docs:verify` 与 `npm run docs:health` 均通过（0 error／0 warning；health 0 error／0 review notice）。未做 compile／lint／测试（仅文档与 ACTIVE 收尾）。未 Git 提交／推送。
+- 齿轮「界面设置」新增「供应商与模型」：状态列表、Add/Update API key（宿主密码框）、Remove、默认模型、Refresh。
+- 宿主 `ProviderConfig` 经 `ModelRuntime`／`SettingsManager` 写标准 `~/.pi/agent`；消息 `providerConfigState`／`openProviderApiKey`／`logoutProvider`／`setDefaultModel`／`refreshProviderConfig`；密钥永不进 webview。
+- 无模型 banner 可打开设置；`piStartupModel` 尊重 `PI_CODING_AGENT_DIR`；扩展 build external 化 `pi-coding-agent`。
+- 检查：compile／lint／679 tests／verify:webview／docs:verify。未 F5、未提交。
 
-### 2026-09-28 — 累计改动提交授权与验证
+### 2026-09-28 — WI-023 Build 实现（未关）
 
-- 维护者明确要求提交当前全部改动，取代仅限本轮暂存／本地提交的历史禁令；按实现、侧栏焦点回退、工作区标签边界、后台进程规避、文档归档及ACTIVE记录分开，不授权推送、重写历史或新增产品实施。
-- 本轮compile／lint、npm test（673/673，0 skipped）、verify:webview、docs:verify及docs:health通过；文档检查0错误／警告，健康检查0错误／复核提醒。每个提交分别核对完整暂存补丁并运行commit:check。
-- 提交准备仅额外清理6个源码与3个归档文件末尾空行，并更新本交接；未扩展应用行为。
-- 当时不新增F5／安装版人工验收证据；该边界已由后续维护者确认 WI-022 关闭替代，不再作为当前未决项。
+- 执行配置迁入齿轮设置；作曲区模型控件始终渲染。检查曾通过；F5／提交未做。
 
 ## 停车场
 
-额外扩展生态、编辑区panel／Chat Participant、remote／multi-root支持、额外平台、无产品依据的delta优化、全局启动默认持久化、跳过审批、图片／PDF／表格／语法高亮、历史回滚、框架更换及发布不属于本次批准队列；不得据此自动新建或实施WI。REQ-007／008／009的原批准缺口已关闭，没有移入停车场。
+额外扩展生态、编辑区panel／Chat Participant、remote／multi-root支持、额外平台、无产品依据的delta优化、全局启动默认持久化、跳过审批、图片／PDF／表格／语法高亮、历史回滚、框架更换及发布不属于本次批准队列；不得据此自动新建或实施WI。OAuth 订阅登录与自定义 OpenAI-compatible 端点属 WI-024 后续候选，不自动开工。
 
 ## 已完成 WI 索引
 
