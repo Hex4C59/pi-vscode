@@ -1,6 +1,10 @@
+import type { ExtensionFeedback } from "./extensionInteractions.js";
+import type { InteractionFormInput, InteractionReplyCallback } from "../interactions/index.js";
 import type { GateCall } from "./approvalProtocol.js";
 import type { ActivityItem, AttachmentDetails, ModelCatalogEntry } from "./webviewProtocol.js";
 export type { ActivityItem, ModelCatalogEntry, RuntimePhase } from "./webviewProtocol.js";
+
+export type ExtensionExecutionProfile = { kind: "controlled" } | { kind: "trusted"; entryPath: string };
 
 export type ProjectTrustFlag = "approve" | "no-approve";
 
@@ -12,7 +16,7 @@ export type PromptInput =
   | { kind: "plain"; body: string }
   | { kind: "enriched"; body: string; attachments: ({ path: string; unsaved: boolean; text: string } & AttachmentDetails)[] };
 
-export type AttachmentPromptResult = { delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown"; code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost" };
+export type AttachmentPromptResult = { rejection?: "authentication"; delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown"; code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost" };
 export type PromptResult = { ok: true } | { ok: false; detail: string };
 
 export type ModelProjectionResult =
@@ -44,14 +48,26 @@ export type RuntimeEvent =
 
   | { kind: "text_delta"; session: number; delta: string; messageId?: string }
   | { kind: "stream_error"; session: number; detail: string }
-  | { kind: "agent_settled"; session: number };
+  | { kind: "agent_settled"; session: number }
+  | { kind: "command_handled"; session: number; agentRunning: boolean };
 
 /** Host-owned pi subprocess lifecycle; implemented in adapter, injected from extension entry. */
 export interface PiRuntimeLifecycle {
-  start(options: { cwd: string; projectTrust: ProjectTrustFlag; resume?: { id: string; path: string } }): Promise<RuntimeStartResult>;
+  start(options: { cwd: string; projectTrust: ProjectTrustFlag; profile?: ExtensionExecutionProfile; resume?: { id: string; path: string } }): Promise<RuntimeStartResult>;
   stop(): Promise<void>;
+  /** Public-RPC checkpoint before profile replacement; unavailable must leave the runtime intact. */
+  checkpointRestart?(expected: { id: string; path: string }): Promise<
+    { kind: "empty" } | { kind: "resume"; conversation: { id: string; path: string } } | { kind: "unavailable" }
+  >;
+  getOwnershipState?(): Promise<"none" | "pending" | "terminal" | "blocked">;
+  endOwnedRuntime?(): Promise<PromptResult>;
+  recoverOwnedRuntime?(): Promise<PromptResult>;
   /** Stop current task without clearing live-session grants. */
   abortTask?(): Promise<PromptResult>;
+  /** Fail closed without treating transport revocation as child termination. */
+  invalidateInteractions?(): void;
+  setFeedbackHandler?(handler: (snapshot: { feedback: ExtensionFeedback[]; omittedFeedback: number }) => void): void;
+  setInteractionHandler?(handler: (form: InteractionFormInput, reply: InteractionReplyCallback) => void): void;
   setApprovalHandler?(handler: (call: GateCall) => Promise<boolean>): void;
   /** Increments when a new subprocess session becomes active; used to drop stale RPC events. */
   getSession(): number;

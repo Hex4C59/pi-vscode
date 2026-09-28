@@ -121,8 +121,8 @@ function parseActivity(value: unknown): DataRecord | undefined {
 }
 
 function parseApproval(value: unknown): DataRecord | undefined {
-  const approval = exactRecord(value, ["id", "toolCallId", "tool", "input", "scope", "expiresAt"]);
-  return approval && string(approval.id, 100) && string(approval.toolCallId, 200) && string(approval.tool, 200)
+  const approval = exactRecord(value, ["id", "toolCallId", "tool", "input", "scope", "expiresAt"], ["category"]);
+  return approval && (approval.category === undefined || (approval.category === "custom" && approval.scope === null)) && string(approval.id, 100) && string(approval.toolCallId, 200) && string(approval.tool, 200)
     && string(approval.input, 32768) && nullableString(approval.scope) && integer(approval.expiresAt) ? approval : undefined;
 }
 
@@ -188,13 +188,61 @@ function parseSessionEntry(value: unknown): DataRecord | undefined {
   return entry && id(entry.id) && string(entry.title, 160) && string(entry.excerpt, 256) && string(entry.modified, 40) ? entry : undefined;
 }
 
-/** Narrow and copy the complete v2 DTO before the browser consumes host data. */
+
+const utf8Text = (value: unknown, bytes: number): value is string => string(value, bytes) && encoder.encode(value).byteLength <= bytes;
+function parseInteractionForm(value: unknown): DataRecord | undefined {
+  const form = snapshotRecord(value);
+  if (!form || !id(form.id) || !utf8Text(form.title, 512) || form.origin !== "trusted runtime extension; not authenticated") return;
+  const common = ["id", "method", "title", "origin"];
+  const optional = ["localCutoffAt"];
+  if (form.localCutoffAt !== undefined && !integer(form.localCutoffAt)) return;
+  if (form.method === "select") {
+    if (!hasFields(form, [...common, "options"], optional)) return;
+    const options = list(form.options, 64, value => {
+      const option = exactRecord(value, ["id", "label"]);
+      return option && id(option.id) && utf8Text(option.label, 1024) ? option : undefined;
+    });
+    if (!options?.length || new Set(options.map(option => option.id)).size !== options.length) return;
+    form.options = options;
+  } else if (form.method === "confirm") {
+    if (!hasFields(form, [...common, "message"], optional) || !utf8Text(form.message, 32768)) return;
+  } else if (form.method === "input" || form.method === "editor") {
+    const field = form.method === "input" ? "placeholder" : "prefill";
+    if (!hasFields(form, common, [...optional, field]) || (form[field] !== undefined && !utf8Text(form[field], 32768))) return;
+  } else return;
+  return encoder.encode(JSON.stringify(form)).byteLength <= 65536 ? form : undefined;
+}
+function parseFeedback(value: unknown): DataRecord | undefined {
+  const item = exactRecord(value, ["id", "kind", "level", "text"]);
+  return item && id(item.id) && oneOf(item.kind, ["notify", "status", "widget", "title", "editor-text"])
+    && oneOf(item.level, ["info", "warning", "error"]) && utf8Text(item.text, 32768) ? item : undefined;
+}
+
+/** Narrow and copy the complete v3 DTO before the browser consumes host data. */
 export function parseHostMessage(value: unknown): HostMessage | undefined {
   const message = snapshotRecord(value);
-  if (!message || message.version !== 2 || !integer(message.generation) || !id(message.viewId)) return;
+  if (!message || message.version !== 3 || !integer(message.generation) || !id(message.viewId)) return;
   const envelope = ["version", "type", "generation", "viewId"];
 
   switch (message.type) {
+    case "interactionState": {
+      if (!hasFields(message, [...envelope, "active", "queuedCount", "phase", "errorCode", "feedback", "omittedFeedback"])
+        || !integer(message.queuedCount) || message.queuedCount > 7 || !integer(message.omittedFeedback)
+        || !oneOf(message.phase, ["idle", "waiting", "blocked"]) || !(message.errorCode === null || (string(message.errorCode, 100) && /^[a-z][a-z0-9-]*$/.test(message.errorCode)))) return;
+      const active = message.active === null ? null : parseInteractionForm(message.active);
+      const feedback = list(message.feedback, 16, parseFeedback);
+      if (active === undefined || !feedback || feedback.reduce((total, item) => total + encoder.encode(item.text as string).byteLength, 0) > 65536) return;
+      if ((message.phase === "idle" && (active !== null || message.queuedCount !== 0)) || (message.phase === "waiting" && active === null)) return;
+      return { ...message, active, feedback } as unknown as HostMessage;
+    }
+    case "executionProfileState": {
+      if (!hasFields(message, [...envelope, "profile", "displayName", "phase", "errorCode", "canSwitch", "canEnd", "canRecover"])
+        || !oneOf(message.profile, ["controlled", "trusted"]) || !(message.displayName === null || utf8Text(message.displayName, 512))
+        || !oneOf(message.phase, ["idle", "selecting", "switching", "recovery-required", "error"])
+        || !(message.errorCode === null || (string(message.errorCode, 100) && /^[a-z][a-z0-9-]*$/.test(message.errorCode)))
+        || [message.canSwitch, message.canEnd, message.canRecover].some(value => typeof value !== "boolean")) return;
+      return message as unknown as HostMessage;
+    }
     case "pong":
       return hasFields(message, envelope) ? message as unknown as HostMessage : undefined;
 
@@ -204,7 +252,7 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
         || !oneOf(message.status, ["no-folder", "multi-root", "remote", "non-file", "untrusted", "eligible"])
         || (message.choice !== null && !oneOf(message.choice, ["allow", "decline"]))
         || typeof message.busy !== "boolean" || typeof message.chatBusy !== "boolean" || typeof message.modelBusy !== "boolean"
-        || message.controlledExecution !== true
+        || typeof message.controlledExecution !== "boolean"
         || !oneOf(message.runtime, ["not-started", "starting", "ready", "stopping", "error"])
         || !oneOf(message.execution, ["idle", "waiting", "thinking", "awaiting-approval", "executing", "replying", "retrying", "compacting", "completed", "stopped", "stopping", "failed"])
         || ![message.error, message.runtimeDetail, message.chatError, message.chatModel, message.thinkingLevel, message.pendingThinkingLevel, message.modelError].every(nullableString)) return;

@@ -14,6 +14,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
   };
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sliderRef = useRef<HTMLInputElement>(null);
+  const selectionFocus = useRef<{ phase: "awaiting-busy" | "busy"; target: HTMLElement } | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [modelListOpen, setModelListOpen] = useState(false);
   const appliedLevel = state.thinkingLevel;
@@ -33,6 +34,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
         event.preventDefault();
         setPopoverOpen(false);
         if (!animatePopover) setModelListOpen(false);
+        if (selectionFocus.current && triggerRef.current) selectionFocus.current.target = triggerRef.current;
         triggerRef.current?.focus();
       }
     };
@@ -41,6 +43,23 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
   }, [popoverOpen, animatePopover]);
 
   const settingsDisabled = disabled || state.busy || state.modelBusy || state.runtime !== "ready" || state.execution === "stopping";
+  // Native disabled controls lose focus in Chromium while the host applies an idle
+  // selection. Restore only our own selection's focus, never a newer user target.
+  useEffect(() => {
+    const moved = (event: FocusEvent) => {
+      if (event.target !== document.body && event.target !== selectionFocus.current?.target) selectionFocus.current = null;
+    };
+    document.addEventListener("focusin", moved);
+    return () => document.removeEventListener("focusin", moved);
+  }, []);
+  useEffect(() => {
+    if (!selectionFocus.current) return;
+    if (state.modelBusy) { selectionFocus.current.phase = "busy"; return; }
+    if (selectionFocus.current.phase !== "busy") return;
+    const target = selectionFocus.current.target;
+    selectionFocus.current = null;
+    if (!settingsDisabled && target.isConnected && document.activeElement === document.body) target.focus();
+  }, [state.modelBusy, settingsDisabled]);
   // Native change commits a range drag on release; React onChange also fires on every input.
   useEffect(() => {
     const slider = sliderRef.current;
@@ -55,11 +74,12 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
         setSliderIndex(index);
         if (level === selectedLevel) return;
       }
+      if (!state.chatBusy && document.activeElement === slider) selectionFocus.current = { phase: "awaiting-busy", target: slider };
       onThinking(level);
     };
     slider.addEventListener("change", commit);
     return () => slider.removeEventListener("change", commit);
-  }, [onThinking, state.thinkingLevels, selectedLevel, continuousThinkingDrag]);
+  }, [onThinking, state.thinkingLevels, state.chatBusy, selectedLevel, continuousThinkingDrag]);
   const modelLabel = state.chatModel ?? t("Model not configured");
   const thinkingLabel = appliedLevel ? thinkingText(appliedLevel) : "—";
   const pendingSettings: string[] = [];
@@ -115,7 +135,10 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
     event.currentTarget.value = String(next);
     setSliderIndex(next);
     const level = state.thinkingLevels[next];
-    if (level && level !== selectedLevel) onThinking(level);
+    if (level && level !== selectedLevel) {
+      if (!state.chatBusy) selectionFocus.current = { phase: "awaiting-busy", target: event.currentTarget };
+      onThinking(level);
+    }
   };
 
   return (
@@ -131,7 +154,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
         title={t("Applied: {model} · {thinking}", { model: modelLabel, thinking: thinkingLabel })}
         onClick={togglePopover}
       >
-        {modelLabel} · {thinkingLabel}
+        <span className="model-effort-trigger__model">{modelLabel}</span><span className="model-effort-trigger__thinking"> · {thinkingLabel}</span>
       </button>
       <div id="model-popover" className="popover" role="dialog" aria-label={t("Model and thinking level")} hidden={!popoverOpen}
         data-animated={animatePopover ? "true" : undefined} aria-hidden={!popoverOpen} inert={!popoverOpen}>
@@ -161,6 +184,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
                 aria-checked={applied}
                 disabled={settingsDisabled}
                 onClick={() => {
+                  selectionFocus.current = !state.chatBusy && triggerRef.current ? { phase: "awaiting-busy", target: triggerRef.current } : null;
                   onModel(entry.provider, entry.modelId);
                   closePopover();
                 }}
@@ -199,7 +223,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
       <p id="pending-settings" className="muted" role="status" hidden={pendingSettings.length === 0 && !state.modelBusy}>
         {pendingSettings.length > 0 ? t(state.modelBusy ? "Applying next turn: {settings}" : "Next turn (pending): {settings}", { settings: pendingSettings.join(" · ") }) : t("Loading model settings…")}
       </p>
-      <div id="model-status-error" className="banner" role="alert" hidden={!state.modelError}>{state.modelError ?? ""}</div>
+      <div id="model-status-error" className="banner" role="alert" hidden={!state.modelError || popoverOpen}>{state.modelError ?? ""}</div>
     </>
   );
 }

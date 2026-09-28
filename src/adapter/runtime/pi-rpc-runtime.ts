@@ -1,3 +1,8 @@
+import { createExtensionFeedback } from "./extension-feedback.js";
+import { extensionCommandNames, dispatchedExtensionCommand } from "./command-classification.js";
+import { createInteractionWriter } from "./interaction-writer.js";
+import { createRpcDialogs } from "./rpc-dialogs.js";
+import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
@@ -12,6 +17,7 @@ import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "
 import { resolvePiCliPath } from "./pi-rpc-probe.js";
 import { readPiStartupModelArg } from "./piStartupModel.js";
 import type {
+  ExtensionExecutionProfile,
   ModelMutationResult,
   ModelProjectionResult,
   PiRuntimeLifecycle,
@@ -19,7 +25,7 @@ import type {
   RuntimeEvent,
   RuntimeStartResult,
 } from "../../extension/contracts/index.js";
-import { boundUserFacingDetail, formatRuntimeError } from "./runtime-errors.js";
+import { boundUserFacingDetail, formatRuntimeError, isAuthenticationError } from "./runtime-errors.js";
 import {
   formatModelLabel,
   parseModelCatalog,
@@ -48,6 +54,7 @@ type RpcResponse = {
   success?: boolean;
   data?: unknown;
   finalError?: string;
+  error?: unknown;
 };
 
 export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): PiRuntimeLifecycle {
@@ -55,14 +62,28 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
   let detachReader: (() => void) | null = null;
   let startToken = 0;
   let activeSession = 0;
+  let resumedConversation = false;
+  let untouchedConversation = false;
   let promptInFlight = false;
+  let commandInFlight = false;
+  let agentRunning = false;
+  let commandNames: ReadonlySet<string> = new Set();
   let promptAckPending = false;
   let requestCounter = 0;
   let gateId = '';
   let cwd = '';
   let gateReady = false;
+  let verifiedCustomTools: ReadonlySet<string> = new Set();
+  let initializationFailed = false;
+  let executionProfile: ExtensionExecutionProfile = { kind: "controlled" };
   let aborting = false;
+  let interactionHandler: ((form: InteractionFormInput, reply: InteractionReplyCallback) => void) | undefined;
+  let dialogs: ReturnType<typeof createRpcDialogs> | undefined;
+  let outstandingDialogs = 0;
+  let startupDeadline: { pause(): void; resume(): void } | undefined;
   let approvalHandler: ((call: GateCall) => Promise<boolean>) | undefined;
+  const feedback = createExtensionFeedback();
+  let feedbackHandler: Parameters<NonNullable<PiRuntimeLifecycle["setFeedbackHandler"]>>[0] | undefined;
   const approvals = new Set<string>();
   const activity = new ActivityProjection();
   const listeners = new Set<(event: RuntimeEvent) => void>();
@@ -82,13 +103,79 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
     const id = typeof parsed.id === "string" ? parsed.id : undefined;
+    if (parsed.type === 'extension_error') {
+      if (!activeSession) { initializationFailed = true; void faultStop(); }
+      else emit({ kind: 'stream_error', session: activeSession, detail: 'A runtime extension reported an error. Its operation may have failed; no automatic retry was made.' });
+      return;
+    }
     if (parsed.type === 'extension_ui_request') {
       let envelope; try { envelope = parseGateEnvelope(JSON.parse(typeof parsed.message === 'string' ? parsed.message : 'null')); } catch { /* Invalid request is denied below. */ }
-      if (envelope?.runtime === gateId && sameGateCwd(envelope.cwd, cwd) && envelope.kind === 'hello' && parsed.method === 'notify') { gateReady = true; return; }
+      if (envelope?.runtime === gateId && sameGateCwd(envelope.cwd, cwd) && envelope.kind === 'hello' && parsed.method === 'notify') {
+        const hello = envelope;
+        gateReady = executionProfile.kind === 'controlled' ? hello.profile !== 'trusted' : hello.profile === 'trusted' && Array.isArray(hello.customTools);
+        verifiedCustomTools = gateReady && hello.profile === 'trusted' ? new Set(hello.customTools) : new Set();
+        return;
+      }
+      if (executionProfile.kind === 'trusted' && ['notify', 'setStatus', 'setWidget', 'setTitle', 'set_editor_text'].includes(String(parsed.method))) {
+        feedback.accept(parsed); feedbackHandler?.(feedback.snapshot()); return;
+      }
+      if (id && ['select', 'confirm', 'input', 'editor'].includes(String(parsed.method)) && envelope?.kind !== 'call') {
+        if (!dialogs) return; // A retired transport must not answer or retry.
+
+        try {
+          const interactionProcess = child;
+          const interactionSession = activeSession;
+          const opened = dialogs.open(parsed);
+          if (opened.kind === 'dialog') {
+            outstandingDialogs++;
+            let consumed = false;
+            const answer: InteractionReplyCallback = async reply => {
+              if (consumed) return;
+              consumed = true;
+              try { await opened.reply(reply); }
+              finally {
+                if (child === interactionProcess) {
+                  outstandingDialogs = Math.max(0, outstandingDialogs - 1);
+                  if (outstandingDialogs === 0) startupDeadline?.resume();
+                }
+              }
+            };
+            if (executionProfile.kind !== 'trusted' || !interactionHandler || aborting) {
+              // Same replay registry, in-flight lease and bounded writer as a human reply.
+              void Promise.resolve(answer({ kind: 'cancel', reason: aborting ? 'stop' : 'unavailable' })).catch(() => undefined);
+            } else {
+              startupDeadline?.pause();
+              interactionHandler(opened.form, answer);
+            }
+          }
+          else if (opened.kind === 'rejected') {
+            if (opened.code === 'identity-budget') {
+              void faultStop();
+              emit({ kind: 'runtime_error', session: interactionSession, detail: 'Extension interaction identity budget exhausted. Explicit safe recovery is required.' });
+              return;
+            }
+            if (opened.cancellation) {
+              outstandingDialogs++;
+              void opened.cancellation.catch(() => undefined).finally(() => {
+                if (child === interactionProcess) {
+                  outstandingDialogs = Math.max(0, outstandingDialogs - 1);
+                  if (outstandingDialogs === 0) startupDeadline?.resume();
+                }
+              });
+            }
+            emit({ kind: 'stream_error', session: activeSession, detail: 'An unsupported or unsafe extension interaction was rejected.' });
+          }
+        } catch {
+          const session = activeSession;
+          void faultStop();
+          emit({ kind: 'runtime_error', session, detail: 'Extension interaction transport failed. Work status is uncertain; no reply was retried.' });
+        }
+        return;
+      }
       if (id && parsed.method === 'confirm') {
         const session = activeSession; const process = child;
         const reply = (allow: boolean): void => { approvals.delete(id); if (process === child) process?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,confirmed:allow && session===activeSession && !aborting})); };
-        if (!gateReady || !session || aborting || envelope?.kind !== 'call' || envelope.runtime !== gateId || !sameGateCwd(envelope.cwd, cwd) || !approvalHandler) { reply(false); return; }
+        if (!gateReady || !session || aborting || envelope?.kind !== 'call' || envelope.runtime !== gateId || !sameGateCwd(envelope.cwd, cwd) || (envelope.category === 'custom' && (executionProfile.kind !== 'trusted' || !verifiedCustomTools.has(envelope.tool))) || !approvalHandler) { reply(false); return; }
         approvals.add(id);
         void approvalHandler({ ...envelope, cwd }).then(reply,()=>reply(false));
       }
@@ -101,14 +188,15 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     }
     const session = activeSession;
     if (!session) return;
+    if (parsed.type === "agent_start" || parsed.type === "message_start" || parsed.type === "message_end") untouchedConversation = false;
     if (parsed.type === "tool_execution_end" && typeof parsed.toolCallId === "string" && parsed.toolCallId.length > 0 && parsed.toolCallId.length <= 200 && typeof parsed.isError === "boolean") {
       emit({ kind: "tool_finished", session, toolCallId: parsed.toolCallId, failed: parsed.isError });
     }
     for (const item of activity.parse(parsed)) emit({kind:'activity',session,item});
     const finalMessage = parsed.message as Record<string,unknown> | undefined;
     if(parsed.type==='message_end' && finalMessage?.role==='assistant' && Array.isArray(finalMessage.content)) {
-      const text=finalMessage.content.filter((p:Record<string,unknown>)=>p.type==='text'&&typeof p.text==='string').map((p:Record<string,unknown>)=>p.text).join('').slice(0,65536);
-      emit({kind:'message_final',session,messageId:activity.currentMessageId(),text:displayText(text)});
+      const text=finalMessage.content.filter((p:Record<string,unknown>)=>p.type==='text'&&typeof p.text==='string').map((p:Record<string,unknown>)=>p.text).join('');
+      emit({kind:'message_final',session,messageId:activity.currentMessageId(),text:displayText(text).slice(0,65536)});
     }
     if (parsed.type === "message_end" && finalMessage?.role === "assistant" && finalMessage.stopReason === "error") {
       emit({ kind: "stream_error", session, detail: formatRuntimeError(typeof finalMessage.errorMessage === "string" && finalMessage.errorMessage.trim() ? finalMessage.errorMessage : "Assistant request failed.") });
@@ -116,7 +204,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     if (parsed.type === "message_update") {
       const assistantMessageEvent = parsed.assistantMessageEvent as Record<string, unknown> | undefined;
       if (assistantMessageEvent?.type === "text_delta" && typeof assistantMessageEvent.delta === "string") {
-        emit({ kind: "text_delta", delta: displayText(assistantMessageEvent.delta.slice(0,65536)), session, messageId:activity.currentMessageId() });
+        emit({ kind: "text_delta", delta: displayText(assistantMessageEvent.delta).slice(0,65536), session, messageId:activity.currentMessageId() });
       }
       return;
     }
@@ -147,8 +235,10 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       emit({ kind: "stream_error", session, detail: formatRuntimeError(detail) });
       return;
     }
+    if (parsed.type === "agent_start") agentRunning = true;
     if (parsed.type === "agent_settled") {
-      promptInFlight = false;
+      agentRunning = false;
+      promptInFlight = commandInFlight;
       aborting = false;
       emit({ kind: "agent_settled", session });
     }
@@ -158,33 +248,42 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     if (detachReader) detachReader();
     detachReader = attachJsonlLineReader(stdout, handleLine, () => {
       const session=activeSession;
-      emit({kind:'runtime_error',session,detail:'Runtime frame exceeded the safety limit. Restart required.'});
-      void stop();
+      emit({kind:'runtime_error',session,detail:'Runtime frame exceeded the safety limit. Explicit recovery is required.'});
+      void faultStop();
     });
   };
 
-  const waitForResponse = (requestId: string, timeoutMs: number): Promise<RpcResponse> =>
+  const waitForResponse = (requestId: string, timeoutMs: number, allowHumanWait = false): Promise<RpcResponse> =>
     new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        pending.delete(requestId);
-        reject(new Error("Timed out waiting for RPC response"));
-      }, timeoutMs);
-      pending.set(requestId, (response) => {
-        clearTimeout(timer);
-        resolve(response);
-      });
+      let remaining = timeoutMs; let armedAt = performance.now();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const clear = () => { if (timer) clearTimeout(timer); timer = undefined; if (startupDeadline === deadline) startupDeadline = undefined; };
+      const expire = () => { clear(); pending.delete(requestId); reject(new Error("Timed out waiting for RPC response")); };
+      const deadline = {
+        pause() { if (timer) { remaining = Math.max(0, remaining - (performance.now() - armedAt)); clearTimeout(timer); timer = undefined; if (remaining === 0) expire(); } },
+        resume() { if (!timer && pending.has(requestId)) { armedAt = performance.now(); timer = setTimeout(expire, remaining); } },
+      };
+      pending.set(requestId, response => { clear(); resolve(response); });
+      if (allowHumanWait) startupDeadline = deadline;
+      if (!allowHumanWait || outstandingDialogs === 0) deadline.resume();
     });
 
   let shutdown: Promise<void> = Promise.resolve();
   let shutdownUnconfirmed = false;
+  let ownedLaunchPending = false;
   const stop = async (): Promise<void> => {
     const owned = child;
+    if (ownedLaunchPending) shutdownUnconfirmed = true;
+    if (owned && environment.owner && (!activeSession || promptInFlight || promptAckPending || commandInFlight || agentRunning || approvals.size > 0 || outstandingDialogs > 0)) shutdownUnconfirmed = true;
+    dialogs?.invalidate(); dialogs = undefined; outstandingDialogs = 0;
+    feedback.reset(); feedbackHandler?.(feedback.snapshot());
     child = null; // Detach synchronously: late loss/close cannot affect a replacement.
     if (startToken < Number.MAX_SAFE_INTEGER) startToken += 1;
     activeSession = 0;
     promptAckPending = false;
     promptInFlight = false;
-    gateReady = false;
+    commandInFlight = false; agentRunning = false; commandNames = new Set();
+    gateReady = false; verifiedCustomTools = new Set();
     aborting = false;
     activity.reset();
     for (const id of approvals) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Terminate even if cancellation cannot be written. */ } }
@@ -195,13 +294,30 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       detachReader();
       detachReader = null;
     }
-    if (owned) shutdown = stopChildProcess(owned, STOP_TIMEOUT_MS).then(closed => { if (!closed) shutdownUnconfirmed = true; });
+    if (owned && environment.owner && shutdownUnconfirmed) {
+      if (owned.connected) { try { owned.disconnect(); } catch { /* Missing owner observation remains blocked. */ } }
+      owned.stdout?.resume();
+    } else if (owned && environment.owner) {
+      const owner = environment.owner;
+      shutdown = (async () => {
+        const ended = await owner.end();
+        if (!ended.ok) { shutdownUnconfirmed = true; return; }
+        const recovered = await owner.recover();
+        if (!recovered.ok) shutdownUnconfirmed = true;
+      })().catch(() => { shutdownUnconfirmed = true; });
+    } else if (owned) shutdown = stopChildProcess(owned, STOP_TIMEOUT_MS).then(closed => { if (!closed) shutdownUnconfirmed = true; });
     await shutdown;
+  };
+
+  const faultStop = (): Promise<void> => {
+    if (environment.owner) shutdownUnconfirmed = true;
+    return stop();
   };
 
   const start = async (options: {
     cwd: string;
     projectTrust: ProjectTrustFlag;
+    profile?: ExtensionExecutionProfile;
     resume?: { id: string; path: string };
   }): Promise<RuntimeStartResult> => {
     await stop();
@@ -210,48 +326,88 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     const token = ++startToken;
     const cliPath = (environment.cliPath ?? resolvePiCliPath)();
     const trustArg = options.projectTrust === "approve" ? "--approve" : "--no-approve";
+    initializationFailed = false;
+    executionProfile = options.profile ?? { kind: "controlled" };
+    if (executionProfile.kind === "trusted" && (!path.isAbsolute(executionProfile.entryPath) || executionProfile.entryPath.includes("\0"))) return { ok: false, detail: "Extension entry is invalid." };
     gateId = randomUUID();
     cwd = options.cwd;
     const gatePath = path.join(__dirname, 'approval-gate.mjs');
     try { await (environment.gateAccess ?? access)(gatePath); } catch { return {ok:false,detail:'Bundled approval extension is missing. Tools remain disabled.'}; }
     if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
     if (options.resume && (!/^[A-Za-z0-9_-]{1,100}$/.test(options.resume.id) || !path.isAbsolute(options.resume.path))) return { ok: false, detail: "Saved session identity is invalid." };
-    const args = ["--mode", "rpc", "--tools", CONTROLLED_TOOLS.join(','), '--no-extensions', '-e', gatePath, trustArg];
+    // pi's --tools allowlist also filters registered extension tools out of getAllTools().
+    // Trusted inventory is instead validated and activated by the bundled approval gate.
+    const toolArgs = executionProfile.kind === "controlled" ? ["--tools", CONTROLLED_TOOLS.join(',')] : [];
+    const args = ["--mode", "rpc", ...toolArgs, '--no-extensions', '-e', gatePath, trustArg];
+    if (executionProfile.kind === "trusted") args.push("-e", executionProfile.entryPath);
     if (options.resume) args.push("--session", options.resume.path);
     const startupModel = (environment.startupModel ?? readPiStartupModelArg)();
     if (startupModel) args.push("--model", startupModel);
 
     // Raw stderr may contain provider credentials; never project or accumulate it.
     try {
-      child = (environment.spawn ?? spawn)(process.execPath, [cliPath, ...args], {
-        cwd: options.cwd,
-        stdio: ["pipe", "pipe", "pipe"],
-        env: controlledEnvironment(process.env, gateId),
-      });
+      const runtimeEnv = { ...controlledEnvironment(process.env, gateId), PI_VSCODE_EXTENSION_PROFILE: executionProfile.kind };
+      if (environment.owner) {
+        ownedLaunchPending = true;
+        let launched;
+        try { launched = await environment.owner.launch({ cwd: options.cwd, cliPath, args, env: runtimeEnv }); }
+        finally { ownedLaunchPending = false; }
+        if (!launched.ok) return { ok: false, detail: launched.code === 'occupied' ? 'The runtime recovery domain is occupied. End the prior owned runtime and recover deliberately; no replacement was launched.' : 'Runtime ownership startup failed. Recovery evidence must be checked before another launch.' };
+        if (token !== startToken) {
+          shutdownUnconfirmed = true;
+          // Cancellation is not permission to terminate uncertain owned work.
+          // Never attach its RPC reader or let this late transport replace current state.
+          if (launched.process.connected) { try { launched.process.disconnect(); } catch { /* Recovery evidence remains required. */ } }
+          launched.process.stdout?.resume();
+          launched.process.stderr?.resume();
+          return { ok: false, detail: "Runtime start superseded. Explicit owned-runtime recovery is required." };
+        }
+        child = launched.process;
+      } else {
+        child = (environment.spawn ?? spawn)(process.execPath, [cliPath, ...args], {
+          cwd: options.cwd, stdio: ["pipe", "pipe", "pipe"], env: runtimeEnv,
+        });
+      }
 
       child.stderr?.resume();
       const owned = child;
+      if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
+      const writeInteraction = createInteractionWriter(owned.stdin, () => child === owned);
+      dialogs = createRpcDialogs(async frame => {
+        try { await writeInteraction(frame); }
+        catch {
+          if (child === owned) {
+            const session = activeSession;
+            void faultStop();
+            emit({ kind: 'runtime_error', session, detail: 'Extension reply delivery is unconfirmed. Explicit owned-runtime recovery is required; no reply was retried.' });
+          }
+          throw new Error('Extension reply delivery is unconfirmed.');
+        }
+      });
       const lost = (): void => {
         if (owned !== child) return;
         const session = activeSession; activeSession = 0; gateReady = false; promptInFlight = false;
         for (const resolve of pending.values()) resolve({success:false}); pending.clear();
         if (session) emit({kind:'runtime_error',session,detail:'Runtime disconnected. Work may be interrupted; no task was retried.'});
-        if (child === owned) void stop();
+        if (child === owned) {
+          if (environment.owner) shutdownUnconfirmed = true;
+          void stop();
+        }
       };
       child.on('error',lost); child.on('close',lost); child.stdin?.on('error',lost);
 
       attachReader(child.stdout!);
 
       const requestId = `pi-vscode-get-state-${token}`;
-      const waiting = waitForResponse(requestId, START_TIMEOUT_MS);
+      const waiting = waitForResponse(requestId, START_TIMEOUT_MS, executionProfile.kind === "trusted");
       child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
       const response = await waiting;
 
       if (token !== startToken) {
         return { ok: false, detail: "Runtime start superseded" };
       }
-      if (!response.success || !gateReady) {
-        await stop();
+      if (!response.success || !gateReady || initializationFailed) {
+        await faultStop();
         return {
           ok: false,
           detail: 'Runtime readiness or approval extension verification failed.',
@@ -260,13 +416,21 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       const data = response.data as Record<string, unknown> | undefined;
       const identityValid = data && typeof data === "object" && typeof data.sessionId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(data.sessionId) && typeof data.sessionFile === "string" && data.sessionFile.length <= 32768 && path.isAbsolute(data.sessionFile) && (data.sessionName == null || typeof data.sessionName === "string");
       if (!identityValid || (options.resume && (data.sessionId !== options.resume.id || !sameNativePath(data.sessionFile as string, options.resume.path)))) {
-        await stop();
+        await faultStop();
         return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
       }
       activeSession = token;
+      resumedConversation = options.resume !== undefined;
+      untouchedConversation = !resumedConversation;
+      if (executionProfile.kind === 'trusted') {
+        const catalogue = await invokeRpc({ type: 'get_commands' }, START_TIMEOUT_MS);
+        const names = catalogue.success ? extensionCommandNames(catalogue.data) : undefined;
+        if (!names) { await faultStop(); return { ok: false, detail: 'Extension command catalogue could not be verified.' }; }
+        commandNames = names;
+      }
       return { ok: true, modelLabel: formatModelLabel(response.data), conversation: { id: data.sessionId as string, path: data.sessionFile as string, name: typeof data.sessionName === "string" ? data.sessionName.slice(0,160) : null } };
     } catch (error) {
-      if (token === startToken) await stop();
+      if (token === startToken) await faultStop();
       const message = error instanceof Error ? error.message : String(error);
       return {
         ok: false,
@@ -292,6 +456,43 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       throw new Error("Runtime restarted during request.");
     }
     return response;
+  };
+
+  const checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
+    const session = activeSession;
+    const idle = () => session !== 0 && session === activeSession && gateReady && !aborting
+      && !promptInFlight && !promptAckPending && !agentRunning && !commandInFlight && outstandingDialogs === 0 && approvals.size === 0;
+    const stateMatches = (response: RpcResponse, count?: number): boolean => {
+      if (response.success !== true || response.command !== "get_state" || !response.data || typeof response.data !== "object") return false;
+      const state = response.data as Record<string, unknown>;
+      return state.sessionId === expected.id && typeof state.sessionFile === "string" && sameNativePath(state.sessionFile, expected.path)
+        && state.isStreaming === false && state.isCompacting === false && state.pendingMessageCount === 0
+        && Number.isSafeInteger(state.messageCount) && (state.messageCount as number) >= 0
+        && (count === undefined || state.messageCount === count);
+    };
+    try {
+      if (!idle()) return { kind: "unavailable" };
+      // Statistics are content-independent; never fetch history across the bounded JSONL transport.
+      const before = await invokeRpc({ type: "get_state" }, 5000);
+      if (!idle() || !stateMatches(before)) return { kind: "unavailable" };
+      const response = await invokeRpc({ type: "get_session_stats" }, 5000);
+      if (!idle() || response.success !== true || response.command !== "get_session_stats" || !response.data || typeof response.data !== "object") return { kind: "unavailable" };
+      const stats = response.data as Record<string, unknown>;
+      if (stats.sessionId !== expected.id || typeof stats.sessionFile !== "string" || !sameNativePath(stats.sessionFile, expected.path)
+        || !Number.isSafeInteger(stats.assistantMessages) || !Number.isSafeInteger(stats.totalMessages)
+        || (stats.assistantMessages as number) < 0 || (stats.totalMessages as number) < (stats.assistantMessages as number)) return { kind: "unavailable" };
+      const messageCount = (before.data as Record<string, unknown>).messageCount as number;
+      const after = await invokeRpc({ type: "get_state" }, 5000);
+      if (!idle() || !stateMatches(after, messageCount)) return { kind: "unavailable" };
+      if (messageCount === 0 && stats.totalMessages === 0 && untouchedConversation) return { kind: "empty" };
+      // pi 0.86.1 flushes fresh session entries only once an assistant exists.
+      // Stats count all entries, unlike active-branch messageCount after compaction.
+      // A verified saved-session start is already durable, even with empty context.
+      if (resumedConversation || (stats.assistantMessages as number) > 0) {
+        return { kind: "resume", conversation: { ...expected } };
+      }
+      return { kind: "unavailable" };
+    } catch { return { kind: "unavailable" }; }
   };
 
   const loadModelProjection = async (expectedSession = activeSession): Promise<ModelProjectionResult> => {
@@ -364,7 +565,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     }
     const session = activeSession;
     const requestId = `pi-vscode-prompt-${session}-${++requestCounter}`;
-    promptInFlight = true;
+    promptInFlight = true; untouchedConversation = false;
     try {
       const waiting = waitForResponse(requestId, PROMPT_TIMEOUT_MS);
       child.stdin?.write(serializePromptFrame(requestId, { kind: "plain", body: text }));
@@ -380,8 +581,8 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       return { ok: true };
     } catch {
       if (session === activeSession) {
-        emit({kind:'runtime_error',session,detail:'Prompt acknowledgement was lost. Runtime shut down; task was not retried.'});
-        await stop();
+        emit({kind:'runtime_error',session,detail:environment.owner ? 'Prompt acknowledgement was lost. Explicit owned-runtime recovery is required; no task was retried.' : 'Prompt acknowledgement was lost. Runtime shut down; task was not retried.'});
+        await faultStop();
       }
       return { ok: false, detail: 'Prompt acknowledgement was lost; restart runtime before retrying.' };
     }
@@ -391,6 +592,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     if (requestCounter >= Number.MAX_SAFE_INTEGER) throw new Error("Runtime request identifiers exhausted. Restart required.");
     const requestId = `pi-vscode-prompt-${expectedSession}-${++requestCounter}`;
     let frame = serializePromptFrame(requestId, input);
+    const command = dispatchedExtensionCommand(input, commandNames);
     let consumed = false;
     return { send(onAttempt) {
       const owned = child;
@@ -399,7 +601,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
         frame = "";
         return Promise.resolve({ delivery: "not-sent", code: "runtime-lost" });
       }
-      consumed = true; promptInFlight = true; promptAckPending = true;
+      consumed = true; promptInFlight = true; promptAckPending = true; commandInFlight = command !== undefined;
       return new Promise(resolve => {
         let attempted = false; let finished = false; let callback = false; let drained = false; let returned = false;
         let response: RpcResponse | undefined;
@@ -409,10 +611,14 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
           clearTimeout(writeTimer); clearTimeout(ackTimer); pending.delete(requestId);
           stream.off("error", lost); stream.off("close", lost); stream.off("drain", drain); frame = "";
           if (delivery !== "rpc-accepted" && child === owned) promptInFlight = false;
-          resolve({ delivery, ...(code ? { code } : {}) });
+          if (command && child === owned) { commandInFlight = false; promptInFlight = agentRunning; }
+          const rejection = delivery === "rpc-rejected" && typeof response?.error === "string" && isAuthenticationError(response.error)
+            ? "authentication" as const : undefined;
+          resolve({ delivery, ...(code ? { code } : {}), ...(rejection ? { rejection } : {}) });
+          if (command && delivery === "rpc-accepted" && child === owned) emit({ kind: "command_handled", session: expectedSession, agentRunning });
           if (delivery === "unknown" && child === owned) {
-            emit({ kind: "runtime_error", session: expectedSession, detail: "Prompt delivery is uncertain. Runtime stopped; no retry was made." });
-            void stop();
+            emit({ kind: "runtime_error", session: expectedSession, detail: environment.owner ? "Prompt delivery is uncertain. Explicit owned-runtime recovery is required; no retry was made." : "Prompt delivery is uncertain. Runtime stopped; no retry was made." });
+            void faultStop();
           }
         };
         const check = () => {
@@ -426,11 +632,11 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
         const lost = () => finish(attempted ? "unknown" : "not-sent", "write-failed");
         const drain = () => { drained = true; check(); };
         const writeTimer = setTimeout(lost, 5000);
-        const ackTimer = setTimeout(() => finish("unknown", "ack-timeout"), 30000);
+        const ackTimer = command ? undefined : setTimeout(() => finish("unknown", "ack-timeout"), 30000);
         pending.set(requestId, value => { response = value; check(); });
         stream.on("error", lost); stream.on("close", lost); stream.on("drain", drain);
         try {
-          attempted = true; onAttempt();
+          attempted = true; untouchedConversation = false; onAttempt();
           const accepted = stream.write(frame, error => { if (error) lost(); else { callback = true; check(); } });
           drained ||= accepted; returned = true; frame = ""; check();
         } catch { lost(); }
@@ -440,22 +646,79 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
 
   return {
     start,
+    checkpointRestart,
     stop,
+    async getOwnershipState() {
+      if (!environment.owner) return 'none';
+      try { const state = await environment.owner.inspect(); return state.kind === 'empty' ? 'none' : state.kind; }
+      catch { return 'blocked'; }
+    },
+    async endOwnedRuntime() {
+      if (!environment.owner) return { ok: false, detail: 'Owned runtime recovery is unavailable.' };
+      try {
+        const result = await environment.owner.end();
+        return result.ok ? { ok: true } : { ok: false, detail: 'Owned runtime exit is not confirmed. Recovery remains blocked.' };
+      } catch { return { ok: false, detail: 'Owned runtime observer is unavailable. Recovery remains blocked.' }; }
+    },
+    async recoverOwnedRuntime() {
+      if (ownedLaunchPending) return { ok: false, detail: "Runtime ownership startup is still pending. Recovery cannot retire an in-flight launch." };
+      if (!environment.owner) return { ok: false, detail: 'Owned runtime recovery is unavailable.' };
+      try {
+        const result = await environment.owner.recover();
+        if (!result.ok) return { ok: false, detail: 'Matching owned-runtime exit evidence is required before recovery.' };
+        shutdownUnconfirmed = false;
+        executionProfile = { kind: 'controlled' };
+        return { ok: true };
+      } catch { return { ok: false, detail: 'Runtime recovery could not be recorded. No replacement was started.' }; }
+    },
     preparePrompt,
+    invalidateInteractions() {
+      if (!child) return;
+      const session = activeSession;
+      void faultStop();
+      emit({ kind: "runtime_error", session, detail: "Extension interaction state is unconfirmed. Explicit owned-runtime recovery is required." });
+    },
+    setFeedbackHandler(handler) { feedbackHandler = handler; handler(feedback.snapshot()); },
+    setInteractionHandler(handler) { interactionHandler = handler; },
     setApprovalHandler(handler) { approvalHandler = handler; },
     async abortTask() {
+      const deadline = performance.now() + STOP_TIMEOUT_MS;
+      const remaining = (): number => {
+        const budget = deadline - performance.now();
+        if (budget <= 0) throw new Error("Stop observation deadline expired.");
+        return budget;
+      };
       aborting = true;
       for (const id of approvals) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
       approvals.clear();
       try {
-        const clear = await invokeRpc({type:'clear_queue'}, STOP_TIMEOUT_MS);
+        const clear = await invokeRpc({type:'clear_queue'}, remaining());
         if (!clear.success) throw new Error();
-        const abort = await invokeRpc({type:'abort'}, STOP_TIMEOUT_MS);
+        const abort = await invokeRpc({type:'abort'}, remaining());
         if (!abort.success) throw new Error();
-        if (promptInFlight) { await stop(); return {ok:false,detail:'Stop did not settle; runtime was shut down. Side effects are not rolled back.'}; }
+        if (promptInFlight && environment.owner) {
+          await new Promise<void>(resolve => {
+            const timer = setTimeout(() => { unsubscribe(); resolve(); }, remaining());
+            const unsubscribe = (() => {
+              const listener = (event: RuntimeEvent): void => { if ((event.kind === 'agent_settled' || event.kind === 'command_handled') && !promptInFlight) { clearTimeout(timer); listeners.delete(listener); resolve(); } };
+              listeners.add(listener);
+              return () => listeners.delete(listener);
+            })();
+          });
+        }
+        if (promptInFlight) {
+          if (environment.owner) shutdownUnconfirmed = true;
+          await stop();
+          return {ok:false,detail:environment.owner ? 'Stop is not confirmed. End the owned runtime explicitly and recover only after observed exit; no automatic termination occurred.' : 'Stop did not settle; runtime was shut down. Side effects are not rolled back.'};
+        }
+        remaining(); // A late response/event is not timely observation, even if its timer has not run.
         aborting = false;
         return {ok:true};
-      } catch { await stop(); return {ok:false,detail:'Stop failed; runtime was shut down. Side effects are not rolled back.'}; }
+      } catch {
+        if (environment.owner) shutdownUnconfirmed = true;
+        await stop();
+        return {ok:false,detail:environment.owner ? 'Stop failed and runtime work is uncertain. Explicit owned-runtime termination and recovery are required.' : 'Stop failed; runtime was shut down. Side effects are not rolled back.'};
+      }
     },
     getSession: () => activeSession,
     subscribe(listener) {

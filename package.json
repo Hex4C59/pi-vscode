@@ -36,6 +36,7 @@
     "dist/extension.js",
     "dist/approval-gate.mjs",
     "dist/session-worker.mjs",
+    "dist/runtime-supervisor.mjs",
     "dist/webview/**",
     "assets",
     "LICENSE",

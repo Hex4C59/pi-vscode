@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { parseWebviewMessage } from "../bridge/webviewMessages.js";
 
 test("saved-session intents are bounded named capabilities rather than storage paths", () => {
- const envelope = { version: 2, viewId: "view", generation: 1 };
+ const envelope = { version: 3, viewId: "view", generation: 1 };
  assert.ok(parseWebviewMessage({ ...envelope, type: "newConversation" }));
  assert.ok(parseWebviewMessage({ ...envelope, type: "getSavedSessions", page: 0 }));
  assert.ok(parseWebviewMessage({ ...envelope, type: "resumeConversation", id: "saved-1" }));
@@ -377,4 +377,75 @@ test("view recreation cannot form a cycle between queued history and an obsolete
   const replacement=f.h.createView();replacement.action("getSavedHistoryPreview",{id:historyState(replacement).messages[0].id,requestId:"fresh-read",offset:0});await tick();
   finish({ok:false,code:"cancelled"});await tick();await tick();assert.equal(previews,2);assert.equal(lists,0);assert.ok(JSON.stringify(replacement.sent).includes('"text":"Fresh"'));
  } finally {finish?.({ok:false,code:"cancelled"});f.h.provider.dispose();}
+});
+
+test("conversation handoff explicitly discloses loss of retained attachment history before confirmation", async () => {
+ for (const kind of ["new", "restore"] as const) {
+  const f = await sessionFixture(); let message = "";
+  f.h.api.window.showWarningMessage = async (value: string) => { message = value; return undefined; };
+  try {
+   if (kind === "new") f.v.action("newConversation");
+   else f.v.action("resumeConversation", { id: f.selected });
+   await tick();
+   assert.match(message, /memory-only attachment history.*cleared/i);
+   assert.match(message, /Unsent draft text\/attachments/);
+   assert.equal(f.starts.length, 1, "cancel does not start a replacement runtime");
+  } finally { f.h.provider.dispose(); }
+ }
+});
+
+for (const handoff of ["new", "restore"] as const) test(`confirmed ${handoff} discards trusted loading while uncommitted handoff preserves it`, async () => {
+ const { mkdir, mkdtemp, writeFile, rm } = await import("node:fs/promises");
+ const path = await import("node:path");
+ const root = path.resolve("dist/tests-fixtures/session-profile"); await mkdir(root, { recursive: true });
+ const dir = await mkdtemp(path.join(root, "handoff-")); const entry = path.join(dir, "extension.ts");
+ await writeFile(entry, "export default function () {}\n");
+ const r = settingsRuntime();
+ const starts: Parameters<typeof r.runtime.start>[0][] = [];
+ const originalStart = r.runtime.start;
+ r.runtime.checkpointRestart = async conversation => ({ kind: "resume", conversation });
+ r.runtime.start = async options => {
+  starts.push(options); await originalStart(options);
+  return { ok: true, modelLabel: null, conversation: options.resume
+   ? { ...options.resume, name: "Restored" } : { id: "current-session", path: "/owned-current", name: "Current" } };
+ };
+ const store = backend(); const inspect = store.inspect;
+ const h = harness([folder()], true, undefined, r.runtime, store);
+ try {
+  const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
+  h.api.window.showOpenDialog = async () => [folder(entry).uri];
+  h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
+  v.action("chooseExecutionProfile", { profile: "trusted" });
+  for (let i = 0; i < 100 && starts.length < 2; i++) await new Promise(resolve => setTimeout(resolve, 5));
+  await tick(); assert.equal(starts.length, 2);
+  assert.deepEqual(starts[1]?.profile, { kind: "trusted", entryPath: entry });
+  const profile = () => {
+   v.state(); return [...v.sent].reverse().find(value => (value as { type: string }).type === "executionProfileState") as import("../contracts/index.js").ExecutionProfileProjection;
+  };
+  const draft = v.attachments().draft;
+  v.action("updateDraft", { draftRevision: draft.revision, editSequence: draft.acceptedEditSequence + 1, text: "Retain until committed" });
+  let selected = "";
+  if (handoff === "restore") { v.action("getSavedSessions", { page: 0 }); await tick(); selected = sessionState(v).entries[0]!.id; }
+  const request = () => handoff === "new" ? v.action("newConversation") : v.action("resumeConversation", { id: selected });
+  h.api.window.showWarningMessage = async () => undefined;
+  request(); await tick(); await tick();
+  assert.equal(starts.length, 2); assert.equal(profile().profile, "trusted");
+  assert.equal(v.attachments().draft.text, "Retain until committed");
+  h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
+  if (handoff === "restore") {
+   store.inspect = async () => ({ ok: false, code: "unavailable" });
+   request(); await tick(); await tick();
+   assert.equal(sessionState(v).error, "unavailable"); assert.equal(starts.length, 2);
+   assert.equal(profile().profile, "trusted"); assert.equal(v.attachments().draft.text, "Retain until committed");
+   store.inspect = inspect;
+  }
+  request(); await tick(); await tick();
+  assert.equal(starts.length, 3);
+  assert.equal(starts[2]?.profile, undefined, "a committed new/restored session starts controlled, not with the previous extension");
+  assert.equal(profile().profile, "controlled"); assert.equal(profile().displayName, null);
+  assert.equal(v.state().controlledExecution, true); assert.equal(v.attachments().draft.text, "");
+  assert.deepEqual(starts[2]?.resume, handoff === "restore" ? { id: saved.id, path: saved.path } : undefined);
+ } finally {
+  h.provider.dispose(); assert.equal(path.dirname(dir), root); await rm(dir, { recursive: true });
+ }
 });

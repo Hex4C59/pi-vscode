@@ -10,6 +10,7 @@ function fixture() {
   const host = hostFixture();
   const messages: AttachmentStateMessage[] = [];
   const events: string[] = [];
+  const failures: string[] = [];
   const view = { webview: { postMessage: async () => true } } as unknown as vscode.WebviewView;
   const context = { generation: 1, session: 1, viewId: "first-view", view: view as vscode.WebviewView | undefined,
     cwd: "/project", disposed: false, ready: true, eligible: true };
@@ -22,15 +23,15 @@ function fixture() {
     } }, () => context,
     message => messages.push(message as AttachmentStateMessage),
     { accepted: body => { events.push(`accepted:${body}`); context.eligible = false; },
-      attempted: () => events.push("attempted"), failed: () => events.push("failed"),
+      attempted: () => events.push("attempted"), failed: detail => { events.push("failed"); failures.push(detail); },
       settled: () => { events.push("settled"); context.eligible = true; }, changed: () => {} },
   );
   const action = (type: string, fields = {}) => draft.handle(view, {
-    version: 2, generation: context.generation, viewId: context.viewId, type,
+    version: 3, generation: context.generation, viewId: context.viewId, type,
     draftRevision: draft.revision, ...fields,
   } as WebviewMessage);
   const snapshot = () => { draft.publish(); return messages.at(-1)!; };
-  return { host, draft, context, events, action, snapshot, acknowledge: (result: AttachmentPromptResult) => acknowledge(result) };
+  return { host, draft, context, events, failures, action, snapshot, acknowledge: (result: AttachmentPromptResult) => acknowledge(result) };
 }
 
 test("draft module waits for ACK after early settlement and preserves newer text across view loss", async () => {
@@ -84,5 +85,17 @@ test("draft module cancels pending picker without submitting or losing acknowled
     assert.equal(f.snapshot().draft.text, "keep");
     assert.equal(f.snapshot().result?.code, "preparation-cancelled");
     assert.deepEqual(f.events, []);
+  } finally { f.draft.dispose(); }
+});
+
+test("a classified missing credential rejection explains recovery without replaying", async () => {
+  const f = fixture();
+  try {
+    await f.action("updateDraft", {editSequence:1,text:"synthetic"});
+    const sent=f.action("sendChat");
+    f.acknowledge({delivery:"rpc-rejected",code:"rpc-rejected",rejection:"authentication"}); await sent;
+    assert.deepEqual(f.failures,["Model authentication failed. Check pi credentials and provider access, then try again."]);
+    assert.equal(f.snapshot().lastSubmission?.delivery,"rpc-rejected");
+    assert.equal(f.events.filter(event=>event==="attempted").length,1);
   } finally { f.draft.dispose(); }
 });

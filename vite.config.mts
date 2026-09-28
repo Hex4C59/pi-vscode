@@ -9,6 +9,8 @@ const webviewRoot = path.join(repositoryRoot, "src", "webview");
 export default defineConfig({
   root: path.join(webviewRoot, "preview"),
   plugins: [react()],
+  // Webview resources live under a per-host URI; emitted CSS assets must stay relative.
+  base: "./",
   // The checkout may be edited through Windows while Vite runs in WSL.
   server: { watch: { usePolling: true, interval: 200 } },
   build: {

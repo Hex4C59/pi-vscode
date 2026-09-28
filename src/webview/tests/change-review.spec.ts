@@ -5,7 +5,7 @@ import { parseHostMessage } from "../parse-host-message.js";
 import { WebviewClient } from "../webview-client.js";
 import { attachmentState, uiHarness } from "./react-harness.js";
 
-const envelope = { version: 2, generation: 1, viewId: "view" } as const;
+const envelope = { version: 3, generation: 1, viewId: "view" } as const;
 
 function entry(index: number, patch: Partial<ChangeReviewEntry> = {}): ChangeReviewEntry {
   return {

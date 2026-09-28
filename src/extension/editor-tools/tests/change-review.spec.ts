@@ -12,7 +12,7 @@ import { ChangeReview } from "../changeReview.js";
 import { parseWebviewMessage } from "../../bridge/webviewMessages.js";
 
 test("review intents accept only host-owned IDs, never a file path or arbitrary editor command", () => {
-  const envelope = { version: 2, generation: 1, viewId: "current-view" };
+  const envelope = { version: 3, generation: 1, viewId: "current-view" };
   for (const type of ["openReviewDiff", "openReviewSource"]) {
     assert.ok(parseWebviewMessage({ ...envelope, type, id: "review-1" }));
     assert.equal(parseWebviewMessage({ ...envelope, type, id: "../file" }), undefined);
@@ -29,7 +29,7 @@ test("a sidebar synchronizes an explicit empty live review state", () => {
     const v = h.createView(); v.action("getChangeReview");
     const review = v.sent.find(message => (message as { type: string }).type === "changeReviewState");
     assert.ok(review);
-    assert.deepEqual(review, { version: 2, type: "changeReviewState", generation: v.state().generation, viewId: v.state().viewId,
+    assert.deepEqual(review, { version: 3, type: "changeReviewState", generation: v.state().generation, viewId: v.state().viewId,
       entries: [], retainedBytes: 0, limited: false, reset: false, error: null });
   } finally { h.provider.dispose(); }
 });

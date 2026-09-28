@@ -44,9 +44,9 @@ test('approval deny timeout cancellation late replies and exact session grant re
 test('approval protocol rejects wrong versions unknown tools and extra webview capabilities',()=>{
   assert.equal(parseGateEnvelope({...call('.'),protocol:'pi-vscode-approval',version:2,kind:'call'}),undefined);
   assert.equal(parseGateEnvelope({...call('.'),protocol:'pi-vscode-approval',version:1,kind:'call',tool:'unknown'}),undefined);
-  assert.ok(parseWebviewMessage({version:2,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'once'}));
-  assert.equal(parseWebviewMessage({version:2,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'once',command:'run'}),undefined);
-  assert.equal(parseWebviewMessage({version:2,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'always'}),undefined);
+  assert.ok(parseWebviewMessage({version:3,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'once'}));
+  assert.equal(parseWebviewMessage({version:3,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'once',command:'run'}),undefined);
+  assert.equal(parseWebviewMessage({version:3,viewId:'view',type:'decideApproval',generation:1,id:'a',decision:'always'}),undefined);
 });
 
 
@@ -106,4 +106,20 @@ test('approval expiry during the final asynchronous safety check cannot authoriz
     t.mock.timers.tick(1001); release?.();
     assert.equal(await pending, false); assert.equal(manager.scopes().length, 0);
   } finally { release?.(); manager.cancel(true); await rm(root, { recursive: true, force: true }); }
+});
+
+test('a known custom tool never inherits file scope or accepts a session-grant intent', async () => {
+  const custom: GateCall = { cwd: '/not-read-for-custom-policy', runtime: 'runtime', request: 'custom', toolCallId: 'custom-call', tool: 'review_summary', category: 'custom', input: { path: 'report.txt', query: 'safe' } };
+  assert.deepEqual(await inspectScope(custom), { auto: false, scope: null });
+  let offered: (() => void) | undefined;
+  const manager = new ToolApprovals(() => { if (manager.cards().length) offered?.(); });
+  try {
+    const ready = new Promise<void>(resolve => { offered = resolve; });
+    const pending = manager.request(custom);
+    await ready;
+    assert.equal(manager.cards()[0].scope, null);
+    manager.decide('custom', 'session');
+    assert.equal(await pending, false);
+    assert.deepEqual(manager.scopes(), []);
+  } finally { manager.cancel(true); }
 });

@@ -2,6 +2,14 @@ import type { UiText } from "../components/index.js";
 
 /** UI copy only. Synthetic response bodies and upstream diagnostics are intentionally not translated. */
 export const chineseUi = {
+  "Custom extension tool. This approval covers this call only; extension-internal execution is outside this approval and built-in file safeguards.": "自定义扩展工具：本次审批仅覆盖此调用；扩展内部执行不在该审批及内置文件保护范围内。",
+  "Pi chat": "Pi 聊天",
+  "Connecting to the extension host…": "正在连接扩展宿主…",
+  "Reload the VS Code window to restart controlled execution. Unsent drafts are not persisted; copy them before reloading.": "重新加载 VS Code 窗口可重启受控执行。未发送草稿不会持久保存，请在重载前复制。",
+  "No configured model is available. Configure a supported pi provider in the extension host, then reload the VS Code window.": "没有可用的已配置模型。请在扩展宿主配置支持的 pi 提供商，然后重新加载 VS Code 窗口。",
+  "For this view only. Reloading the view restores English.": "仅用于本视图。重载视图后恢复英文。",
+  "(Link blocked — only absolute HTTP(S) links without credentials are allowed.)": "（链接已阻止，仅允许不含凭据的 HTTP(S) 绝对链接。）",
+  "Opening an external link through VS Code.": "正在通过 VS Code 打开外部链接。",
   "Task failed": "任务失败",
   "Retrying…": "正在重试…",
   "Compacting context…": "正在压缩上下文…",
@@ -53,6 +61,9 @@ export const chineseUi = {
   "Outside the selected project": "位于所选项目之外",
   "Preview only: diff and source opening are simulated.": "仅用于预览：差异和源码打开操作均为模拟。",
   "Review summary: {captured} captured · {reported} reported · {observed} observed · {unavailable} unavailable": "修改审阅：{captured} 项已捕获 · {reported} 项工具报告 · {observed} 项观察到 · {unavailable} 项不可用",
+  "Use the runtime recovery controls below. Reloading does not clear uncertain work; no task will be replayed.": "请使用下方运行时恢复控件。重载不能清除未确认工作；不会重放任务。",
+  "Runtime extensions": "运行时扩展",
+  "Trusted extension code runs outside covered tool approvals; this is not a sandbox.": "受信扩展内部代码不受已覆盖工具审批约束；这不是安全沙箱。",
   "Permissions ({count})": "权限（{count}）",
   "Controlled execution: covered tools ask for approval; this is not a sandbox.": "受控执行：覆盖的工具会请求审批；这不是安全沙箱。",
   "Execution policy is unavailable. No additional permission is implied.": "执行策略不可用，不表示获得额外权限。",
@@ -334,7 +345,7 @@ export const chineseUi = {
   "Delivery uncertain; no automatic retry": "投递不确定，未自动重试",
   "Acknowledgement timed out; no automatic retry": "接纳确认超时，未自动重试",
   "Submission rejected": "提交被拒绝",
-  "Runtime ended; attachment history lost": "运行时已结束，附件历史已丢失",
+  "Runtime connection unavailable; attachment history cleared": "运行时连接不可用，附件历史已清除",
   "Admitted by host": "宿主已接纳",
   "Delivery attempted": "已尝试投递",
   "Accepted by runtime": "运行时已接纳",

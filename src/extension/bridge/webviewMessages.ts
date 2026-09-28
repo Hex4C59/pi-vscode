@@ -1,4 +1,4 @@
-export const WEBVIEW_MESSAGE_VERSION = 2;
+export const WEBVIEW_MESSAGE_VERSION = 3;
 export type * from "../contracts/index.js";
 import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/index.js";
 
@@ -19,6 +19,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   if (message.version !== WEBVIEW_MESSAGE_VERSION) return undefined;
   const actions: Record<string, string[]> = {
     newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
+    chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
@@ -51,6 +52,21 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   if (message.type === "setChatModel") {
     if (typeof message.provider !== "string" || typeof message.modelId !== "string") return undefined;
     if (!isValidModelRef(message.provider, message.modelId)) return undefined;
+  }
+  if (message.type === "chooseExecutionProfile" && message.profile !== "controlled" && message.profile !== "trusted") return undefined;
+  if (message.type === "answerInteraction") {
+    const answer = message.answer;
+    if (!answer || typeof answer !== "object" || Array.isArray(answer)) return undefined;
+    const prototype: unknown = Object.getPrototypeOf(answer);
+    if (prototype !== Object.prototype && prototype !== null) return undefined;
+    const keys = Reflect.ownKeys(answer);
+    if (keys.some(key => !Object.getOwnPropertyDescriptor(answer, key)?.enumerable || !Object.hasOwn(Object.getOwnPropertyDescriptor(answer, key) ?? {}, "value"))) return undefined;
+    const value = answer as Record<string, unknown>;
+    const field = value.method === "select" ? "optionId" : value.method === "confirm" ? "value" : value.method === "input" || value.method === "editor" ? "text" : undefined;
+    if (!field || keys.length !== 2 || !keys.includes("method") || !keys.includes(field)) return undefined;
+    if (field === "optionId" && (typeof value.optionId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(value.optionId))) return undefined;
+    if (field === "value" && typeof value.value !== "boolean") return undefined;
+    if (field === "text" && (typeof value.text !== "string" || value.text.length > 32768 || Buffer.byteLength(value.text, "utf8") > 32768)) return undefined;
   }
   return message as WebviewMessage;
 }

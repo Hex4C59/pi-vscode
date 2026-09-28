@@ -73,7 +73,7 @@ test("actions recheck host eligibility without trusting a prior state message", 
 test("malformed provider messages perform no action or state mutation", () => {
   const h = harness(); const v = h.createView();
   const before = v.state(); const count = v.sent.length;
-  for (const message of [null, [], { version: 2, type: "openFolder", generation: before.generation },
+  for (const message of [null, [], { version: 3, type: "openFolder", generation: before.generation },
     { version: 1, type: "chooseResources", generation: before.generation, choice: "allow", path: "/evil" },
     { version: 1, type: "executeCommand", command: "evil" }]) v.receive.fire(message);
   assert.equal(v.sent.length, count);

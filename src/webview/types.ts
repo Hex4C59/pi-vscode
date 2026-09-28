@@ -1,6 +1,6 @@
 import type {
   AttachmentHistoryEntry, AttachmentStateMessage, ChangeReviewStateMessage,
-  HostMessage, SavedHistoryStateMessage, SessionStateMessage,
+  HostMessage, SavedHistoryStateMessage, SessionStateMessage, InteractionStateMessage, ExecutionProfileStateMessage,
   WebviewMessage, WorkspaceStateMessage,
 } from "../extension/contracts/index.js";
 
@@ -32,6 +32,8 @@ export type Intent = WithoutEnvelope<WebviewMessage>;
 export type Preview = { snapshotId: string; requestId: string; offset: number; text: string; error: string | null };
 export type ClientSnapshot = SavedHistorySnapshot & {
   workspace: WorkspaceStateMessage | null;
+  interactions: InteractionStateMessage | null;
+  executionProfile: ExecutionProfileStateMessage | null;
   attachments: AttachmentStateMessage | null;
   sessions: SessionStateMessage | null;
   changeReview: ChangeReviewStateMessage | null;

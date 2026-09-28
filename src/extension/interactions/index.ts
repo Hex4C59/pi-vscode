@@ -1,0 +1,21 @@
+export { createInteractionCoordinator } from './interaction-coordinator.js';
+export type {
+  InteractionActionResult,
+  InteractionAdmissionResult,
+  InteractionAnswer,
+  InteractionCancelReason,
+  InteractionClock,
+  InteractionCoordinator,
+  InteractionCoordinatorOptions,
+  InteractionErrorCode,
+  InteractionFormInput,
+  InteractionFormProjection,
+  InteractionMethod,
+  InteractionOption,
+  InteractionPhase,
+  InteractionReply,
+  InteractionReplyCallback,
+  InteractionSnapshot,
+  InteractionTimer,
+  InteractionView,
+} from './types.js';

@@ -12,3 +12,8 @@
 @import "./components/change-review.css";
 @import "./components/sessions.css";
 @import "./components/saved-history.css";
+
+@import "./chat/candidate.css";
+@import "./chat/candidate-review.css";
+
+@import "./chat/extension-interactions.css";

@@ -47,7 +47,7 @@ export class WebviewClient {
     },
     intent => this.action(intent), snapshot => this.update(snapshot), error => this.update({ error }),
   );
-  private snapshot: ClientSnapshot = { workspace: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
+  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
     ...this.savedHistory.snapshot,
     changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   constructor(private readonly bridge: WebviewBridge) {}
@@ -57,8 +57,8 @@ export class WebviewClient {
     if (this.unsubscribe || this.disposed) return;
     try {
       this.unsubscribe = this.bridge.subscribe(value => this.receive(value));
-      this.bridge.postMessage({ version: 2, type: "ping" });
-      this.bridge.postMessage({ version: 2, type: "getWorkspaceState" });
+      this.bridge.postMessage({ version: 3, type: "ping" });
+      this.bridge.postMessage({ version: 3, type: "getWorkspaceState" });
     } catch { this.update({ error: "Could not connect to the extension host. Reopen the view to retry." }); }
   }
   dispose(): void { this.disposed = true; this.unsubscribe?.(); this.unsubscribe = undefined; this.listeners.clear(); }
@@ -68,7 +68,7 @@ export class WebviewClient {
   }
   action = (intent: Intent): void => {
     if (!this.identity || this.disposed || this.snapshot.error || (availability(this.snapshot).sessionTransitioning && blockedDuringSessionSwitch(intent))) return;
-    try { this.bridge.postMessage({ version: 2, ...this.identity, ...intent }); }
+    try { this.bridge.postMessage({ version: 3, ...this.identity, ...intent }); }
     catch { this.pending = null; this.update({ error: "Connection to the extension host was lost. Reopen the view; no automatic retry was made." }); }
   };
   private syncDraft(): void {
@@ -189,12 +189,14 @@ export class WebviewClient {
       // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
       const committedHandoff = message.type === "sessionState" && message.phase === "switching";
       this.pending = null; this.submitted = null;
-      this.update({ workspace: null, attachments: null, sessions: null, ...this.savedHistory.reset(),
+      this.update({ workspace: null, interactions: null, executionProfile: null, attachments: null, sessions: null, ...this.savedHistory.reset(),
         changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
         ...(committedHandoff ? { text: "" } : {}) });
     }
     this.identity = { generation: message.generation, viewId: message.viewId };
     if (message.type === "pong") return;
+    if (message.type === "interactionState") { this.update({ interactions: message }); return; }
+    if (message.type === "executionProfileState") { this.update({ executionProfile: message }); return; }
     if (message.type === "sessionState") {
       // The host cancels retained-history reads before its native modal and suppresses their replies.
       const cancelsHistoryRead = message.phase === "confirming" || message.phase === "switching";

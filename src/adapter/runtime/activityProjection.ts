@@ -35,6 +35,7 @@ export class ActivityProjection {
       const notice:ActivityItem=this.items.get(id)??{id,kind:'tool',tool:'Activity display limit',messageId:this.messageId,text:'Additional activity is omitted from this display. Execution and approval checks continue; this is a display limit, not a tool result.',status:'complete',truncated:true};
       this.items.set(id,notice);return [notice];
     }
-    item={...item,text:displayText(item.text.slice(0,LIMIT)),input:item.input?displayText(item.input.slice(0,LIMIT)):undefined,truncated:item.truncated||item.text.length>LIMIT||(item.input?.length??0)>LIMIT};this.items.set(item.id,item);return [item];
+    const text=displayText(item.text); const input=item.input?displayText(item.input):undefined;
+    item={...item,text:text.slice(0,LIMIT),input:input?.slice(0,LIMIT),truncated:item.truncated||text.length>LIMIT||(input?.length??0)>LIMIT};this.items.set(item.id,item);return [item];
   }
 }

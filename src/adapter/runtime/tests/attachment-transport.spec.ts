@@ -29,7 +29,7 @@ async function transportFixture(writeFault?: "throw") {
   }) as unknown as typeof spawn;
   const runtime = createPiRpcRuntime({ spawn: fakeSpawn, startupModel: () => undefined, cliPath: () => "unused", gateAccess: async () => undefined });
   assert.equal((await runtime.start({ cwd: "/synthetic", projectTrust: "no-approve" })).ok, true);
-  return { runtime, stdin, stdout, child, callback: (error?: Error) => callback?.(error), get writes() { return writes; }, get lastPrompt() { return lastPrompt; }, ack: () => stdout.write(JSON.stringify({ type: "response", id: promptId, command: "prompt", success: true }) + "\n") };
+  return { runtime, stdin, stdout, child, callback: (error?: Error) => callback?.(error), get writes() { return writes; }, get lastPrompt() { return lastPrompt; }, ack: (success = true, error?: string) => stdout.write(JSON.stringify({ type: "response", id: promptId, command: "prompt", success, error }) + "\n") };
 }
 
 test("prompt ACK before callback/drain does not release admission; one-attempt token cannot replay", async () => {
@@ -176,5 +176,15 @@ test("the adapter bounds the complete vector and preserves one MiB under worst-c
     const written = JSON.parse(h.lastPrompt) as { message: string };
     assert.equal(written.message, outer.message, "prepared frame is immutable after caller mutates the vector");
     assert.equal((await prepared.send(() => undefined)).delivery, "not-sent"); assert.equal(h.writes, 1);
+  } finally { await h.runtime.stop(); }
+});
+
+test("prompt authentication rejection carries only an allowlisted reason, never the upstream error", async () => {
+  const h = await transportFixture();
+  try {
+    const pending = h.runtime.preparePrompt({kind:"plain",body:"synthetic"},h.runtime.getSession()).send(()=>undefined);
+    h.callback(); h.stdin.emit("drain"); h.ack(false,"No API key found for private-synthetic-marker");
+    assert.deepEqual(await pending,{delivery:"rpc-rejected",code:"rpc-rejected",rejection:"authentication"});
+    assert.equal(h.writes,1);
   } finally { await h.runtime.stop(); }
 });

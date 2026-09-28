@@ -1,0 +1,45 @@
+.candidate-review {
+  min-width: 0;
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+}
+
+.candidate-review__summary {
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+
+.candidate-review .change-review {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.candidate-review .change-review__content {
+  max-height: min(220px, 32dvh);
+  padding-right: 0;
+  padding-left: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-height: 540px) {
+  .candidate-review .change-review__content { max-height: min(150px, 28dvh); }
+}
+
+.candidate-review__simulation {
+  margin: 3px 0;
+  color: var(--ui-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+/* A reopened review shares the remaining height, never displacing approval decisions or Stop. */
+.candidate__footer .candidate-review { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 46px; overflow: hidden; }
+.candidate-review .change-review { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+.candidate-review .change-review__toggle { flex: none; }
+.candidate-review .change-review__content { flex: 1 1 auto; min-height: 0; }

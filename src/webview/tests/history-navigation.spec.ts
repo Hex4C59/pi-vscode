@@ -4,7 +4,7 @@ import { readAppStyles } from "./react-harness.js";
 import { attachmentState, uiHarness } from "./react-harness.js";
 import type { AttachmentHistoryEntry } from "../../extension/contracts/webviewProtocol.js";
 
-const envelope = { version: 2, generation: 1, viewId: "view" };
+const envelope = { version: 3, generation: 1, viewId: "view" };
 function entries(count: number): AttachmentHistoryEntry[] {
   return Array.from({ length: count }, (_, index) => ({
     submissionId: `submission-${Math.floor(index / 20) + 1}`, snapshotId: `history-${index}`,

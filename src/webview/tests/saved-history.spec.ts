@@ -7,7 +7,7 @@ import { parseHostMessage } from "../parse-host-message.js";
 import { readySettings, tick } from "../../extension/tests/harness.js";
 import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 
-const envelope = { version: 2, generation: 1, viewId: "view" } as const;
+const envelope = { version: 3, generation: 1, viewId: "view" } as const;
 function historyState(patch: Partial<SavedHistoryStateMessage> = {}): SavedHistoryStateMessage {
   return { ...envelope, type: "savedHistoryState", available: true, phase: "idle", messages: [{ id: "retained-1", role: "user", text: "Retained question" }], page: 0, total: 1, error: null, ...patch };
 }

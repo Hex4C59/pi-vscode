@@ -30,7 +30,10 @@ const spikeBuild = {
 
 const gateBuild = { entryPoints: ["src/adapter/approvalGate.ts"], bundle: true, outfile: "dist/approval-gate.mjs", format: "esm", platform: "node", target: "node22", logLevel: "info" };
 const sessionBuild = { entryPoints: ["src/adapter/sessions/sessionWorker.ts"], bundle: true, outfile: "dist/session-worker.mjs", external: ["@earendil-works/pi-coding-agent"], format: "esm", platform: "node", target: "node22", logLevel: "info" };
+const supervisorBuild = { entryPoints: ["src/adapter/ownership/supervisor.ts"], bundle: true, outfile: "dist/runtime-supervisor.mjs", format: "esm", platform: "node", target: "node22", logLevel: "info" };
 if (watch) {
+  const supervisorContext = await esbuild.context(supervisorBuild);
+  await supervisorContext.watch();
   const sessionContext = await esbuild.context(sessionBuild);
   await sessionContext.watch();
   const gateContext = await esbuild.context(gateBuild);
@@ -40,6 +43,7 @@ if (watch) {
   await buildWebview({ configFile: "vite.config.mts", build: { watch: {} } });
   console.log("Watching extension and webview…");
 } else {
+  await esbuild.build(supervisorBuild);
   await esbuild.build(sessionBuild);
   await esbuild.build(gateBuild);
   await esbuild.build(extensionBuild);

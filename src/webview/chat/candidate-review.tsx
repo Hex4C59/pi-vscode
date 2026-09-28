@@ -1,3 +1,4 @@
+import { useChatPreview } from "./environment.js";
 import type { ReactElement } from "react";
 import { ChangeReview, useUiText, type ChangeReviewProps } from "../components/index.js";
 
@@ -5,6 +6,7 @@ export type CandidateReviewProps = ChangeReviewProps;
 
 export function CandidateReview(props: CandidateReviewProps): ReactElement | null {
   const { text: t } = useUiText();
+  const preview = useChatPreview();
   const { state } = props;
   if (!state || (state.entries.length === 0 && !state.limited && !state.reset && state.error === null)) return null;
 
@@ -24,7 +26,7 @@ export function CandidateReview(props: CandidateReviewProps): ReactElement | nul
           captured, reported, observed, unavailable,
         })}
       </p>
-      {props.open && <p className="candidate-review__simulation" role="note">{t("Preview only: diff and source opening are simulated.")}</p>}
+      {props.open && preview && <p className="candidate-review__simulation" role="note">{t("Preview only: diff and source opening are simulated.")}</p>}
       </>} caption={t("Review changes ({count})", { count: state.entries.length })} />
     </div>
   );

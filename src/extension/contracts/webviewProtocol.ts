@@ -1,8 +1,9 @@
+import type { ExtensionInteractionIntent, ExtensionInteractionProjection, ExecutionProfileProjection } from "./extensionInteractions.js";
 /** Canonical browser/host DTOs. Type-only: no Node, VS Code or runtime dependencies. */
 export type RuntimePhase = "not-started" | "starting" | "ready" | "stopping" | "error";
 export type ActivityItem = { id: string; kind: "thinking" | "tool"; messageId: string; contentIndex?: number; toolCallId?: string; tool?: string; text: string; input?: string; status: "thinking" | "preparing" | "executing" | "complete" | "failed" | "interrupted"; truncated: boolean };
 export type ModelCatalogEntry = { provider: string; modelId: string; label: string };
-export type ApprovalCard = { id: string; toolCallId: string; tool: string; input: string; scope: string | null; expiresAt: number };
+export type ApprovalCard = { category?: "custom"; id: string; toolCallId: string; tool: string; input: string; scope: string | null; expiresAt: number };
 export type SessionGrant = { id: string; scope: string };
 export type ApprovalDecision = "once" | "session" | "deny";
 export type SelectionRange = { start: { line: number; character: number }; end: { line: number; character: number } };
@@ -13,10 +14,11 @@ export type ResourceChoice = "allow" | "decline";
 export type WorkspaceStatus = "no-folder" | "multi-root" | "remote" | "non-file" | "untrusted" | "eligible";
 export type ChatRole = "user" | "assistant";
 export type ChatLine = { role: ChatRole; text: string; id?: string };
-export type PingMessage = { version: 2; type: "ping" };
-export type PongMessage = { version: 2; type: "pong" };
-type Action = { version: 2; generation: number; viewId: string };
-export type WebviewMessage = PingMessage | { version: 2; type: "getWorkspaceState" }
+export type PingMessage = { version: 3; type: "ping" };
+export type PongMessage = { version: 3; type: "pong" };
+type Action = { version: 3; generation: number; viewId: string };
+export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceState" }
+  | Action & ExtensionInteractionIntent
   | Action & (
     | { type: "stopChat" | "openFolder" | "manageTrust" | "getAttachmentHistory" | "getChangeReview" | "newConversation" }
     | { type: "decideApproval"; id: string; decision: ApprovalDecision }
@@ -33,7 +35,7 @@ export type WebviewMessage = PingMessage | { version: 2; type: "getWorkspaceStat
     | { type: "setThinkingLevel"; level: string }
     | { type: "setChatModel"; provider: string; modelId: string });
 export type WorkspaceStateMessage = {
-  version: 2;
+  version: 3;
   type: "workspaceState";
   viewId: string;
   generation: number;
@@ -60,7 +62,7 @@ export type WorkspaceStateMessage = {
   approvals: ApprovalCard[];
   grants: SessionGrant[];
   execution: "idle" | "waiting" | "thinking" | "awaiting-approval" | "executing" | "replying" | "retrying" | "compacting" | "completed" | "stopped" | "stopping" | "failed";
-  controlledExecution: true;
+  controlledExecution: boolean;
 };
 
 /** Host-owned, bounded attachment projections. Browser consumers import types only. */
@@ -73,7 +75,7 @@ export type AttachmentMetadata = {
 } & AttachmentDetails;
 export type DraftAttachment = AttachmentMetadata & { state: "attached" | "changed" | "confirmation-required" | "unavailable" };
 export type AttachmentHistoryEntry = Omit<AttachmentMetadata, "attachmentId" | "kind"> & AttachmentDetails & { submissionId: string; delivery: string; outcome: string };
-export type HostEnvelope = { version: 2; generation: number; viewId: string };
+export type HostEnvelope = { version: 3; generation: number; viewId: string };
 export type AttachmentStateMessage = HostEnvelope & {
   type: "attachmentState";
   draft: { revision: number; text: string; acceptedEditSequence: number; attachments: DraftAttachment[] };
@@ -88,7 +90,9 @@ export type AttachmentPreviewMessage = HostEnvelope & { type: "attachmentPreview
   { code: AttachmentCode } |
   { snapshotId: string; offset: number; nextOffset: number; done: boolean; text: string }
 );
-export type HostMessage = SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
+export type InteractionStateMessage = HostEnvelope & ExtensionInteractionProjection & { type: "interactionState" };
+export type ExecutionProfileStateMessage = HostEnvelope & ExecutionProfileProjection & { type: "executionProfileState" };
+export type HostMessage = InteractionStateMessage | ExecutionProfileStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

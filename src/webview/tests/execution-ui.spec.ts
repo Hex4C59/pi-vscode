@@ -75,7 +75,7 @@ test("mounted React approvals expose literal input and scope, lock one decision,
       const buttons = approval.querySelectorAll<HTMLButtonElement>("[data-decision]");
       assert.equal(buttons.length, 3);
       await h.click(`[data-decision="${decision}"]`);
-      assert.deepEqual(h.sent.at(-1), { version: 2, type: "decideApproval", generation: 1, viewId: "view", id: "approval1", decision });
+      assert.deepEqual(h.sent.at(-1), { version: 3, type: "decideApproval", generation: 1, viewId: "view", id: "approval1", decision });
       assert.ok([...buttons].every(button => button.disabled));
       await h.click('[data-grant-action="revoke"]');
       assert.equal((h.sent.at(-1) as { type: string }).type, "revokeGrant");
@@ -163,7 +163,7 @@ test("generation changes clear old activity and approval nodes without reviving 
     assert.equal(h.get("#messages").children.length, 0);
     assert.equal(h.root.querySelectorAll("[data-activity-id]").length, 0);
     assert.equal(h.get("#approvals").children.length, 0);
-    await h.receive({ ...({ version: 2, type: "workspaceState", viewId: "view", generation: 1 }), messages: [{ id: "late", role: "assistant", text: "late" }], activities: [], approvals: [], grants: [] });
+    await h.receive({ ...({ version: 3, type: "workspaceState", viewId: "view", generation: 1 }), messages: [{ id: "late", role: "assistant", text: "late" }], activities: [], approvals: [], grants: [] });
     assert.equal(h.get("#messages").textContent, "");
   } finally {
     await h.close();

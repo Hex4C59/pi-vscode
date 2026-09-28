@@ -397,7 +397,7 @@ test("an explicit dirty editor selection sends only its fixed text and original 
   try {
     const { editor, originalRange } = f;
     const state = f.v.state(); const revision = f.v.attachments().draft.revision;
-    const action = { version: 2, type: "addSelectionAttachment", generation: state.generation, viewId: state.viewId, draftRevision: revision };
+    const action = { version: 3, type: "addSelectionAttachment", generation: state.generation, viewId: state.viewId, draftRevision: revision };
     assert.ok(parseWebviewMessage(action), "the named selection intent must be admitted by the real validator");
     const idle = f.waitIdle(); f.v.receive.fire(action); await idle;
     const attached = f.v.attachments().draft.attachments[0]; assert.ok(attached);
@@ -426,7 +426,7 @@ test("changed selection text stays fixed and each source revision requires an ex
     assert.equal(draft.attachments[0]?.state, "confirmation-required");
     assert.equal(draft.attachments[0]?.snapshotId, attached.snapshotId);
     assert.equal(f.inputs.length, 0);
-    const answer = { version: 2, type: "confirmSelectionAttachment", generation: state.generation, viewId: state.viewId, draftRevision: draft.revision, attachmentId: attached.attachmentId, snapshotId: attached.snapshotId };
+    const answer = { version: 3, type: "confirmSelectionAttachment", generation: state.generation, viewId: state.viewId, draftRevision: draft.revision, attachmentId: attached.attachmentId, snapshotId: attached.snapshotId };
     assert.ok(parseWebviewMessage(answer));
     let idle = f.waitIdle(); f.v.receive.fire(answer); await idle;
     assert.equal(f.v.attachments().draft.attachments[0]?.state, "attached"); assert.equal(f.inputs.length, 0);

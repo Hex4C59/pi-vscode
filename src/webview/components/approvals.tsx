@@ -93,7 +93,9 @@ export function Approvals({ cards, grants, disabled, onDecision, onRevoke, compa
           return (
             <section key={card.id} className="card approval" data-approval-id={card.id} hidden={compact && selected?.id !== card.id}>
               <h2>{t("Approval required · {tool}", { tool: card.tool })}</h2>
+              {!compact && card.category === "custom" && <p className="muted">{t("Custom extension tool. This approval covers this call only; extension-internal execution is outside this approval and built-in file safeguards.")}</p>}
               {compact ? <div className="approval-details">
+                {card.category === "custom" && <p className="muted">{t("Custom extension tool. This approval covers this call only; extension-internal execution is outside this approval and built-in file safeguards.")}</p>}
                 <RequestedOperation card={card} />
                 <div className="approval-critical"><span className="activity-label">{t("Session scope")}</span>
                 <pre className="grant-scope">{card.scope ?? scopeText(card, t)}</pre></div>

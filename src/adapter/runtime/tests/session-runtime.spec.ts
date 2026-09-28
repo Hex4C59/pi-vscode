@@ -18,6 +18,9 @@ function fixture(state: unknown = identity, reportedCwd?: string) {
     stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: reportedCwd ?? options.cwd }) }) + "\n");
     stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, data: state }) + "\n");
    });
+   if (command.type === "get_available_models" || command.type === "get_available_thinking_levels") queueMicrotask(() => {
+    stdout.write(JSON.stringify({type:"response",id:command.id,command:command.type,success:true,data:command.type === "get_available_models" ? {models:[]} : {levels:[]}})+"\n");
+   });
    if (command.type === "clear_queue" || command.type === "abort") queueMicrotask(() => {
     if (command.type === "abort") {
      stdout.write(JSON.stringify({type:"auto_retry_end",success:false,attempt:1,finalError:"Retry cancelled"})+"\n");
@@ -114,7 +117,7 @@ test("assistant failure is observable even when automatic retry is disabled", as
  try {
   assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
   f.frame({type:"message_end",message:{role:"assistant",content:[],stopReason:"error",errorMessage:"Synthetic non-retryable provider failure"}});
-  assert.deepEqual(events.at(-1),{kind:"stream_error",session:f.runtime.getSession(),detail:"Synthetic non-retryable provider failure"});
+  assert.deepEqual(events.at(-1),{kind:"stream_error",session:f.runtime.getSession(),detail:"Model request failed. Check the selected model and provider configuration, then try again."});
  } finally {unsubscribe();await f.runtime.stop();}
 });
 
@@ -127,4 +130,68 @@ test("Stop cancelling automatic retry does not manufacture a provider failure", 
   assert.equal(events.some(event=>(event as {kind:string}).kind==="stream_error"),false);
   assert.ok(events.some(event=>(event as {kind:string}).kind==="agent_settled"));
  } finally {unsubscribe();await f.runtime.stop();}
+});
+
+test("all provider failure event paths suppress untrusted authentication response bodies", async () => {
+ const f=fixture(); const events: { kind: string; detail?: string }[]=[];
+ const unsubscribe=f.runtime.subscribe(event=>events.push(event));
+ try {
+  assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
+  const raw='401: {"message":"authorization=synthetic-marker"}';
+  f.frame({type:"message_end",message:{role:"assistant",content:[],stopReason:"error",errorMessage:raw}});
+  f.frame({type:"compaction_start",reason:"overflow"});
+  f.frame({type:"compaction_end",reason:"overflow",aborted:false,willRetry:false,errorMessage:raw});
+  f.frame({type:"auto_retry_end",success:false,attempt:1,finalError:raw});
+  const failures=events.filter(event=>event.kind==="stream_error");
+  assert.equal(failures.length,3);
+  for(const event of failures)assert.equal(event.detail,"Model authentication failed. Check pi credentials and provider access, then try again.");
+  assert.doesNotMatch(JSON.stringify(events),/synthetic-marker|authorization=/);
+ } finally {unsubscribe();await f.runtime.stop();}
+});
+
+test("pi's empty-model sentinel is not projected as a configured model", async () => {
+ const sentinel={id:"unknown",name:"unknown",api:"unknown",provider:"unknown",baseUrl:"",reasoning:false,input:[],contextWindow:0,maxTokens:0};
+ for(const [model, expected] of [[sentinel,null],[{...sentinel,api:"openai-completions",provider:"local",contextWindow:1024,maxTokens:128},"unknown"]] as const){
+  const f=fixture({...identity,model});
+  try {
+   const result=await f.runtime.start({cwd:"/project",projectTrust:"no-approve"});
+   assert.equal(result.ok,true);
+   if(result.ok)assert.equal(result.modelLabel,expected);
+   const projection=await f.runtime.getModelProjection();
+   assert.equal(projection.ok,true);
+   if(projection.ok)assert.equal(projection.modelLabel,expected);
+  }finally{await f.runtime.stop();}
+ }
+});
+
+test("runtime model labels are bounded before startup and refreshed host projections", async () => {
+ const cases = [
+  { model: { id: "x".repeat(70_000) }, expected: "x".repeat(200) },
+  { model: { provider: "p".repeat(70_000) }, expected: "p".repeat(200) },
+  { model: { provider: "local", id: "x".repeat(70_000), name: "n".repeat(201) }, expected: "local / " + "x".repeat(192) },
+  { model: { provider: "local", id: "short", name: " " }, expected: "local / short" },
+ ];
+ for (const { model, expected } of cases) {
+  const f = fixture({ ...identity, model });
+  try {
+   const started = await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+   assert.equal(started.ok, true); if (started.ok) assert.equal(started.modelLabel, expected);
+   const refreshed = await f.runtime.getModelProjection();
+   assert.equal(refreshed.ok, true); if (refreshed.ok) assert.equal(refreshed.modelLabel, expected);
+  } finally { await f.runtime.stop(); }
+ }
+});
+
+test("final assistant text stays within the projection budget after redaction expands it", async () => {
+ const f = fixture(); const events: import("../../../extension/contracts/index.js").RuntimeEvent[] = [];
+ const unsubscribe = f.runtime.subscribe(event => events.push(event));
+ try {
+  assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+  f.frame({ type: "message_start", message: { role: "assistant" } });
+  f.frame({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: "a".repeat(65_526) + "password=x" }] } });
+  const final = events.find(event => event.kind === "message_final");
+  assert.ok(final?.kind === "message_final");
+  assert.equal(final.text.length, 65_536);
+  assert.equal(final.text, "a".repeat(65_526) + "password=[");
+ } finally { unsubscribe(); await f.runtime.stop(); }
 });

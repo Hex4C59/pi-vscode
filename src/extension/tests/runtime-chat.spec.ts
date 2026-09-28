@@ -347,3 +347,22 @@ test("runtime disconnection does not rewrite a reliably completed task as failed
     assert.equal(v.attachments().lastSubmission?.delivery, "rpc-accepted");
   } finally { h.provider.dispose(); }
 });
+
+test("registered command handler settlement is not an empty assistant failure and respects active agent", async () => {
+  const { r, h, v } = await readySettings();
+  try {
+    v.action("sendChat", { text: "/manage" }); await tick();
+    assert.equal(v.state().chatBusy, true);
+    r.events.fire({ kind: "command_handled", session: r.runtime.getSession(), agentRunning: false });
+    await tick();
+    assert.equal(v.state().chatBusy, false);
+    assert.equal(v.state().chatError, null);
+    v.action("sendChat", { text: "/starts-agent" }); await tick();
+    r.events.fire({ kind: "command_handled", session: r.runtime.getSession(), agentRunning: true });
+    assert.equal(v.state().chatBusy, true);
+    r.events.fire({ kind: "text_delta", session: r.runtime.getSession(), delta: "agent reply" });
+    r.settled(); await tick();
+    assert.equal(v.state().chatBusy, false);
+    assert.equal(v.state().messages.at(-1)?.text, "agent reply");
+  } finally { h.provider.dispose(); }
+});

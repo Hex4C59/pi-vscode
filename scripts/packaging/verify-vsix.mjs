@@ -18,7 +18,7 @@ for(let i=0;i<count;i++){
   const name=archive.toString('utf8',cursor+46,cursor+46+length);entries.push({name,method,size,offset});cursor+=46+length+extra+comment;
 }
 const cliRelative='extension/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js';
-for(const required of [cliRelative,'extension/dist/approval-gate.mjs','extension/dist/extension.js','extension/node_modules/@earendil-works/pi-coding-agent/package.json'])assert.ok(entries.some(e=>e.name===required),required);
+for(const required of [cliRelative,'extension/dist/runtime-supervisor.mjs','extension/dist/session-worker.mjs','extension/dist/approval-gate.mjs','extension/dist/extension.js','extension/node_modules/@earendil-works/pi-coding-agent/package.json'])assert.ok(entries.some(e=>e.name===required),required);
 assert.ok(entries.some(e=>e.name.startsWith('extension/node_modules/@earendil-works/pi-coding-agent/node_modules/')),'production transitive dependencies missing');
 await isolatedFixture(async({root,env})=>{
   const extracted=path.join(root,'unpacked');

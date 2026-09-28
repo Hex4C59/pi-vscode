@@ -16,6 +16,7 @@ export function unambiguousPath(value: string): boolean {
     && !value.replace(/^[a-z]:/i, "").includes(":") && !value.split(/[\\/]/).some(p => /[ .]$/.test(p) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p));
 }
 export async function inspectScope(call: GateCall): Promise<{ auto: boolean; scope: string | null }> {
+  if (call.category === "custom") return { auto: false, scope: null };
   const input = call.input;
   if (call.tool === "bash" || call.tool === "powershell") return {auto:false,scope:typeof input.command === "string" ? JSON.stringify([call.tool, await realpath(call.cwd), input]) : null};
   const target = input.path ?? (['ls','find','grep'].includes(call.tool) ? '.' : undefined);
@@ -45,7 +46,7 @@ export class ToolApprovals {
   decide(id:string, decision:ApprovalDecision):boolean {
     const p=this.pending.get(id);if(!p)return false;
     this.pending.delete(id);clearTimeout(p.timer);
-    const allow=decision !== 'deny' && Date.now()<p.card.expiresAt;
+    const allow=decision !== 'deny' && (decision !== "session" || p.card.scope !== null) && Date.now()<p.card.expiresAt;
     p.resolve(allow ? decision : "deny");this.changed();return true;
   }
   async request(call:GateCall):Promise<boolean> {
@@ -67,7 +68,7 @@ export class ToolApprovals {
       const allowed = await this.canExecute(call, "final");
       return allowed && current() && (policy.auto || (grant !== undefined && this.grants.has(grant.id)));
     }
-    const decision = await new Promise<ApprovalDecision>(resolve=>{const id=call.request;if(this.pending.has(id)){resolve("deny");return;}const card={id,toolCallId:call.toolCallId,tool:call.tool,input,scope:policy.scope,expiresAt};const timer=setTimeout(()=>this.decide(id,'deny'),Math.max(0, expiresAt - Date.now()));this.pending.set(id,{card,resolve,timer});this.changed();});
+    const decision = await new Promise<ApprovalDecision>(resolve=>{const id=call.request;if(this.pending.has(id)){resolve("deny");return;}const card: ApprovalCard={...(call.category === "custom" ? {category: "custom" as const} : {}),id,toolCallId:call.toolCallId,tool:call.tool,input,scope:policy.scope,expiresAt};const timer=setTimeout(()=>this.decide(id,'deny'),Math.max(0, expiresAt - Date.now()));this.pending.set(id,{card,resolve,timer});this.changed();});
     if (decision === "deny" || !current() || !await this.canExecute(call, "final") || !current()) return false;
     if (decision === "session" && policy.scope && this.grants.size < 64) {
       const grant = { id: randomUUID(), scope: policy.scope };

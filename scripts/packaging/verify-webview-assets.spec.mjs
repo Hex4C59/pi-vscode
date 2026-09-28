@@ -49,20 +49,21 @@ async function fixture(t, files) {
   const root = await mkdtemp(path.join(os.tmpdir(), "pi-vscode-webview-assets-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(path.join(root, "dist", "webview"), { recursive: true });
-  for (const [name, body] of Object.entries(files)) await writeFile(path.join(root, "dist", "webview", name), body);
+  for (const [name, body] of Object.entries({ "webview-pi.svg": "<svg/>", ...files })) await writeFile(path.join(root, "dist", "webview", name), body);
   return root;
 }
 
 test("static verifier accepts the stable bundle and packaged VSIX asset paths", async (t) => {
   const root = await fixture(t, { "webview.js": "console.log('bundle');", "webview.css": ":root{}" });
   const archive = zip({
+    "extension/dist/webview/webview-pi.svg": "<svg/>",
     "extension/dist/webview/webview.js": "bundle",
     "extension/dist/webview/webview.css": "style",
     "extension/dist/extension.js": "host",
   });
   const result = await verifyWebviewAssets({ rootDir: root });
-  assert.deepEqual(result.bundle.assets, ["webview.js", "webview.css"]);
-  assert.equal(verifyWebviewArchive(archive).entries, 3);
+  assert.deepEqual(result.bundle.assets, ["webview.js", "webview.css", "webview-pi.svg"]);
+  assert.equal(verifyWebviewArchive(archive).entries, 4);
 });
 
 test("static verifier rejects missing assets and unexpected JavaScript chunks", async (t) => {
@@ -88,12 +89,30 @@ test("VSIX verification binds the packaged frontend to the current build", async
   const root = await fixture(t, { "webview.js": "current bundle", "webview.css": "current style" });
   const archivePath = path.join(root, "test.vsix");
   await writeFile(archivePath, zip({
+    "extension/dist/webview/webview-pi.svg": "<svg/>",
     "extension/dist/webview/webview.js": "stale bundle", "extension/dist/webview/webview.css": "current style",
   }));
   await assert.rejects(verifyWebviewAssets({ rootDir: root, archivePath }), /does not match the current build/);
   await writeFile(archivePath, zip({
+    "extension/dist/webview/webview-pi.svg": "<svg/>",
     "extension/dist/webview/webview.js": "current bundle", "extension/dist/webview/webview.css": "current style",
   }));
   const result = await verifyWebviewAssets({ rootDir: root, archivePath });
   assert.deepEqual(result.archive.sha256, result.bundle.sha256);
+});
+
+test("static verifier requires the shipped Pi mark in bundle and archive", async (t) => {
+  const root = await fixture(t, { "webview.js": "bundle", "webview.css": "style" });
+  await rm(path.join(root, "dist", "webview", "webview-pi.svg"));
+  await assert.rejects(verifyWebviewDirectory(root), /missing.*webview-pi\.svg/);
+  assert.throws(() => verifyWebviewArchive(zip({
+    "extension/dist/webview/webview.js": "bundle", "extension/dist/webview/webview.css": "style",
+  })), /missing.*webview-pi\.svg/);
+});
+
+test("static verifier rejects server-root CSS asset URLs that break isolated Webviews", async (t) => {
+  const root = await fixture(t, { "webview.js": "bundle", "webview.css": '.mark{mask:url(/webview-pi.svg)}' });
+  await assert.rejects(verifyWebviewDirectory(root), /CSS asset URL must be relative/);
+  await writeFile(path.join(root, "dist", "webview", "webview.css"), '.mark{mask:url(./webview-pi.svg)}');
+  await verifyWebviewDirectory(root);
 });

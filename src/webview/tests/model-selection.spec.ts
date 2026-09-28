@@ -52,7 +52,9 @@ test("mounted React model controls keep applied and pending settings distinct du
       modelError: "Requested thinking level is not supported.",
     });
     assert.equal(h.get("#pending-settings").hidden, true);
-    assert.equal(h.get("#model-status-error").hidden, false);
+    assert.equal(h.get("#model-status-error").hidden, true);
+    assert.equal(h.get("#model-popover").hidden, false);
+    assert.match(h.get("#model-error").textContent ?? "", /not supported/);
     assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "keep draft");
 
     await h.click("#model-effort-trigger");

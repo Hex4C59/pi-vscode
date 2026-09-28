@@ -22,7 +22,7 @@ async function fixture(changeReview: boolean) {
   const errors: string[] = [];
   const tools = new EditorTools(host.api as unknown as ConstructorParameters<typeof EditorTools>[0],
     () => context, value => { projection = value; if (value.approvals.length) offered?.(); }, () => {}, message => errors.push(message), { changeReview });
-  const action = (type: string, extra: object) => tools.handle({ version: 2, generation: 1, viewId: "view", type, ...extra } as WebviewMessage, () => true);
+  const action = (type: string, extra: object) => tools.handle({ version: 3, generation: 1, viewId: "view", type, ...extra } as WebviewMessage, () => true);
   const request = (id: string) => {
     const card = new Promise<string>(resolve => { offered = () => resolve("offered"); });
     const call: GateCall = { cwd: root, runtime: "fixture", request: id, toolCallId: id, tool: "write", input: { path: "file.ts", content: "replacement" } };

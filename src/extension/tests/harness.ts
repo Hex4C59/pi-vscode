@@ -84,7 +84,7 @@ export function harness(
       onDidReceiveMessage: receive.subscribe,
       postMessage: (message: unknown) => { sent.push(message); posted.fire(message); return Promise.resolve(true); } }, onDidDispose: dispose.subscribe };
     provider.resolveWebviewView(view as unknown as vscode.WebviewView, {} as vscode.WebviewViewResolveContext, {} as vscode.CancellationToken);
-    const send = (type: string, extra: object = {}) => receive.fire({ version: 2, type, ...extra });
+    const send = (type: string, extra: object = {}) => receive.fire({ version: 3, type, ...extra });
     const state = () => { send("getWorkspaceState"); return sent.at(-1) as WorkspaceStateMessage; };
     const attachments = () => { state(); return [...sent].reverse().find((value) => (value as { type: string }).type === "attachmentState") as AttachmentStateMessage; };
     const action = (type: string, extra: object = {}) => {

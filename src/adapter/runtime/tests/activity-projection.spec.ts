@@ -24,3 +24,15 @@ test('thinking start and end without deltas preserve true empty state and final 
   const end=p.parse({type:'message_update',assistantMessageEvent:{type:'thinking_end',contentIndex:0,content:''}})[0];assert.equal(end.id,start.id);assert.equal(end.text,'');assert.equal(end.status,'complete');
   const final=p.parse({type:'message_update',assistantMessageEvent:{type:'thinking_end',contentIndex:1,content:'Actual summary'}})[0];assert.equal(final.text,'Actual summary');
 });
+
+test('activity enforces its budget after sanitization and reports expansion truncation', () => {
+  const projection = new ActivityProjection();
+  const value = 'a'.repeat(16_374) + 'password=x';
+  const item = projection.parse({ type: 'message_update', assistantMessageEvent: { type: 'thinking_end', contentIndex: 0, content: value } })[0];
+  assert.equal(item.text.length, 16_384);
+  assert.equal(item.text, 'a'.repeat(16_374) + 'password=[');
+  assert.equal(item.truncated, true);
+  const tool = projection.parse({ type: 'tool_execution_start', toolCallId: 'bounded-input', toolName: 'read', args: { password: 'x', padding: 'b'.repeat(16_350) } })[0];
+  assert.ok((tool.input?.length ?? 0) <= 16_384);
+  assert.equal(tool.truncated, true);
+});

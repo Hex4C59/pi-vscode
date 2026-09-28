@@ -28,7 +28,7 @@ test("real host projection is accepted by the browser boundary, malformed snapsh
   } finally { ui.client.dispose(); h.provider.dispose(); }
 });
 
-test("v2 host DTO parsing rejects accessors and extra fields while preserving real projections", async () => {
+test("v3 host DTO parsing rejects accessors and extra fields while preserving real projections", async () => {
   const { h, v } = await readySettings();
   const ui = clientHarness();
   let getterCalls = 0;
@@ -47,10 +47,10 @@ test("v2 host DTO parsing rejects accessors and extra fields while preserving re
       assert.equal(parseHostMessage({ ...projection, unexpected: true }), undefined, `${parsed.type} rejects unknown fields`);
       ui.receive(projection);
     }
-    assert.deepEqual([...observedTypes].sort(), ["attachmentHistory", "attachmentPreview", "attachmentState", "changeReviewState", "savedHistoryState", "sessionState", "workspaceState"]);
+    assert.deepEqual([...observedTypes].sort(), ["attachmentHistory", "attachmentPreview", "attachmentState", "changeReviewState", "executionProfileState", "interactionState", "savedHistoryState", "sessionState", "workspaceState"]);
 
     const workspace = v.state();
-    const pong = { version: 2, type: "pong", viewId: workspace.viewId, generation: workspace.generation } as const;
+    const pong = { version: 3, type: "pong", viewId: workspace.viewId, generation: workspace.generation } as const;
     assert.ok(parseHostMessage(pong));
     assert.equal(parseHostMessage({ ...pong, unexpected: true }), undefined);
     const beforeMalformed = ui.client.getSnapshot();
@@ -122,7 +122,7 @@ test("attachment metadata paths are bounded by UTF-8 bytes", () => {
   assert.equal(encoder.encode(oversizedPath).byteLength, 1026);
 
   const history = (relativePath: string) => ({
-    version: 2,
+    version: 3,
     type: "attachmentHistory",
     viewId: "view",
     generation: 1,
@@ -133,7 +133,7 @@ test("attachment metadata paths are bounded by UTF-8 bytes", () => {
   assert.equal(parseHostMessage(history(oversizedPath)), undefined);
 
   const draftState = (path: string) => ({
-    version: 2,
+    version: 3,
     type: "attachmentState",
     viewId: "view",
     generation: 1,
@@ -216,7 +216,7 @@ test("selection metadata accepts only exact immutable ranges and never executes 
     for (const extra of [{ stale: undefined }, { stale: "true" }, { kind: "file" }, { text: "not metadata" }]) assert.equal(parseHostMessage(projection({ ...selection, ...extra })), undefined);
     assert.equal(getters, 0);
     const { attachmentId: omitted, state: omittedState, ...details } = selection; void omitted; void omittedState;
-    const history = { version: 2, type: "attachmentHistory", viewId: v.state().viewId, generation: v.state().generation, entries: [{ ...details, submissionId: "submission", delivery: "rpc-accepted", outcome: "completed" }] };
+    const history = { version: 3, type: "attachmentHistory", viewId: v.state().viewId, generation: v.state().generation, entries: [{ ...details, submissionId: "submission", delivery: "rpc-accepted", outcome: "completed" }] };
     assert.ok(parseHostMessage(history));
     assert.equal(parseHostMessage({ ...history, entries: [{ ...history.entries[0], originalRange: { start: range.end, end: range.start } }] }), undefined);
   } finally { h.provider.dispose(); }

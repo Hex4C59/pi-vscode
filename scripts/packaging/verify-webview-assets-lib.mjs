@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { inflateRawSync } from "node:zlib";
 
-const requiredAssets = ["webview.js", "webview.css"];
+const requiredAssets = ["webview.js", "webview.css", "webview-pi.svg"];
 
 function fail(message) {
   throw new Error(`Webview asset verification failed: ${message}`);
@@ -56,9 +56,17 @@ export function verifyWebviewArchive(archive, prefix = "extension/dist/webview")
     if (!matches.length) fail(`VSIX is missing ${name}`);
     if (matches.length !== 1) fail(`duplicate frontend asset: ${name}`);
     if (matches[0].size === 0) fail(`VSIX asset is empty: ${name}`);
-    sha256[asset] = checksum(readAsset(archive, matches[0]));
+    const content = readAsset(archive, matches[0]);
+    if (asset === "webview.css") verifyCssAssetUrls(content.toString("utf8"));
+    sha256[asset] = checksum(content);
   }
   return { assets: requiredAssets.map((asset) => `${prefix}/${asset}`), entries: names.length, sha256 };
+}
+
+function verifyCssAssetUrls(css) {
+  for (const match of css.matchAll(/url\(\s*["']?([^"')\s]+)/g)) {
+    if (match[1].startsWith("/") || /^[a-z][a-z\d+.-]*:/i.test(match[1])) fail("CSS asset URL must be relative to the packaged stylesheet");
+  }
 }
 
 export async function verifyWebviewDirectory(rootDir) {
@@ -75,6 +83,7 @@ export async function verifyWebviewDirectory(rootDir) {
     if (details.size === 0) fail(`bundle asset is empty: dist/webview/${asset}`);
     sha256[asset] = checksum(await readFile(path.join(directory, asset)));
   }
+  verifyCssAssetUrls(await readFile(path.join(directory, "webview.css"), "utf8"));
   const extraJavaScript = entries.filter((entry) => entry.isFile() && entry.name.endsWith(".js") && entry.name !== "webview.js");
   if (extraJavaScript.length > 0) fail(`unexpected JavaScript chunks: ${extraJavaScript.map((entry) => entry.name).join(", ")}`);
   return { directory, assets: requiredAssets, entries: entries.filter((entry) => entry.isFile()).map((entry) => entry.name).sort(), sha256 };

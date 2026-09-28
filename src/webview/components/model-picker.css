@@ -45,7 +45,7 @@
 .model-option[aria-selected="true"]::after {
   margin-left: auto;
   color: var(--ui-focus);
-  content: "\\2713";
+  content: "✓";
 }
 
 .menu-item .sub,

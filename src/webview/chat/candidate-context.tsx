@@ -30,7 +30,7 @@ const stateLabels = {
   "write-failed": "Delivery uncertain; no automatic retry",
   "ack-timeout": "Acknowledgement timed out; no automatic retry",
   "rpc-rejected": "Submission rejected",
-  "runtime-lost": "Runtime ended; attachment history lost",
+  "runtime-lost": "Runtime connection unavailable; attachment history cleared",
   "host-accepted": "Admitted by host",
   "write-attempted": "Delivery attempted",
   "rpc-accepted": "Accepted by runtime",

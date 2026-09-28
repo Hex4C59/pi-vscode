@@ -3,7 +3,7 @@ import test from "node:test";
 import { attachmentState, uiHarness } from "./react-harness.js";
 
 const attachment = { attachmentId: "a", snapshotId: "s", relativePath: "src/<script>.ts", kind: "file" as const, utf8Bytes: 9, unsaved: true, state: "attached" as const };
-const envelope = { version: 2, generation: 1, viewId: "view" };
+const envelope = { version: 3, generation: 1, viewId: "view" };
 
 test("attachment preview correlates pages, stays literal, and history remains inspectable during streaming", async () => {
   const h = await uiHarness();

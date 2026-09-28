@@ -6,7 +6,7 @@ import { uiHarness, attachmentState, readyState } from "./react-harness.js";
 test("loading, busy and runtime-error projections hide chat despite retained history and emit no actions", async () => {
   const h = await uiHarness(false);
   try {
-    const bootstrap = [{ version: 2, type: "ping" }, { version: 2, type: "getWorkspaceState" }];
+    const bootstrap = [{ version: 3, type: "ping" }, { version: 3, type: "getWorkspaceState" }];
     assert.deepEqual(h.sent, bootstrap);
     assert.equal(h.root.querySelector("#chat") === null, true);
     assert.equal(h.root.querySelector("#composer-wrap") === null, true);
@@ -73,7 +73,7 @@ test("attachment draft and pending model survive Stop and view recreation withou
     await first.receive(attachmentState({ draft: { revision: 1, text: "", acceptedEditSequence: 0, attachments: [attachment] } }));
     await first.input("Review this file");
     assert.deepEqual(first.sent.at(-1), {
-      version: 2, generation: 1, viewId: "view", type: "updateDraft", draftRevision: 1, editSequence: 1, text: "Review this file",
+      version: 3, generation: 1, viewId: "view", type: "updateDraft", draftRevision: 1, editSequence: 1, text: "Review this file",
     });
     await first.receive(attachmentState({ draft: { revision: 2, text: "Review this file", acceptedEditSequence: 1, attachments: [attachment] } }));
 
@@ -83,13 +83,13 @@ test("attachment draft and pending model survive Stop and view recreation withou
     await first.click("#model-current");
     await first.click("#model-list button:nth-child(2)");
     assert.deepEqual(first.sent.at(-1), {
-      version: 2, generation: 1, viewId: "view", type: "setChatModel", provider: "B", modelId: "two",
+      version: 3, generation: 1, viewId: "view", type: "setChatModel", provider: "B", modelId: "two",
     });
     await first.render({ chatBusy: true, execution: "awaiting-approval", approvals: [approval], pendingModel });
     assert.ok(first.get("#pending-settings").textContent?.includes("Next turn (pending): B / Two"));
 
     await first.click("#stop-chat");
-    assert.deepEqual(first.sent.at(-1), { version: 2, generation: 1, viewId: "view", type: "stopChat" });
+    assert.deepEqual(first.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "stopChat" });
     assert.equal(first.get<HTMLTextAreaElement>("#chat-input").value, "Review this file");
     assert.ok(first.get("#attachment-entry").textContent?.includes("src/example.ts"));
     assert.deepEqual(first.sent.map(message => message.type), [
@@ -111,8 +111,8 @@ test("attachment draft and pending model survive Stop and view recreation withou
     assert.equal(recreated.get<HTMLButtonElement>("#stop-chat").disabled, true);
     assert.equal(recreated.get("#stop-chat").textContent, "Stopping…");
     assert.deepEqual(recreated.sent, [
-      { version: 2, type: "ping" },
-      { version: 2, type: "getWorkspaceState" },
+      { version: 3, type: "ping" },
+      { version: 3, type: "getWorkspaceState" },
     ], "restoring host projections must not replay the draft, model selection or Stop action");
   } finally {
     await recreated.close();
@@ -122,12 +122,12 @@ test("attachment draft and pending model survive Stop and view recreation withou
 test("React workspace setup boots through the real v2 bridge and releases its listener", async () => {
   const h = await uiHarness(false);
   try {
-    assert.deepEqual(h.sent, [{ version: 2, type: "ping" }, { version: 2, type: "getWorkspaceState" }]);
+    assert.deepEqual(h.sent, [{ version: 3, type: "ping" }, { version: 3, type: "getWorkspaceState" }]);
     const hostile = '</script><img src=x onerror="attack()">';
     await h.render({ runtime: "not-started", folder: { name: hostile, path: hostile } });
     assert.ok(h.root.textContent?.includes(hostile)); assert.equal(h.root.querySelector("img"), null);
     await h.click("#allow");
-    assert.deepEqual(h.sent.at(-1), { version: 2, generation: 1, viewId: "view", type: "chooseResources", choice: "allow" });
+    assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "chooseResources", choice: "allow" });
     await h.unmount(); assert.equal(h.listeners.size, 0);
   } finally { await h.close(); }
 });
@@ -136,7 +136,7 @@ test("draft acknowledgement gates one submission and late admission preserves ne
   const h = await uiHarness();
   try {
     await h.input("first task");
-    assert.deepEqual(h.sent.at(-1), { version: 2, generation: 1, viewId: "view", type: "updateDraft", draftRevision: 0, editSequence: 1, text: "first task" });
+    assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "updateDraft", draftRevision: 0, editSequence: 1, text: "first task" });
     assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
     await h.receive(attachmentState({ draft: { revision: 1, text: "first task", acceptedEditSequence: 1, attachments: [] } }));
     await h.click("#send-chat"); await h.click("#send-chat");

@@ -196,7 +196,7 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
   const runtime = noFolder || untrusted || blockedStatus ? "not-started" : error ? "error" : "ready";
   const chatModel = unavailable || noFolder || untrusted || blockedStatus ? null : "Claude Sonnet";
   return {
-    version: 2,
+    version: 3,
     type: "workspaceState",
     viewId: "preview-view",
     generation: 1,
@@ -257,7 +257,7 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
 
 export function baseSessionState(scenario: PreviewScenario, viewId: string, generation = 1): SessionStateMessage {
   return {
-    version: 2,
+    version: 3,
     type: "sessionState",
     viewId,
     generation,
@@ -273,7 +273,7 @@ export function baseSessionState(scenario: PreviewScenario, viewId: string, gene
 
 export function baseSavedHistoryState(viewId: string, generation = 1): SavedHistoryStateMessage {
   return {
-    version: 2,
+    version: 3,
     type: "savedHistoryState",
     viewId,
     generation,
@@ -290,7 +290,7 @@ export function baseAttachmentState(scenario: PreviewScenario): AttachmentStateM
   const attached = scenario === "attachment" || scenario === "source-changed" || scenario === "attachment-unavailable";
   const attachment = attached ? draftAttachment(scenario === "source-changed" ? "changed" : scenario === "attachment-unavailable" ? "unavailable" : "attached") : null;
   return {
-    version: 2,
+    version: 3,
     type: "attachmentState",
     viewId: "preview-view",
     generation: 1,

@@ -1,10 +1,13 @@
+import type { UiLanguageState } from "./types.js";
 import { useRef, useState, useLayoutEffect, type ReactElement } from "react";
+import { useChatPreview } from "./environment.js";
 import { useUiText } from "../components/index.js";
-import { previewLanguages, type PreviewLanguage } from "./ui-language.js";
+import { uiLanguages } from "./ui-language.js";
 
 /** Native modal owns focus containment/Escape; no document listeners or host settings. */
-export function InterfaceSettings({ language }: { language: PreviewLanguage }): ReactElement {
+export function InterfaceSettings({ language }: { language: UiLanguageState }): ReactElement {
   const { locale, text: t } = useUiText();
+  const preview = useChatPreview();
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -33,9 +36,9 @@ export function InterfaceSettings({ language }: { language: PreviewLanguage }): 
         </button>
       </header>
       <label><span>{t("Language")}</span><select aria-label={t("Language")} value={locale} onChange={event => language.select(event.currentTarget.value)}>
-        {previewLanguages.map(item => <option key={item.locale} value={item.locale}>{item.label}</option>)}
+        {uiLanguages.map(item => <option key={item.locale} value={item.locale}>{item.label}</option>)}
       </select></label>
-      <p>{t("For this preview only. Reloading the page restores English.")}</p>
+      <p>{t(preview ? "For this preview only. Reloading the page restores English." : "For this view only. Reloading the view restores English.")}</p>
     </dialog>}
   </>;
 }

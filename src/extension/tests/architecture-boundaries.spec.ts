@@ -20,9 +20,9 @@ test("host and browser modules preserve the runtime and capability boundaries", 
 
 const sourceRoot = path.resolve("src");
 const modules = new Set([
-  "adapter", "adapter/runtime", "adapter/sessions", "extension", "extension/bridge",
+  "adapter", "adapter/runtime", "adapter/sessions", "adapter/ownership", "extension", "extension/bridge",
   "extension/contracts", "extension/draft", "extension/editor-tools", "extension/models",
-  "extension/sessions", "webview", "webview/components",
+  "extension/sessions", "extension/interactions", "extension/extension-loading", "webview", "webview/components", "webview/chat",
 ].map(directory => path.join(sourceRoot, directory)));
 
 // Report the same public-entry violations for source fixtures and the application scan.
@@ -73,8 +73,8 @@ test("application module consumers use public directory entries", () => {
 // Module-local contracts describe the interface without pulling runtime capabilities into importers.
 test("module type contracts are type-only and reachable through their public entry", () => {
   for (const module of [
-    "adapter/runtime", "adapter/sessions", "extension/draft", "extension/editor-tools",
-    "extension/models", "extension/sessions", "webview", "webview/components",
+    "adapter/runtime", "adapter/sessions", "adapter/ownership", "extension/interactions", "extension/draft", "extension/editor-tools",
+    "extension/models", "extension/sessions", "webview", "webview/components", "webview/chat",
   ]) {
     const contract = readFileSync(path.join("src", module, "types.ts"), "utf8");
     const entry = readFileSync(path.join("src", module, "index.ts"), "utf8");
@@ -83,4 +83,17 @@ test("module type contracts are type-only and reachable through their public ent
     assert.doesNotMatch(contract, /^export\s+(?!type\b|interface\b)/m, `${module}: type file must not export a runtime value`);
     assert.match(entry, /export type\s*\{[^}]+\}\s*from\s*["']\.\/types\.js["']/s, `${module}: public entry must expose its contract`);
   }
+});
+
+test("activation and distribution own the isolated persistent runtime supervisor", () => {
+  const activation = readFileSync("src/extension.ts", "utf8");
+  assert.match(activation, /createRuntimeOwner/);
+  assert.match(activation, /context\.globalStorageUri\.fsPath/);
+  assert.match(activation, /recovery-v1/);
+  assert.match(activation, /runtime-supervisor\.mjs/);
+  const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+  assert.ok(pkg.files.includes("dist/runtime-supervisor.mjs"));
+  const build = readFileSync("esbuild.mjs", "utf8");
+  assert.match(build, /src\/adapter\/ownership\/supervisor\.ts/);
+  assert.match(build, /dist\/runtime-supervisor\.mjs/);
 });

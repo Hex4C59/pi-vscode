@@ -1,17 +1,18 @@
+/** Historical composition fixture for shared-control contract regressions; not production UI. */
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import { attachmentError, availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE } from "./client-state.js";
-import { SAVED_HISTORY_PAGE_SIZE } from "./saved-history-client.js";
-import { type WebviewClient } from "./webview-client.js";
+import { attachmentError, availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE } from "../client-state.js";
+import { SAVED_HISTORY_PAGE_SIZE } from "../saved-history-client.js";
+import { type WebviewClient } from "../webview-client.js";
 import {
   WorkspaceSetup, Conversation, ModelPicker, Approvals,
   AttachmentPanel, ChangeReview, Sessions, SavedHistory,
-} from "./components/index.js";
+} from "../components/index.js";
 
 const runtimeLabels = { "not-started": "Not running", starting: "Starting…", ready: "Connected", stopping: "Stopping…", error: "Runtime error" };
 const executionLabels = { idle: "Ready", waiting: "Waiting for response…", thinking: "Thinking…", "awaiting-approval": "Waiting for tool approval",
   completed: "Task completed", stopped: "Task stopped · Side effects are not rolled back.", retrying: "Retrying…", compacting: "Compacting context…", executing: "Executing tool…", replying: "Replying…", stopping: "Stopping… Waiting for task to settle; side effects are not rolled back.", failed: "Task failed / interrupted" };
 
-export function App({ client }: { client: WebviewClient }) {
+export function BaselineApp({ client }: { client: WebviewClient }) {
   const snapshot = useSyncExternalStore(client.subscribe, client.getSnapshot);
   const state = snapshot.workspace;
   const a = availability(snapshot);

@@ -24,7 +24,9 @@ export function attachmentError(code: string, kind?: "file" | "selection"): stri
 export function availability(s: ClientSnapshot) {
   const w = s.workspace;
   const stopping = s.stopRequested || w?.execution === "stopping" || w?.runtime === "stopping";
-  const ready = !!w && w.runtime === "ready" && !w.busy;
+  const extensionBlocked = s.interactions?.phase === "blocked" || s.interactions?.active != null
+    || (!!s.executionProfile && s.executionProfile.phase !== "idle");
+  const ready = !!w && w.runtime === "ready" && !w.busy && !extensionBlocked;
   const sessionTransitioning = s.sessions?.phase === "confirming" || s.sessions?.phase === "switching";
   const chatDisabled = !ready || !!w?.chatBusy || !!w?.modelBusy || stopping || !!s.error || sessionTransitioning;
   return {

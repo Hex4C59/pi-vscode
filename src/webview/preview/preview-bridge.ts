@@ -122,7 +122,7 @@ export class PreviewBridge implements WebviewBridge {
   postMessage(message: WebviewMessage): void {
     if (this.disposed) return;
     if (message.type === "ping") {
-      this.emit({ version: 2, type: "pong", viewId: this.viewId, generation: this.workspace.generation });
+      this.emit({ version: 3, type: "pong", viewId: this.viewId, generation: this.workspace.generation });
       return;
     }
     if (message.type === "getWorkspaceState") {
@@ -192,7 +192,7 @@ export class PreviewBridge implements WebviewBridge {
         this.emitReview("unavailable"); // Browser fixture has no native editor or filesystem authority.
         break;
       case "getAttachmentHistory":
-        this.emit({ version: 2, type: "attachmentHistory", viewId: this.viewId, generation: this.workspace.generation, entries: this.history });
+        this.emit({ version: 3, type: "attachmentHistory", viewId: this.viewId, generation: this.workspace.generation, entries: this.history });
         break;
       case "getAttachmentPreview":
         this.sendPreview(message);
@@ -316,7 +316,7 @@ export class PreviewBridge implements WebviewBridge {
       reason: index === 2 ? "sensitive-source" as const : index % 3 === 1 ? "no-before-snapshot" as const : null,
       sourceChanged: index === 0, overlap: index === 3,
     })) : [];
-    this.emit({ version: 2, type: "changeReviewState", viewId: this.viewId, generation: this.workspace.generation,
+    this.emit({ version: 3, type: "changeReviewState", viewId: this.viewId, generation: this.workspace.generation,
       entries, retainedBytes: entries.length ? 2048 : 0, limited: false, reset: this.reviewLost, error: this.reviewLost ? "unavailable" : error });
   }
 
@@ -505,12 +505,12 @@ export class PreviewBridge implements WebviewBridge {
       || !this.savedHistory.messages.some(line => line.id === message.id)) return;
     const text = this.savedHistoryPreviews.get(message.id);
     if (text === undefined || message.offset > text.length) {
-      this.schedule(() => this.emit({ version: 2, type: "savedHistoryPreview", viewId: this.viewId, generation: this.workspace.generation, id: message.id, requestId: message.requestId, code: "unavailable" }), 0);
+      this.schedule(() => this.emit({ version: 3, type: "savedHistoryPreview", viewId: this.viewId, generation: this.workspace.generation, id: message.id, requestId: message.requestId, code: "unavailable" }), 0);
       return;
     }
     const nextOffset = Math.min(message.offset + SAVED_HISTORY_PREVIEW_CHUNK_SIZE, text.length);
     const chunk: SavedHistoryPreviewMessage = {
-      version: 2,
+      version: 3,
       type: "savedHistoryPreview",
       viewId: this.viewId,
       generation: this.workspace.generation,
@@ -946,13 +946,13 @@ export class PreviewBridge implements WebviewBridge {
   private sendPreview(message: Extract<WebviewMessage, { type: "getAttachmentPreview" }>): void {
     const text = this.previews.get(message.snapshotId);
     if (text === undefined || message.offset > text.length) {
-      this.schedule(() => this.emit({ version: 2, type: "attachmentPreview", viewId: this.viewId, generation: this.workspace.generation, requestId: message.requestId, code: "unavailable" }), 0);
+      this.schedule(() => this.emit({ version: 3, type: "attachmentPreview", viewId: this.viewId, generation: this.workspace.generation, requestId: message.requestId, code: "unavailable" }), 0);
       return;
     }
     let nextOffset = Math.min(message.offset + (this.scenario === "long-history" ? 16384 : 96), text.length);
     if (nextOffset < text.length && /[\uD800-\uDBFF]/.test(text[nextOffset - 1])) nextOffset--;
     const chunk: AttachmentPreviewMessage = {
-      version: 2,
+      version: 3,
       type: "attachmentPreview",
       viewId: this.viewId,
       generation: this.workspace.generation,

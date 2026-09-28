@@ -14,7 +14,7 @@ const sessionEntry = (index: number) => ({
 
 function sessionState(patch: Partial<SessionStateMessage> = {}): SessionStateMessage {
   return {
-    version: 2,
+    version: 3,
     type: "sessionState",
     viewId: "view",
     generation: 1,

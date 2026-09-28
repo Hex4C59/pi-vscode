@@ -8,10 +8,10 @@ import { parseWebviewMessage, type HostMessage, type AttachmentStateMessage } fr
 function fixture(scenario: PreviewScenario) {
   const bridge = new PreviewBridge(scenario); const messages: HostMessage[] = [];
   bridge.subscribe(value => { const parsed = parseHostMessage(value); assert.ok(parsed); messages.push(parsed); });
-  bridge.postMessage({ version: 2, type: "getWorkspaceState" });
+  bridge.postMessage({ version: 3, type: "getWorkspaceState" });
   const state = (): AttachmentStateMessage => { const found = [...messages].reverse().find(m => m.type === "attachmentState"); assert.ok(found?.type === "attachmentState"); return found; };
   const send = (action: Record<string, unknown>) => {
-    const current = state(); const parsed = parseWebviewMessage({ version: 2, viewId: current.viewId, generation: current.generation, ...action });
+    const current = state(); const parsed = parseWebviewMessage({ version: 3, viewId: current.viewId, generation: current.generation, ...action });
     assert.ok(parsed); bridge.postMessage(parsed);
   };
   const body = () => send({ type: "updateDraft", draftRevision: state().draft.revision, editSequence: state().draft.acceptedEditSequence + 1, text: "literal preview request" });

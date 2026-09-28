@@ -8,21 +8,21 @@ import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 import type { WebviewBridge } from "../bridge.js";
 
 export const readyState: WorkspaceStateMessage = {
-  version: 2, type: "workspaceState", viewId: "view", generation: 1, status: "eligible", folder: { name: "project", path: "/project" },
+  version: 3, type: "workspaceState", viewId: "view", generation: 1, status: "eligible", folder: { name: "project", path: "/project" },
   choice: "allow", busy: false, error: null, runtime: "ready", runtimeDetail: null, messages: [], chatBusy: false, chatError: null,
   chatModel: "A / one", thinkingLevel: "medium", thinkingLevels: ["off", "medium", "high"],
   availableModels: [{ provider: "A", modelId: "one", label: "One" }, { provider: "B", modelId: "two", label: "Two" }],
   pendingModel: null, pendingThinkingLevel: null, modelBusy: false, modelError: null, activities: [], approvals: [], grants: [], execution: "idle", controlledExecution: true,
 };
 export function attachmentState(patch: Partial<AttachmentStateMessage> = {}): AttachmentStateMessage {
-  return { version: 2, type: "attachmentState", viewId: "view", generation: 1, draft: { revision: 0, text: "", acceptedEditSequence: 0, attachments: [] },
+  return { version: 3, type: "attachmentState", viewId: "view", generation: 1, draft: { revision: 0, text: "", acceptedEditSequence: 0, attachments: [] },
     preparation: "idle", result: null, historyCount: 0, retainedBytes: 0, lastSubmission: null, ...patch };
 }
-export async function uiHarness(initial = true, candidate = false) {
+export async function uiHarness(initial = true, candidate = false, production = false) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });
   const previous = new Map<string, PropertyDescriptor | undefined>();
   const globals: Record<string, unknown> = { window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
-    HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, HTMLTextAreaElement: dom.window.HTMLTextAreaElement,
+    Node: dom.window.Node, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, HTMLTextAreaElement: dom.window.HTMLTextAreaElement,
     Event: dom.window.Event, MouseEvent: dom.window.MouseEvent, KeyboardEvent: dom.window.KeyboardEvent, IS_REACT_ACT_ENVIRONMENT: true };
   for (const [key, value] of Object.entries(globals)) { previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key)); Object.defineProperty(globalThis, key, { configurable: true, writable: true, value }); }
   const listeners = new Set<(message: unknown) => void>();
@@ -31,13 +31,14 @@ export async function uiHarness(initial = true, candidate = false) {
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; } };
   const root = dom.window.document.getElementById("root"); assert.ok(root);
   const { mountApp } = await import("../mount.js");
+  const { mountBaselineApp } = await import("./baseline-mount.js");
   let dispose: () => void = () => undefined;
   await act(async () => {
     if (candidate) {
       const { mountCandidate } = await import("../preview/candidate.js");
       const { createPreviewLanguage } = await import("../preview/ui-language.js");
       dispose = mountCandidate(root, bridge, createPreviewLanguage());
-    } else dispose = mountApp(root, bridge);
+    } else dispose = production ? mountApp(root, bridge) : mountBaselineApp(root, bridge);
   });
   const receive = async (value: unknown) => { await act(async () => { for (const listener of [...listeners]) listener(value); }); };
   const render = (patch: Partial<WorkspaceStateMessage> = {}) => receive({ ...readyState, ...patch });
@@ -61,4 +62,9 @@ export async function uiHarness(initial = true, candidate = false) {
 export function readAppStyles(file = "src/webview/styles.css"): string {
   return readFileSync(file, "utf8").replace(/@import "(\.[^"]+)";/g, (_match, relative: string) =>
     readAppStyles(path.resolve(path.dirname(file), relative)));
+}
+
+/** Exercises the shipped mounting entry, rather than a historical composition fixture. */
+export async function productionHarness(initial = true) {
+  return uiHarness(initial, false, true);
 }

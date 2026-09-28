@@ -1343,3 +1343,43 @@ test("deterministic candidate Stop displays stopped rather than a failed task", 
   assert.match(h.root.textContent ?? "", /Task stopped · Side effects are not rolled back\./);
   assert.doesNotMatch(h.root.textContent ?? "", /Task failed/);
 });
+
+test("candidate runtime loss keeps dialogue and newer draft keyboard-readable without allowing sends", async () => {
+  const { uiHarness } = await import("./react-harness.js");
+  const h = await uiHarness(true, true);
+  try {
+    await h.render({ messages: [{ id: "retained", role: "assistant", text: "Retained prior reply" }] });
+    await h.input("Unsent draft survives loss", "textarea");
+    await h.render({ runtime: "error", execution: "failed", runtimeDetail: "Owned runtime disconnected", messages: [{ id: "retained", role: "assistant", text: "Retained prior reply" }] });
+    assert.match(h.root.textContent ?? "", /Retained prior reply/);
+    const input = h.get<HTMLTextAreaElement>("textarea");
+    assert.equal(input.value, "Unsent draft survives loss");
+    assert.equal(input.disabled, false);
+    assert.equal(input.readOnly, true);
+    input.focus(); input.select();
+    assert.equal(h.dom.window.document.activeElement, input);
+    assert.equal(input.selectionEnd, input.value.length);
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
+    const submissions = h.sent.filter(message => message.type === "sendChat").length;
+    await act(async () => input.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    assert.equal(h.sent.filter(message => message.type === "sendChat").length, submissions);
+  } finally { await h.close(); }
+});
+
+test("candidate runtime loss reveals the recovery error once without overriding subsequent reading", async () => {
+  const { uiHarness } = await import("./react-harness.js");
+  const h = await uiHarness(true, true);
+  try {
+    const messages = [{ id: "retained", role: "assistant" as const, text: "Retained prior reply" }];
+    await h.render({ messages });
+    const main = h.get(".candidate__messages");
+    Object.defineProperties(main, { scrollHeight: { configurable: true, value: 1000 }, clientHeight: { configurable: true, value: 300 } });
+    main.scrollTop = 700;
+    await h.render({ messages, runtime: "error", runtimeDetail: "Owned runtime disconnected", execution: "failed" });
+    assert.equal(main.scrollTop, 0);
+    main.scrollTop = 180;
+    await act(async () => main.dispatchEvent(new h.dom.window.Event("scroll")));
+    await h.render({ messages, runtime: "error", runtimeDetail: "Owned runtime disconnected", execution: "failed" });
+    assert.equal(main.scrollTop, 180);
+  } finally { await h.close(); }
+});

@@ -36,9 +36,9 @@ async function previewHarness(t: TestContext) {
   });
   const root = dom.window.document.getElementById("root");
   assert.ok(root);
-  const { mountApp } = await import("../mount.js");
+  const { mountBaselineApp } = await import("./baseline-mount.js");
   let dispose: () => void = () => undefined;
-  await act(async () => { dispose = mountApp(root, bridge); });
+  await act(async () => { dispose = mountBaselineApp(root, bridge); });
 
   const get = <T extends HTMLElement = HTMLElement>(selector: string): T => {
     const element = root.querySelector<T>(selector);
@@ -69,7 +69,7 @@ async function previewHarness(t: TestContext) {
   };
   const send = (message: { type: "getSavedSessions"; page: number }) => {
     const workspace = latest("workspaceState");
-    bridge.postMessage({ version: 2, generation: workspace.generation, viewId: workspace.viewId, ...message });
+    bridge.postMessage({ version: 3, generation: workspace.generation, viewId: workspace.viewId, ...message });
   };
   const close = async () => {
     await act(async () => dispose());

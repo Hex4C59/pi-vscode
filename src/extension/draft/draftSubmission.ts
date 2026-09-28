@@ -57,7 +57,7 @@ export class DraftSubmission implements vscode.Disposable {
   private attachmentEligible(): boolean { const context = this.context(); return !this.disposed && !context.disposed && context.eligible && !!context.cwd && !this.awaitingAck; }
   private attachmentEnvelope<T extends string>(type: T) {
     const { generation, viewId } = this.context();
-    return { version: 2 as const, type, generation, viewId };
+    return { version: 3 as const, type, generation, viewId };
   }
   rejectStale(): void { this.attachmentResult = "stale"; this.publish(); }
   openView(): void { this.acceptedEditSequence = 0; }
@@ -327,7 +327,9 @@ export class DraftSubmission implements vscode.Disposable {
         for (const record of records) if (record.outcome === "pending") record.outcome = "failed";
         if (this.lastSubmission?.outcome === "pending") this.lastSubmission.outcome = "failed";
         const chatError = result.delivery === "rpc-rejected"
-          ? "Runtime rejected the prompt. Check model/provider configuration before deliberately sending again; no retry was made."
+          ? result.rejection === "authentication"
+            ? "Model authentication failed. Check pi credentials and provider access, then try again."
+            : "Runtime rejected the prompt. Check model/provider configuration before deliberately sending again; no retry was made."
           : "Prompt delivery was not confirmed. Inspect delivery status and restart the runtime before retrying; no retry was made.";
         this.events.failed(chatError);
       } else if (this.lastSubmission && ["settled", "interrupted", "failed"].includes(this.lastSubmission.outcome)) { this.events.settled(); }

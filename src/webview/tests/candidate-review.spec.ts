@@ -3,7 +3,7 @@ import test from "node:test";
 import type { ChangeReviewEntry, ChangeReviewStateMessage } from "../../extension/contracts/webviewProtocol.js";
 import { uiHarness } from "./react-harness.js";
 
-const envelope = { version: 2, generation: 1, viewId: "view" } as const;
+const envelope = { version: 3, generation: 1, viewId: "view" } as const;
 
 function entry(index: number, patch: Partial<ChangeReviewEntry> = {}): ChangeReviewEntry {
   return {
@@ -83,9 +83,9 @@ test("candidate expands, pages, and opens only opaque review intents without cha
     assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value, "Keep this draft while reviewing");
 
     await h.click('[data-review-entry-id="review-17"] [data-review-action="diff"]');
-    assert.deepEqual(h.sent.at(-1), { version: 2, type: "openReviewDiff", viewId: "view", generation: 1, id: "review-17" });
+    assert.deepEqual(h.sent.at(-1), { version: 3, type: "openReviewDiff", viewId: "view", generation: 1, id: "review-17" });
     await h.click('[data-review-entry-id="review-17"] [data-review-action="source"]');
-    assert.deepEqual(h.sent.at(-1), { version: 2, type: "openReviewSource", viewId: "view", generation: 1, id: "review-17" });
+    assert.deepEqual(h.sent.at(-1), { version: 3, type: "openReviewSource", viewId: "view", generation: 1, id: "review-17" });
   } finally {
     await h.close();
   }

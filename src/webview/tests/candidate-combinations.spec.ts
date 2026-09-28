@@ -3,7 +3,7 @@ import test from "node:test";
 import { act } from "react";
 import { uiHarness } from "./react-harness.js";
 
-const review = {version:2,type:"changeReviewState",viewId:"view",generation:1,entries:[{
+const review = {version:3,type:"changeReviewState",viewId:"view",generation:1,entries:[{
   id:"review", taskId:"task", path:"src/literal.ts", source:"tool", tool:"write", status:"complete", diff:"ready",
   reason:null, sourceChanged:true, overlap:false,
 }],retainedBytes:128,limited:false,reset:false,error:null} as const;

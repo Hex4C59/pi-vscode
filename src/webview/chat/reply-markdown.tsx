@@ -1,3 +1,4 @@
+import { useChatPreview } from "./environment.js";
 import { useUiText, type UiText } from "../components/index.js";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Lexer, type Token, type MarkedToken } from "marked";
@@ -50,11 +51,12 @@ function CodeBlock({ text }: { text: string }): ReactNode {
 }
 
 function ReplyLink({ href, children }: { href: string; children: ReactNode }): ReactNode {
+  const preview = useChatPreview();
   const { text: t } = useUiText();
   const destination = safeLink(href);
   const [notice, setNotice] = useState<UiText | "">("");
-  if (!destination) return <span aria-label={t("Blocked link")}>{children} <span className="candidate__notice">{t("(Link blocked — only absolute HTTP(S) links without credentials are available in this preview.)")}</span></span>;
-  return <><a href={destination} target="_blank" rel="noopener noreferrer" onClick={() => setNotice("Opening an external browser tab; native host routing is not available in this preview.")}>{children}</a><span className="candidate__notice" role="status">{notice ? t(notice) : ""}</span></>;
+  if (!destination) return <span aria-label={t("Blocked link")}>{children} <span className="candidate__notice">{t(preview ? "(Link blocked — only absolute HTTP(S) links without credentials are available in this preview.)" : "(Link blocked — only absolute HTTP(S) links without credentials are allowed.)")}</span></span>;
+  return <><a href={destination} target="_blank" rel="noopener noreferrer" onClick={() => setNotice(preview ? "Opening an external browser tab; native host routing is not available in this preview." : "Opening an external link through VS Code.")}>{children}</a><span className="candidate__notice" role="status">{notice ? t(notice) : ""}</span></>;
 }
 
 function renderTokens(tokens: readonly Token[]): ReactNode {

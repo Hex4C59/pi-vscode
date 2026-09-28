@@ -12,12 +12,16 @@ export function formatModelLabel(data: unknown): string | null {
   const model = (data as Record<string, unknown>).model ?? data;
   if (!model || typeof model !== "object") return null;
   const entry = model as Record<string, unknown>;
+  // pi 0.86.1 get_state uses this zero-capability sentinel when no model exists.
+  // A real configured model merely named "unknown" must remain selectable.
+  if (entry.id === "unknown" && entry.provider === "unknown" && entry.api === "unknown"
+    && entry.contextWindow === 0 && entry.maxTokens === 0) return null;
   const id = typeof entry.id === "string" ? entry.id : typeof entry.modelId === "string" ? entry.modelId : null;
   const provider = typeof entry.provider === "string" ? entry.provider : null;
   const name = typeof entry.name === "string" ? entry.name.trim() : null;
   if (name && name.length <= MAX_MODEL_LABEL_CHARS) return name;
-  if (id && provider) return `${provider} / ${id}`;
-  return id ?? provider;
+  const fallback = id && provider ? `${provider} / ${id}` : id ?? provider;
+  return fallback?.slice(0, MAX_MODEL_LABEL_CHARS) ?? null;
 }
 
 export function readThinkingLevel(data: unknown): string | null {

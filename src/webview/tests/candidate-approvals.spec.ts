@@ -14,6 +14,7 @@ test("candidate selects one of eight pending approvals without authorizing or ch
   const h = await uiHarness(true, true);
   try {
     const pending = cards();
+    const initialExpiries = pending.map(card => card.expiresAt);
     await h.render({ approvals: pending, chatBusy: true, execution: "awaiting-approval" });
     assert.match(h.get('[aria-label="Pending approvals"]').textContent ?? "", /8/);
     assert.equal(h.root.querySelectorAll('.approval:not([hidden])').length, 1);
@@ -24,11 +25,11 @@ test("candidate selects one of eight pending approvals without authorizing or ch
     assert.equal(h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="session"]').disabled, true);
     await h.click('[data-select-approval="approval-2"]');
     await h.click('.approval:not([hidden]) [data-decision="once"]');
-    assert.deepEqual(h.sent.at(-1), {version: 2, type: "decideApproval", viewId: "view", generation: 1, id: "approval-2", decision: "once"});
+    assert.deepEqual(h.sent.at(-1), {version: 3, type: "decideApproval", viewId: "view", generation: 1, id: "approval-2", decision: "once"});
     await h.click('[data-select-approval="approval-3"]');
     await h.click('[data-select-approval="approval-2"]');
     assert.equal(h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="deny"]').disabled, true);
-    assert.equal(pending[2].expiresAt, pending[0].expiresAt);
+    assert.deepEqual(pending.map(card => card.expiresAt), initialExpiries);
   } finally { await h.close(); }
 });
 
@@ -112,7 +113,7 @@ test("candidate always exposes controlled permissions in the composer and revoke
     await h.render({grants:[{id:"scope-grant",scope:'["bash","/workspace","echo complete command"]'}]});
     assert.equal(h.get('[data-grant-id] .grant-scope').textContent,'["bash","/workspace","echo complete command"]');
     await h.click('[data-grant-action="revoke"]');
-    assert.deepEqual(h.sent.at(-1), {version:2,type:"revokeGrant",viewId:"view",generation:1,id:"scope-grant"});
+    assert.deepEqual(h.sent.at(-1), {version:3,type:"revokeGrant",viewId:"view",generation:1,id:"scope-grant"});
   } finally {await h.close();}
 });
 
@@ -137,4 +138,30 @@ test("a new synthetic approval queue is not erased by the previous queue's late 
   await h.advance(360);
   assert.equal(h.root.querySelectorAll('[data-select-approval]').length,8);
   assert.ok(h.root.querySelector('button[aria-label="Stop current task"]'));
+});
+
+test("custom tool approval discloses limited coverage and never offers a usable session grant", async () => {
+  const h = await uiHarness(true, true);
+  try {
+    const card: ApprovalCard = { id: "custom", toolCallId: "custom-call", tool: "review_summary", category: "custom", input: '{"query":"literal <script>"}', scope: null, expiresAt: Date.now() + 120000 };
+    await h.render({ approvals: [card], chatBusy: true, execution: "awaiting-approval" });
+    assert.match(h.get('.approval:not([hidden])').textContent ?? "", /Custom extension tool/);
+    assert.match(h.get('.approval:not([hidden])').textContent ?? "", /outside this approval/);
+    assert.equal(h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="session"]').disabled, true);
+    assert.equal(h.get('.approval-input').textContent, card.input);
+    assert.equal(h.root.querySelector('script'), null);
+    await h.click('.approval:not([hidden]) [data-decision="once"]');
+    assert.equal(h.sent.at(-1)?.type, 'decideApproval');
+  } finally { await h.close(); }
+});
+
+test("compact custom coverage warning shares scrollable details rather than shrinking literal input", async () => {
+  const h = await uiHarness(true, true);
+  try {
+    await h.render({ approvals: [{ id: "custom-layout", toolCallId: "custom-call", tool: "owned_counter", category: "custom", input: '{"text":"fixed synthetic payload"}', scope: null, expiresAt: Date.now() + 120000 }], chatBusy: true, execution: "awaiting-approval" });
+    const warning = h.get(".approval:not([hidden]) .approval-details > .muted");
+    assert.match(warning.textContent ?? "", /Custom extension tool/);
+    assert.equal(h.root.querySelector(".approval:not([hidden]) > .muted"), null);
+    assert.equal(h.get<HTMLButtonElement>('[data-decision="session"]').disabled, true);
+  } finally { await h.close(); }
 });
