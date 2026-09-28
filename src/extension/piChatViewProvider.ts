@@ -16,6 +16,8 @@ import { createInteractionCoordinator } from "./interactions/index.js";
 import { DraftSubmission } from "./draft/index.js";
 
 const opaqueId = () => randomBytes(16).toString("hex");
+// Display metadata is not a filesystem capability; keep the real local cwd unchanged.
+const workspaceLabel = (value: string, limit: number): string => value.length <= limit ? value : value.slice(0, limit - 1).replace(/[\uD800-\uDBFF]$/, "") + "…";
 
 export const PI_CHAT_VIEW_ID = "pi-vscode.chat";
 
@@ -287,7 +289,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       runtime: "not-started", runtimeDetail: null, controlledExecution: true,
       status: remote ? "remote" : folders.length === 0 ? "no-folder" : folders.length > 1 ? "multi-root"
         : folder?.uri.scheme !== "file" ? "non-file" : !trusted ? "untrusted" : "eligible",
-      folder: folder ? { name: folder.name, path: folder.uri.scheme === "file" ? folder.uri.fsPath : folder.uri.toString() } : null,
+      folder: folder ? { name: workspaceLabel(folder.name, 512), path: folder.uri.scheme === "file" ? folder.uri.fsPath : workspaceLabel(folder.uri.toString(), 65_536) } : null,
     };
     if (prevChoice !== this.state.choice || prevStatus !== this.state.status) {
       void this.reconcileRuntime();

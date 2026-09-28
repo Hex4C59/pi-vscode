@@ -176,3 +176,24 @@ test("pending native operations serialize, tolerate posting failures and late re
   h.provider.dispose(); reject(new Error("late secret")); await tick();
   assert.deepEqual(h.commands, []);
 });
+
+test("workspace aliases and ineligible URI labels cannot overflow the renderer projection", () => {
+  const local = folder("/actual-project"); local.name = "界".repeat(70_000);
+  const h = harness([local]);
+  try {
+    const v = h.createView();
+    assert.equal(v.state().folder?.name, "界".repeat(511) + "…");
+    assert.equal(v.state().folder?.path, "/actual-project");
+    assert.equal(v.state().status, "eligible");
+  } finally { h.provider.dispose(); }
+  const virtual = folder("x".repeat(70_000), "memfs");
+  const other = harness([virtual]);
+  try {
+    const v = other.createView();
+    assert.equal(v.state().status, "non-file");
+    assert.ok((v.state().folder?.path.length ?? 0) <= 65_536);
+    assert.ok(v.state().folder?.path.endsWith("…"));
+    v.action("chooseResources", { choice: "allow" });
+    assert.equal(v.state().choice, null);
+  } finally { other.provider.dispose(); }
+});
