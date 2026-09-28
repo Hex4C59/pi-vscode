@@ -5,9 +5,9 @@
 .grants-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: var(--ui-space-2);
   min-width: 0;
-  margin-top: 10px;
+  margin-top: var(--ui-space-2);
 }
 
 .activity,
@@ -16,11 +16,11 @@
 .approval-card,
 .grant-card {
   min-width: 0;
-  padding: 7px 9px;
+  padding: var(--ui-space-2) var(--ui-space-3);
   overflow: hidden;
   background: var(--ui-surface);
   border: 1px solid var(--ui-border);
-  border-radius: 5px;
+  border-radius: var(--ui-radius);
 }
 
 .activity summary,
@@ -29,7 +29,7 @@
   cursor: pointer;
   overflow-wrap: anywhere;
   color: var(--ui-fg);
-  font-size: 12px;
+  font-size: var(--ui-font-chrome);
 }
 
 .activity pre,
@@ -39,14 +39,14 @@
 .attachment-preview-text {
   max-width: 100%;
   max-height: 320px;
-  margin: 7px 0 0;
+  margin: var(--ui-space-2) 0 0;
   overflow: auto;
   color: var(--ui-fg);
   background: var(--ui-input);
   border: 1px solid var(--ui-border);
-  border-radius: 4px;
+  border-radius: var(--ui-radius);
   font-family: var(--vscode-editor-font-family, var(--vscode-font-family, ui-monospace, SFMono-Regular, Consolas, monospace));
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -55,14 +55,14 @@
 .activity pre,
 .approval-input,
 .grant-scope,
-.attachment-preview-text { padding: 7px; }
+.attachment-preview-text { padding: var(--ui-space-2); }
 
 .activity-label,
 .truncation,
 .approval-meta,
 .field-hint {
   color: var(--ui-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
 }
 
 .approval,
@@ -74,16 +74,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--ui-space-2);
   min-width: 0;
 }
 
 #execution-status,
 #controlled-disclosure,
 .execution-status {
-  margin: 5px 0 8px;
+  margin: var(--ui-space-2) 0;
   color: var(--ui-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
 }
 
 #controlled-disclosure summary,
@@ -91,6 +91,6 @@
 
 #session-grants,
 .session-grants {
-  margin-top: 10px;
-  font-size: 11px;
+  margin-top: var(--ui-space-2);
+  font-size: var(--ui-font-chrome);
 }

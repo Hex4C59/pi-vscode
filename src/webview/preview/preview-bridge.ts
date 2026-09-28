@@ -129,6 +129,7 @@ export class PreviewBridge implements WebviewBridge {
       this.emitWorkspace();
       this.emitAttachment();
       this.emitReview();
+      this.emitSettings();
       if (this.scenario === "sessions") {
         this.emitSession();
         this.emitSavedHistory();
@@ -298,6 +299,23 @@ export class PreviewBridge implements WebviewBridge {
   private belongsToCurrentView(message: InboundAction): boolean {
     return "generation" in message && "viewId" in message
       && message.generation === this.workspace.generation && message.viewId === this.viewId;
+  }
+
+  /** Synthetic settings so the dialog can be reviewed; no credential or host state exists in the preview. */
+  private emitSettings(): void {
+    const envelope = { version: 3 as const, viewId: this.viewId, generation: this.workspace.generation };
+    this.emit({ ...envelope, type: "executionProfileState", profile: "controlled", displayName: null, phase: "idle",
+      errorCode: null, canSwitch: true, canEnd: false, canRecover: false });
+    this.emit({ ...envelope, type: "providerConfigState", busy: false, error: null,
+      defaultProvider: "synthetic", defaultModelId: "sonnet",
+      providers: [
+        { providerId: "synthetic", displayName: "Synthetic provider", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
+        { providerId: "other", displayName: "Other provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+      ],
+      catalog: [
+        { provider: "synthetic", modelId: "sonnet", label: "Claude Sonnet" },
+        { provider: "synthetic", modelId: "haiku", label: "Claude Haiku" },
+      ] });
   }
 
   private emit(message: HostMessage): void {

@@ -22,6 +22,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
   const levelsKey = state.thinkingLevels.join("\u0000");
   const selectedLevelIndex = Math.max(0, state.thinkingLevels.indexOf(selectedLevel ?? ""));
   const [sliderIndex, setSliderIndex] = useState(selectedLevelIndex);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     setSliderIndex(selectedLevelIndex);
@@ -90,6 +91,7 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
   const fill = max > 0 ? `${(value / max) * 100}%` : "0%";
   const previewIndex = Math.round(value);
   const previewLevel = state.thinkingLevels[previewIndex];
+  const effortStyle = { "--effort-position": max > 0 ? value / max : 0 } as CSSProperties;
   const sliderStyle = {
     "--fill": fill,
     accentColor: "#168BFF",
@@ -196,6 +198,18 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
           })}
         </div>
         <p className="popover-title" id="thinking-heading">{t("Thinking level")}</p>
+        {continuousThinkingDrag && <strong className="thinking-current">{previewLevel ? thinkingText(previewLevel) : "—"}</strong>}
+        <div className={continuousThinkingDrag ? "thinking-control" : undefined} style={effortStyle}
+          data-dragging={dragging} data-maximum={max > 0 && value >= max - 0.001}
+          data-disabled={settingsDisabled || state.thinkingLevels.length <= 1}>
+        {continuousThinkingDrag && <>
+          <div className="thinking-control__track" aria-hidden="true">
+            <div className="thinking-control__fill" />
+            {state.thinkingLevels.map((level, index) => <i key={level} className="thinking-control__stop"
+              style={{ "--stop-position": max > 0 ? index / max : 0 } as CSSProperties} />)}
+          </div>
+          <div className="thinking-control__thumb" aria-hidden="true" />
+        </>}
         <input
           id="thinking-slider"
           ref={sliderRef}
@@ -210,11 +224,15 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
           data-maximum={continuousThinkingDrag && max > 0 && previewIndex === max ? "true" : undefined}
           disabled={settingsDisabled || state.thinkingLevels.length <= 1}
           style={sliderStyle}
-          onPointerDown={event => event.currentTarget.setAttribute("data-keyboard-focus", "false")}
+          onPointerDown={event => { event.currentTarget.setAttribute("data-keyboard-focus", "false"); setDragging(true); }}
+          onPointerUp={() => setDragging(false)}
+          onPointerCancel={() => setDragging(false)}
+          onLostPointerCapture={() => setDragging(false)}
           onKeyDown={handleThinkingKey}
           onInput={event => setSliderIndex(Number(event.currentTarget.value))}
           onChange={event => setSliderIndex(Number(event.currentTarget.value))}
         />
+        </div>
         <p id="thinking-level-label" className="muted" aria-live="polite">
           {t("Applied: {thinking}", { thinking: thinkingLabel })}{state.pendingThinkingLevel ? t(" · Next turn (pending): {thinking}", { thinking: thinkingText(state.pendingThinkingLevel) }) : ""}
         </p>

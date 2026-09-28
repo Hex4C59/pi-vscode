@@ -2,7 +2,11 @@ import type { UiText } from "../components/index.js";
 
 /** UI copy only. Synthetic response bodies and upstream diagnostics are intentionally not translated. */
 export const chineseUi = {
+  "Replay Pi logo animation": "重播 Pi 标志动画",
   "Custom extension tool. This approval covers this call only; extension-internal execution is outside this approval and built-in file safeguards.": "自定义扩展工具：本次审批仅覆盖此调用；扩展内部执行不在该审批及内置文件保护范围内。",
+  "Set up this project": "设置此项目",
+  "Use this project's pi settings and resources?": "是否使用此项目的 pi 设置和资源？",
+  "What does this choice affect?": "此选择会影响什么？",
   "Pi chat": "Pi 聊天",
   "Connecting to the extension host…": "正在连接扩展宿主…",
   "Reload the VS Code window to restart controlled execution. Unsent drafts are not persisted; copy them before reloading.": "重新加载 VS Code 窗口可重启受控执行。未发送草稿不会持久保存，请在重载前复制。",
@@ -69,6 +73,10 @@ export const chineseUi = {
   "Default model": "默认模型",
   "Select a default model": "选择默认模型",
   "No models available": "暂无可用模型",
+  "Provider": "供应商",
+  "Select a provider": "选择供应商",
+  "Configured providers: {names}": "已配置：{names}",
+  "No providers configured yet.": "尚未配置任何供应商。",
   "Configured{source}": "已配置{source}",
   "Not configured": "未配置",
   "Add API key": "添加 API 密钥",
@@ -108,7 +116,6 @@ export const chineseUi = {
   "Stop current task": "停止当前任务",
   "Send message": "发送消息",
   "What should we work on?": "今天想做些什么？",
-  "Ask a question or describe a change.": "提出问题，或描述你想要的修改。",
   "Copy code": "复制代码",
   "Copy": "复制",
   "Code block": "代码块",

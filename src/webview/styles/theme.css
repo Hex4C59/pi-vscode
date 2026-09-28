@@ -10,26 +10,57 @@
   --ui-hover: var(--vscode-list-hoverBackground, #2b3039);
   --ui-selection: var(--vscode-editor-inactiveSelectionBackground, #344052);
   --ui-focus: var(--vscode-focusBorder, #6cb6ff);
-  --ui-accent: var(--vscode-button-background, #0e639c);
-  --ui-accent-hover: var(--vscode-button-hoverBackground, #1177bb);
-  --ui-accent-fg: var(--vscode-button-foreground, #ffffff);
+  /* Buttons stay neutral (the host's secondary button), never the host's blue primary. */
+  --ui-accent: var(--vscode-button-secondaryBackground, #3a3d41);
+  --ui-accent-hover: var(--vscode-button-secondaryHoverBackground, #45494e);
+  --ui-accent-fg: var(--vscode-button-secondaryForeground, #ffffff);
   --ui-danger: var(--vscode-errorForeground, #f48771);
   --ui-danger-bg: var(--vscode-inputValidation-errorBackground, #3a1f24);
   --ui-warning: var(--vscode-editorWarning-foreground, #e5c07b);
   --ui-warning-bg: var(--vscode-inputValidation-warningBackground, #3c321d);
   --ui-success: var(--vscode-testing-iconPassed, #73c991);
+  --ui-shadow: 0 4px 12px var(--vscode-widget-shadow, rgb(0 0 0 / 24%));
+
+  /* pi is monochrome: the emphasis color is the host foreground (off-white on dark, near-black on light). */
+  --ui-brand: var(--ui-fg);
+  --ui-brand-fg: var(--ui-bg);
+  --ui-brand-focus: var(--ui-muted);
+  --ui-composer: color-mix(in srgb, var(--ui-bg) 92%, black);
+
+  /* Closed scale (.agents/skills/pi-sidebar-ui/tokens.md). 4px only inside chips, icons, compact controls and the π caret. */
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 24px;
+  --ui-font-chrome: 12px;
+  --ui-font-body: var(--vscode-font-size, 13px);
+  --ui-font-empty: 17px;
   --ui-radius: 6px;
-  --ui-gap: 10px;
+  --ui-radius-lg: 8px;
   color-scheme: dark;
 }
 
 body.vscode-light,
 body.vscode-light-plus,
 body.vscode-high-contrast-light,
-body[data-vscode-theme-kind="vscode-light"] { color-scheme: light; }
+body[data-vscode-theme-kind="vscode-light"],
+body[data-vscode-theme-kind="vscode-high-contrast-light"] {
+  --ui-composer: color-mix(in srgb, var(--ui-bg) 96%, black);
+  color-scheme: light;
+}
 
 body.vscode-dark,
 body.vscode-dark-plus,
 body[data-vscode-theme-kind="vscode-dark"],
 body.vscode-high-contrast,
 body[data-vscode-theme-kind="vscode-high-contrast"] { color-scheme: dark; }
+
+/* High contrast borders are already the foreground, so composer focus must use the host focus color to stay visible. */
+body.vscode-high-contrast,
+body.vscode-high-contrast-light,
+body[data-vscode-theme-kind="vscode-high-contrast"],
+body[data-vscode-theme-kind="vscode-high-contrast-light"] {
+  --ui-brand-focus: var(--ui-focus);
+  --ui-composer: var(--ui-input);
+}

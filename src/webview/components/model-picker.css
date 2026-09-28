@@ -4,22 +4,22 @@
   position: absolute;
   z-index: 5;
   bottom: calc(100% - 1px);
-  left: 10px;
-  width: min(300px, calc(100% - 20px));
+  left: var(--ui-space-2);
+  width: min(300px, calc(100% - 16px));
   max-height: min(430px, calc(100vh - 80px));
   overflow: auto;
-  padding: 9px;
+  padding: var(--ui-space-2);
   background: var(--ui-surface-raised);
   border: 1px solid var(--ui-border-strong);
-  border-radius: 6px;
-  box-shadow: 0 8px 22px rgb(0 0 0 / 28%);
+  border-radius: var(--ui-radius);
+  box-shadow: var(--ui-shadow);
 }
 
 .popover-title,
 .model-popover__title {
-  margin: 2px 2px 6px;
+  margin: 0 0 var(--ui-space-2);
   color: var(--ui-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
   font-weight: 600;
 }
 
@@ -29,13 +29,13 @@
   align-items: center;
   width: 100%;
   min-width: 0;
-  gap: 6px;
-  padding: 6px 7px;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-2);
   color: var(--ui-fg);
   text-align: left;
   background: transparent;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--ui-radius);
+  font-size: var(--ui-font-chrome);
 }
 
 .menu-item:hover:not(:disabled),
@@ -44,7 +44,7 @@
 .menu-item[aria-checked="true"]::after,
 .model-option[aria-selected="true"]::after {
   margin-left: auto;
-  color: var(--ui-focus);
+  color: var(--ui-fg);
   content: "✓";
 }
 
@@ -53,14 +53,15 @@
   margin-left: auto;
   overflow: hidden;
   color: var(--ui-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 #thinking-level-label,
-.thinking-level-label { margin: 4px 2px 0; color: var(--ui-muted); font-size: 11px; }
+.thinking-level-label { margin: var(--ui-space-1) 0 0; color: var(--ui-muted); font-size: var(--ui-font-chrome); }
 
+/* The thinking slider geometry is PRD-confirmed (UIP-01) and its fill is the monochrome foreground; they are not part of the spacing scale. */
 #thinking-slider,
 .thinking-slider {
   width: 100%;
@@ -77,16 +78,16 @@
 .thinking-slider:focus-visible { outline: none; box-shadow: none; }
 
 #thinking-slider[data-keyboard-focus="true"]:focus-visible::-webkit-slider-thumb,
-.thinking-slider[data-keyboard-focus="true"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px #168bff66; }
+.thinking-slider[data-keyboard-focus="true"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-brand) 40%, transparent); }
 
 #thinking-slider[data-keyboard-focus="true"]:focus-visible::-moz-range-thumb,
-.thinking-slider[data-keyboard-focus="true"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px #168bff66; }
+.thinking-slider[data-keyboard-focus="true"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-brand) 40%, transparent); }
 
 #thinking-slider::-webkit-slider-runnable-track,
 .thinking-slider::-webkit-slider-runnable-track {
   height: 14px;
   border-radius: 7px;
-  background: linear-gradient(to right, #168bff 0 var(--fill), var(--ui-border-strong) var(--fill) 100%);
+  background: linear-gradient(to right, var(--ui-brand) 0 var(--fill), color-mix(in srgb, var(--ui-fg) 20%, transparent) var(--fill) 100%);
 }
 
 #thinking-slider::-webkit-slider-thumb,
@@ -95,22 +96,22 @@
   height: 22px;
   margin-top: -4px;
   appearance: none;
-  background: #168bff;
+  background: var(--ui-brand);
   border: 2px solid var(--ui-surface-raised);
   border-radius: 50%;
 }
 
 #thinking-slider::-moz-range-track,
-.thinking-slider::-moz-range-track { height: 14px; background: var(--ui-border-strong); border-radius: 7px; }
+.thinking-slider::-moz-range-track { height: 14px; background: color-mix(in srgb, var(--ui-fg) 20%, transparent); border-radius: 7px; }
 
 #thinking-slider::-moz-range-progress,
-.thinking-slider::-moz-range-progress { height: 14px; background: #168bff; border-radius: 7px; }
+.thinking-slider::-moz-range-progress { height: 14px; background: var(--ui-brand); border-radius: 7px; }
 
 #thinking-slider::-moz-range-thumb,
 .thinking-slider::-moz-range-thumb {
   width: 18px;
   height: 18px;
-  background: #168bff;
+  background: var(--ui-brand);
   border: 2px solid var(--ui-surface-raised);
   border-radius: 50%;
 }

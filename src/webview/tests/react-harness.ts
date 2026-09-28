@@ -22,7 +22,8 @@ export async function uiHarness(initial = true, candidate = false, production = 
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });
   const previous = new Map<string, PropertyDescriptor | undefined>();
   const globals: Record<string, unknown> = { window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
-    Node: dom.window.Node, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, HTMLTextAreaElement: dom.window.HTMLTextAreaElement,
+    Node: dom.window.Node, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement,
+    HTMLSelectElement: dom.window.HTMLSelectElement, HTMLTextAreaElement: dom.window.HTMLTextAreaElement,
     Event: dom.window.Event, MouseEvent: dom.window.MouseEvent, KeyboardEvent: dom.window.KeyboardEvent, IS_REACT_ACT_ENVIRONMENT: true };
   for (const [key, value] of Object.entries(globals)) { previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key)); Object.defineProperty(globalThis, key, { configurable: true, writable: true, value }); }
   const listeners = new Set<(message: unknown) => void>();

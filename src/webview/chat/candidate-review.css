@@ -1,29 +1,30 @@
 .candidate-review {
   min-width: 0;
-  margin: 6px 0;
-  padding: 6px 8px;
+  margin: 0 0 var(--ui-space-2);
+  padding: var(--ui-space-2);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
 }
 
 .candidate-review__summary {
-  margin: 0 0 4px;
+  margin: 0;
   overflow-wrap: anywhere;
   color: var(--ui-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
 }
 
-.candidate-review .change-review {
+.candidate-review #change-review-panel {
   margin: 0;
   border: 0;
   background: transparent;
 }
 
+.candidate-review #change-review-toggle { padding-inline: 0; }
+.candidate-review #change-review-content { padding: 0; }
+
 .candidate-review .change-review__content {
   max-height: min(220px, 32dvh);
-  padding-right: 0;
-  padding-left: 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -33,9 +34,9 @@
 }
 
 .candidate-review__simulation {
-  margin: 3px 0;
+  margin: var(--ui-space-2) 0 0;
   color: var(--ui-muted);
-  font-size: 11px;
+  font-size: var(--ui-font-chrome);
   overflow-wrap: anywhere;
 }
 /* A reopened review shares the remaining height, never displacing approval decisions or Stop. */

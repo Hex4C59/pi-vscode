@@ -1,8 +1,7 @@
 import type { UiLanguageState } from "./types.js";
-import type { ExecutionProfileProjection, ProviderConfigProjection } from "../../extension/contracts/index.js";
+import type { ExecutionProfileProjection, ProviderConfigEntry, ProviderConfigProjection } from "../../extension/contracts/index.js";
 import { ExecutionProfileControls } from "./extension-interactions.js";
-import { useEffect, useRef, useState, useLayoutEffect, type ReactElement } from "react";
-import { useChatPreview } from "./environment.js";
+import { useEffect, useId, useRef, useState, useLayoutEffect, type ReactElement } from "react";
 import { useUiText } from "../components/index.js";
 import { uiLanguages } from "./ui-language.js";
 
@@ -20,6 +19,11 @@ export interface InterfaceSettingsProps {
   onRefreshProviders?(): void;
 }
 
+function preferredProviderId(providers: readonly ProviderConfigEntry[], defaultProvider: string | null): string {
+  if (defaultProvider && providers.some(entry => entry.providerId === defaultProvider)) return defaultProvider;
+  return providers.find(entry => entry.configured)?.providerId ?? providers[0]?.providerId ?? "";
+}
+
 /** Native modal owns focus containment/Escape; no document listeners or host settings. */
 export function InterfaceSettings({
   language,
@@ -35,10 +39,13 @@ export function InterfaceSettings({
   onRefreshProviders,
 }: InterfaceSettingsProps): ReactElement {
   const { locale, text: t } = useUiText();
-  const preview = useChatPreview();
   const [open, setOpen] = useState(false);
+  const [selectedProviderId, setSelectedProviderId] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const languageId = useId();
+  const defaultModelId = useId();
+  const providerId = useId();
   useEffect(() => {
     if (openRequest > 0) setOpen(true);
   }, [openRequest]);
@@ -48,6 +55,15 @@ export function InterfaceSettings({
     if (typeof node.showModal === "function") node.showModal();
     else node.open = true; // jsdom; native modal behavior is verified in Chrome.
   }, [open]);
+  useEffect(() => {
+    if (!providerConfig) {
+      setSelectedProviderId("");
+      return;
+    }
+    const ids = new Set(providerConfig.providers.map(entry => entry.providerId));
+    if (selectedProviderId && ids.has(selectedProviderId)) return;
+    setSelectedProviderId(preferredProviderId(providerConfig.providers, providerConfig.defaultProvider));
+  }, [providerConfig, selectedProviderId]);
   const finishClose = () => { setOpen(false); trigger.current?.focus({ preventScroll: true }); };
   const close = () => {
     if (typeof dialog.current?.close === "function") dialog.current.close();
@@ -56,6 +72,8 @@ export function InterfaceSettings({
   const defaultValue = providerConfig?.defaultProvider && providerConfig.defaultModelId
     ? `${providerConfig.defaultProvider}\0${providerConfig.defaultModelId}`
     : "";
+  const selectedProvider = providerConfig?.providers.find(entry => entry.providerId === selectedProviderId) ?? null;
+  const configuredNames = providerConfig?.providers.filter(entry => entry.configured).map(entry => entry.displayName) ?? [];
   return <>
     <button ref={trigger} className="candidate__icon" type="button" aria-label={t("Interface settings")} title={t("Interface settings")}
       onClick={() => setOpen(true)}>
@@ -70,22 +88,32 @@ export function InterfaceSettings({
         </button>
       </header>
       <section className="candidate-settings__section" aria-labelledby="candidate-settings-language">
-        <h3 id="candidate-settings-language">{t("Language")}</h3>
-        <label className="candidate-settings__row"><span className="candidate-settings__hint">{t("Language")}</span>
-          <select aria-label={t("Language")} value={locale} onChange={event => language.select(event.currentTarget.value)}>
+        <div className="candidate-settings__heading"><h3 id="candidate-settings-language">{t("Language")}</h3></div>
+        <div className="candidate-settings__field">
+          <select id={languageId} aria-label={t("Language")} value={locale}
+            onChange={event => language.select(event.currentTarget.value)}>
             {uiLanguages.map(item => <option key={item.locale} value={item.locale}>{item.label}</option>)}
           </select>
-        </label>
-        <p className="candidate-settings__note">{t(preview ? "For this preview only. Reloading the page restores English." : "For this view only. Reloading the view restores English.")}</p>
+        </div>
       </section>
       {providerConfig && (
         <section className="candidate-settings__section" aria-labelledby="candidate-settings-providers">
-          <h3 id="candidate-settings-providers">{t("Providers and models")}</h3>
-          <p className="candidate-settings__note">{t("API keys are entered in a native password prompt. Keys are never shown in this view.")}</p>
+          <div className="candidate-settings__heading">
+            <h3 id="candidate-settings-providers">{t("Providers and models")}</h3>
+            {onRefreshProviders && (
+              <button className="candidate__icon" type="button" disabled={providerConfig.busy} aria-busy={providerConfig.busy}
+                aria-label={t(providerConfig.busy ? "Refreshing providers…" : "Refresh providers")}
+                title={t(providerConfig.busy ? "Refreshing providers…" : "Refresh providers")}
+                onClick={onRefreshProviders}>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4" /></svg>
+              </button>
+            )}
+          </div>
           {providerConfig.error && <p className="candidate-settings__error" role="alert">{providerConfig.error}</p>}
-          <div className="candidate-settings__row">
-            <span className="candidate-settings__hint">{t("Default model")}</span>
+          <div className="candidate-settings__field">
+            <label htmlFor={defaultModelId}>{t("Default model")}</label>
             <select
+              id={defaultModelId}
               aria-label={t("Default model")}
               disabled={providerConfig.busy || !onSetDefaultModel || providerConfig.catalog.length === 0}
               value={defaultValue}
@@ -102,42 +130,57 @@ export function InterfaceSettings({
               ))}
             </select>
           </div>
-          <ul className="candidate-settings__providers">
-            {providerConfig.providers.map(provider => (
-              <li key={provider.providerId} className="candidate-settings__provider">
-                <div>
-                  <strong>{provider.displayName}</strong>
-                  <span className="candidate-settings__hint">
-                    {provider.configured
-                      ? t("Configured{source}", { source: provider.authLabel ? ` · ${provider.authLabel}` : "" })
-                      : t("Not configured")}
-                  </span>
-                </div>
-                <div className="candidate-settings__provider-actions">
-                  {provider.canAddApiKey && onAddApiKey && (
-                    <button type="button" disabled={providerConfig.busy}
-                      onClick={() => onAddApiKey(provider.providerId)}>
-                      {t(provider.configured ? "Update API key" : "Add API key")}
-                    </button>
-                  )}
-                  {provider.canLogout && onLogoutProvider && (
-                    <button type="button" disabled={providerConfig.busy}
-                      onClick={() => onLogoutProvider(provider.providerId)}>
-                      {t("Remove credentials")}
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-          {providerConfig.providers.length === 0 && (
+          <p className="candidate-settings__note" data-testid="configured-providers">
+            {configuredNames.length
+              ? t("Configured providers: {names}", { names: configuredNames.join(", ") })
+              : t("No providers configured yet.")}
+          </p>
+          {providerConfig.providers.length === 0 ? (
             <p className="candidate-settings__note">{t("No API-key providers are available yet.")}</p>
-          )}
-          {onRefreshProviders && (
-            <button className="candidate-settings__refresh" type="button" disabled={providerConfig.busy}
-              onClick={onRefreshProviders}>
-              {t(providerConfig.busy ? "Refreshing providers…" : "Refresh providers")}
-            </button>
+          ) : (
+            <>
+              <div className="candidate-settings__field">
+                <label htmlFor={providerId}>{t("Provider")}</label>
+                <select
+                  id={providerId}
+                  aria-label={t("Provider")}
+                  disabled={providerConfig.busy}
+                  value={selectedProviderId}
+                  onChange={event => setSelectedProviderId(event.currentTarget.value)}
+                >
+                  {!selectedProviderId && <option value="">{t("Select a provider")}</option>}
+                  {providerConfig.providers.map(provider => (
+                    <option key={provider.providerId} value={provider.providerId}>
+                      {provider.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {selectedProvider && (
+                <div className="candidate-settings__provider" data-testid="selected-provider">
+                  <p className={`candidate-settings__status${selectedProvider.configured ? " is-ready" : ""}`}>
+                    <span className="candidate-settings__dot" aria-hidden="true" />
+                    {selectedProvider.configured
+                      ? t("Configured{source}", { source: selectedProvider.authLabel ? ` · ${selectedProvider.authLabel}` : "" })
+                      : t("Not configured")}
+                  </p>
+                  <div className="candidate-settings__actions candidate-settings__provider-actions">
+                    {selectedProvider.canAddApiKey && onAddApiKey && (
+                      <button type="button" disabled={providerConfig.busy}
+                        onClick={() => onAddApiKey(selectedProvider.providerId)}>
+                        {t(selectedProvider.configured ? "Update API key" : "Add API key")}
+                      </button>
+                    )}
+                    {selectedProvider.canLogout && onLogoutProvider && (
+                      <button type="button" disabled={providerConfig.busy}
+                        onClick={() => onLogoutProvider(selectedProvider.providerId)}>
+                        {t("Remove credentials")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
       )}

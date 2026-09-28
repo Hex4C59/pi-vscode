@@ -1,0 +1,89 @@
+import assert from "node:assert/strict";
+import test, { type TestContext } from "node:test";
+import { readFileSync } from "node:fs";
+import { candidateHarness } from "./candidate-harness.js";
+import { readAppStyles, uiHarness } from "./react-harness.js";
+import { chineseUi } from "../chat/ui-zh-cn.js";
+
+async function styledEmptySession(t: TestContext) {
+  const h = await candidateHarness(t);
+  const style = h.dom.window.document.createElement("style");
+  style.textContent = readAppStyles();
+  h.dom.window.document.head.append(style);
+  return h;
+}
+
+test("idle empty session shows the π mark and exactly one greeting line", async t => {
+  const h = await candidateHarness(t);
+  const empty = h.get(".candidate__empty");
+  assert.deepEqual([...empty.children].map(child => child.className || child.tagName), ["candidate__mark", "H1"]);
+  assert.equal(empty.querySelectorAll("h1").length, 1);
+  assert.equal(empty.querySelector("p"), null);
+  assert.equal(h.get(".candidate__mark").getAttribute("aria-label"), "Replay Pi logo animation");
+  assert.equal(h.get(".candidate__mark svg").getAttribute("aria-hidden"), "true");
+  assert.equal(empty.textContent, "What should we work on?");
+  assert.doesNotMatch(h.root.textContent ?? "", /Ask a question or describe a change/);
+  assert.equal(chineseUi["What should we work on?"], "今天想做些什么？");
+  assert.equal(Object.values(chineseUi).includes("提出问题，或描述你想要的修改。"), false);
+});
+
+test("welcome uses official tricolor cells; send and composer retain brand tokens", async t => {
+  const h = await styledEmptySession(t);
+  const computed = (selector: string) => h.dom.window.getComputedStyle(h.get(selector));
+  // jsdom leaves custom properties unresolved; the actual per-theme colors are checked in the browser preview.
+  assert.deepEqual([...new Set([...h.get(".candidate__mark").querySelectorAll("rect")].map(cell => cell.getAttribute("fill")))].sort(), ["#4D9ABF", "#F09082", "#F1BE58"]);
+  await h.input("Ready to send");
+  assert.equal(h.get<HTMLButtonElement>('button[aria-label="Send message"]').disabled, false);
+  assert.equal(computed('button[aria-label="Send message"]').backgroundColor, "var(--ui-brand)");
+  const focusRule = [...(h.dom.window.document.styleSheets[0]?.cssRules ?? [])]
+    .find((rule): rule is CSSStyleRule => rule instanceof h.dom.window.CSSStyleRule && rule.selectorText === ".candidate__composer:focus-within");
+  assert.equal(focusRule?.style.getPropertyValue("border-color"), "var(--ui-brand-focus)");
+});
+
+test("theme is monochrome: emphasis follows the host foreground and buttons use the neutral secondary style", () => {
+  const theme = readFileSync("src/webview/styles/theme.css", "utf8");
+  assert.match(theme, /:root \{[^}]*--ui-brand: var\(--ui-fg\);/s);
+  assert.match(theme, /:root \{[^}]*--ui-accent: var\(--vscode-button-secondaryBackground,/s);
+  assert.match(theme, /body\.vscode-high-contrast,[^{]*\{[^}]*--ui-brand-focus: var\(--ui-focus\);/s);
+  assert.equal(theme.replace(/var\(--vscode-[^)]*\)/g, "").match(/#[0-9a-fA-F]{3,8}\b/g), null, "no literal colors; every surface comes from --vscode-* with fallbacks");
+  const styles = readAppStyles();
+  for (const blue of ["#168bff", "#2563eb", "#7c3aed", "#E07A5F", "#C45C3E", "hsl(212"]) {
+    assert.equal(styles.includes(blue), false, `${blue} must not appear in the shipped styles`);
+  }
+});
+
+test("settings dialog uses section headings with an icon refresh and a borderless provider status", async () => {
+  const h = await uiHarness(true, false, true);
+  try {
+    await h.receive({
+      version: 3, generation: 1, viewId: "view", type: "providerConfigState", busy: false, error: null,
+      defaultProvider: "openai", defaultModelId: "gpt",
+      providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true }],
+      catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
+    });
+    await h.click('button[aria-label="Interface settings"]');
+    const settings = h.get(".candidate-settings");
+    const refresh = settings.querySelector<HTMLButtonElement>('.candidate-settings__heading button[aria-label="Refresh providers"]');
+    assert.ok(refresh, "refresh lives in the providers heading as an icon button");
+    assert.equal(refresh.textContent, "");
+    assert.equal(settings.querySelector(".candidate-settings__secondary, .candidate-settings__panel"), null);
+    assert.equal(h.get('[data-testid="selected-provider"]').className, "candidate-settings__provider");
+    assert.ok(h.get(".candidate-settings__status.is-ready .candidate-settings__dot"));
+    await h.click('.candidate-settings__heading button[aria-label="Refresh providers"]');
+    assert.ok(h.sent.some(message => message.type === "refreshProviderConfig"));
+  } finally { await h.close(); }
+});
+
+test("narrow composer keeps model, permissions and send in one non-wrapping flow instead of stacking over the input", async t => {
+  const h = await styledEmptySession(t);
+  const toolbar = h.get(".candidate__composer-actions");
+  assert.deepEqual([...toolbar.children].map(child => child.classList[0]), ["candidate__model", "candidate-permissions", "candidate__send"]);
+  const style = (element: Element) => h.dom.window.getComputedStyle(element);
+  assert.equal(style(toolbar).display, "flex");
+  assert.notEqual(style(toolbar).flexWrap, "wrap", "the attach button is anchored to the toolbar row, so the row must not wrap under it");
+  assert.equal(style(h.get(".candidate__model")).minWidth, "0px", "the model label truncates before it can push send out of reach");
+  assert.notEqual(style(h.get(".candidate-permissions > summary")).position, "absolute");
+  assert.equal(style(h.get(".candidate__send")).flexShrink, "0");
+  const textarea = h.get('textarea[aria-label="Message"]');
+  assert.equal(textarea.compareDocumentPosition(toolbar) & h.dom.window.Node.DOCUMENT_POSITION_FOLLOWING, h.dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+});

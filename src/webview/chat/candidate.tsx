@@ -2,7 +2,10 @@ import type { ChatMountOptions, UiLanguageState } from "./types.js";
 import { ExtensionInteractions, RuntimeRecoveryBanner } from "./extension-interactions.js";
 import { CandidateReview } from "./candidate-review.js";
 import { CandidateContext } from "./candidate-context.js";
+import { ProjectResourcesPrompt } from "./project-resources-prompt.js";
+import { DefaultModelPicker } from "./default-model-picker.js";
 import { NoFolderPrompt } from "./no-folder-prompt.js";
+import { PiWelcomeMark } from "./pi-welcome-mark.js";
 import { InterfaceSettings } from "./interface-settings.js";
 import { createUiLanguage } from "./ui-language.js";
 import { ChatPreviewContext, useChatPreview } from "./environment.js";
@@ -40,12 +43,25 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
     }
     priorPriority.current = prioritizeApprovals;
   }, [prioritizeApprovals, snapshot.changeReviewOpen, client]);
+  const input = useRef<HTMLTextAreaElement>(null);
   const noFolder = state?.status === "no-folder";
+  const needsResources = state?.status === "eligible" && state.choice === null && state.runtime === "not-started";
+  const canPrepare = noFolder || needsResources;
+  const [resourcesPrompt, setResourcesPrompt] = useState(false);
+  const resourcesVisible = resourcesPrompt && needsResources;
+  const wasResourcesVisible = useRef(false);
+  useLayoutEffect(() => {
+    if (!resourcesVisible && wasResourcesVisible.current) {
+      setResourcesPrompt(false);
+      input.current?.focus({ preventScroll: true });
+    }
+    wasResourcesVisible.current = resourcesVisible;
+  }, [resourcesVisible]);
   const [folderPrompt, setFolderPrompt] = useState(false);
+  const [contextPrompt, setContextPrompt] = useState(false);
   const promptVisible = folderPrompt && noFolder;
   const wasPromptVisible = useRef(false);
   const messages = useRef<HTMLDivElement>(null);
-  const input = useRef<HTMLTextAreaElement>(null);
   const follow = useRef(true);
   const browse = useRef<HTMLButtonElement>(null);
   const back = useRef<HTMLButtonElement>(null);
@@ -79,17 +95,21 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
   useLayoutEffect(() => {
     if (priorIdentity.current && identity !== priorIdentity.current) {
       readingPosition.current = 0; follow.current = true; wasBrowsing.current = false;
-      setHistoryOpen(false); input.current?.focus({ preventScroll: true });
+      setResourcesPrompt(false); setHistoryOpen(false); input.current?.focus({ preventScroll: true });
     }
     priorIdentity.current = identity;
   }, [identity]);
   const canBrowse = !!state && state.status === "eligible" && state.choice !== null && !snapshot.error;
   const canCompose = canBrowse && state.runtime === "ready" && !state.busy;
   const readableRuntimeError = canBrowse && state.runtime === "error";
-  const empty = noFolder || (canCompose && !state.messages.length && !snapshot.savedHistory?.available);
+  const empty = canPrepare || (canCompose && !state.messages.length && !snapshot.savedHistory?.available);
   const submit = () => {
+    if (needsResources) {
+      if (!state.busy && !snapshot.error && snapshot.text.trim()) setResourcesPrompt(true);
+      return;
+    }
     if (noFolder) {
-      if (!state.busy && !snapshot.error && snapshot.text.trim()) setFolderPrompt(true);
+      if (!state.busy && !snapshot.error && snapshot.text.trim()) { setContextPrompt(false); setFolderPrompt(true); }
       return;
     }
     client.submit();
@@ -153,20 +173,19 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
       const node = messages.current;
       if (node && !historyOpen) follow.current = node.scrollHeight - node.clientHeight - node.scrollTop <= 32;
     }}>
-      {noFolder && state.error && !promptVisible && <p className="candidate__error" role="alert">{state.error}</p>}
+      {canPrepare && state.error && !promptVisible && !resourcesVisible && <p className="candidate__error" role="alert">{state.error}</p>}
       {snapshot.error && <p className="candidate__error" role="alert">{snapshot.error}</p>}
       {!state && <p role="status">{t(preview ? "Connecting to the preview…" : "Connecting to the extension host…")}</p>}
       {state && <>
-        {!noFolder && (state.status !== "eligible" || state.choice === null) && <WorkspaceSetup state={state} onAction={client.action} />}
+        {!noFolder && state.status !== "eligible" && <WorkspaceSetup state={state} onAction={client.action} />}
         {(state.runtime === "starting" || state.busy) && <p role="status">{t("Loading runtime and models…")}</p>}
         {state.runtime === "error" && <div className="candidate__error" role="alert">
           <strong>{t("Runtime unavailable")}</strong><p>{state.error ?? state.runtimeDetail}</p>
           <p>{t(snapshot.executionProfile?.phase === "recovery-required" ? "Use the runtime recovery controls below. Reloading does not clear uncertain work; no task will be replayed." : preview ? "Use Simulate recovery in the preview toolbar to try again." : "Reload the VS Code window to restart controlled execution. Unsent drafts are not persisted; copy them before reloading.")}</p>
         </div>}
         {empty && <div className="candidate__empty">
-          <span className="candidate__mark" aria-hidden="true" />
+          <PiWelcomeMark label={t("Replay Pi logo animation")} />
           <h1>{t("What should we work on?")}</h1>
-          <p>{t("Ask a question or describe a change.")}</p>
         </div>}
         {(canCompose || readableRuntimeError) && <>
           {!state.chatModel && <div className="candidate__error" role="alert">
@@ -201,30 +220,25 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
           onRevoke={id => client.action({ type: "revokeGrant", id })} />
       </div>}
       {!historyOpen && snapshot.sessions?.error && <p className="candidate__error" role="alert">{t("Conversation handoff: {error}. No conversation switch was made. Retry or browse history.", { error: snapshot.sessions.error })}</p>}
-      {progress && <p className="candidate__progress" role="status"><span className="candidate__pulse" aria-hidden="true" />{progress}</p>}
+      {progress && <p className="candidate__progress" role="status" data-active={!!state?.chatBusy || controls.stopping}><span className="candidate__pulse" aria-hidden="true" />{progress}</p>}
       {state?.chatError && state.runtime !== "error" && <p className="candidate__error" role="status">{state.chatError}</p>}
       </div>
       <form className="candidate__composer" onSubmit={event => { event.preventDefault(); submit(); }}>
-        {canBrowse && state && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
-          if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
-        }}>
-          <summary aria-label={t("Permissions ({count})", { count: state.grants.length })} title={t("Permissions ({count})", { count: state.grants.length })}>⚿</summary>
-          <div className="candidate-permissions__content">
-            <p>{state.controlledExecution ? t("Controlled execution: covered tools ask for approval; this is not a sandbox.") : t("Trusted extension code runs outside covered tool approvals; this is not a sandbox.")}</p>
-            <SessionGrants grants={state.grants} disabled={controls.stopping || !!snapshot.error} onRevoke={id => client.action({ type: "revokeGrant", id })} />
-          </div>
-        </details>}
-        <CandidateContext historyDisabled={!canBrowse || controls.sessionTransitioning} key={identity} pageSize={16} history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} onHistory={client.toggleHistory} onHistoryPage={client.navigateHistory} state={snapshot.attachments} disabled={controls.attachmentDisabled} onAdd={client.addAttachment} onAddSelection={client.addSelection} onRemove={client.removeAttachment} onConfirm={client.confirmAttachment} onPreview={client.requestPreview} onClosePreview={client.closePreview} preview={snapshot.preview} />
+        <CandidateContext onRequireWorkspace={canPrepare && !state.busy && !snapshot.error ? () => { if (needsResources) setResourcesPrompt(true); else { setContextPrompt(true); setFolderPrompt(true); } } : undefined} historyDisabled={!canBrowse || controls.sessionTransitioning} key={identity} pageSize={16} history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} onHistory={client.toggleHistory} onHistoryPage={client.navigateHistory} state={snapshot.attachments} disabled={controls.attachmentDisabled} onAdd={client.addAttachment} onAddSelection={client.addSelection} onRemove={client.removeAttachment} onConfirm={client.confirmAttachment} onPreview={client.requestPreview} onClosePreview={client.closePreview} preview={snapshot.preview} />
         <textarea ref={input} aria-label={t("Message")} placeholder={t("Ask pi anything…")} rows={2} maxLength={8000} value={snapshot.text}
           readOnly={readableRuntimeError}
-          disabled={!!snapshot.error || (noFolder ? !!state.busy : (!canCompose && !readableRuntimeError) || !snapshot.attachments)}
+          disabled={!!snapshot.error || (canPrepare ? !!state.busy : (!canCompose && !readableRuntimeError) || !snapshot.attachments)}
           onChange={event => client.edit(event.currentTarget.value)}
           onKeyDown={event => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); }
           }} />
         <div className="candidate__composer-actions">
           <div className="candidate__model">
-            {state
+            {canPrepare
+              ? <DefaultModelPicker config={snapshot.providerConfig} disabled={!!snapshot.error || !!state.busy}
+                  onSelect={(provider, modelId) => client.action({ type: "setDefaultModel", provider, modelId })}
+                  onSettings={() => setSettingsOpenRequest(value => value + 1)} />
+              : state
               ? <ModelPicker key={`${state.viewId}-${state.generation}`} state={state} disabled={controls.settingsDisabled} continuousThinkingDrag animatePopover
                   onModel={(provider, modelId) => client.action({ type: "setChatModel", provider, modelId })}
                   onThinking={level => client.action({ type: "setThinkingLevel", level })} />
@@ -235,14 +249,27 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
                   <span className="model-effort-trigger__thinking"> · —</span>
                 </button>}
           </div>
+          {canBrowse && state && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
+            if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+          }}>
+            <summary aria-label={t("Permissions ({count})", { count: state.grants.length })} title={t("Permissions ({count})", { count: state.grants.length })}>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.6 2.5 6.6 6 8 3.5-1.4 6-4.4 6-8V5l-6-2.5Z" /></svg>
+            </summary>
+            <div className="candidate-permissions__content">
+              <p>{state.controlledExecution ? t("Controlled execution: covered tools ask for approval; this is not a sandbox.") : t("Trusted extension code runs outside covered tool approvals; this is not a sandbox.")}</p>
+              <SessionGrants grants={state.grants} disabled={controls.stopping || !!snapshot.error} onRevoke={id => client.action({ type: "revokeGrant", id })} />
+            </div>
+          </details>}
           {controls.showStop
-            ? <button className="candidate__send" type="button" aria-label={t("Stop current task")} disabled={controls.stopping} onClick={client.stop}><span aria-hidden="true">■</span></button>
-            : <button className="candidate__send" type="submit" aria-label={t("Send message")} disabled={noFolder ? !snapshot.text.trim() || !!state.busy || !!snapshot.error : controls.sendDisabled}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4m-5 5 5-5 5 5" /></svg></button>}
+            ? <button className="candidate__send candidate__send--stop" type="button" aria-label={t("Stop current task")} disabled={controls.stopping} onClick={client.stop}><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5.5" y="5.5" width="9" height="9" rx="1.5" /></svg></button>
+            : <button className="candidate__send" type="submit" aria-label={t("Send message")} disabled={canPrepare ? !snapshot.text.trim() || !!state.busy || !!snapshot.error : controls.sendDisabled}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4m-5 5 5-5 5 5" /></svg></button>}
         </div>
       </form>
       {snapshot.synchronizing && snapshot.text && <p className="candidate__sync" role="status">{t("Synchronizing draft…")}</p>}
     </footer>
-    {promptVisible && <NoFolderPrompt onDismiss={() => setFolderPrompt(false)} busy={!!state.busy || !!snapshot.error} error={snapshot.error ?? state.error}
+    {resourcesVisible && <ProjectResourcesPrompt state={state} onDismiss={() => setResourcesPrompt(false)}
+      onChoose={choice => client.action({ type: "chooseResources", choice })} />}
+    {promptVisible && <NoFolderPrompt context={contextPrompt} onDismiss={() => setFolderPrompt(false)} busy={!!state.busy || !!snapshot.error} error={snapshot.error ?? state.error}
       onOpenFolder={() => client.action({ type: "openFolder" })} />}
   </section>;
 }

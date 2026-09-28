@@ -14,14 +14,15 @@
   --ui-hover: #e8edf3;
   --ui-selection: #d9e8f8;
   --ui-focus: #0969da;
-  --ui-accent: #0969da;
-  --ui-accent-hover: #0758b8;
-  --ui-accent-fg: #ffffff;
+  --ui-accent: #e4e7eb;
+  --ui-accent-hover: #d6dbe1;
+  --ui-accent-fg: #24272d;
   --ui-danger: #b42318;
   --ui-danger-bg: #fff0ee;
   --ui-warning: #8c5a00;
   --ui-warning-bg: #fff8e1;
   --ui-success: #177245;
+  --ui-composer: color-mix(in srgb, var(--ui-bg) 96%, black);
   color-scheme: light;
 }
 
@@ -37,14 +38,16 @@
   --ui-hover: #1f1f1f;
   --ui-selection: #264f78;
   --ui-focus: #f1df00;
-  --ui-accent: #0f7cc1;
-  --ui-accent-hover: #1b9ae0;
+  --ui-accent: #000000;
+  --ui-accent-hover: #1f1f1f;
   --ui-accent-fg: #ffffff;
   --ui-danger: #ff8b8b;
   --ui-danger-bg: #2b0000;
   --ui-warning: #ffe27a;
   --ui-warning-bg: #2b2300;
   --ui-success: #7fffb2;
+  --ui-brand-focus: var(--ui-focus);
+  --ui-composer: var(--ui-input);
   color-scheme: dark;
 }
 

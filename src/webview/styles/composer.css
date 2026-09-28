@@ -78,11 +78,11 @@
   max-width: min(58%, 230px);
   min-height: 24px;
   overflow: hidden;
-  padding: 2px 7px;
+  padding: var(--ui-space-1) var(--ui-space-2);
   color: var(--ui-muted);
   background: transparent;
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: var(--ui-radius);
+  font-size: var(--ui-font-chrome);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

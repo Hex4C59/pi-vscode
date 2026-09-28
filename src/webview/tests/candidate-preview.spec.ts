@@ -77,7 +77,10 @@ for (const [scenario, action] of [["no-folder", "#open-folder"], ["untrusted", "
     const h = await candidateHarness(t, scenario);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").disabled, scenario !== "no-folder");
     if (scenario === "no-folder") { await h.input("Retain before opening a folder"); await h.click(send); }
-    await h.click(action); await h.click("#decline");
+    await h.click(action);
+    await h.click('button[aria-label="Add context"]');
+    await h.click('button[aria-label="Add file"]');
+    await h.click("#decline");
     if (scenario === "no-folder") {
       assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Retain before opening a folder");
       assert.equal(h.root.querySelectorAll(".candidate__message--user").length, 0);
@@ -143,7 +146,13 @@ test("candidate thinking drag previews continuous positions and commits only a c
   const h = await candidateHarness(t);
   await h.input("Keep this draft"); await h.click("#model-effort-trigger");
   const slider = h.get<HTMLInputElement>("#thinking-slider");
+  assert.equal(h.root.querySelectorAll(".thinking-control__stop").length, Number(slider.max) + 1, "markers follow model capabilities");
+  await act(async () => { slider.value = String(Number(slider.max) - 0.1); slider.dispatchEvent(new h.dom.window.Event("input", { bubbles: true })); });
+  assert.equal(h.get(".thinking-control").getAttribute("data-maximum"), "false", "near-maximum drag must not start flow early");
+  await act(async () => { slider.value = slider.max; slider.dispatchEvent(new h.dom.window.Event("input", { bubbles: true })); });
+  assert.equal(h.get(".thinking-control").getAttribute("data-maximum"), "true");
   await act(async () => { slider.value = "1.4"; slider.dispatchEvent(new h.dom.window.Event("input", { bubbles: true })); });
+  assert.equal(h.get(".thinking-control").getAttribute("data-maximum"), "false", "leaving maximum stops flow");
   assert.equal(slider.value, "1.4", "preview follows the pointer between supported levels");
   assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, false, "dragging does not apply settings");
   assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium/);
@@ -853,6 +862,8 @@ test("candidate language settings translate the deferred folder prompt and recov
   assert.equal(h.get("#open-folder").textContent?.trim(), "打开文件夹");
   assert.match(h.get("dialog").textContent ?? "", /无法发送消息/);
   await h.click("#open-folder");
+  assert.equal(h.root.querySelector("#setup-resources"), null);
+  await h.click('button[aria-label="发送消息"]');
   assert.equal(h.get("#allow").textContent?.trim(), "允许项目资源");
   assert.match(h.root.textContent ?? "", /不是沙箱或工具授权/);
 });
@@ -1166,10 +1177,13 @@ test("candidate unavailable source blocks sending but lets user remove exactly t
   assert.equal(h.get<HTMLTextAreaElement>('textarea').value, "Unavailable source draft");
 });
 
-test("candidate context actions respect no-folder and trust eligibility", async t => {
+test("candidate no-folder context menu offers folder recovery", async t => {
   const h = await candidateHarness(t, "no-folder");
   await h.input("Ordinary no-folder draft");
-  assert.equal(h.get<HTMLButtonElement>('button[aria-label="Add context"]').disabled, true);
+  assert.equal(h.get<HTMLButtonElement>('button[aria-label="Add context"]').disabled, false);
+  await h.click('button[aria-label="Add context"]');
+  await h.click('button[aria-label="Add selection"]');
+  assert.ok(h.get("#open-folder"));
   assert.equal(h.root.querySelectorAll('[aria-label="Draft context"]').length, 0);
   assert.equal(h.get<HTMLTextAreaElement>('textarea').disabled, false);
 });

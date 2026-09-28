@@ -3,8 +3,8 @@
 .setup-card,
 .workspace-setup,
 .status-card {
-  margin: 8px 0 14px;
-  padding: 14px;
+  margin: var(--ui-space-2) 0 var(--ui-space-4);
+  padding: var(--ui-space-3);
   overflow: hidden;
   background: var(--ui-surface);
   border: 1px solid var(--ui-border);
@@ -16,9 +16,9 @@
 .workspace-setup h2,
 .status-card h2,
 .panel-title {
-  margin: 0 0 6px;
+  margin: 0 0 var(--ui-space-2);
   color: var(--ui-fg);
-  font-size: 13px;
+  font-size: var(--ui-font-body);
   font-weight: 600;
 }
 
@@ -26,33 +26,33 @@
 .setup-card p,
 .workspace-setup p,
 .status-card p {
-  margin: 0 0 10px;
+  margin: 0 0 var(--ui-space-2);
   overflow-wrap: anywhere;
   color: var(--ui-muted);
-  font-size: 12px;
+  font-size: var(--ui-font-chrome);
 }
 
 .banner,
 .error-banner,
 .status-error {
-  margin: 0 0 10px;
-  padding: 8px 10px;
+  margin: 0 0 var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
   overflow-wrap: anywhere;
   color: var(--ui-danger);
   background: var(--ui-danger-bg);
   border: 1px solid color-mix(in srgb, var(--ui-danger) 55%, var(--ui-border));
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--ui-radius);
+  font-size: var(--ui-font-chrome);
 }
 
 .notice,
 .status-notice {
-  padding: 8px 10px;
+  padding: var(--ui-space-2) var(--ui-space-3);
   color: var(--ui-warning);
   background: var(--ui-warning-bg);
   border: 1px solid color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border));
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--ui-radius);
+  font-size: var(--ui-font-chrome);
 }
 
 #error:empty,
@@ -67,14 +67,14 @@
 .button-secondary,
 .button-quiet,
 .icon-button {
-  min-height: 26px;
-  border-radius: 4px;
-  font-size: 12px;
+  min-height: 28px;
+  border-radius: var(--ui-radius);
+  font-size: var(--ui-font-chrome);
 }
 
 .btn-primary,
 .button-primary {
-  padding: 4px 10px;
+  padding: var(--ui-space-1) var(--ui-space-3);
   color: var(--ui-accent-fg);
   background: var(--ui-accent);
 }
@@ -84,7 +84,7 @@
 
 .btn-secondary,
 .button-secondary {
-  padding: 4px 10px;
+  padding: var(--ui-space-1) var(--ui-space-3);
   color: var(--ui-fg);
   background: var(--ui-surface-raised);
   border: 1px solid var(--ui-border-strong);
@@ -97,7 +97,7 @@
 
 .button-quiet,
 .icon-button {
-  padding: 3px 7px;
+  padding: var(--ui-space-1) var(--ui-space-2);
   color: var(--ui-muted);
   background: transparent;
 }

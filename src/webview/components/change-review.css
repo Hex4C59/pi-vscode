@@ -1,7 +1,7 @@
 /* Already-applied change review. Keep this block scoped so the chat and attachment controls remain unchanged. */
 #change-review-panel {
   min-width: 0;
-  margin: 8px 0;
+  margin: var(--ui-space-2) 0;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
@@ -13,7 +13,7 @@
   justify-content: space-between;
   width: 100%;
   min-height: 32px;
-  padding: 7px 9px;
+  padding: var(--ui-space-2) var(--ui-space-3);
   color: var(--ui-fg);
   background: transparent;
   text-align: left;
@@ -24,19 +24,19 @@
 
 #change-review-content {
   min-width: 0;
-  padding: 0 9px 9px;
+  padding: 0 var(--ui-space-3) var(--ui-space-3);
 }
 
-#change-review-content > p { margin: 6px 0; }
+#change-review-content > p { margin: var(--ui-space-2) 0; }
 
 .change-review__retention,
-.change-review__page-status { color: var(--ui-muted); font-size: 11px; }
+.change-review__page-status { color: var(--ui-muted); font-size: var(--ui-font-chrome); }
 
 .change-review__notice,
 .change-review__warning {
-  padding: 5px 7px;
+  padding: var(--ui-space-2);
   border: 1px solid var(--ui-warning);
-  border-radius: 4px;
+  border-radius: var(--ui-radius);
   background: var(--ui-warning-bg);
 }
 
@@ -46,21 +46,21 @@
 .change-review__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin: 6px 0;
+  gap: var(--ui-space-2);
+  margin: var(--ui-space-2) 0;
 }
 
 .change-review__entries {
   display: grid;
-  gap: 6px;
+  gap: var(--ui-space-2);
   min-width: 0;
 }
 
 .change-review__entry {
   min-width: 0;
-  padding: 7px;
+  padding: var(--ui-space-2);
   border: 1px solid var(--ui-border);
-  border-radius: 4px;
+  border-radius: var(--ui-radius);
   background: var(--ui-surface-raised);
 }
 
@@ -68,7 +68,7 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 4px 8px;
+  gap: 0 var(--ui-space-2);
   min-width: 0;
 }
 
@@ -80,16 +80,16 @@
 }
 
 .change-review__source,
-.change-review__meta { color: var(--ui-muted); font-size: 11px; }
+.change-review__meta { color: var(--ui-muted); font-size: var(--ui-font-chrome); }
 
 .change-review__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 3px 0;
+  gap: 0 var(--ui-space-3);
+  margin: 0;
 }
 
 .change-review__notice,
-.change-review__warning { margin: 5px 0; font-size: 11px; }
+.change-review__warning { margin: var(--ui-space-2) 0; font-size: var(--ui-font-chrome); }
 
-.change-review__actions .btn-secondary { min-height: 26px; padding: 4px 7px; font-size: 11px; }
+.change-review__actions .btn-secondary { min-height: 28px; padding: var(--ui-space-1) var(--ui-space-2); font-size: var(--ui-font-chrome); }

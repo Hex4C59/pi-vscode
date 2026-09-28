@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import type { AttachmentDetails } from "../../extension/contracts/index.js";
 import { useUiText, type AttachmentPanelProps, type UiTranslator, type UiText } from "../components/index.js";
 
-type ContextProps = Omit<AttachmentPanelProps, "status"> & { historyDisabled: boolean };
+type ContextProps = Omit<AttachmentPanelProps, "status"> & { historyDisabled: boolean; onRequireWorkspace?: () => void };
 type Metadata = AttachmentDetails & { relativePath: string; utf8Bytes: number; unsaved: boolean };
 
 const stateLabels = {
@@ -57,7 +57,7 @@ function metadata(a: Metadata, t: UiTranslator): string {
 
 /** Presentation only. Snapshot mutations, admission and paging cross the existing client Interface. */
 export function CandidateContext({ pageSize, state, history, historyOpen, historyPage, preview, disabled,
-  onAdd, onAddSelection, onRemove, onConfirm, onHistory, onHistoryPage, onPreview, onClosePreview, historyDisabled }: ContextProps): ReactElement {
+  onAdd, onAddSelection, onRemove, onConfirm, onHistory, onHistoryPage, onPreview, onClosePreview, historyDisabled, onRequireWorkspace }: ContextProps): ReactElement {
   const { text: t } = useUiText();
   const [menu, setMenu] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -79,7 +79,7 @@ export function CandidateContext({ pageSize, state, history, historyOpen, histor
     previewClose.current?.focus({ preventScroll: true });
     if (reader.current) reader.current.scrollTop = 0;
   };
-  const canOpen = !!state && (!disabled || (!historyDisabled && state.historyCount > 0));
+  const canOpen = !!onRequireWorkspace || (!!state && (!disabled || (!historyDisabled && state.historyCount > 0)));
   useLayoutEffect(() => {
     if (menu && !canOpen) { setMenu(false); return; }
     if (menu) items.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
@@ -115,8 +115,8 @@ export function CandidateContext({ pageSize, state, history, historyOpen, histor
           }
         }}>
         <div ref={items} role="menu" aria-label={t("Add context")}>
-        <button role="menuitem" type="button" aria-label={t("Add file")} disabled={disabled || budgetReached} onClick={() => { closeMenu(); onAdd(); }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2h6l4 4v12H5z M11 2v5h4 M8 11h4 M8 14h4" /></svg>{t("Add file")}</button>
-        <button role="menuitem" type="button" aria-label={t("Add selection")} disabled={disabled || budgetReached} onClick={() => { closeMenu(); onAddSelection(); }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3H3v14h2 M15 3h2v14h-2 M7 7h6 M7 10h6 M7 13h4" /></svg>{t("Add selection")}</button>
+        <button role="menuitem" type="button" aria-label={t("Add file")} disabled={!onRequireWorkspace && (disabled || budgetReached)} onClick={() => { closeMenu(); if (onRequireWorkspace) onRequireWorkspace(); else onAdd(); }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2h6l4 4v12H5z M11 2v5h4 M8 11h4 M8 14h4" /></svg>{t("Add file")}</button>
+        <button role="menuitem" type="button" aria-label={t("Add selection")} disabled={!onRequireWorkspace && (disabled || budgetReached)} onClick={() => { closeMenu(); if (onRequireWorkspace) onRequireWorkspace(); else onAddSelection(); }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3H3v14h2 M15 3h2v14h-2 M7 7h6 M7 10h6 M7 13h4" /></svg>{t("Add selection")}</button>
         {!!state?.historyCount && <button role="menuitem" type="button" aria-label={t("Attachment history")} disabled={historyDisabled}
           onClick={() => { returnTo.current = trigger.current; closeMenu(); onHistory(); }}>{t("Attachment history")} · {state.historyCount}</button>}
         </div>

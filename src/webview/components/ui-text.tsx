@@ -2,6 +2,10 @@ import { createContext, useContext } from "react";
 
 /** Source-language UI identifiers only; never pass host/user content through this Interface. */
 export type UiText =
+  | "Replay Pi logo animation"
+  | "Set up this project"
+  | "Use this project's pi settings and resources?"
+  | "What does this choice affect?"
   | "Pi chat"
   | "Connecting to the extension host…"
   | "Reload the VS Code window to restart controlled execution. Unsent drafts are not persisted; copy them before reloading."
@@ -68,6 +72,10 @@ export type UiText =
   | "Default model"
   | "Select a default model"
   | "No models available"
+  | "Provider"
+  | "Select a provider"
+  | "Configured providers: {names}"
+  | "No providers configured yet."
   | "Configured{source}"
   | "Not configured"
   | "Add API key"
@@ -107,7 +115,6 @@ export type UiText =
   | "Stop current task"
   | "Send message"
   | "What should we work on?"
-  | "Ask a question or describe a change."
   | "Copy code"
   | "Copy"
   | "Code block"
