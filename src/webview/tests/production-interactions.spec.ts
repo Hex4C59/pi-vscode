@@ -15,11 +15,30 @@ test("production chat renders separate extension forms and emits only typed host
     assert.ok(h.sent.some(message => message.type === "cancelInteraction" && message.id === "one"));
     assert.equal(h.sent.some(message => message.type === "decideApproval"), false);
     await h.receive({ ...envelope, type: "executionProfileState", profile: "controlled", displayName: null, phase: "recovery-required", errorCode: "exit-evidence-required", canSwitch: false, canEnd: true, canRecover: false });
-    const details = h.get<HTMLDetailsElement>(".candidate__extension-profile"); assert.equal(details.open, true);
-    await h.click('[data-action="end-owned-runtime"]');
+    assert.ok(h.root.querySelector(".candidate__runtime-recovery"));
+    assert.equal(h.root.querySelector(".candidate__extension-profile"), null);
+    await h.click('.candidate__runtime-recovery [data-action="end-owned-runtime"]');
     assert.ok(h.sent.some(message => message.type === "endOwnedRuntime"));
-    assert.equal(h.get<HTMLButtonElement>('[data-action="recover-controlled-runtime"]').disabled, true);
+    assert.equal(h.get<HTMLButtonElement>('.candidate__runtime-recovery [data-action="recover-controlled-runtime"]').disabled, true);
     assert.deepEqual(errors, []);
+  } finally { await h.close(); }
+});
+
+test("idle execution profile lives in settings and keeps the composer model control visible", async () => {
+  const h = await uiHarness(true, false, true);
+  try {
+    const envelope = { version: 3, generation: 1, viewId: "view" };
+    assert.ok(h.root.querySelector("#model-effort-trigger"), "model control is present before workspace projection");
+    await h.receive({ ...envelope, type: "executionProfileState", profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false });
+    assert.equal(h.root.querySelector(".candidate__extension-profile"), null);
+    assert.equal(h.root.querySelector(".candidate__runtime-recovery"), null);
+    assert.ok(h.root.querySelector("#model-effort-trigger"));
+    await h.click('button[aria-label="Interface settings"]');
+    assert.match(h.get(".candidate-settings").textContent ?? "", /Execution profile|执行配置/);
+    assert.ok(h.get('.candidate-settings [data-profile-choice="trusted"]'));
+    assert.ok(h.get(".candidate-settings .execution-profile-controls__notes"));
+    await h.click('.candidate-settings [data-profile-choice="trusted"]');
+    assert.ok(h.sent.some(message => message.type === "chooseExecutionProfile" && message.profile === "trusted"));
   } finally { await h.close(); }
 });
 

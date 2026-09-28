@@ -17,10 +17,14 @@ export function isValidThinkingLevel(level: string): boolean {
     && THINKING_LEVEL_PATTERN.test(level);
 }
 
-export function isValidModelRef(provider: string, modelId: string): boolean {
+export function isValidProviderId(provider: string): boolean {
   return provider.length > 0
     && provider.length <= MAX_MODEL_PROVIDER_CHARS
-    && MODEL_TOKEN_PATTERN.test(provider)
+    && MODEL_TOKEN_PATTERN.test(provider);
+}
+
+export function isValidModelRef(provider: string, modelId: string): boolean {
+  return isValidProviderId(provider)
     && modelId.length > 0
     && modelId.length <= MAX_MODEL_ID_CHARS
     && MODEL_TOKEN_PATTERN.test(modelId);

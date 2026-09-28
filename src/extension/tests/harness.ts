@@ -52,7 +52,14 @@ export function hostFixture(folders = [folder()], trusted = true, remoteName: st
       openTextDocument: async (_uri: vscode.Uri): Promise<vscode.TextDocument> => { throw new Error("fixture document unavailable"); },
       updateWorkspaceFolders: (...args: unknown[]): boolean => { updates.push(args); return true; } },
     env: { remoteName },
-    window: { showWarningMessage: async (_message: string, _options: vscode.MessageOptions, ..._items: string[]): Promise<string | undefined> => undefined, showTextDocument: async (uri: unknown) => { shown.push(uri); }, showOpenDialog: async (): Promise<ReturnType<typeof folder>["uri"][] | undefined> => { picks++; return undefined; } },
+    window: {
+      showWarningMessage: async (_message: string, _options: vscode.MessageOptions, ..._items: string[]): Promise<string | undefined> => undefined,
+      showInformationMessage: async (_message: string): Promise<string | undefined> => undefined,
+      showInputBox: async (_options?: vscode.InputBoxOptions): Promise<string | undefined> => undefined,
+      showQuickPick: async (_items: unknown, _options?: unknown): Promise<undefined> => undefined,
+      showTextDocument: async (uri: unknown) => { shown.push(uri); },
+      showOpenDialog: async (): Promise<ReturnType<typeof folder>["uri"][] | undefined> => { picks++; return undefined; },
+    },
     commands: { executeCommand: async (...args: unknown[]) => { commands.push(args); executed.fire(args); } },
   };
   return { api, change, trust, documentChange, documentClose, fileCreate, fileChange, fileDelete, contentProviders, shown, executed, commands, updates, get picks() { return picks; } };

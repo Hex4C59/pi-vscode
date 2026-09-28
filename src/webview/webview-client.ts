@@ -47,7 +47,7 @@ export class WebviewClient {
     },
     intent => this.action(intent), snapshot => this.update(snapshot), error => this.update({ error }),
   );
-  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
+  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
     ...this.savedHistory.snapshot,
     changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   constructor(private readonly bridge: WebviewBridge) {}
@@ -189,7 +189,7 @@ export class WebviewClient {
       // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
       const committedHandoff = message.type === "sessionState" && message.phase === "switching";
       this.pending = null; this.submitted = null;
-      this.update({ workspace: null, interactions: null, executionProfile: null, attachments: null, sessions: null, ...this.savedHistory.reset(),
+      this.update({ workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, sessions: null, ...this.savedHistory.reset(),
         changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
         ...(committedHandoff ? { text: "" } : {}) });
     }
@@ -197,6 +197,7 @@ export class WebviewClient {
     if (message.type === "pong") return;
     if (message.type === "interactionState") { this.update({ interactions: message }); return; }
     if (message.type === "executionProfileState") { this.update({ executionProfile: message }); return; }
+    if (message.type === "providerConfigState") { this.update({ providerConfig: message }); return; }
     if (message.type === "sessionState") {
       // The host cancels retained-history reads before its native modal and suppresses their replies.
       const cancelsHistoryRead = message.phase === "confirming" || message.phase === "switching";

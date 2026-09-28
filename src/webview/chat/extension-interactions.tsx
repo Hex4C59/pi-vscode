@@ -460,42 +460,78 @@ export interface ExecutionProfileControlsProps {
   onChoose(profile: "controlled" | "trusted"): void;
   onEnd(): void;
   onRecover(): void;
+  /** `settings` is the compact settings dialog; `full` keeps legacy dense disclosure for direct mounts. */
+  density?: "settings" | "full";
 }
 
-export function ExecutionProfileControls({ state, language, onChoose, onEnd, onRecover }: ExecutionProfileControlsProps): ReactElement {
+export function ExecutionProfileControls({ state, language, onChoose, onEnd, onRecover, density = "full" }: ExecutionProfileControlsProps): ReactElement {
   const copy = executionProfileCopy[language];
   const headingId = useId();
+  const notesId = useId();
   const isPending = state.phase === "selecting" || state.phase === "switching";
   const profileLabel = state.profile === "trusted" ? copy.trusted : copy.controlled;
   const badge = state.displayName === null ? profileLabel : `${profileLabel}${copy.badgeSeparator}${state.displayName}`;
   const disabledSwitch = !state.canSwitch || (state.phase !== "idle" && state.phase !== "error");
   const disabledLifecycleAction = isPending;
+  const showLifecycle = state.canEnd || state.canRecover || state.phase === "recovery-required";
+  const compact = density === "settings";
+  const notes = (
+    <>
+      {(state.profile === "trusted" || !compact) && <p className="execution-profile-controls__coverage">{copy.coverageWarning}</p>}
+      <p className="execution-profile-controls__domain">{copy.recoveryDomain}</p>
+      <p className="execution-profile-controls__chooser-note">{copy.chooserNote}</p>
+    </>
+  );
   return (
-    <section className="execution-profile-controls" aria-labelledby={headingId}>
+    <section className={`execution-profile-controls${compact ? " is-settings" : ""}`} aria-labelledby={headingId}>
       <h2 id={headingId}>{copy.heading}</h2>
       <p className={`execution-profile-controls__badge is-${state.profile}`} data-profile-badge={state.profile}>{badge}</p>
       <p className="execution-profile-controls__phase" role={state.phase === "error" || state.phase === "recovery-required" ? "alert" : "status"}>
         {copy.phase[state.phase]}
       </p>
       {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{copy.error}</p>}
-      <p className="execution-profile-controls__coverage">{copy.coverageWarning}</p>
-      <p className="execution-profile-controls__domain">{copy.recoveryDomain}</p>
-      <p className="execution-profile-controls__chooser-note">{copy.chooserNote}</p>
       <div className="execution-profile-controls__actions">
         <button type="button" data-profile-choice="controlled" disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
           {copy.chooseControlled}
         </button>
-        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")}>
+        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={copy.chooserNote}>
           {copy.chooseTrusted}
         </button>
-        <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd || disabledLifecycleAction} onClick={onEnd}>
-          {copy.endOwned}
-        </button>
-        <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover || disabledLifecycleAction} onClick={onRecover}>
-          {copy.recoverControlled}
-        </button>
+        {(!compact || showLifecycle) && <>
+          <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd || disabledLifecycleAction} onClick={onEnd}>
+            {copy.endOwned}
+          </button>
+          <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover || disabledLifecycleAction} onClick={onRecover}>
+            {copy.recoverControlled}
+          </button>
+        </>}
       </div>
-      <p className="execution-profile-controls__end-warning">{copy.endWarning}</p>
+      {compact
+        ? <details className="execution-profile-controls__notes">
+            <summary id={notesId}>{language === "zh-CN" ? "注意事项" : "Notes"}</summary>
+            {notes}
+            {showLifecycle && <p className="execution-profile-controls__end-warning">{copy.endWarning}</p>}
+          </details>
+        : <>
+            {notes}
+            <p className="execution-profile-controls__end-warning">{copy.endWarning}</p>
+          </>}
     </section>
+  );
+}
+
+/** Forced-visible strip when recovery cannot stay buried in settings alone. */
+export function RuntimeRecoveryBanner({ state, language, onEnd, onRecover }: Omit<ExecutionProfileControlsProps, "onChoose" | "density">): ReactElement | null {
+  if (state.phase !== "recovery-required" && state.phase !== "error") return null;
+  if (!state.canEnd && !state.canRecover && state.phase !== "recovery-required") return null;
+  const copy = executionProfileCopy[language];
+  return (
+    <div className="candidate__runtime-recovery" role="alert">
+      <p>{copy.phase[state.phase]}</p>
+      <div className="candidate__runtime-recovery-actions">
+        <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover} onClick={onRecover}>{copy.recoverControlled}</button>
+        <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd} onClick={onEnd}>{copy.endOwned}</button>
+      </div>
+    </div>
   );
 }

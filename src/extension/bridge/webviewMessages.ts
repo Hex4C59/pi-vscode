@@ -3,7 +3,7 @@ export type * from "../contracts/index.js";
 import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/index.js";
 
 import { MAX_CHAT_MESSAGE_CHARS } from "./chatBounds.js";
-import { isValidModelRef, isValidThinkingLevel } from "../models/index.js";
+import { isValidModelRef, isValidProviderId, isValidThinkingLevel } from "../models/index.js";
 
 
 
@@ -20,6 +20,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   const actions: Record<string, string[]> = {
     newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
     chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
+    openProviderApiKey: ["providerId"], logoutProvider: ["providerId"], setDefaultModel: ["provider", "modelId"], refreshProviderConfig: [],
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
@@ -52,6 +53,13 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   if (message.type === "setChatModel") {
     if (typeof message.provider !== "string" || typeof message.modelId !== "string") return undefined;
     if (!isValidModelRef(message.provider, message.modelId)) return undefined;
+  }
+  if (message.type === "setDefaultModel") {
+    if (typeof message.provider !== "string" || typeof message.modelId !== "string") return undefined;
+    if (!isValidModelRef(message.provider, message.modelId)) return undefined;
+  }
+  if (message.type === "openProviderApiKey" || message.type === "logoutProvider") {
+    if (typeof message.providerId !== "string" || !isValidProviderId(message.providerId)) return undefined;
   }
   if (message.type === "chooseExecutionProfile" && message.profile !== "controlled" && message.profile !== "trusted") return undefined;
   if (message.type === "answerInteraction") {

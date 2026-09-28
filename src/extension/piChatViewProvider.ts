@@ -3,7 +3,7 @@ import type { SessionStateMessage, SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot } from "./bridge/index.js";
-import { ModelSettings, type ModelSettingsSnapshot } from "./models/index.js";
+import { ModelSettings, ProviderConfig, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { PiRuntimeLifecycle, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage } from "./contracts/index.js";
@@ -60,6 +60,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private extensionFeedback: { feedback: ExtensionFeedback[]; omittedFeedback: number } = { feedback: [], omittedFeedback: 0 };
   private lastInteractionProjection = "";
   private lastProfileProjection = "";
+  private lastProviderConfigProjection = "";
+  private readonly providerConfig: ProviderConfig;
   private liveConversation: { id: string; path: string } | undefined;
   private untouchedControlledConversation = false;
   private interactionFailureReported = false;
@@ -95,6 +97,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         disposed: this.disposed, blocked: this.state.busy || this.sessionTransitionBusy() || this.interactions.snapshot().phase !== "idle" || this.profilePhase !== "idle",
         chatBusy: this.state.chatBusy, stopping: this.stoppingTask };
     }, () => this.publish());
+    this.providerConfig = new ProviderConfig(createDefaultProviderConfigDeps({
+      showInputBox: options => this.api.window.showInputBox(options),
+      showQuickPick: (items, options) => this.api.window.showQuickPick(items, options),
+      showInformationMessage: message => this.api.window.showInformationMessage(message),
+    }), () => this.publish());
     this.savedHistory = new SavedHistory(sessionBackend, () => ({
       cwd: this.state.folder?.path,
       key: this.state.generation + ":" + this.state.viewId,
@@ -354,6 +361,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         messages: preserveMessages ? this.state.messages : [],
       };
       void this.models.load(result.modelLabel);
+      void this.providerConfig.refresh();
     }
     if (!result.ok) await this.refreshOwnership();
     this.publishSessions(); this.publish();
@@ -604,6 +612,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const profile = { ...this.envelope("executionProfileState"), profile: this.executionProfile.kind, displayName: this.profileDisplayName, phase: this.profilePhase, errorCode: this.profileError, canSwitch: this.canSwitchProfile(), canEnd: !this.recoveryBusy && this.profilePhase === "recovery-required" && this.ownershipState === "pending", canRecover: !this.recoveryBusy && this.profilePhase === "recovery-required" && this.ownershipState === "terminal" };
     const profileKey = JSON.stringify(profile);
     if (forceExtensions || profileKey !== this.lastProfileProjection) { this.lastProfileProjection = profileKey; this.post(this.view, profile); }
+    const providers = { ...this.envelope("providerConfigState"), ...this.providerConfig.snapshot };
+    const providerKey = JSON.stringify(providers);
+    if (forceExtensions || providerKey !== this.lastProviderConfigProjection) { this.lastProviderConfigProjection = providerKey; this.post(this.view, providers); }
     this.post(this.view, { ...this.state, ...this.models.snapshot });
   }
 
@@ -648,6 +659,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     ];
     const nonce = randomBytes(16).toString("base64");
     webviewView.webview.html = getWebviewHtml(webviewView.webview, this.extensionUri, nonce);
+    void this.providerConfig.refresh();
   }
 
   private async receive(view: vscode.WebviewView, value: unknown): Promise<void> {
@@ -662,6 +674,28 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === "cancelInteraction") { this.interactions.cancel(message, message.id); return; }
     if (message.type === "chooseExecutionProfile") { await this.chooseExecutionProfile(view, message.profile); return; }
     if (message.type === "endOwnedRuntime" || message.type === "recoverControlledRuntime") { await this.recoverRuntime(view, message.type); return; }
+    if (message.type === "refreshProviderConfig") { await this.providerConfig.refresh(); this.publish(); return; }
+    if (message.type === "openProviderApiKey") {
+      await this.providerConfig.openApiKey(message.providerId);
+      if (this.state.runtime === "ready") await this.models.load(this.models.snapshot.chatModel);
+      this.publish();
+      return;
+    }
+    if (message.type === "logoutProvider") {
+      await this.providerConfig.logout(message.providerId);
+      if (this.state.runtime === "ready") await this.models.load(this.models.snapshot.chatModel);
+      this.publish();
+      return;
+    }
+    if (message.type === "setDefaultModel") {
+      await this.providerConfig.setDefaultModel(message.provider, message.modelId);
+      if (this.state.runtime === "ready") {
+        await this.models.load(this.models.snapshot.chatModel);
+        await this.models.select({ type: "setChatModel", provider: message.provider, modelId: message.modelId });
+      }
+      this.publish();
+      return;
+    }
     if (this.profilePhase !== "idle" && message.type !== "stopChat") { this.publish(); return; }
     if (this.state.busy) { this.draft.rejectStale(); this.publish(); return; }
     if (message.type === "getSavedHistory") { await this.savedHistory.page(message.page); return; }

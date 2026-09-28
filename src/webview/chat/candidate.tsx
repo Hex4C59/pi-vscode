@@ -1,5 +1,5 @@
 import type { ChatMountOptions, UiLanguageState } from "./types.js";
-import { ExtensionInteractions, ExecutionProfileControls } from "./extension-interactions.js";
+import { ExtensionInteractions, RuntimeRecoveryBanner } from "./extension-interactions.js";
 import { CandidateReview } from "./candidate-review.js";
 import { CandidateContext } from "./candidate-context.js";
 import { NoFolderPrompt } from "./no-folder-prompt.js";
@@ -51,6 +51,7 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
   const back = useRef<HTMLButtonElement>(null);
   const readingPosition = useRef(0);
   const wasBrowsing = useRef(false);
+  const [settingsOpenRequest, setSettingsOpenRequest] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const historyId = useId();
   useLayoutEffect(() => {
@@ -128,7 +129,19 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
         onClick={event => { event.currentTarget.focus(); client.newConversation(); }}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M9 4H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-4M11 10l6-6-2-2-6 6-1 4 3-2Z" /></svg>
       </button>
-      <InterfaceSettings language={language} />
+      <InterfaceSettings
+        language={language}
+        openRequest={settingsOpenRequest}
+        executionProfile={snapshot.executionProfile}
+        providerConfig={snapshot.providerConfig}
+        onChooseProfile={profile => client.action({ type: "chooseExecutionProfile", profile })}
+        onEndRuntime={() => client.action({ type: "endOwnedRuntime" })}
+        onRecoverRuntime={() => client.action({ type: "recoverControlledRuntime" })}
+        onAddApiKey={providerId => client.action({ type: "openProviderApiKey", providerId })}
+        onLogoutProvider={providerId => client.action({ type: "logoutProvider", providerId })}
+        onSetDefaultModel={(provider, modelId) => client.action({ type: "setDefaultModel", provider, modelId })}
+        onRefreshProviders={() => client.action({ type: "refreshProviderConfig" })}
+      />
     </nav>
     <div className="candidate__history" id={historyId} aria-label={t("Conversation history")} role="region" hidden={!historyOpen}>
       <button className="candidate__icon candidate__history-back" type="button" aria-label={t("Back to conversation")} title={t("Back to conversation")} ref={back} onClick={() => setHistoryOpen(false)}>
@@ -156,7 +169,10 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
           <p>{t("Ask a question or describe a change.")}</p>
         </div>}
         {(canCompose || readableRuntimeError) && <>
-          {!state.chatModel && <p className="candidate__error" role="alert">{t(preview ? "No configured model is available. Use Simulate recovery in the preview toolbar." : "No configured model is available. Configure a supported pi provider in the extension host, then reload the VS Code window.")}</p>}
+          {!state.chatModel && <div className="candidate__error" role="alert">
+            <p>{t(preview ? "No configured model is available. Use Simulate recovery in the preview toolbar." : "No configured model is available. Open Interface settings to configure a provider API key.")}</p>
+            {!preview && <button type="button" className="candidate__link-button" onClick={() => setSettingsOpenRequest(value => value + 1)}>{t("Open provider settings")}</button>}
+          </div>}
           {snapshot.savedHistory && (snapshot.savedHistory.available || snapshot.savedHistory.error) && <SavedHistory
             pageSize={SAVED_HISTORY_PAGE_SIZE} state={snapshot.savedHistory} pendingPage={snapshot.savedHistoryPendingPage} preview={snapshot.savedHistoryPreview}
             disabled={!!snapshot.error || state.busy || controls.sessionTransitioning}
@@ -172,12 +188,11 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
         state={snapshot.interactions} language={locale === "zh-CN" ? "zh-CN" : "en"}
         onAnswer={(id, answer) => client.action({ type: "answerInteraction", id, answer })}
         onCancel={id => client.action({ type: "cancelInteraction", id })} />}
-      {snapshot.executionProfile && <details className="candidate__extension-profile" open={snapshot.executionProfile.phase === "recovery-required" || undefined}>
-        <summary>{t("Runtime extensions")}</summary>
-        <ExecutionProfileControls state={snapshot.executionProfile} language={locale === "zh-CN" ? "zh-CN" : "en"}
-          onChoose={profile => client.action({ type: "chooseExecutionProfile", profile })}
-          onEnd={() => client.action({ type: "endOwnedRuntime" })} onRecover={() => client.action({ type: "recoverControlledRuntime" })} />
-      </details>}
+      {snapshot.executionProfile && <RuntimeRecoveryBanner
+        state={snapshot.executionProfile}
+        language={locale === "zh-CN" ? "zh-CN" : "en"}
+        onEnd={() => client.action({ type: "endOwnedRuntime" })}
+        onRecover={() => client.action({ type: "recoverControlledRuntime" })} />}
       {state && <CandidateReview key={`review-${identity}`} pageSize={16} state={snapshot.changeReview} open={snapshot.changeReviewOpen} page={snapshot.changeReviewPage}
         onToggle={client.toggleChangeReview} onPage={client.navigateChangeReview} onDiff={client.openReviewDiff} onSource={client.openReviewSource} />}
       {state && state.approvals.length > 0 && <div className="candidate__shared-operations">
@@ -208,9 +223,18 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); }
           }} />
         <div className="candidate__composer-actions">
-          <div className="candidate__model">{state && !noFolder && <ModelPicker key={`${state.viewId}-${state.generation}`} state={state} disabled={controls.settingsDisabled} continuousThinkingDrag animatePopover
-            onModel={(provider, modelId) => client.action({ type: "setChatModel", provider, modelId })}
-            onThinking={level => client.action({ type: "setThinkingLevel", level })} />}</div>
+          <div className="candidate__model">
+            {state
+              ? <ModelPicker key={`${state.viewId}-${state.generation}`} state={state} disabled={controls.settingsDisabled} continuousThinkingDrag animatePopover
+                  onModel={(provider, modelId) => client.action({ type: "setChatModel", provider, modelId })}
+                  onThinking={level => client.action({ type: "setThinkingLevel", level })} />
+              : <button id="model-effort-trigger" className="chip" type="button" disabled
+                  title={t(preview ? "Connecting to the preview…" : "Connecting to the extension host…")}
+                  aria-label={t("Model and thinking level")}>
+                  <span className="model-effort-trigger__model">{t("Model not configured")}</span>
+                  <span className="model-effort-trigger__thinking"> · —</span>
+                </button>}
+          </div>
           {controls.showStop
             ? <button className="candidate__send" type="button" aria-label={t("Stop current task")} disabled={controls.stopping} onClick={client.stop}><span aria-hidden="true">■</span></button>
             : <button className="candidate__send" type="submit" aria-label={t("Send message")} disabled={noFolder ? !snapshot.text.trim() || !!state.busy || !!snapshot.error : controls.sendDisabled}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4m-5 5 5-5 5 5" /></svg></button>}

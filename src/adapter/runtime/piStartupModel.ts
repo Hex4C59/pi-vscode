@@ -7,10 +7,21 @@ type PiSettings = {
   defaultModel?: string;
 };
 
+function agentDir(env: NodeJS.ProcessEnv): string {
+  const override = env.PI_CODING_AGENT_DIR?.trim();
+  if (override) {
+    if (override === "~") return os.homedir();
+    if (override.startsWith("~/") || override.startsWith("~\\")) {
+      return path.join(os.homedir(), override.slice(2));
+    }
+    return override;
+  }
+  return path.join(os.homedir(), ".pi", "agent");
+}
+
 /** Maps pi global settings to a `--model` CLI argument when configured. */
-export function readPiStartupModelArg(): string | undefined {
-  const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
-  const settingsPath = path.join(home, ".pi", "agent", "settings.json");
+export function readPiStartupModelArg(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const settingsPath = path.join(agentDir(env), "settings.json");
   try {
     const raw = fs.readFileSync(settingsPath, "utf8");
     const settings = JSON.parse(raw) as PiSettings;

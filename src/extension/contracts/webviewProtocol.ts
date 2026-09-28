@@ -1,4 +1,5 @@
 import type { ExtensionInteractionIntent, ExtensionInteractionProjection, ExecutionProfileProjection } from "./extensionInteractions.js";
+import type { ProviderConfigIntent, ProviderConfigProjection } from "./providerConfig.js";
 /** Canonical browser/host DTOs. Type-only: no Node, VS Code or runtime dependencies. */
 export type RuntimePhase = "not-started" | "starting" | "ready" | "stopping" | "error";
 export type ActivityItem = { id: string; kind: "thinking" | "tool"; messageId: string; contentIndex?: number; toolCallId?: string; tool?: string; text: string; input?: string; status: "thinking" | "preparing" | "executing" | "complete" | "failed" | "interrupted"; truncated: boolean };
@@ -19,6 +20,7 @@ export type PongMessage = { version: 3; type: "pong" };
 type Action = { version: 3; generation: number; viewId: string };
 export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceState" }
   | Action & ExtensionInteractionIntent
+  | Action & ProviderConfigIntent
   | Action & (
     | { type: "stopChat" | "openFolder" | "manageTrust" | "getAttachmentHistory" | "getChangeReview" | "newConversation" }
     | { type: "decideApproval"; id: string; decision: ApprovalDecision }
@@ -92,7 +94,8 @@ export type AttachmentPreviewMessage = HostEnvelope & { type: "attachmentPreview
 );
 export type InteractionStateMessage = HostEnvelope & ExtensionInteractionProjection & { type: "interactionState" };
 export type ExecutionProfileStateMessage = HostEnvelope & ExecutionProfileProjection & { type: "executionProfileState" };
-export type HostMessage = InteractionStateMessage | ExecutionProfileStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
+export type ProviderConfigStateMessage = HostEnvelope & ProviderConfigProjection & { type: "providerConfigState" };
+export type HostMessage = InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

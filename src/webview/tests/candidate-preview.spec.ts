@@ -911,6 +911,7 @@ test("candidate settings owns Escape without dismissing an underlying model popu
 test("candidate no-folder welcome accepts a draft and defers the folder explanation until Send", async t => {
   const h = await candidateHarness(t, "no-folder");
   assert.equal(h.get<HTMLTextAreaElement>("textarea").disabled, false);
+  assert.ok(h.root.querySelector("#model-effort-trigger"), "model control stays visible without a workspace folder");
   assert.match(h.root.textContent ?? "", /What should we work on/);
   assert.equal(h.root.textContent?.includes("No workspace folder"), false);
   assert.equal(h.root.querySelectorAll("dialog[open]").length, 0);
