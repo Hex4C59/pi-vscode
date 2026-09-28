@@ -14,6 +14,14 @@
 @import "./components/saved-history.css";
 
 @import "./chat/candidate.css";
+@import "./chat/candidate-conversation.css";
+@import "./chat/message-composer.css";
+@import "./chat/candidate-context.css";
+@import "./chat/session-navigation.css";
+@import "./chat/candidate-sessions.css";
 @import "./chat/candidate-review.css";
-
+@import "./chat/task-status.css";
+@import "./chat/candidate-approvals.css";
 @import "./chat/extension-interactions.css";
+@import "./chat/chat-dialog.css";
+@import "./chat/interface-settings.css";

@@ -144,6 +144,8 @@ function renderToolbar(): void {
     ["Simulate pending approvals", () => preview?.queueApprovals()],
     ["Simulate captured changes", () => preview?.completeReview()],
     ["Simulate review loss", () => preview?.loseReview()],
+    ["Simulate extension request", () => preview?.simulateInteraction()],
+    ["Simulate runtime recovery", () => preview?.simulateRecoveryRequired()],
   ];
   const simulationButtons = simulations.map(([label, action]) => {
     const button = document.createElement("button"); button.className = "preview-toolbar__reset"; button.type = "button";

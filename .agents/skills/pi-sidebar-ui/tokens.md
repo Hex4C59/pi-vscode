@@ -14,6 +14,7 @@ Host family. Roles:
 |------|------|--------|-------------|-----|
 | chrome | 12px | 400 | 1.4 | session bar, toolbar, captions |
 | body | 13px (`--vscode-font-size`) | 400 | 1.5 | messages, input |
+| title | 15px | 600 | 1.35 | reply headings h1–h2 (h3+ stay body-size bold) |
 | empty | 16–18px | 550 | 1.35 | the one idle greeting |
 
 No 10–11px as default voice. No pure-white display title.

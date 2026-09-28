@@ -35,6 +35,7 @@
   --ui-space-5: 24px;
   --ui-font-chrome: 12px;
   --ui-font-body: var(--vscode-font-size, 13px);
+  --ui-font-title: 15px;
   --ui-font-empty: 17px;
   --ui-radius: 6px;
   --ui-radius-lg: 8px;

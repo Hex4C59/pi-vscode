@@ -58,9 +58,6 @@
   white-space: nowrap;
 }
 
-#thinking-level-label,
-.thinking-level-label { margin: var(--ui-space-1) 0 0; color: var(--ui-muted); font-size: var(--ui-font-chrome); }
-
 /* The thinking slider geometry is PRD-confirmed (UIP-01) and its fill is the monochrome foreground; they are not part of the spacing scale. */
 #thinking-slider,
 .thinking-slider {

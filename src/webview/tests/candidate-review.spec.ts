@@ -90,3 +90,20 @@ test("candidate expands, pages, and opens only opaque review intents without cha
     await h.close();
   }
 });
+
+test("the review toggle carries the shared Lucide chevron instead of literal arrows", async () => {
+  const h = await uiHarness(true, true);
+  try {
+    await h.receive(reviewState());
+    const toggle = h.get("#change-review-toggle");
+    const chevron = toggle.querySelector("svg.change-review__chevron");
+    assert.ok(chevron, "the toggle uses the chevron icon");
+    assert.equal(chevron.getAttribute("aria-hidden"), "true");
+    assert.doesNotMatch(toggle.textContent ?? "", /[▾▸]/, "no text arrows remain");
+    await h.click("#change-review-toggle");
+    assert.equal(toggle.getAttribute("aria-expanded"), "true");
+    assert.ok(toggle.querySelector("svg.change-review__chevron"), "the icon survives expansion");
+  } finally {
+    await h.close();
+  }
+});

@@ -1,8 +1,15 @@
-import { useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { SessionIcon } from "./session-icon.js";
+import { ComposerIcon } from "./composer-icon.js";
+import { useLayoutEffect, useRef, useState, type ReactNode, type ReactElement } from "react";
 import type { AttachmentDetails } from "../../extension/contracts/index.js";
 import { useUiText, type AttachmentPanelProps, type UiTranslator, type UiText } from "../components/index.js";
 
-type ContextProps = Omit<AttachmentPanelProps, "status"> & { historyDisabled: boolean; onRequireWorkspace?: () => void };
+type ContextProps = Omit<AttachmentPanelProps, "status"> & {
+  /** Keep attachment state/focus here while the composer places the two surfaces in reading order. */
+  children: (parts: { actions: ReactNode; content: ReactNode }) => ReactNode;
+  historyDisabled: boolean;
+  onRequireWorkspace?: () => void;
+};
 type Metadata = AttachmentDetails & { relativePath: string; utf8Bytes: number; unsaved: boolean };
 
 const stateLabels = {
@@ -57,25 +64,25 @@ function metadata(a: Metadata, t: UiTranslator): string {
 
 /** Presentation only. Snapshot mutations, admission and paging cross the existing client Interface. */
 export function CandidateContext({ pageSize, state, history, historyOpen, historyPage, preview, disabled,
-  onAdd, onAddSelection, onRemove, onConfirm, onHistory, onHistoryPage, onPreview, onClosePreview, historyDisabled, onRequireWorkspace }: ContextProps): ReactElement {
+  onAdd, onAddSelection, onRemove, onConfirm, onHistory, onHistoryPage, onPreview, onClosePreview, historyDisabled, onRequireWorkspace, children }: ContextProps): ReactElement {
   const { text: t } = useUiText();
   const [menu, setMenu] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const items = useRef<HTMLDivElement>(null);
   const previewClose = useRef<HTMLButtonElement>(null);
   const historyClose = useRef<HTMLButtonElement>(null);
-  const returnTo = useRef<HTMLButtonElement | null>(null);
+  const previewReturnTo = useRef<HTMLButtonElement | null>(null);
+  const historyReturnTo = useRef<HTMLButtonElement | null>(null);
   const reader = useRef<HTMLDivElement>(null);
   const closeMenu = () => { setMenu(false); trigger.current?.focus({ preventScroll: true }); };
-  const restoreFocus = () => {
-    const target = returnTo.current;
+  const restoreFocus = (target: HTMLButtonElement | null) => {
     if (target?.isConnected && !target.disabled) target.focus({ preventScroll: true });
     else trigger.current?.focus({ preventScroll: true });
   };
-  const closePreview = () => { onClosePreview(); restoreFocus(); };
-  const closeHistory = () => { onHistory(); restoreFocus(); };
+  const closePreview = () => { onClosePreview(); restoreFocus(previewReturnTo.current); };
+  const closeHistory = () => { onHistory(); restoreFocus(historyReturnTo.current); };
   const openPreview = (id: string, button: HTMLButtonElement) => {
-    returnTo.current = button; onPreview(id);
+    previewReturnTo.current = button; onPreview(id);
     previewClose.current?.focus({ preventScroll: true });
     if (reader.current) reader.current.scrollTop = 0;
   };
@@ -94,14 +101,9 @@ export function CandidateContext({ pageSize, state, history, historyOpen, histor
   const attachments = state?.draft.attachments ?? [];
   const budgetReached = attachments.length >= 20;
   const showDelivery = !!state?.lastSubmission && ["write-failed", "ack-timeout", "rpc-rejected", "unknown"].includes(state.lastSubmission.delivery);
-  return <div className="candidate-context" onKeyDown={event => {
-    if (event.key !== "Escape" || event.defaultPrevented || event.nativeEvent.isComposing) return;
-    if (preview) { event.preventDefault(); closePreview(); }
-    else if (historyOpen) { event.preventDefault(); closeHistory(); }
-  }}>
-    <div className="candidate-context__actions">
+  const actions = <div className="candidate-context__actions">
       <button ref={trigger} type="button" aria-label={t("Add context")} title={t("Add context")} aria-haspopup="menu" aria-expanded={menu}
-        disabled={!canOpen} onClick={() => setMenu(!menu)}><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 4v12M4 10h12" /></svg></button>
+        disabled={!canOpen} onClick={() => setMenu(!menu)}><ComposerIcon name="plus" /></button>
       {menu && <div className="candidate-context__menu"
         onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setMenu(false); }} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
@@ -115,19 +117,42 @@ export function CandidateContext({ pageSize, state, history, historyOpen, histor
           }
         }}>
         <div ref={items} role="menu" aria-label={t("Add context")}>
-        <button role="menuitem" type="button" aria-label={t("Add file")} disabled={!onRequireWorkspace && (disabled || budgetReached)} onClick={() => { closeMenu(); if (onRequireWorkspace) onRequireWorkspace(); else onAdd(); }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2h6l4 4v12H5z M11 2v5h4 M8 11h4 M8 14h4" /></svg>{t("Add file")}</button>
-        <button role="menuitem" type="button" aria-label={t("Add selection")} disabled={!onRequireWorkspace && (disabled || budgetReached)} onClick={() => { closeMenu(); if (onRequireWorkspace) onRequireWorkspace(); else onAddSelection(); }}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3H3v14h2 M15 3h2v14h-2 M7 7h6 M7 10h6 M7 13h4" /></svg>{t("Add selection")}</button>
+        <button role="menuitem" type="button" aria-label={t("Add file")} disabled={!onRequireWorkspace && (disabled || budgetReached)} onClick={() => { closeMenu(); if (onRequireWorkspace) onRequireWorkspace(); else onAdd(); }}><ComposerIcon name="file" />{t("Add file")}</button>
+        <button role="menuitem" type="button" aria-label={t("Add selection")} disabled={!onRequireWorkspace && (disabled || budgetReached)} onClick={() => { closeMenu(); if (onRequireWorkspace) onRequireWorkspace(); else onAddSelection(); }}><ComposerIcon name="keyboard" />{t("Add selection")}</button>
         {!!state?.historyCount && <button role="menuitem" type="button" aria-label={t("Attachment history")} disabled={historyDisabled}
-          onClick={() => { returnTo.current = trigger.current; closeMenu(); onHistory(); }}>{t("Attachment history")} · {state.historyCount}</button>}
+          onClick={() => { historyReturnTo.current = trigger.current; closeMenu(); onHistory(); }}>{t("Attachment history")} · {state.historyCount}</button>}
         </div>
       </div>}
-      {!!state?.historyCount && <button className="candidate-context__history-trigger" type="button" aria-label={t("Attachment history")} aria-expanded={historyOpen} disabled={historyDisabled}
-        onClick={event => { returnTo.current = event.currentTarget; onHistory(); }}>{t("Attachment history")} · {state.historyCount}</button>}
-    </div>
-    <div className="candidate-context__content">
+    </div>;
+  const content = <div className="candidate-context__content" ref={reader}>
+    {(historyOpen || preview) && <div className="candidate-context__reader">
+      {preview && <section aria-label={t("Attachment preview")}>
+        <header className="candidate-context__reader-heading"><strong>{t("Attachment preview")}</strong><button ref={previewClose} type="button" aria-label={t("Close preview")} title={t("Close preview")} onClick={closePreview}><SessionIcon name="x" /></button></header>
+        <pre tabIndex={0} aria-label={t("Literal attachment text")}>{preview.error ?? preview.text}</pre>
+        <p>{t("Literal retained snapshot, not the current file. Content is never rendered as Markdown or loaded as a resource.")}</p>
+      </section>}
+      {historyOpen && <section aria-label={t("Retained attachment history")}>
+        <header className="candidate-context__reader-heading"><strong>{t("Attachment history")}</strong><button ref={historyClose} type="button" aria-label={t("Close attachment history")} title={t("Close attachment history")} onClick={closeHistory}><SessionIcon name="x" /></button></header>
+        <p role="status">{historyPage === null ? t("Loading retained attachment history…") : history.length ? t("Snapshots {start}–{end} of {total}", {
+          start: offset + 1, end: Math.min(offset + pageSize, history.length), total: history.length,
+        }) : t("No retained attachment submissions in this live session.")}</p>
+        {lastPage > 0 && <nav aria-label={t("Attachment history pages")}>
+          <button type="button" aria-label={t("First page")} disabled={historyPage === null || historyPage === 0} onClick={() => onHistoryPage(0)}>{t("First page")}</button>
+          <button type="button" aria-label={t("Previous page")} disabled={historyPage === null || historyPage === 0} onClick={() => onHistoryPage((historyPage ?? 0) - 1)}>{t("Previous page")}</button>
+          <button type="button" aria-label={t("Next page")} disabled={historyPage === null || historyPage === lastPage} onClick={() => onHistoryPage((historyPage ?? 0) + 1)}>{t("Next page")}</button>
+          <button type="button" aria-label={t("Latest page")} disabled={historyPage === null || historyPage === lastPage} onClick={() => onHistoryPage(lastPage)}>{t("Latest page")}</button>
+        </nav>}
+        <ul>{(historyPage === null ? [] : history.slice(offset, offset + pageSize)).map(a => <li key={a.submissionId + ":" + a.snapshotId}>
+          <details className="candidate-context__path"><summary title={a.relativePath}><SessionIcon name="chevron-right" /><span>{a.relativePath}</span></summary><p>{a.relativePath}</p></details>
+          <span>{metadata(a, t)} · {stateLabel(a.delivery, t)} / {stateLabel(a.outcome, t)}</span>
+          <button type="button" aria-label={t("Preview complete snapshot")} onClick={event => openPreview(a.snapshotId, event.currentTarget)}>{t("Preview")}</button>
+        </li>)}</ul>
+        <p>{t("Memory-only retained snapshots, not current files or model context. Bounded to 128 snapshots; restarting or changing resources loses this history.")}</p>
+      </section>}
+    </div>}
     {!!attachments.length && <ul className="candidate-context__draft" aria-label={t("Draft context")}>
-      {attachments.map(a => <li key={a.attachmentId}>
-        <details className="candidate-context__path"><summary title={a.relativePath}>{a.relativePath}</summary><p>{a.relativePath}</p></details>
+      {attachments.map(a => <li key={a.attachmentId} data-state={a.state}>
+        <details className="candidate-context__path"><summary title={a.relativePath}><SessionIcon name="chevron-right" /><span>{a.relativePath}</span></summary><p>{a.relativePath}</p></details>
         <span className="candidate-context__label">{metadata(a, t)}</span>
         <div className="candidate-context__item-actions">
           {a.state !== "attached" && <span>{t(a.state)}</span>}
@@ -146,31 +171,14 @@ export function CandidateContext({ pageSize, state, history, historyOpen, histor
       {state.result && !["source-changed", "cancelled", "preparation-cancelled"].includes(state.result.code) && <p>{t("Remove or reattach unavailable context; reduce oversized text. For uncertain delivery, Stop or Reset before retrying. Reset loses the draft and memory-only history.")}</p>}
       {showDelivery && state.lastSubmission && <p>{t("Context delivery: {delivery}", { delivery: stateLabel(state.lastSubmission.delivery, t) })} · {stateLabel(state.lastSubmission.outcome, t)}</p>}
     </div>}
-    {(historyOpen || preview) && <div className="candidate-context__reader" ref={reader}>
-      {preview && <section aria-label={t("Attachment preview")}>
-        <button ref={previewClose} type="button" aria-label={t("Close preview")} onClick={closePreview}>{t("Close preview")}</button>
-        <p>{t("Literal retained snapshot, not the current file. Content is never rendered as Markdown or loaded as a resource.")}</p>
-        <pre tabIndex={0} aria-label={t("Literal attachment text")}>{preview.error ?? preview.text}</pre>
-      </section>}
-      {historyOpen && <section aria-label={t("Retained attachment history")}>
-        <button ref={historyClose} type="button" aria-label={t("Close attachment history")} onClick={closeHistory}>{t("Close attachment history")}</button>
-        <p>{t("Memory-only retained snapshots, not current files or model context. Bounded to 128 snapshots; restarting or changing resources loses this history.")}</p>
-        <p role="status">{historyPage === null ? t("Loading retained attachment history…") : history.length ? t("Snapshots {start}–{end} of {total}", {
-          start: offset + 1, end: Math.min(offset + pageSize, history.length), total: history.length,
-        }) : t("No retained attachment submissions in this live session.")}</p>
-        <nav aria-label={t("Attachment history pages")}>
-          <button type="button" aria-label={t("First page")} disabled={historyPage === null || historyPage === 0} onClick={() => onHistoryPage(0)}>{t("First page")}</button>
-          <button type="button" aria-label={t("Previous page")} disabled={historyPage === null || historyPage === 0} onClick={() => onHistoryPage((historyPage ?? 0) - 1)}>{t("Previous page")}</button>
-          <button type="button" aria-label={t("Next page")} disabled={historyPage === null || historyPage === lastPage} onClick={() => onHistoryPage((historyPage ?? 0) + 1)}>{t("Next page")}</button>
-          <button type="button" aria-label={t("Latest page")} disabled={historyPage === null || historyPage === lastPage} onClick={() => onHistoryPage(lastPage)}>{t("Latest page")}</button>
-        </nav>
-        <ul>{(historyPage === null ? [] : history.slice(offset, offset + pageSize)).map(a => <li key={a.submissionId + ":" + a.snapshotId}>
-          <details className="candidate-context__path"><summary title={a.relativePath}>{a.relativePath}</summary><p>{a.relativePath}</p></details>
-          <span>{metadata(a, t)} · {stateLabel(a.delivery, t)} / {stateLabel(a.outcome, t)}</span>
-          <button type="button" aria-label={t("Preview complete snapshot")} onClick={event => openPreview(a.snapshotId, event.currentTarget)}>{t("Preview")}</button>
-        </li>)}</ul>
-      </section>}
-    </div>}
-    </div>
+    {!!state?.historyCount && <button className="candidate-context__history-trigger" type="button" aria-label={t("Attachment history")} aria-expanded={historyOpen} disabled={historyDisabled}
+      onClick={event => { historyReturnTo.current = event.currentTarget; onHistory(); }}>{t("Attachment history")} · {state.historyCount}</button>}
+    </div>;
+  return <div className="candidate-context" onKeyDown={event => {
+    if (event.key !== "Escape" || event.defaultPrevented || event.nativeEvent.isComposing) return;
+    if (preview) { event.preventDefault(); closePreview(); }
+    else if (historyOpen) { event.preventDefault(); closeHistory(); }
+  }}>
+    {children({ actions, content })}
   </div>;
 }

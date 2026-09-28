@@ -87,7 +87,7 @@ export function ChangeReview({ pageSize, state, open, page, onToggle, onPage, on
         onClick={onToggle}
       >
         <span id="change-review-heading">{caption ?? t("Review changes")}</span>
-        <span aria-hidden="true">{open ? "▾" : "▸"}</span>
+        <svg className="change-review__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6" /></svg>
       </button>
       <div id="change-review-content" className="change-review__content" hidden={!open}>
         {open && introduction}

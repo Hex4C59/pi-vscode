@@ -1,0 +1,43 @@
+/* Context list, retained snapshot reader and add menu; height budgets live in Candidate. */
+.candidate-context__content { max-height: min(220px, 32dvh); overflow: auto; overscroll-behavior: contain; font-size: var(--ui-font-chrome); overflow-wrap: anywhere; }
+.candidate-context__actions { display: flex; flex: none; align-items: center; }
+/* Context uses its own flex item; no compensating margin or absolute trigger. */
+.candidate-context__actions > button[aria-haspopup] { position: static; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; line-height: 0; border: 0; border-radius: var(--ui-radius-lg); color: var(--ui-muted); background: transparent; }
+.candidate-context__actions > button[aria-haspopup] > svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+.candidate-context__content button { max-width: 100%; font-size: var(--ui-font-chrome); padding: var(--ui-space-1) var(--ui-space-2); background: transparent; color: var(--ui-fg); border: 1px solid transparent; border-radius: var(--ui-radius); }
+.candidate-context__content button:hover:not(:disabled) { background: var(--ui-hover); }
+.candidate-context__content button:disabled { opacity: 0.45; }
+.candidate-context__menu { position: absolute; left: var(--ui-space-2); width: min(240px, calc(100% - 16px)); bottom: calc(100% + var(--ui-space-2)); z-index: 8; max-height: min(260px, 45dvh); overflow: auto; padding: var(--ui-space-1); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); background: var(--ui-surface-raised); box-shadow: var(--ui-shadow); transform-origin: bottom left; animation: composer-menu-enter 140ms ease-out; }
+.candidate-context__menu [role="menuitem"] { display: flex; align-items: center; gap: var(--ui-space-2); width: 100%; text-align: left; margin: 0; padding: var(--ui-space-2); border: 0; border-radius: var(--ui-radius); color: var(--ui-fg); font: inherit; font-size: var(--ui-font-body); background: transparent; }
+.candidate-context__menu svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+.candidate-context__menu details { padding: var(--ui-space-1); }
+.candidate-context__menu summary { cursor: pointer; }
+.candidate-context__content :is(ul, p) { margin: var(--ui-space-1) 0; padding: 0; }
+.candidate-context__content li { list-style: none; min-width: 0; padding: var(--ui-space-2) 0; margin: 0; border-bottom: 1px solid var(--ui-border); }
+.candidate-context__label { display: block; overflow-wrap: anywhere; }
+.candidate-context__item-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ui-space-1); margin-top: var(--ui-space-1); }
+.candidate-context__status { color: var(--ui-muted); }
+.candidate-context__reader { border-top: 1px solid var(--ui-border); padding-top: var(--ui-space-2); }
+.candidate-context__reader nav { display: flex; flex-wrap: wrap; gap: var(--ui-space-1); }
+.candidate-context__reader pre { font: var(--ui-font-chrome)/1.5 var(--vscode-editor-font-family, monospace); white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; max-height: 150px; padding: var(--ui-space-2); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); background: var(--ui-bg); }
+.candidate-context__reader li > button { display: block; margin-top: var(--ui-space-1); }
+.candidate-context__history-trigger { font-size: var(--ui-font-chrome); }
+@media (max-height: 540px) {
+  .candidate-context__reader pre { max-height: 90px; }
+}
+.candidate-context__path { min-width: 0; }
+.candidate-context__path summary { display: flex; align-items: center; gap: var(--ui-space-1); cursor: pointer; font-weight: 500; }
+
+.candidate-context__path summary::-webkit-details-marker { display: none; }
+.candidate-context__path summary > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.candidate-context__path svg { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.75; transition: transform 100ms ease-out; }
+.candidate-context__path[open] summary svg { transform: rotate(90deg); }
+.candidate-context__label, .candidate-context__reader p, .candidate-context__reader li > span { color: var(--ui-muted); }
+.candidate-context__draft [data-state="confirmation-required"] .candidate-context__item-actions > span,
+.candidate-context__draft [data-state="changed"] .candidate-context__item-actions > span { color: var(--ui-warning); }
+.candidate-context__draft [data-state="unavailable"] .candidate-context__item-actions > span { color: var(--ui-danger); }
+.candidate-context__reader-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2); background: var(--ui-composer); }
+.candidate-context__reader-heading > button { display: grid; place-items: center; width: 28px; height: 28px; flex: none; padding: 0; }
+.candidate-context__reader-heading svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+.candidate-context__content :is(button, summary, pre):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .candidate-context__path svg { transition: none; } }

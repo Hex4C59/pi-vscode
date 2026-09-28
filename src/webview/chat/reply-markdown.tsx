@@ -12,7 +12,7 @@ function safeLink(href: string): string | undefined {
   return undefined;
 }
 
-function CodeBlock({ text }: { text: string }): ReactNode {
+function CodeBlock({ text, lang }: { text: string; lang?: string }): ReactNode {
   const { text: t } = useUiText();
   const [result, setResult] = useState<{ text: string; message: UiText }>();
   const mounted = useRef(true);
@@ -43,9 +43,13 @@ function CodeBlock({ text }: { text: string }): ReactNode {
       if (request.current === id) clearTimeout(timeout.current);
     }
   };
+  const feedback = result?.text === text ? t(result.message) : "";
   return <div className="candidate__code">
-    <div className="candidate__code-actions"><button type="button" aria-label={t("Copy code")} onClick={() => { void copy(); }}>{t("Copy")}</button>
-      <span role="status">{result?.text === text ? t(result.message) : ""}</span></div>
+    <div className="candidate__code-actions">
+      {lang ? <span className="candidate__code-lang">{lang}</span> : null}
+      <span role="status" title={feedback || undefined}>{feedback}</span>
+      <button type="button" aria-label={t("Copy code")} onClick={() => { void copy(); }}>{t("Copy")}</button>
+    </div>
     <pre tabIndex={0} aria-label={t("Code block")}><code>{text}</code></pre>
   </div>;
 }
@@ -77,8 +81,9 @@ function renderTokens(tokens: readonly Token[]): ReactNode {
         content = token.ordered ? <ol start={token.start || 1}>{items}</ol> : <ul>{items}</ul>;
         break;
       }
-      case "code": content = <CodeBlock text={token.text} />; break;
+      case "code": content = <CodeBlock text={token.text} lang={token.lang || undefined} />; break;
       case "codespan": content = <code>{token.text}</code>; break;
+      case "blockquote": content = <blockquote>{renderTokens(token.tokens)}</blockquote>; break;
       case "text": content = token.tokens ? renderTokens(token.tokens) : token.text; break;
       case "escape": content = token.text; break;
       case "strong": content = <strong>{renderTokens(token.tokens)}</strong>; break;

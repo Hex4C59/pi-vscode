@@ -6,7 +6,10 @@ import type {
   AttachmentStateMessage,
   ChangeReviewStateMessage,
   DraftAttachment,
+  ExecutionProfileProjection,
+  ExtensionInteractionProjection,
   HostMessage,
+  ProviderConfigProjection,
   SavedHistoryPreviewMessage,
   SavedHistoryStateMessage,
   SessionStateMessage,
@@ -48,6 +51,53 @@ type Timer = ReturnType<typeof setTimeout>;
 type InboundAction = Extract<WebviewMessage, { type: string }>;
 let bridgeNumber = 0;
 
+export type SettingsFixture = "ready" | "loading" | "error" | "empty" | "unconfigured" | "mismatch" | "switching" | "long";
+export type PreviewBridgeOptions = {
+  title?: string;
+  loading?: boolean;
+  settings?: SettingsFixture;
+  resourcesPending?: boolean;
+};
+
+function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection {
+  const ready: ProviderConfigProjection = {
+    busy: false, error: null,
+    defaultProvider: "synthetic", defaultModelId: "sonnet",
+    providers: [
+      { providerId: "synthetic", displayName: "Synthetic provider", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
+      { providerId: "other", displayName: "Other provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+    ],
+    catalog: [
+      { provider: "synthetic", modelId: "sonnet", label: "Claude Sonnet" },
+      { provider: "synthetic", modelId: "haiku", label: "Claude Haiku" },
+    ],
+  };
+  if (fixture === "loading") return { ...ready, busy: true };
+  if (fixture === "error") return { ...ready, error: "Could not refresh provider configuration." };
+  if (fixture === "empty") return { busy: false, error: null, defaultProvider: null, defaultModelId: null, providers: [], catalog: [] };
+  if (fixture === "unconfigured") {
+    return {
+      ...ready, defaultProvider: null, defaultModelId: null, catalog: [],
+      providers: ready.providers.map(provider => ({ ...provider, configured: false, authLabel: null, canLogout: false })),
+    };
+  }
+  if (fixture === "mismatch") return { ...ready, defaultModelId: "haiku" };
+  if (fixture === "long") {
+    return {
+      ...ready,
+      providers: [
+        { providerId: "synthetic", displayName: "Synthetic Anthropic Messages API With An Unreasonably Long Provider Title", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
+        { providerId: "other", displayName: "Other Extremely Verbose Compatibility Provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+      ],
+      catalog: [
+        { provider: "synthetic", modelId: "sonnet", label: "claude-opus-4-thinking-preview-unreasonably-long-model-name" },
+        { provider: "synthetic", modelId: "haiku", label: "Claude Haiku" },
+      ],
+    };
+  }
+  return ready;
+}
+
 export class PreviewBridge implements WebviewBridge {
   readonly viewId: string;
   private readonly listeners = new Set<(message: unknown) => void>();
@@ -79,11 +129,22 @@ export class PreviewBridge implements WebviewBridge {
   private approvalSequence = 0;
   private reviewCaptured = false;
   private reviewLost = false;
+  private interactionSequence = 0;
+  private interactions: ExtensionInteractionProjection = { active: null, queuedCount: 0, phase: "idle", errorCode: null, feedback: [], omittedFeedback: 0 };
+  private executionProfile: ExecutionProfileProjection = { profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false };
+  private providerConfig: ProviderConfigProjection;
 
-  constructor(readonly scenario: PreviewScenario, private readonly confirmHandoff?: (restoring: boolean) => Promise<HandoffOutcome>) {
+  constructor(readonly scenario: PreviewScenario, private readonly confirmHandoff?: (restoring: boolean) => Promise<HandoffOutcome>, private readonly previewOptions?: PreviewBridgeOptions) {
     bridgeNumber += 1;
     this.viewId = `preview-view-${bridgeNumber}`;
     this.workspace = { ...baseWorkspace(scenario), viewId: this.viewId };
+    this.providerConfig = providerConfigFor(previewOptions?.settings);
+    if (previewOptions?.resourcesPending) {
+      this.workspace = { ...this.workspace, status: "eligible", folder: READY_FOLDER, choice: null, runtime: "not-started", chatModel: null, availableModels: [], thinkingLevel: null, thinkingLevels: [], messages: [] };
+    }
+    if (previewOptions?.settings === "switching") {
+      this.executionProfile = { ...this.executionProfile, phase: "switching", canSwitch: false };
+    }
     this.reviewCaptured = scenario === "change-review";
     this.attachment = { ...baseAttachmentState(scenario), viewId: this.viewId };
     this.session = baseSessionState(scenario, this.viewId);
@@ -130,6 +191,7 @@ export class PreviewBridge implements WebviewBridge {
       this.emitAttachment();
       this.emitReview();
       this.emitSettings();
+      this.emitInteractions();
       if (this.scenario === "sessions") {
         this.emitSession();
         this.emitSavedHistory();
@@ -171,6 +233,54 @@ export class PreviewBridge implements WebviewBridge {
       case "revokeGrant":
         this.workspace = { ...this.workspace, grants: this.workspace.grants.filter(grant => grant.id !== message.id) };
         this.emitWorkspace();
+        break;
+      case "answerInteraction":
+        this.settleInteraction(message.id, "Synthetic answer recorded.");
+        break;
+      case "cancelInteraction":
+        this.settleInteraction(message.id, "Synthetic request cancelled.");
+        break;
+      case "chooseExecutionProfile":
+        this.executionProfile = { ...this.executionProfile, profile: message.profile, phase: "idle", canSwitch: true };
+        this.emitProfile();
+        break;
+      case "setDefaultModel":
+        this.providerConfig = { ...this.providerConfig, defaultProvider: message.provider, defaultModelId: message.modelId };
+        this.emitSettings();
+        break;
+      case "refreshProviderConfig":
+        if (this.providerConfig.busy) break;
+        this.providerConfig = { ...this.providerConfig, busy: true };
+        this.emitSettings();
+        this.schedule(() => {
+          this.providerConfig = { ...this.providerConfig, busy: false };
+          this.emitSettings();
+        }, 400);
+        break;
+      case "openProviderApiKey":
+        this.providerConfig = {
+          ...this.providerConfig,
+          providers: this.providerConfig.providers.map(provider => provider.providerId === message.providerId
+            ? { ...provider, configured: true, authLabel: "stored", canLogout: true }
+            : provider),
+        };
+        this.emitSettings();
+        break;
+      case "logoutProvider":
+        this.providerConfig = {
+          ...this.providerConfig,
+          defaultProvider: this.providerConfig.defaultProvider === message.providerId ? null : this.providerConfig.defaultProvider,
+          defaultModelId: this.providerConfig.defaultProvider === message.providerId ? null : this.providerConfig.defaultModelId,
+          providers: this.providerConfig.providers.map(provider => provider.providerId === message.providerId
+            ? { ...provider, configured: false, authLabel: null, canLogout: false }
+            : provider),
+        };
+        this.emitSettings();
+        break;
+      case "endOwnedRuntime":
+      case "recoverControlledRuntime":
+        this.executionProfile = { profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false };
+        this.emitProfile();
         break;
       case "addFileAttachment":
         this.addAttachment("file");
@@ -246,6 +356,53 @@ export class PreviewBridge implements WebviewBridge {
     this.scheduleApprovalExpiry(); this.emitWorkspace();
   }
 
+  /** Synthetic extension request: one active form, one queued behind it, one warning feedback entry. */
+  simulateInteraction(): void {
+    if (this.disposed || this.workspace.runtime !== "ready") return;
+    const sequence = ++this.interactionSequence;
+    this.interactions = {
+      active: {
+        id: `interaction-preview-${sequence}`,
+        method: "select",
+        title: "Choose how the synthetic extension should continue",
+        origin: "trusted runtime extension; not authenticated",
+        options: [
+          { id: "once", label: "Run the synthetic step once" },
+          { id: "skip", label: "Skip it for this task" },
+        ],
+      },
+      queuedCount: 1,
+      phase: "waiting",
+      errorCode: null,
+      feedback: [{ id: `feedback-preview-${sequence}`, kind: "notify", level: "warning", text: "Synthetic extension warning: an earlier step's output was truncated." }],
+      omittedFeedback: 0,
+    };
+    this.emitInteractions();
+  }
+
+  /** Synthetic recovery banner: no real runtime is ended or recovered in the preview. */
+  simulateRecoveryRequired(): void {
+    if (this.disposed) return;
+    this.executionProfile = { ...this.executionProfile, phase: "recovery-required", errorCode: "stop-unconfirmed", canSwitch: false, canEnd: true, canRecover: true };
+    this.emitProfile();
+  }
+
+  private settleInteraction(id: string, note: string): void {
+    const active = this.interactions.active;
+    if (!active || active.id !== id) return;
+    const hadQueued = this.interactions.queuedCount > 0;
+    this.interactions = {
+      ...this.interactions,
+      active: hadQueued
+        ? { id: `interaction-preview-queued-${++this.interactionSequence}`, method: "confirm", title: "Queued synthetic follow-up", message: "This request was queued behind the one just settled.", origin: "trusted runtime extension; not authenticated" }
+        : null,
+      queuedCount: hadQueued ? this.interactions.queuedCount - 1 : 0,
+      phase: hadQueued ? "waiting" : "idle",
+      feedback: [...this.interactions.feedback, { id: `feedback-settled-${active.id}`, kind: "status" as const, level: "info" as const, text: note }].slice(-8),
+    };
+    this.emitInteractions();
+  }
+
   private scheduleApprovalExpiry(): void {
     const generation = this.workspace.generation;
     for (const card of this.workspace.approvals) this.schedule(() => {
@@ -282,8 +439,12 @@ export class PreviewBridge implements WebviewBridge {
     this.preparationToken++;
     this.workspace = { ...baseWorkspace("empty"), viewId: this.viewId, generation: this.workspace.generation, messages: this.workspace.messages };
     this.attachment = { ...this.attachment, preparation: "idle", result: null };
+    this.interactions = { active: null, queuedCount: 0, phase: "idle", errorCode: null, feedback: [], omittedFeedback: 0 };
+    this.executionProfile = { profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false };
     this.emitWorkspace();
     this.emitAttachment();
+    this.emitInteractions();
+    this.emitProfile();
   }
 
   dispose(): void {
@@ -303,19 +464,16 @@ export class PreviewBridge implements WebviewBridge {
 
   /** Synthetic settings so the dialog can be reviewed; no credential or host state exists in the preview. */
   private emitSettings(): void {
-    const envelope = { version: 3 as const, viewId: this.viewId, generation: this.workspace.generation };
-    this.emit({ ...envelope, type: "executionProfileState", profile: "controlled", displayName: null, phase: "idle",
-      errorCode: null, canSwitch: true, canEnd: false, canRecover: false });
-    this.emit({ ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "synthetic", defaultModelId: "sonnet",
-      providers: [
-        { providerId: "synthetic", displayName: "Synthetic provider", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-        { providerId: "other", displayName: "Other provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
-      ],
-      catalog: [
-        { provider: "synthetic", modelId: "sonnet", label: "Claude Sonnet" },
-        { provider: "synthetic", modelId: "haiku", label: "Claude Haiku" },
-      ] });
+    this.emitProfile();
+    this.emit({ version: 3, type: "providerConfigState", viewId: this.viewId, generation: this.workspace.generation, ...this.providerConfig });
+  }
+
+  private emitInteractions(): void {
+    this.emit({ version: 3, type: "interactionState", viewId: this.viewId, generation: this.workspace.generation, ...this.interactions });
+  }
+
+  private emitProfile(): void {
+    this.emit({ version: 3, type: "executionProfileState", viewId: this.viewId, generation: this.workspace.generation, ...this.executionProfile });
   }
 
   private emit(message: HostMessage): void {
@@ -347,7 +505,14 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private emitSession(): void {
-    this.emit({ ...this.session, viewId: this.viewId });
+    const title = this.previewOptions?.title;
+    this.emit({ ...this.session, viewId: this.viewId,
+      ...(title ? {
+        current: this.session.current ? { ...this.session.current, name: title } : null,
+        entries: this.previewOptions?.loading ? [] : this.session.entries.map((entry, index) => ({ ...entry, title: index === 0 ? title : entry.title })),
+        ...(this.previewOptions?.loading ? { phase: "listing" as const, loaded: false } : {}),
+      } : {}),
+    });
   }
 
   private emitSavedHistory(): void {

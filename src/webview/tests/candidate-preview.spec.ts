@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { act } from "react";
 import { candidateHarness } from "./candidate-harness.js";
+import { chineseUi } from "../chat/ui-zh-cn.js";
 
 
 const send = 'button[aria-label="Send message"]';
@@ -203,6 +204,43 @@ test("candidate reads headings, lists, links and an unfinished code fence throug
   const link = h.get<HTMLAnchorElement>('a');
   assert.equal(link.textContent, "the guide");
   assert.equal(link.href, "https://example.com/guide");
+});
+
+test("candidate message rows read from layout: no repeated speaker labels or empty-activity placeholders", async t => {
+  const h = await candidateHarness(t, "ready");
+  const user = h.get(".candidate__message--user");
+  const assistant = h.get(".candidate__message--assistant");
+  assert.equal(user.getAttribute("aria-label"), "You");
+  assert.equal(assistant.getAttribute("aria-label"), "pi");
+  assert.equal(h.root.querySelectorAll(".candidate__speaker").length, 0);
+  assert.equal(assistant.querySelector(".candidate__activity"), null, "no activity means no placeholder row");
+  assert.equal(h.root.textContent?.includes("No activity reported"), false);
+  assert.equal(chineseUi["You"], "你");
+});
+
+test("candidate renders the fence language, quotes and inline code within the reading surface", async t => {
+  const h = await candidateHarness(t, "formatted");
+  await h.advance(360);
+  assert.equal(h.get(".candidate__code-lang").textContent, "ts");
+  await h.advance(420); await h.advance(420);
+  assert.equal(h.get(".candidate__code-lang").textContent, "ts", "the header survives stream updates");
+  const quote = h.get(".candidate__markdown blockquote");
+  assert.match(quote.textContent ?? "", /Keep the change small and reviewable/);
+  assert.equal(h.get(".candidate__markdown p code").textContent, "npm test");
+  assert.equal(h.get(".candidate__code pre code").textContent, 'const greeting = "<hello>&";\n  console.log(greeting);', "block code stays literal");
+});
+
+test("candidate activity items carry status as text and data, never color alone", async t => {
+  const h = await candidateHarness(t, "activity");
+  await h.advance(360); await h.advance(420); await h.advance(420); await h.advance(420);
+  const tool = h.get('details[aria-label="Tool details"]');
+  const status = tool.querySelector('[data-status]');
+  assert.equal(status?.getAttribute("data-status"), "failed");
+  assert.match(status?.textContent ?? "", /^failed$/i);
+  const thinking = h.get('details[aria-label="Thinking details"]');
+  assert.equal(thinking.querySelector('[data-status]')?.getAttribute("data-status"), "complete");
+  const summary = h.get('details[aria-label="Message activity"] > summary');
+  assert.equal(summary.querySelector(".candidate__activity-label")?.textContent, summary.getAttribute("title"));
 });
 
 test("candidate copies the exact partial and completed code without copying Markdown fences", async t => {
@@ -936,7 +974,7 @@ test("candidate no-folder welcome accepts a draft and defers the folder explanat
   await h.advance(5000);
   assert.equal(h.root.querySelectorAll(".candidate__message").length, 0);
   assert.equal(h.root.querySelectorAll(stop).length, 0);
-  await h.click('button[aria-label="OK"]');
+  await h.click('button[aria-label="Keep editing"]');
   assert.equal(h.root.querySelectorAll("dialog").length, 0);
   assert.equal(composer.value, "Hello without a folder 原文");
   assert.equal(h.dom.window.document.activeElement, composer);
@@ -978,7 +1016,7 @@ test("candidate folder recovery transport failure stays visible in the prompt wi
   assert.equal(h.get<HTMLButtonElement>("#open-folder").disabled, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep recovery failure draft");
   assert.equal(h.root.querySelectorAll(".candidate__message--user").length, 0);
-  await h.click('button[aria-label="OK"]');
+  await h.click('button[aria-label="Keep editing"]');
   assert.match(h.root.textContent ?? "", /Reopen the view/);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep recovery failure draft");
 });

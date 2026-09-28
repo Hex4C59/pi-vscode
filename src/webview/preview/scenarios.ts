@@ -64,7 +64,7 @@ export const STREAM_CHUNKS = [
 export const FORMATTED_STREAM_CHUNKS = [
   '# Formatted reply\n\n- First step\n- Second step\n\n1. Inspect\n2. Verify\n\n```ts\nconst greeting = "<hello>',
   '&";\n  console.log(greeting);',
-  '\n```\n\nRead [the guide](https://example.com/guide).',
+  '\n```\n\nRead [the guide](https://example.com/guide).\n\n> Keep the change small and reviewable.\n\nUse `npm test` to verify.',
 ];
 export const ACTIVITY_STREAM_CHUNKS = [
   '# Activity-first reply\n\nThe tool details remain available while this reply streams.',

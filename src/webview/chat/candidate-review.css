@@ -4,7 +4,6 @@
   padding: var(--ui-space-2);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
-  background: var(--ui-surface);
 }
 
 .candidate-review__summary {
@@ -39,6 +38,48 @@
   font-size: var(--ui-font-chrome);
   overflow-wrap: anywhere;
 }
+
+/* Entries are hairline-separated rows, not nested cards; the summary stays the strong layer. */
+.candidate-review .change-review__entries { gap: 0; }
+
+.candidate-review .change-review__entry {
+  padding: var(--ui-space-2) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.candidate-review .change-review__entry + .change-review__entry { border-top: 1px solid var(--ui-border); }
+
+/* Notices keep their severity color as a quiet leading rule instead of another boxed surface. */
+.candidate-review .change-review__notice,
+.candidate-review .change-review__warning {
+  margin: var(--ui-space-2) 0 0;
+  padding: 0 0 0 var(--ui-space-2);
+  border: 0;
+  border-inline-start: 2px solid var(--ui-warning);
+  border-radius: 0;
+  background: transparent;
+}
+
+.candidate-review .change-review__warning { border-inline-start-color: var(--ui-danger); }
+
+/* Pagination is secondary chrome: quiet text buttons until hover or focus. */
+.candidate-review .change-review__pagination { margin: var(--ui-space-2) 0 0; }
+
+.candidate-review .change-review__pagination .btn-secondary {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ui-muted);
+}
+
+.candidate-review .change-review__pagination .btn-secondary:hover:not(:disabled) {
+  color: var(--ui-fg);
+  background: var(--ui-hover);
+}
+
+.candidate-review .change-review__pagination .btn-secondary:disabled { opacity: 0.55; }
+
 /* A reopened review shares the remaining height, never displacing approval decisions or Stop. */
 .candidate__footer .candidate-review { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 46px; overflow: hidden; }
 .candidate-review .change-review { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }

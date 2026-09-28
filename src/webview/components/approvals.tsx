@@ -79,7 +79,7 @@ export function Approvals({ cards, grants, disabled, onDecision, onRevoke, compa
       }} onFocusCapture={event => {
         focusedCard.current = event.target.closest<HTMLElement>('[data-approval-id]')?.dataset.approvalId ?? null;
       }}>
-        {compact && <nav className="approval-selector" aria-label={t("Pending approvals")}>
+        {compact && pending.length > 1 && <nav className="approval-selector" aria-label={t("Pending approvals")}>
           <span role="status">{t("Pending actions ({count})", { count: pending.length })}</span>
           <div className="approval-selector__list">
             {pending.map((card, index) => <button key={card.id} type="button" className="btn-secondary" data-select-approval={card.id}
@@ -106,6 +106,7 @@ export function Approvals({ cards, grants, disabled, onDecision, onRevoke, compa
                 <div className="activity-label">{t("Session scope")}</div>
                 <pre className="grant-scope">{scopeText(card, t)}</pre>
               </>}
+              {expired && <p className="approval-expired" role="status">{t("This request has expired.")}</p>}
               <div className="approval-actions">
                 {decisions.map(([decision, label]) => {
                   const unavailableSession = decision === "session" && card.scope === null;

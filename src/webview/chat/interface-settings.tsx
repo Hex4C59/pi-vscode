@@ -1,7 +1,9 @@
+import { ChatDialog } from "./chat-dialog.js";
+import { SessionIcon } from "./session-icon.js";
 import type { UiLanguageState } from "./types.js";
 import type { ExecutionProfileProjection, ProviderConfigEntry, ProviderConfigProjection } from "../../extension/contracts/index.js";
 import { ExecutionProfileControls } from "./extension-interactions.js";
-import { useEffect, useId, useRef, useState, useLayoutEffect, type ReactElement } from "react";
+import { useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { useUiText } from "../components/index.js";
 import { uiLanguages } from "./ui-language.js";
 
@@ -9,6 +11,7 @@ export interface InterfaceSettingsProps {
   language: UiLanguageState;
   executionProfile?: ExecutionProfileProjection | null;
   providerConfig?: ProviderConfigProjection | null;
+  sessionModel?: string | null;
   openRequest?: number;
   onChooseProfile?(profile: "controlled" | "trusted"): void;
   onEndRuntime?(): void;
@@ -24,11 +27,22 @@ function preferredProviderId(providers: readonly ProviderConfigEntry[], defaultP
   return providers.find(entry => entry.configured)?.providerId ?? providers[0]?.providerId ?? "";
 }
 
+function sessionMatchesDefault(
+  sessionModel: string | null | undefined,
+  provider: string | null,
+  modelId: string | null,
+  label: string | undefined,
+): boolean {
+  if (!sessionModel || !provider || !modelId) return false;
+  return sessionModel === `${provider} / ${modelId}` || sessionModel === label || sessionModel === `${provider} / ${label}`;
+}
+
 /** Native modal owns focus containment/Escape; no document listeners or host settings. */
 export function InterfaceSettings({
   language,
   executionProfile = null,
   providerConfig = null,
+  sessionModel = null,
   openRequest = 0,
   onChooseProfile,
   onEndRuntime,
@@ -41,7 +55,6 @@ export function InterfaceSettings({
   const { locale, text: t } = useUiText();
   const [open, setOpen] = useState(false);
   const [selectedProviderId, setSelectedProviderId] = useState("");
-  const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const languageId = useId();
   const defaultModelId = useId();
@@ -49,12 +62,6 @@ export function InterfaceSettings({
   useEffect(() => {
     if (openRequest > 0) setOpen(true);
   }, [openRequest]);
-  useLayoutEffect(() => {
-    const node = dialog.current;
-    if (!open || !node) return;
-    if (typeof node.showModal === "function") node.showModal();
-    else node.open = true; // jsdom; native modal behavior is verified in Chrome.
-  }, [open]);
   useEffect(() => {
     if (!providerConfig) {
       setSelectedProviderId("");
@@ -65,51 +72,48 @@ export function InterfaceSettings({
     setSelectedProviderId(preferredProviderId(providerConfig.providers, providerConfig.defaultProvider));
   }, [providerConfig, selectedProviderId]);
   const finishClose = () => { setOpen(false); trigger.current?.focus({ preventScroll: true }); };
-  const close = () => {
-    if (typeof dialog.current?.close === "function") dialog.current.close();
-    else finishClose();
-  };
   const defaultValue = providerConfig?.defaultProvider && providerConfig.defaultModelId
     ? `${providerConfig.defaultProvider}\0${providerConfig.defaultModelId}`
     : "";
   const selectedProvider = providerConfig?.providers.find(entry => entry.providerId === selectedProviderId) ?? null;
   const configuredNames = providerConfig?.providers.filter(entry => entry.configured).map(entry => entry.displayName) ?? [];
+  const defaultEntry = providerConfig?.catalog.find(entry =>
+    entry.provider === providerConfig.defaultProvider && entry.modelId === providerConfig.defaultModelId);
+  const defaultMatchesSession = sessionMatchesDefault(
+    sessionModel, providerConfig?.defaultProvider ?? null, providerConfig?.defaultModelId ?? null, defaultEntry?.label);
+  const providerStatus = providerConfig?.busy
+    ? "busy"
+    : selectedProvider?.configured ? "ready"
+      : selectedProvider ? "empty"
+        : providerConfig?.providers.length === 0 ? "empty"
+          : "empty";
   return <>
-    <button ref={trigger} className="candidate__icon" type="button" aria-label={t("Interface settings")} title={t("Interface settings")}
+    <button ref={trigger} className="candidate__icon session-icon-button" aria-haspopup="dialog" aria-expanded={open} type="button" aria-label={t("Interface settings")} title={t("Interface settings")}
       onClick={() => setOpen(true)}>
-      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 2-.5 2-2 .9-1.8-.6-2 3.4 1.5 1.4v2l-1.5 1.4 2 3.4 1.8-.6 2 .9.5 2h4l.5-2 2-.9 1.8.6 2-3.4-1.5-1.4v-2l1.5-1.4-2-3.4-1.8.6-2-.9L12 2Z"/><circle cx="10" cy="10" r="3"/></svg>
+      <SessionIcon name="settings" />
     </button>
-    {open && <dialog ref={dialog} className="candidate-settings" aria-label={t("Interface settings")} onClose={finishClose}
-      onKeyDown={event => { if (event.key === "Escape") event.stopPropagation(); }}>
-      <header><h2>{t("Interface settings")}</h2>
-        <button className="candidate__icon" type="button" aria-label={t("Close settings")} title={t("Close settings")}
-          onClick={close}>
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M5 15 15 5"/></svg>
-        </button>
-      </header>
+    {open && <ChatDialog className="candidate-settings" title={t("Interface settings")} closeLabel={t("Close settings")} onClose={finishClose}>
       <section className="candidate-settings__section" aria-labelledby="candidate-settings-language">
         <div className="candidate-settings__heading"><h3 id="candidate-settings-language">{t("Language")}</h3></div>
-        <div className="candidate-settings__field">
-          <select id={languageId} aria-label={t("Language")} value={locale}
-            onChange={event => language.select(event.currentTarget.value)}>
-            {uiLanguages.map(item => <option key={item.locale} value={item.locale}>{item.label}</option>)}
-          </select>
-        </div>
+        <p className="candidate-settings__note">{t("For this view only. Reloading the view restores English.")}</p>
+        <select id={languageId} aria-label={t("Language")} value={locale}
+          onChange={event => language.select(event.currentTarget.value)}>
+          {uiLanguages.map(item => <option key={item.locale} value={item.locale}>{item.label}</option>)}
+        </select>
       </section>
       {providerConfig && (
         <section className="candidate-settings__section" aria-labelledby="candidate-settings-providers">
           <div className="candidate-settings__heading">
             <h3 id="candidate-settings-providers">{t("Providers and models")}</h3>
             {onRefreshProviders && (
-              <button className="candidate__icon" type="button" disabled={providerConfig.busy} aria-busy={providerConfig.busy}
+              <button className="candidate__icon candidate-settings__refresh" type="button" disabled={providerConfig.busy} aria-busy={providerConfig.busy}
                 aria-label={t(providerConfig.busy ? "Refreshing providers…" : "Refresh providers")}
                 title={t(providerConfig.busy ? "Refreshing providers…" : "Refresh providers")}
                 onClick={onRefreshProviders}>
-                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4" /></svg>
+                <SessionIcon name="refresh-cw" />
               </button>
             )}
           </div>
-          {providerConfig.error && <p className="candidate-settings__error" role="alert">{providerConfig.error}</p>}
           <div className="candidate-settings__field">
             <label htmlFor={defaultModelId}>{t("Default model")}</label>
             <select
@@ -129,6 +133,13 @@ export function InterfaceSettings({
                 </option>
               ))}
             </select>
+            <p className="candidate-settings__note">{t("Saved default. This is not a connection test.")}</p>
+            {sessionModel
+              ? <>
+                <p className="candidate-settings__note" data-testid="session-model">{t("This session: {model}", { model: sessionModel })}</p>
+                {!defaultMatchesSession && <p className="candidate-settings__note">{t("Changing the default does not replace the current session model until the host applies it.")}</p>}
+              </>
+              : <p className="candidate-settings__note" data-testid="session-model">{t("No live session model yet. The default is used when a session starts.")}</p>}
           </div>
           <p className="candidate-settings__note" data-testid="configured-providers">
             {configuredNames.length
@@ -136,7 +147,7 @@ export function InterfaceSettings({
               : t("No providers configured yet.")}
           </p>
           {providerConfig.providers.length === 0 ? (
-            <p className="candidate-settings__note">{t("No API-key providers are available yet.")}</p>
+            <p className="candidate-settings__note" role="status">{t(providerConfig.busy ? "Loading providers…" : "No API-key providers are available yet.")}</p>
           ) : (
             <>
               <div className="candidate-settings__field">
@@ -158,12 +169,16 @@ export function InterfaceSettings({
               </div>
               {selectedProvider && (
                 <div className="candidate-settings__provider" data-testid="selected-provider">
-                  <p className={`candidate-settings__status${selectedProvider.configured ? " is-ready" : ""}`}>
+                  <p className={`candidate-settings__status is-${providerStatus}`} data-provider-status={providerStatus}>
                     <span className="candidate-settings__dot" aria-hidden="true" />
-                    {selectedProvider.configured
-                      ? t("Configured{source}", { source: selectedProvider.authLabel ? ` · ${selectedProvider.authLabel}` : "" })
-                      : t("Not configured")}
+                    {providerConfig.busy
+                      ? t("Refreshing providers…")
+                      : selectedProvider.configured
+                        ? t("Configured{source}", { source: selectedProvider.authLabel ? ` · ${selectedProvider.authLabel}` : "" })
+                        : t("Not configured")}
                   </p>
+                  <p className="candidate-settings__note">{t("API keys are entered in a native password prompt. Keys are never shown in this view.")}</p>
+                  <p className="candidate-settings__note">{t("Configured means credentials are saved, not that a connection test succeeded.")}</p>
                   <div className="candidate-settings__actions candidate-settings__provider-actions">
                     {selectedProvider.canAddApiKey && onAddApiKey && (
                       <button type="button" disabled={providerConfig.busy}
@@ -178,14 +193,16 @@ export function InterfaceSettings({
                       </button>
                     )}
                   </div>
+                  {providerConfig.error && <p className="candidate-settings__error" role="alert">{providerConfig.error}</p>}
                 </div>
               )}
             </>
           )}
+          {providerConfig.error && providerConfig.providers.length === 0 && <p className="candidate-settings__error" role="alert">{providerConfig.error}</p>}
         </section>
       )}
       {executionProfile && onChooseProfile && onEndRuntime && onRecoverRuntime && (
-        <section className="candidate-settings__section" aria-label={t("Runtime extensions")}>
+        <section className="candidate-settings__section">
           <ExecutionProfileControls
             state={executionProfile}
             language={locale === "zh-CN" ? "zh-CN" : "en"}
@@ -196,6 +213,6 @@ export function InterfaceSettings({
           />
         </section>
       )}
-    </dialog>}
+    </ChatDialog>}
   </>;
 }

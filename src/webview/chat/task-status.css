@@ -1,0 +1,44 @@
+/* Task status line: in-progress pulses, waiting and terminal states carry distinct markers (not color alone). */
+.candidate__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin: 0 var(--ui-space-2) var(--ui-space-2);
+  color: var(--ui-muted);
+  font-size: var(--ui-font-chrome);
+  line-height: 1.4;
+}
+
+.candidate__pulse {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ui-brand);
+  animation: task-status-pulse 1.2s ease-in-out infinite;
+}
+
+.candidate__status-icon {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Waiting for a decision is read aloud by the marker; the text stays foreground for attention. */
+.candidate__progress[data-state="waiting"] { color: var(--ui-fg); }
+.candidate__progress[data-state="waiting"] .candidate__status-icon { color: var(--ui-warning); }
+.candidate__progress[data-state="failed"] { color: var(--ui-fg); }
+.candidate__progress[data-state="failed"] .candidate__status-icon { color: var(--ui-danger); }
+.candidate__progress[data-state="completed"] .candidate__status-icon,
+.candidate__progress[data-state="stopped"] .candidate__status-icon { color: var(--ui-muted); }
+
+@keyframes task-status-pulse { 50% { opacity: 0.4; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .candidate__pulse { animation: none; }
+}

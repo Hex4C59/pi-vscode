@@ -1,0 +1,86 @@
+/* Message composer owns input, toolbar and its context/permission surfaces. */
+.candidate__composer { position: relative; padding: var(--ui-space-3); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius-lg); background: var(--ui-composer); transition: border-color 120ms ease-out; }
+.candidate__composer:focus-within { border-color: var(--ui-brand-focus); }
+.candidate__composer textarea { display: block; width: 100%; min-height: 60px; max-height: min(140px, 24vh); padding: 0 0 var(--ui-space-3); resize: none; border: 0; outline: none; color: var(--ui-fg); background: transparent; font-size: var(--ui-font-body); line-height: 1.5; }
+.candidate__composer textarea::placeholder { color: var(--ui-muted); }
+/* Real DOM order matches the toolbar: context, model, permissions, send. */
+.candidate__composer-actions { display: flex; align-items: center; gap: var(--ui-space-1); min-width: 0; }
+.candidate__model { flex: 1; min-width: 0; }
+.candidate #model-effort-trigger {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 5.5rem;
+  min-height: 28px;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: transparent;
+  color: var(--ui-fg);
+  font-size: var(--ui-font-chrome);
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+}
+.candidate #model-effort-trigger:hover:not(:disabled) { background: var(--ui-hover); border-color: var(--ui-border); }
+.candidate #model-effort-trigger:disabled { opacity: 0.72; color: var(--ui-fg); }
+.candidate .model-effort-trigger__model { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.candidate .model-effort-trigger__thinking { flex-shrink: 0; white-space: pre; color: var(--ui-muted); }
+.candidate #model-current-label { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+/* Same inset as the borderless trigger above it, so both lines start at one edge. */
+.candidate #model-status-error { padding: var(--ui-space-2); }
+.candidate #pending-settings { margin: var(--ui-space-1) var(--ui-space-2) 0; font-size: var(--ui-font-chrome); overflow-wrap: anywhere; }
+.candidate .popover { left: 0; bottom: calc(100% + var(--ui-space-2)); width: 100%; max-height: min(360px, 55vh); }
+/* Keep only this opted-in candidate panel paintable for exit; React makes it inert immediately. */
+.candidate #model-popover[data-animated="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity 160ms ease-out, transform 160ms ease-out, visibility 0s;
+}
+.candidate #model-popover[data-animated="true"][hidden] {
+  display: block !important;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 100ms ease-in, transform 100ms ease-in, visibility 0s 100ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .candidate #model-popover[data-animated="true"],
+  .candidate #model-popover[data-animated="true"][hidden] { transition: none; transform: none; }
+}
+.candidate__send { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--ui-radius-lg); background-color: var(--ui-brand); color: var(--ui-brand-fg); }
+.candidate__send:hover:not(:disabled) { background-color: color-mix(in srgb, var(--ui-brand) 85%, var(--ui-bg)); }
+.candidate__send:disabled { opacity: 1; background-color: var(--ui-hover); color: var(--ui-muted); }
+.candidate__send svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+/* Stop keeps the brand fill while settling so the running state never reads as idle chrome. */
+.candidate__send--stop:disabled { opacity: 0.6; background-color: var(--ui-brand); color: var(--ui-brand-fg); }
+.candidate__send--stop svg { fill: currentColor; stroke: none; }
+
+
+.candidate-permissions { margin: 0; font-size: var(--ui-font-chrome); color: var(--ui-muted); }
+.candidate-permissions > summary { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--ui-radius-lg); cursor: pointer; list-style: none; }
+.candidate-permissions > summary::-webkit-details-marker { display: none; }
+.candidate-permissions > summary:hover, .candidate-permissions[open] > summary { color: var(--ui-fg); background: var(--ui-hover); }
+.candidate-permissions > summary svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+/* Opens above the composer (the positioned form), never over the draft. */
+.candidate-permissions__content { position: absolute; z-index: 2; bottom: calc(100% + var(--ui-space-2)); right: 0; width: 100%; max-width: 320px; max-height: min(160px, 25dvh); overflow: auto; padding: var(--ui-space-3); color: var(--ui-fg); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); background: var(--ui-surface-raised); box-shadow: var(--ui-shadow); }
+.candidate-permissions__content p { margin: 0 0 var(--ui-space-2); }
+.candidate-context__content:not(:empty) { margin-bottom: var(--ui-space-2); }
+.candidate-context__menu [role="menuitem"]:is(:hover, :focus-visible):not(:disabled) { background: var(--ui-hover); }
+.candidate-context__menu [role="menuitem"]:disabled { opacity: .45; }
+.candidate-context__actions > button[aria-haspopup]:is(:hover, [aria-expanded="true"]):not(:disabled) { background: var(--ui-hover); color: var(--ui-fg); }
+.candidate-context__actions > button:disabled { opacity: .45; }
+.candidate__composer-actions :is(button, summary) { transition: background-color 100ms ease-out, color 100ms ease-out; }
+.candidate__composer-actions :is(button, summary):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+@keyframes composer-menu-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .candidate__composer, .candidate__composer-actions :is(button, summary) { transition: none; }
+  .candidate-context__menu { animation: none; }
+}
+
+@media (max-height: 540px) {
+  .candidate__composer textarea { min-height: 36px; }
+}

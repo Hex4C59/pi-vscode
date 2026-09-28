@@ -48,6 +48,8 @@ export async function candidateHarness(t: TestContext, scenario: PreviewScenario
     completeReview: () => act(async () => preview?.completeReview()),
     loseReview: () => act(async () => preview?.loseReview()),
     queueApprovals: () => act(async () => preview?.queueApprovals()),
+    simulateInteraction: () => act(async () => preview?.simulateInteraction()),
+    simulateRecoveryRequired: () => act(async () => preview?.simulateRecoveryRequired()),
     dispose: () => act(async () => preview?.dispose()),
     reset: () => act(async () => { preview?.dispose(); preview = mountCandidatePreview(root, "empty", language); }),
   };

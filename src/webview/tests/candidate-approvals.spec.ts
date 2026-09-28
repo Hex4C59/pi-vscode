@@ -165,3 +165,29 @@ test("compact custom coverage warning shares scrollable details rather than shri
     assert.equal(h.get<HTMLButtonElement>('[data-decision="session"]').disabled, true);
   } finally { await h.close(); }
 });
+
+test("a single pending request renders without the multi-request selector", async () => {
+  const h = await uiHarness(true, true);
+  try {
+    await h.render({ approvals: [cards()[0]], chatBusy: true, execution: "awaiting-approval" });
+    assert.equal(h.root.querySelector(".approval-selector"), null, "one request needs no selector row");
+    assert.equal(h.root.querySelectorAll('.approval:not([hidden])').length, 1);
+    await h.render({ approvals: cards().slice(0, 2), chatBusy: true, execution: "awaiting-approval" });
+    assert.ok(h.get('[aria-label="Pending approvals"]'), "two requests restore the selector");
+    assert.match(h.get('[aria-label="Pending approvals"]').textContent ?? "", /2/);
+  } finally { await h.close(); }
+});
+
+test("an expired request says so in words instead of only disabling its decisions", async t => {
+  t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: 1000 });
+  const h = await uiHarness(true, true);
+  try {
+    const expired = { ...cards()[0], expiresAt: 900 };
+    await h.render({ approvals: [expired], chatBusy: true, execution: "awaiting-approval" });
+    const marker = h.get(".approval-expired");
+    assert.equal(marker.getAttribute("role"), "status");
+    assert.match(marker.textContent ?? "", /This request has expired\./);
+    assert.equal(h.get<HTMLButtonElement>('[data-decision="once"]').disabled, true);
+    assert.equal(h.sent.filter(m => m.type === "decideApproval").length, 0);
+  } finally { await h.close(); }
+});

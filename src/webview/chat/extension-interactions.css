@@ -34,14 +34,11 @@
   overflow-wrap: anywhere;
 }
 
+/* The panel already carries the frame; the form is a plain stack inside it, not a second card. */
 .extension-interactions__form {
   display: grid;
   gap: var(--ui-space-2);
   min-inline-size: 0;
-  padding: var(--ui-space-3);
-  background: var(--ui-bg);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
 }
 
 .extension-interactions__title {
@@ -178,31 +175,33 @@
 .extension-interactions__omitted { color: var(--ui-muted); }
 .extension-interactions__feedback { min-inline-size: 0; margin-block-start: var(--ui-space-3); }
 .extension-interactions__feedback h3 { margin: 0 0 var(--ui-space-2); font-size: var(--ui-font-chrome); }
+
+/* Feedback reads as quiet hairline-separated rows; the level shows in the label, not a card edge. */
 .extension-interactions__feedback-list {
   display: grid;
-  gap: var(--ui-space-2);
   max-block-size: 14rem;
   margin: 0;
-  padding: 0 var(--ui-space-2) 0 var(--ui-space-5);
+  padding: 0;
+  list-style: none;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
 .extension-interactions__feedback-entry {
   min-inline-size: 0;
-  padding: var(--ui-space-2);
-  background: var(--ui-bg);
-  border: 1px solid var(--ui-border);
-  border-inline-start: 2px solid var(--ui-border-strong);
-  border-radius: var(--ui-radius);
+  padding: var(--ui-space-2) 0;
 }
 
-.extension-interactions__feedback-entry.is-warning { border-inline-start-color: var(--ui-warning); }
-.extension-interactions__feedback-entry.is-error { border-inline-start-color: var(--ui-danger); }
-.extension-interactions__feedback-label { color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.extension-interactions__feedback-entry + .extension-interactions__feedback-entry {
+  border-block-start: 1px solid var(--ui-border);
+}
+
+.extension-interactions__feedback-label { margin: 0; color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.extension-interactions__feedback-entry.is-warning .extension-interactions__feedback-label { color: var(--ui-warning); }
+.extension-interactions__feedback-entry.is-error .extension-interactions__feedback-label { color: var(--ui-danger); }
 .extension-interactions__feedback-text {
   max-block-size: 8rem;
-  margin: 0;
+  margin: var(--ui-space-1) 0 0;
   overflow: auto;
   color: var(--ui-fg);
   font: inherit;
@@ -237,8 +236,6 @@
   .extension-interactions,
   .execution-profile-controls { padding: var(--ui-space-2); }
 
-  .extension-interactions__form { padding: var(--ui-space-2); }
-
   .extension-interactions__actions,
   .execution-profile-controls__actions { display: grid; grid-template-columns: minmax(0, 1fr); }
 
@@ -258,3 +255,39 @@
 .extension-interactions > summary { cursor: pointer; }
 .extension-interactions > summary > h2 { display: inline; }
 .extension-interactions:not([open]) { overflow: visible; padding-block: var(--ui-space-2); }
+
+/* Forced-visible recovery strip (RuntimeRecoveryBanner). Presentation moved here from candidate.css;
+   cross-region height budgets stay with the page composition. */
+.candidate__runtime-recovery {
+  margin: 0 0 var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid var(--ui-warning);
+  border-radius: var(--ui-radius);
+  background: var(--ui-warning-bg);
+  font-size: var(--ui-font-chrome);
+}
+
+.candidate__runtime-recovery p { margin: 0 0 var(--ui-space-2); }
+
+.candidate__runtime-recovery-actions { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); }
+
+.candidate__runtime-recovery-actions button {
+  flex: 1 1 auto;
+  min-height: 28px;
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  border: 1px solid var(--ui-border-strong);
+  background: var(--ui-surface);
+  color: var(--ui-fg);
+  font: inherit;
+}
+
+.candidate__runtime-recovery-actions button[data-action="recover-controlled-runtime"] {
+  background: var(--ui-accent);
+  border-color: transparent;
+  color: var(--ui-accent-fg);
+}
+
+.candidate__runtime-recovery-actions button:hover:not(:disabled) { background: var(--ui-hover); }
+.candidate__runtime-recovery-actions button[data-action="recover-controlled-runtime"]:hover:not(:disabled) { background: var(--ui-accent-hover); }
+.candidate__runtime-recovery-actions button:disabled { opacity: 0.55; }

@@ -1,12 +1,12 @@
+import { SessionNavigation } from "./session-navigation.js";
+import { MessageComposer } from "./message-composer.js";
+import { TaskStatus } from "./task-status.js";
 import type { ChatMountOptions, UiLanguageState } from "./types.js";
 import { ExtensionInteractions, RuntimeRecoveryBanner } from "./extension-interactions.js";
 import { CandidateReview } from "./candidate-review.js";
-import { CandidateContext } from "./candidate-context.js";
 import { ProjectResourcesPrompt } from "./project-resources-prompt.js";
-import { DefaultModelPicker } from "./default-model-picker.js";
 import { NoFolderPrompt } from "./no-folder-prompt.js";
 import { PiWelcomeMark } from "./pi-welcome-mark.js";
-import { InterfaceSettings } from "./interface-settings.js";
 import { createUiLanguage } from "./ui-language.js";
 import { ChatPreviewContext, useChatPreview } from "./environment.js";
 import { SESSION_PAGE_SIZE, SAVED_HISTORY_PAGE_SIZE } from "../index.js";
@@ -15,7 +15,7 @@ import { CandidateConversation } from "./candidate-conversation.js";
 import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { WebviewClient, availability, type WebviewBridge } from "../index.js";
-import { ModelPicker, WorkspaceSetup, SavedHistory, Approvals, SessionGrants, UiTextProvider, useUiText } from "../components/index.js";
+import { WorkspaceSetup, SavedHistory, Approvals, UiTextProvider, useUiText } from "../components/index.js";
 
 function subscribeViewport(listener: () => void): () => void {
   window.addEventListener("resize", listener);
@@ -122,53 +122,17 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
     } else if (node && !empty && !historyOpen && follow.current) node.scrollTop = node.scrollHeight;
     priorRuntimeError.current = readableRuntimeError;
   }, [state, historyOpen, empty, readableRuntimeError]);
-  useLayoutEffect(() => {
-    const node = input.current;
-    if (node) { node.style.height = "auto"; node.style.height = `${Math.min(node.scrollHeight, 140)}px`; }
-  }, [snapshot.text]);
-  const progress = controls.stopping ? t("Stopping… Waiting for the task to settle.")
-    : state?.execution === "retrying" ? t("Retrying…")
-    : state?.execution === "compacting" ? t("Compacting context…")
-    : state?.execution === "completed" ? t("Task completed")
-    : state?.execution === "stopped" ? t("Task stopped · Side effects are not rolled back.")
-    : state?.execution === "failed" ? t("Task failed")
-    : state?.chatBusy ? state.execution === "replying" ? t("Replying…") : t("Working…") : null;
   return <section lang={locale} className="candidate" aria-label={t(preview ? "Candidate chat" : "Pi chat")} onKeyDown={event => {
     if (!historyOpen || event.key !== "Escape" || event.defaultPrevented || event.nativeEvent.isComposing) return;
     // Existing nested dialogs own Escape first, even when focus remains on their trigger.
     if (event.currentTarget.querySelector('[role="dialog"]:not([hidden]), dialog[open]')) return;
     event.preventDefault(); setHistoryOpen(false);
   }}>
-    <nav className="candidate__navigation" aria-label={t("Conversation navigation")}>
-      <span className="candidate__current" aria-label={t("Current conversation")} title={snapshot.sessions?.current?.name ?? undefined}>{snapshot.sessions?.current?.name}</span>
-      <button className="candidate__icon" type="button" aria-label={t("Browse saved conversations")} title={t("Chat history")} disabled={!canBrowse} ref={browse} aria-expanded={historyOpen} aria-controls={historyId}
-        onClick={() => { if (historyOpen) { setHistoryOpen(false); return; } readingPosition.current = messages.current?.scrollTop ?? 0; setHistoryOpen(true); client.openSessions(); }}>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8a7 7 0 1 1 0 4M3 3v5h5M10 6v4l3 2" /></svg>
-      </button>
-      <button className="candidate__icon" type="button" aria-label={t("New conversation")} title={t("New conversation")} disabled={!canCompose || controls.sessionTransitioning || snapshot.sessions?.phase === "listing"}
-        onClick={event => { event.currentTarget.focus(); client.newConversation(); }}>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M9 4H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-4M11 10l6-6-2-2-6 6-1 4 3-2Z" /></svg>
-      </button>
-      <InterfaceSettings
-        language={language}
-        openRequest={settingsOpenRequest}
-        executionProfile={snapshot.executionProfile}
-        providerConfig={snapshot.providerConfig}
-        onChooseProfile={profile => client.action({ type: "chooseExecutionProfile", profile })}
-        onEndRuntime={() => client.action({ type: "endOwnedRuntime" })}
-        onRecoverRuntime={() => client.action({ type: "recoverControlledRuntime" })}
-        onAddApiKey={providerId => client.action({ type: "openProviderApiKey", providerId })}
-        onLogoutProvider={providerId => client.action({ type: "logoutProvider", providerId })}
-        onSetDefaultModel={(provider, modelId) => client.action({ type: "setDefaultModel", provider, modelId })}
-        onRefreshProviders={() => client.action({ type: "refreshProviderConfig" })}
-      />
-    </nav>
-    <div className="candidate__history" id={historyId} aria-label={t("Conversation history")} role="region" hidden={!historyOpen}>
-      <button className="candidate__icon candidate__history-back" type="button" aria-label={t("Back to conversation")} title={t("Back to conversation")} ref={back} onClick={() => setHistoryOpen(false)}>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m10 5-5 5 5 5M5 10h11" /></svg>
-      </button>
-      <CandidateSessions state={snapshot.sessions} pageSize={SESSION_PAGE_SIZE} onResume={client.resumeConversation} onPage={client.navigateSessions} onRefresh={() => client.getSavedSessions(0)} />
-    </div>
+    <SessionNavigation snapshot={snapshot} client={client} language={language} canBrowse={canBrowse} canCompose={canCompose}
+      historyOpen={historyOpen} historyId={historyId} browse={browse} settingsOpenRequest={settingsOpenRequest}
+      onBrowse={() => { if (historyOpen) { setHistoryOpen(false); return; } readingPosition.current = messages.current?.scrollTop ?? 0; setHistoryOpen(true); client.openSessions(); }} />
+    <CandidateSessions open={historyOpen} id={historyId} back={back} onBack={() => setHistoryOpen(false)}
+      state={snapshot.sessions} pageSize={SESSION_PAGE_SIZE} onResume={client.resumeConversation} onPage={client.navigateSessions} onRefresh={() => client.getSavedSessions(0)} />
     <div className="candidate__messages" tabIndex={-1} hidden={historyOpen} ref={messages} onScroll={() => {
       const node = messages.current;
       if (node && !historyOpen) follow.current = node.scrollHeight - node.clientHeight - node.scrollTop <= 32;
@@ -220,51 +184,13 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
           onRevoke={id => client.action({ type: "revokeGrant", id })} />
       </div>}
       {!historyOpen && snapshot.sessions?.error && <p className="candidate__error" role="alert">{t("Conversation handoff: {error}. No conversation switch was made. Retry or browse history.", { error: snapshot.sessions.error })}</p>}
-      {progress && <p className="candidate__progress" role="status" data-active={!!state?.chatBusy || controls.stopping}><span className="candidate__pulse" aria-hidden="true" />{progress}</p>}
+      <TaskStatus execution={state?.execution} chatBusy={!!state?.chatBusy} stopping={controls.stopping} />
       {state?.chatError && state.runtime !== "error" && <p className="candidate__error" role="status">{state.chatError}</p>}
       </div>
-      <form className="candidate__composer" onSubmit={event => { event.preventDefault(); submit(); }}>
-        <CandidateContext onRequireWorkspace={canPrepare && !state.busy && !snapshot.error ? () => { if (needsResources) setResourcesPrompt(true); else { setContextPrompt(true); setFolderPrompt(true); } } : undefined} historyDisabled={!canBrowse || controls.sessionTransitioning} key={identity} pageSize={16} history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} onHistory={client.toggleHistory} onHistoryPage={client.navigateHistory} state={snapshot.attachments} disabled={controls.attachmentDisabled} onAdd={client.addAttachment} onAddSelection={client.addSelection} onRemove={client.removeAttachment} onConfirm={client.confirmAttachment} onPreview={client.requestPreview} onClosePreview={client.closePreview} preview={snapshot.preview} />
-        <textarea ref={input} aria-label={t("Message")} placeholder={t("Ask pi anything…")} rows={2} maxLength={8000} value={snapshot.text}
-          readOnly={readableRuntimeError}
-          disabled={!!snapshot.error || (canPrepare ? !!state.busy : (!canCompose && !readableRuntimeError) || !snapshot.attachments)}
-          onChange={event => client.edit(event.currentTarget.value)}
-          onKeyDown={event => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); }
-          }} />
-        <div className="candidate__composer-actions">
-          <div className="candidate__model">
-            {canPrepare
-              ? <DefaultModelPicker config={snapshot.providerConfig} disabled={!!snapshot.error || !!state.busy}
-                  onSelect={(provider, modelId) => client.action({ type: "setDefaultModel", provider, modelId })}
-                  onSettings={() => setSettingsOpenRequest(value => value + 1)} />
-              : state
-              ? <ModelPicker key={`${state.viewId}-${state.generation}`} state={state} disabled={controls.settingsDisabled} continuousThinkingDrag animatePopover
-                  onModel={(provider, modelId) => client.action({ type: "setChatModel", provider, modelId })}
-                  onThinking={level => client.action({ type: "setThinkingLevel", level })} />
-              : <button id="model-effort-trigger" className="chip" type="button" disabled
-                  title={t(preview ? "Connecting to the preview…" : "Connecting to the extension host…")}
-                  aria-label={t("Model and thinking level")}>
-                  <span className="model-effort-trigger__model">{t("Model not configured")}</span>
-                  <span className="model-effort-trigger__thinking"> · —</span>
-                </button>}
-          </div>
-          {canBrowse && state && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
-            if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
-          }}>
-            <summary aria-label={t("Permissions ({count})", { count: state.grants.length })} title={t("Permissions ({count})", { count: state.grants.length })}>
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.6 2.5 6.6 6 8 3.5-1.4 6-4.4 6-8V5l-6-2.5Z" /></svg>
-            </summary>
-            <div className="candidate-permissions__content">
-              <p>{state.controlledExecution ? t("Controlled execution: covered tools ask for approval; this is not a sandbox.") : t("Trusted extension code runs outside covered tool approvals; this is not a sandbox.")}</p>
-              <SessionGrants grants={state.grants} disabled={controls.stopping || !!snapshot.error} onRevoke={id => client.action({ type: "revokeGrant", id })} />
-            </div>
-          </details>}
-          {controls.showStop
-            ? <button className="candidate__send candidate__send--stop" type="button" aria-label={t("Stop current task")} disabled={controls.stopping} onClick={client.stop}><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5.5" y="5.5" width="9" height="9" rx="1.5" /></svg></button>
-            : <button className="candidate__send" type="submit" aria-label={t("Send message")} disabled={canPrepare ? !snapshot.text.trim() || !!state.busy || !!snapshot.error : controls.sendDisabled}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4m-5 5 5-5 5 5" /></svg></button>}
-        </div>
-      </form>
+      <MessageComposer snapshot={snapshot} client={client} input={input} canPrepare={canPrepare} canBrowse={canBrowse}
+        canCompose={canCompose} readableRuntimeError={readableRuntimeError} submit={submit}
+        onSettings={() => setSettingsOpenRequest(value => value + 1)}
+        onRequireWorkspace={canPrepare && !state.busy && !snapshot.error ? () => { if (needsResources) setResourcesPrompt(true); else { setContextPrompt(true); setFolderPrompt(true); } } : undefined} />
       {snapshot.synchronizing && snapshot.text && <p className="candidate__sync" role="status">{t("Synchronizing draft…")}</p>}
     </footer>
     {resourcesVisible && <ProjectResourcesPrompt state={state} onDismiss={() => setResourcesPrompt(false)}

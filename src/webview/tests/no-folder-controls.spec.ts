@@ -60,7 +60,7 @@ test("no-folder context cancellation retains draft and other blocked workspaces 
     await h.input("Retain on cancel", "textarea");
     await h.click('button[aria-label="Add context"]');
     await h.click('button[aria-label="Add selection"]');
-    await h.click('button[aria-label="OK"]');
+    await h.click('button[aria-label="Keep editing"]');
     assert.equal(h.root.querySelector(".candidate-folder-prompt"), null);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Retain on cancel");
     for (const status of ["untrusted", "multi-root", "remote"] as const) {

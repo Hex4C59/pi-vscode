@@ -1,3 +1,4 @@
+import { SessionIcon } from "./session-icon.js";
 import { useId, useLayoutEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
 import type { ExecutionProfileProjection, ExtensionFeedback, ExtensionInteractionProjection, InteractionAnswer } from "../../extension/contracts/index.js";
 
@@ -399,6 +400,8 @@ interface ExecutionProfileCopy {
   chooserNote: string;
   chooseControlled: string;
   chooseTrusted: string;
+  controlledSummary: string;
+  trustedSummary: string;
   coverageWarning: string;
   recoveryDomain: string;
   endWarning: string;
@@ -423,6 +426,8 @@ const executionProfileCopy: Record<Language, ExecutionProfileCopy> = {
     chooserNote: "Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.",
     chooseControlled: "Use controlled execution",
     chooseTrusted: "Load a trusted extension…",
+    controlledSummary: "Covered tools ask for approval. This is not a sandbox.",
+    trustedSummary: "Loads an extension after the VS Code file picker and host confirmation. Not a sandbox.",
     coverageWarning: "Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.",
     recoveryDomain: "Only one runtime is admitted at a time in the shared recovery domain. Another VS Code window can remain blocked until the exact run is observed ended and deliberately recovered.",
     endWarning: "Ending an owned runtime may interrupt irreversible work. The host will ask for confirmation.",
@@ -445,6 +450,8 @@ const executionProfileCopy: Record<Language, ExecutionProfileCopy> = {
     chooserNote: "选择受信执行后，宿主会先打开 VS Code 原生文件选择器并请求确认，再加载扩展。",
     chooseControlled: "使用受控执行",
     chooseTrusted: "加载受信扩展…",
+    controlledSummary: "覆盖的工具会请求审批。这不是安全沙箱。",
+    trustedSummary: "经 VS Code 文件选择器和宿主确认后加载扩展。不是安全沙箱。",
     coverageWarning: "受信扩展代码不在沙箱中；其内部代码和外部影响不受已覆盖的审批约束。已覆盖工具仍会请求审批。",
     recoveryDomain: "共享恢复域中同一时间只允许一个运行时。其他 VS Code 窗口可能会保持阻止，直到确认对应运行实例已结束并由用户明确恢复。",
     endWarning: "结束自有运行时可能中断不可逆工作；宿主会请求确认。",
@@ -477,10 +484,33 @@ export function ExecutionProfileControls({ state, language, onChoose, onEnd, onR
   const compact = density === "settings";
   const notes = (
     <>
-      {(state.profile === "trusted" || !compact) && <p className="execution-profile-controls__coverage">{copy.coverageWarning}</p>}
+      <p className="execution-profile-controls__coverage">{copy.coverageWarning}</p>
       <p className="execution-profile-controls__domain">{copy.recoveryDomain}</p>
       <p className="execution-profile-controls__chooser-note">{copy.chooserNote}</p>
     </>
+  );
+  const choices = (
+    <div className={compact ? "execution-profile-controls__choices" : "execution-profile-controls__actions"} role="group" aria-label={copy.heading}>
+      {compact ? <>
+        <button type="button" className="execution-profile-controls__choice" data-profile-choice="controlled" aria-pressed={state.profile === "controlled"} disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
+          <span className="execution-profile-controls__choice-title">{copy.controlled}</span>
+          {state.profile === "controlled" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
+          <span className="execution-profile-controls__choice-note">{copy.controlledSummary}</span>
+        </button>
+        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={copy.chooserNote}>
+          <span className="execution-profile-controls__choice-title">{copy.trusted}</span>
+          {state.profile === "trusted" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
+          <span className="execution-profile-controls__choice-note">{copy.trustedSummary}</span>
+        </button>
+      </> : <>
+        <button type="button" data-profile-choice="controlled" disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
+          {copy.chooseControlled}
+        </button>
+        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={copy.chooserNote}>
+          {copy.chooseTrusted}
+        </button>
+      </>}
+    </div>
   );
   return (
     <section className={`execution-profile-controls${compact ? " is-settings" : ""}`} aria-labelledby={headingId}>
@@ -490,22 +520,15 @@ export function ExecutionProfileControls({ state, language, onChoose, onEnd, onR
         {copy.phase[state.phase]}
       </p>
       {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{copy.error}</p>}
-      <div className="execution-profile-controls__actions">
-        <button type="button" data-profile-choice="controlled" disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
-          {copy.chooseControlled}
+      {choices}
+      {(!compact || showLifecycle) && <div className="execution-profile-controls__actions">
+        <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd || disabledLifecycleAction} onClick={onEnd}>
+          {copy.endOwned}
         </button>
-        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={copy.chooserNote}>
-          {copy.chooseTrusted}
+        <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover || disabledLifecycleAction} onClick={onRecover}>
+          {copy.recoverControlled}
         </button>
-        {(!compact || showLifecycle) && <>
-          <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd || disabledLifecycleAction} onClick={onEnd}>
-            {copy.endOwned}
-          </button>
-          <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover || disabledLifecycleAction} onClick={onRecover}>
-            {copy.recoverControlled}
-          </button>
-        </>}
-      </div>
+      </div>}
       {compact
         ? <details className="execution-profile-controls__notes">
             <summary id={notesId}>{language === "zh-CN" ? "注意事项" : "Notes"}</summary>

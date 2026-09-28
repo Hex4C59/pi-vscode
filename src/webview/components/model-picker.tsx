@@ -233,12 +233,12 @@ export function ModelPicker({ state, disabled, onModel, onThinking, continuousTh
           onChange={event => setSliderIndex(Number(event.currentTarget.value))}
         />
         </div>
-        <p id="thinking-level-label" className="muted" aria-live="polite">
+        <p id="thinking-level-label" className="sr-only" aria-live="polite">
           {t("Applied: {thinking}", { thinking: thinkingLabel })}{state.pendingThinkingLevel ? t(" · Next turn (pending): {thinking}", { thinking: thinkingText(state.pendingThinkingLevel) }) : ""}
         </p>
         <div id="model-error" className="banner" role="alert">{state.modelError ?? ""}</div>
       </div>
-      <p id="pending-settings" className="muted" role="status" hidden={pendingSettings.length === 0 && !state.modelBusy}>
+      <p id="pending-settings" className={pendingSettings.length > 0 ? "sr-only" : "muted"} role="status" hidden={pendingSettings.length === 0 && !state.modelBusy}>
         {pendingSettings.length > 0 ? t(state.modelBusy ? "Applying next turn: {settings}" : "Next turn (pending): {settings}", { settings: pendingSettings.join(" · ") }) : t("Loading model settings…")}
       </p>
       <div id="model-status-error" className="banner" role="alert" hidden={!state.modelError || popoverOpen}>{state.modelError ?? ""}</div>

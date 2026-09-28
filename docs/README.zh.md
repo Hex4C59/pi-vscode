@@ -20,6 +20,7 @@
 本索引是一棵路由树，不是从头读到底的清单。仓库规则与基础必读以 [`../AGENTS.zh.md`](../AGENTS.zh.md) 及其内核为准。
 
 - **当前会话：** 完整阅读 [`../ACTIVE.md`](../ACTIVE.md) 中唯一的当前 WI、批准状态、仍有效限制与最近交接，再跟随与任务有关的链接。
+- **界面介绍与区域名称：** 阅读[聊天侧栏区域与组件说明](reference/sidebar-ui-anatomy.zh.md)，查看结构示意、组件称呼、演示用语与当前代码对应关系。
 - **用户可见行为：** 阅读 [`product-requirements.zh.md`](product-requirements.zh.md) 与 [主架构](architecture/vscode-extension-architecture.zh.md)。
 - **架构或契约：** 阅读[主架构](architecture/vscode-extension-architecture.zh.md)、[Webview 消息契约](reference/webview-messages.zh.md)及 [`guides/architecture-governance.zh.md`](guides/architecture-governance.zh.md)。
 - **实现 playbook：** 按 [`../AGENTS.zh.md`](../AGENTS.zh.md) 或 [`guides/agent/`](guides/agent/) 的匹配路由选择，不默认展开无关指南。

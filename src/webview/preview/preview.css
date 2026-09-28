@@ -51,6 +51,9 @@
   color-scheme: dark;
 }
 
+/* Mirrors the production body.vscode-high-contrast rules that the classless preview cannot match. */
+:root[data-theme="high-contrast"] .candidate__message--user { border-color: var(--ui-border); }
+
 body.preview-page {
   width: min(100%, var(--preview-sidebar-width));
   margin: 0 auto;

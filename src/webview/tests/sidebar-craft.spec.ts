@@ -77,13 +77,59 @@ test("settings dialog uses section headings with an icon refresh and a borderles
 test("narrow composer keeps model, permissions and send in one non-wrapping flow instead of stacking over the input", async t => {
   const h = await styledEmptySession(t);
   const toolbar = h.get(".candidate__composer-actions");
-  assert.deepEqual([...toolbar.children].map(child => child.classList[0]), ["candidate__model", "candidate-permissions", "candidate__send"]);
+  assert.deepEqual([...toolbar.children].map(child => child.classList[0]), ["candidate-context__actions", "candidate__model", "candidate-permissions", "candidate__send"]);
   const style = (element: Element) => h.dom.window.getComputedStyle(element);
   assert.equal(style(toolbar).display, "flex");
-  assert.notEqual(style(toolbar).flexWrap, "wrap", "the attach button is anchored to the toolbar row, so the row must not wrap under it");
+  assert.notEqual(style(toolbar).flexWrap, "wrap", "toolbar stays on one row while the model name truncates");
   assert.equal(style(h.get(".candidate__model")).minWidth, "0px", "the model label truncates before it can push send out of reach");
+  assert.notEqual(style(h.get('button[aria-label="Add context"]')).position, "absolute", "context participates in layout and keyboard order");
   assert.notEqual(style(h.get(".candidate-permissions > summary")).position, "absolute");
   assert.equal(style(h.get(".candidate__send")).flexShrink, "0");
   const textarea = h.get('textarea[aria-label="Message"]');
   assert.equal(textarea.compareDocumentPosition(toolbar) & h.dom.window.Node.DOCUMENT_POSITION_FOLLOWING, h.dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+});
+
+test("conversation surface keeps the closed spacing, type and radius scale", () => {
+  const css = readFileSync("src/webview/chat/candidate-conversation.css", "utf8");
+  const offScale = /(?:padding|margin|gap|font-size|inset):[^;{}]*\b(?:3|5|6|7|10|11)px/.exec(css);
+  assert.equal(offScale, null, `off-scale spacing or type literal: ${offScale?.[0] ?? ""}`);
+  const radii = [...css.matchAll(/border-radius:\s*([^;]+);/g)].map(match => match[1].trim());
+  assert.ok(radii.length > 0, "the conversation surface uses the shared radius tokens");
+  assert.deepEqual([...new Set(radii)].sort(), ["0", "var(--ui-radius)"]);
+  const hexes = css.match(/#[0-9a-fA-F]{3,8}\b/g);
+  assert.equal(hexes, null, "surfaces come from --vscode-* aliases, not literal colors");
+});
+
+test("operations area styles keep the closed spacing scale and token-only colors", () => {
+  const files = [
+    "src/webview/chat/task-status.css",
+    "src/webview/chat/candidate-approvals.css",
+    "src/webview/chat/candidate-review.css",
+    "src/webview/chat/extension-interactions.css",
+    "src/webview/chat/chat-dialog.css",
+    "src/webview/chat/interface-settings.css",
+    "src/webview/components/change-review.css",
+  ];
+  for (const file of files) {
+    const css = readFileSync(file, "utf8");
+    const offScale = /(?:padding|margin|gap|font-size|inset):[^;{}]*\b(?:3|5|6|7|10|11)px/.exec(css);
+    assert.equal(offScale, null, `${file}: off-scale spacing or type literal: ${offScale?.[0] ?? ""}`);
+    assert.equal(css.match(/#[0-9a-fA-F]{3,8}\b/g), null, `${file}: surfaces come from --vscode-* aliases, not literal colors`);
+  }
+});
+
+test("task status motion serves real state changes and yields to reduced motion", () => {
+  const css = readFileSync("src/webview/chat/task-status.css", "utf8");
+  assert.match(css, /@keyframes task-status-pulse/, "the pulse is the only status animation");
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate__pulse \{ animation: none; \}\s*\}/s, "reduced motion stills the pulse");
+  assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "no entrance or layout animation on status updates");
+});
+
+test("settings dialog motion is open-only and yields to reduced motion", () => {
+  const css = readFileSync("src/webview/chat/chat-dialog.css", "utf8");
+  assert.match(css, /@keyframes candidate-dialog-in/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate-dialog\[open\] \{ animation: none; \}\s*\}/s);
+  assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "settings content updates must not replay a second entrance");
+  const settings = readFileSync("src/webview/chat/interface-settings.css", "utf8");
+  assert.match(settings, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate-settings__refresh\[aria-busy="true"\] svg \{ animation: none; \}\s*\}/s);
 });

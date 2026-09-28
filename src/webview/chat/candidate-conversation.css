@@ -1,0 +1,74 @@
+/* Conversation reading area: message rows, tool activity, Markdown and code blocks.
+   One quiet reading surface — roles read from layout, not from boxes or repeated labels. */
+
+/* Messages: the user's question is a soft surface row; pi's reply is plain text. */
+.candidate__message { flex: none; min-width: 0; margin: 0 0 var(--ui-space-4); }
+.candidate__message--user { padding: var(--ui-space-2) var(--ui-space-3); background: var(--ui-surface); border: 1px solid transparent; border-radius: var(--ui-radius); }
+.candidate__text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.candidate__waiting { color: var(--ui-muted); }
+/* High-contrast themes can merge the surface into the page; the hairline keeps the user's row visible. */
+body.vscode-high-contrast .candidate__message--user,
+body.vscode-high-contrast-light .candidate__message--user,
+body[data-vscode-theme-kind="vscode-high-contrast"] .candidate__message--user,
+body[data-vscode-theme-kind="vscode-high-contrast-light"] .candidate__message--user { border-color: var(--ui-border); }
+
+/* Markdown body: few type roles, spacing from the closed scale, first/last child hug the message. */
+.candidate__markdown { white-space: normal; overflow-wrap: anywhere; }
+.candidate__markdown > :first-child { margin-top: 0; }
+.candidate__markdown > :last-child { margin-bottom: 0; }
+.candidate__markdown :is(h1, h2) { margin: var(--ui-space-4) 0 var(--ui-space-2); font-size: var(--ui-font-title); font-weight: 600; line-height: 1.35; }
+.candidate__markdown :is(h3, h4, h5, h6) { margin: var(--ui-space-3) 0 var(--ui-space-2); font-size: var(--ui-font-body); font-weight: 600; line-height: 1.35; }
+.candidate__markdown p { margin: var(--ui-space-2) 0; }
+.candidate__markdown :is(ul, ol) { margin: var(--ui-space-2) 0; padding-left: var(--ui-space-4); }
+.candidate__markdown li > :is(ul, ol) { margin: 0; }
+.candidate__markdown li > p { margin: 0; }
+.candidate__markdown blockquote { margin: var(--ui-space-2) 0; padding-left: var(--ui-space-3); border-left: 2px solid var(--ui-border-strong); color: var(--ui-muted); }
+.candidate__markdown blockquote > p:first-child { margin-top: 0; }
+.candidate__markdown blockquote > p:last-child { margin-bottom: 0; }
+.candidate__markdown a { color: var(--ui-fg); text-decoration: underline; text-underline-offset: 2px; transition: color 100ms ease-out; }
+.candidate__markdown a:hover { color: var(--ui-muted); }
+.candidate__markdown code { padding: 0 var(--ui-space-1); background: var(--ui-surface); border-radius: var(--ui-radius); font-family: var(--vscode-editor-font-family, monospace); overflow-wrap: anywhere; }
+
+/* Code blocks: a quiet header (language, copy feedback, Copy) above the bounded scrolling body. */
+.candidate__code { min-width: 0; margin: var(--ui-space-3) 0; overflow: hidden; background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: var(--ui-radius); }
+.candidate__code-actions { display: flex; align-items: center; gap: var(--ui-space-2); min-height: 28px; padding: 0 var(--ui-space-1) 0 var(--ui-space-3); border-bottom: 1px solid var(--ui-border); color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.candidate__code-lang { flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.candidate__code-actions [role="status"] { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.candidate__code-actions button { flex: none; padding: var(--ui-space-1) var(--ui-space-2); color: var(--ui-muted); background: transparent; border: 0; border-radius: var(--ui-radius); font-size: var(--ui-font-chrome); line-height: 1.4; cursor: pointer; transition: color 100ms ease-out, background-color 100ms ease-out; }
+.candidate__code-actions button:hover:not(:disabled) { color: var(--ui-fg); background: var(--ui-hover); }
+.candidate__code pre { margin: 0; padding: var(--ui-space-2) var(--ui-space-3); max-height: 240px; overflow: auto; white-space: pre; overflow-wrap: normal; font-family: var(--vscode-editor-font-family, monospace); font-size: var(--ui-font-chrome); line-height: 1.5; }
+.candidate__code pre code { padding: 0; background: transparent; border-radius: 0; }
+.candidate__notice { color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.candidate__markdown :is(a, pre):focus-visible,
+.candidate__code-actions button:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+
+/* Tool activity: a borderless disclosure row; expanded items keep a hairline rail and literal output. */
+.candidate__activity { margin: 0 0 var(--ui-space-2); color: var(--ui-muted); font-size: var(--ui-font-chrome); line-height: 1.4; }
+.candidate__activity summary { display: flex; align-items: center; gap: var(--ui-space-1); min-width: 0; cursor: pointer; list-style: none; transition: color 100ms ease-out; }
+.candidate__activity summary::-webkit-details-marker { display: none; }
+.candidate__activity summary > svg { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 100ms ease-out; }
+.candidate__activity details[open] > summary > svg { transform: rotate(90deg); }
+.candidate__activity summary:hover { color: var(--ui-fg); }
+.candidate__activity > summary { margin: 0 calc(-1 * var(--ui-space-2)); padding: var(--ui-space-1) var(--ui-space-2); border-radius: var(--ui-radius); transition: color 100ms ease-out, background-color 100ms ease-out; }
+.candidate__activity > summary:hover { background: var(--ui-hover); }
+.candidate__activity-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.candidate__activity details { margin: 0 0 var(--ui-space-2) var(--ui-space-2); padding-left: var(--ui-space-2); border-left: 1px solid var(--ui-border); }
+/* States are words first; color only reinforces failure and interruption. */
+.candidate__activity [data-status="failed"] { color: var(--ui-danger); }
+.candidate__activity [data-status="interrupted"] { color: var(--ui-warning); }
+.candidate__activity [data-status="thinking"],
+.candidate__activity [data-status="preparing"],
+.candidate__activity [data-status="executing"] { color: var(--ui-fg); }
+.candidate__activity pre { max-height: 180px; margin: var(--ui-space-1) 0; padding: var(--ui-space-2) var(--ui-space-3); overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ui-fg); background: var(--ui-surface); border-radius: var(--ui-radius); font-family: var(--vscode-editor-font-family, monospace); font-size: var(--ui-font-chrome); line-height: 1.5; }
+.candidate__activity :is(summary, pre):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
+.candidate__activity > summary:focus-visible { outline-offset: -2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .candidate__markdown a,
+  .candidate__code-actions button,
+  .candidate__activity summary,
+  .candidate__activity summary > svg { transition: none; }
+}
+@media (forced-colors: active) {
+  .candidate__message--user { border-color: CanvasText; }
+}

@@ -1,0 +1,80 @@
+/* Shared modal chrome for settings and confirmation dialogs. Values come from theme.css tokens. */
+.candidate-dialog {
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  color: var(--ui-fg);
+  background: var(--ui-surface-raised);
+  font-size: var(--ui-font-body);
+  box-shadow: var(--ui-shadow);
+  overflow: hidden;
+}
+.candidate-dialog:not([open]) { display: none; }
+.candidate-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  animation: candidate-dialog-in 160ms cubic-bezier(.16, 1, .3, 1);
+}
+.candidate-dialog::backdrop { background: rgb(0 0 0 / 40%); }
+.candidate-dialog__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-2) var(--ui-space-2) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+}
+.candidate-dialog__header h2 { margin: 0; min-width: 0; font-size: var(--ui-font-body); font-weight: 600; overflow-wrap: anywhere; }
+.candidate-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.candidate-dialog__footer {
+  flex: none;
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-top: 1px solid var(--ui-border);
+}
+.candidate-dialog__actions { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); }
+.candidate-dialog__action {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 28px;
+  padding: var(--ui-space-1) var(--ui-space-3);
+  font: inherit;
+  font-size: var(--ui-font-chrome);
+  color: var(--ui-fg);
+  background: transparent;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+  white-space: normal;
+}
+.candidate-dialog__action:hover:not(:disabled) { background: var(--ui-hover); }
+.candidate-dialog__action:disabled { opacity: .55; cursor: default; }
+.candidate-dialog__action.is-primary {
+  color: var(--ui-brand-fg);
+  background: var(--ui-brand);
+  border-color: transparent;
+}
+.candidate-dialog__action.is-primary:hover:not(:disabled) { background: var(--ui-brand); }
+.candidate-dialog__action.is-quiet {
+  flex: 1 1 100%;
+  border-color: transparent;
+  color: var(--ui-muted);
+}
+.candidate-dialog__action.is-quiet:hover:not(:disabled) { color: var(--ui-fg); background: var(--ui-hover); }
+.candidate-dialog :focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+@keyframes candidate-dialog-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .candidate-dialog[open] { animation: none; }
+}
