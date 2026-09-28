@@ -84,6 +84,7 @@
 | 检查文档是否过期、修复文档结构，或者收尾当前 WI | [`docs/guides/documentation-health.zh.md`](docs/guides/documentation-health.zh.md) |
 | 判断某项工作现在是否值得做、下一步做什么，或者是否继续 | [`docs/guides/agent/judgment.zh.md`](docs/guides/agent/judgment.zh.md) |
 | 调整系统分层、模块职责、跨层接口、数据保存方式或其他重要架构边界 | [`docs/guides/architecture-governance.zh.md`](docs/guides/architecture-governance.zh.md)、[`docs/architecture/vscode-extension-architecture.zh.md`](docs/architecture/vscode-extension-architecture.zh.md) |
+| 修改侧栏 Webview 布局、CSS、空白会话、作曲区铬件或视觉工艺 | [pi-sidebar-ui](.agents/skills/pi-sidebar-ui/SKILL.md)；用户可见改动仍须 PRD 行与 `ACTIVE.md` 批准 |
 | 改变用户能够看到、操作或感知的产品行为 | [`docs/product-requirements.zh.md`](docs/product-requirements.zh.md)、[架构文档](docs/architecture/vscode-extension-architecture.zh.md) |
 | 新增、调查或更新架构验证关卡（Gate） | [`docs/reference/architecture-gates.zh.md`](docs/reference/architecture-gates.zh.md) |
 | 创建 Git commit 或编写 commit message | [`docs/git-commit-convention.zh.md`](docs/git-commit-convention.zh.md)（commit message 仅使用英文） |

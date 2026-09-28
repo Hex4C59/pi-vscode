@@ -144,6 +144,12 @@ Keep grilling → spec → tickets in one context window when possible; start im
 
 ### Design and architecture
 
+#### `pi-sidebar-ui`
+
+- **What:** Quiet, tool-like sidebar visual craft: empty session, monochrome π, closed spacing/type, VS Code surfaces.
+- **When:** Editing webview CSS/TSX, empty state, composer, session bar, or visual polish.
+- **How:** Auto when those files or terms match, or ask explicitly. Does not authorize Build.
+
 #### `codebase-design`
 
 - **What:** Vocabulary for deep modules, seams, testability, AI-navigable design.
@@ -312,6 +318,7 @@ implement-spec
 improve-codebase-architecture
 loop-me
 migrate-to-shoehorn
+pi-sidebar-ui
 pr
 prototype
 research

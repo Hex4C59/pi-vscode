@@ -1,0 +1,743 @@
+[
+  {
+    "id": "codex-ide-review",
+    "title": "Codex: IDE review and sidebar",
+    "pageUrl": "https://learn.chatgpt.com/docs/codex/ide",
+    "assetUrl": "https://learn.chatgpt.com/images/codex/ide-review.webp",
+    "file": "codex-ide-review.webp",
+    "width": 1600,
+    "height": 900,
+    "coverage": [
+      "Session header and actions",
+      "Grouped file rows and review summary",
+      "Composer and compact selectors"
+    ],
+    "limits": "Official documentation screenshot; pictured build/date unknown. Menus are closed. No full settings page, history list or opened permission/model menu. Background illustration is not a product surface.",
+    "retrieved": "2026-09-29",
+    "annotated": "codex-ide-review-annotated.png",
+    "cropSourcePixels": [
+      1082,
+      98,
+      1534,
+      878
+    ],
+    "annotations": [
+      {
+        "label": "Compact session header",
+        "observation": "The title and a small action cluster share one quiet navigation row.",
+        "sourceBox": [
+          1095,
+          130,
+          1523,
+          163
+        ]
+      },
+      {
+        "label": "Related content, shared boundary",
+        "observation": "Two file rows share a container and a light internal separator.",
+        "sourceBox": [
+          1098,
+          366,
+          1520,
+          490
+        ]
+      },
+      {
+        "label": "Integrated composer",
+        "observation": "Input and compact selectors share one contour; send has its own silhouette.",
+        "sourceBox": [
+          1098,
+          738,
+          1520,
+          835
+        ]
+      }
+    ]
+  },
+  {
+    "id": "claude-interface",
+    "title": "Claude Code: conversation and composer",
+    "pageUrl": "https://code.claude.com/docs/en/vs-code",
+    "assetUrl": "https://mintcdn.com/claude-code/-YhHHmtSxwr7W8gy/images/vs-code-extension-interface.jpg",
+    "file": "claude-vscode-interface.jpg",
+    "width": 2500,
+    "height": 1155,
+    "coverage": [
+      "Session header",
+      "Conversation typography and tool rows",
+      "Composer container and toolbar"
+    ],
+    "limits": "Official documentation illustration; pictured build/date unknown. Different composer from the user screenshots. No settings, history, or opened selector. Decorative background is not a product surface.",
+    "annotated": "claude-interface-annotated.png",
+    "cropSourcePixels": [
+      1510,
+      140,
+      2220,
+      1020
+    ],
+    "annotations": [
+      {
+        "label": "Title + actions",
+        "observation": "A compact header gives title and actions separate space.",
+        "sourceBox": [
+          1520,
+          145,
+          2205,
+          195
+        ]
+      },
+      {
+        "label": "One composer boundary",
+        "observation": "Input and toolbar share one outer contour at the foot of the sidebar.",
+        "sourceBox": [
+          1540,
+          875,
+          2210,
+          1008
+        ]
+      },
+      {
+        "label": "Quiet toolbar",
+        "observation": "Short labels and a small action keep the lower row visually light.",
+        "sourceBox": [
+          1550,
+          947,
+          2200,
+          1003
+        ]
+      }
+    ]
+  },
+  {
+    "id": "claude-composer",
+    "title": "Claude Code: focused composer with context",
+    "pageUrl": "https://code.claude.com/docs/en/vs-code",
+    "assetUrl": "https://mintcdn.com/claude-code/FVYz38sRY-VuoGHA/images/vs-code-send-prompt.png",
+    "file": "claude-vscode-composer.png",
+    "width": 3288,
+    "height": 1876,
+    "coverage": [
+      "Composer outer shape",
+      "Input and toolbar separation",
+      "Compact mode/context controls",
+      "Send button",
+      "Sidebar title and actions"
+    ],
+    "limits": "Official documentation screenshot; pictured build/date unknown. Labels are truncated at the shown width. Focus color and branding are references only; pi tokens remain authoritative. No opened menu or history.",
+    "annotated": "claude-composer-annotated.png",
+    "cropSourcePixels": [
+      2280,
+      1435,
+      3250,
+      1750
+    ],
+    "annotations": [
+      {
+        "label": "Input above controls",
+        "observation": "The upper text area is separated from the compact lower toolbar.",
+        "sourceBox": [
+          2309,
+          1464,
+          3229,
+          1599
+        ]
+      },
+      {
+        "label": "Content-sized controls",
+        "observation": "Mode, context and auxiliary actions occupy a shared baseline.",
+        "sourceBox": [
+          2335,
+          1619,
+          3065,
+          1711
+        ]
+      },
+      {
+        "label": "Distinct primary action",
+        "observation": "A compact filled send button is visually stronger than nearby tools.",
+        "sourceBox": [
+          3120,
+          1620,
+          3209,
+          1709
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-effort",
+    "title": "Codex: focused effort control",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-effort.png",
+    "width": 431,
+    "height": 175,
+    "captureFile": "codex-effort.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      2493,
+      1260,
+      2924,
+      1435
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Value before control",
+      "One focused parameter"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-effort-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      431,
+      175
+    ],
+    "annotations": [
+      {
+        "label": "Value before control",
+        "observation": "The current effort sits above quieter model context; one slider occupies a separate lower band.",
+        "sourceBox": [
+          20,
+          22,
+          410,
+          83
+        ]
+      },
+      {
+        "label": "One focused parameter",
+        "observation": "The small surface has no unrelated action rows.",
+        "sourceBox": [
+          16,
+          97,
+          413,
+          151
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-models",
+    "title": "Codex: simple model list",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-models.png",
+    "width": 431,
+    "height": 197,
+    "captureFile": "codex-models.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      2493,
+      1238,
+      2924,
+      1435
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Quiet heading",
+      "Independent state channels"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-models-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      431,
+      197
+    ],
+    "annotations": [
+      {
+        "label": "Quiet heading",
+        "observation": "The heading introduces the list without competing with model names.",
+        "sourceBox": [
+          12,
+          8,
+          416,
+          49
+        ]
+      },
+      {
+        "label": "Independent state channels",
+        "observation": "Sol has the pointer highlight while Astra retains the trailing selection check.",
+        "sourceBox": [
+          10,
+          54,
+          418,
+          174
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-add",
+    "title": "Codex: grouped add menu",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-add.png",
+    "width": 1071,
+    "height": 542,
+    "captureFile": "codex-add.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      1852,
+      793,
+      2923,
+      1335
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Group labels",
+      "Shared reading edge",
+      "Flat grouped rows"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-add-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      1071,
+      542
+    ],
+    "annotations": [
+      {
+        "label": "Group labels",
+        "observation": "Quiet headings and vertical spacing distinguish action families.",
+        "sourceBox": [
+          12,
+          10,
+          1055,
+          49
+        ]
+      },
+      {
+        "label": "Shared reading edge",
+        "observation": "Icons form a leading rail; short labels precede quieter inline descriptions.",
+        "sourceBox": [
+          12,
+          53,
+          1055,
+          221
+        ]
+      },
+      {
+        "label": "Flat grouped rows",
+        "observation": "Plugin actions share one surface rather than separate cards; only the visible portion was captured.",
+        "sourceBox": [
+          12,
+          232,
+          1055,
+          525
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-permissions",
+    "title": "Codex: explained permission choices",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-permissions.png",
+    "width": 698,
+    "height": 254,
+    "captureFile": "codex-permissions.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      1920,
+      1188,
+      2618,
+      1442
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Heading plus help",
+      "Three stable slots"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-permissions-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      698,
+      254
+    ],
+    "annotations": [
+      {
+        "label": "Heading plus help",
+        "observation": "The question and help link share the header without another toolbar.",
+        "sourceBox": [
+          17,
+          9,
+          678,
+          47
+        ]
+      },
+      {
+        "label": "Three stable slots",
+        "observation": "Leading icon, title with description, and trailing check stay aligned across choices.",
+        "sourceBox": [
+          20,
+          52,
+          678,
+          245
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-settings-menu",
+    "title": "Codex: compact settings menu",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-settings-menu.png",
+    "width": 409,
+    "height": 104,
+    "captureFile": "codex-settings-menu.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      2515,
+      168,
+      2924,
+      272
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Only the needed anatomy"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-settings-menu-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      409,
+      104
+    ],
+    "annotations": [
+      {
+        "label": "Only the needed anatomy",
+        "observation": "Two icon-and-label rows need no extra heading or description.",
+        "sourceBox": [
+          13,
+          11,
+          395,
+          91
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-settings",
+    "title": "Codex: settings page",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-settings.png",
+    "width": 1106,
+    "height": 860,
+    "captureFile": "codex-settings.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      714,
+      180,
+      1820,
+      1040
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Navigation outside content",
+      "One boundary per group",
+      "Content controls row height"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-settings-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      1106,
+      860
+    ],
+    "annotations": [
+      {
+        "label": "Navigation outside content",
+        "observation": "Category navigation is separate from the setting groups.",
+        "sourceBox": [
+          6,
+          79,
+          245,
+          437
+        ]
+      },
+      {
+        "label": "One boundary per group",
+        "observation": "Related rows share a contour and an inset separator.",
+        "sourceBox": [
+          270,
+          124,
+          1100,
+          357
+        ]
+      },
+      {
+        "label": "Content controls row height",
+        "observation": "Long descriptions grow the row; controls keep their natural widths on the right.",
+        "sourceBox": [
+          273,
+          498,
+          1100,
+          849
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-codex-history",
+    "title": "Codex: recent chats (titles redacted)",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-codex-history.png",
+    "width": 1068,
+    "height": 512,
+    "captureFile": "codex-history.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      1852,
+      182,
+      2920,
+      694
+    ],
+    "redactedRegions": [
+      [
+        16,
+        67,
+        865,
+        106
+      ],
+      [
+        16,
+        113,
+        865,
+        155
+      ],
+      [
+        16,
+        161,
+        865,
+        202
+      ],
+      [
+        16,
+        209,
+        865,
+        248
+      ],
+      [
+        16,
+        257,
+        865,
+        297
+      ],
+      [
+        16,
+        304,
+        865,
+        346
+      ],
+      [
+        16,
+        352,
+        865,
+        393
+      ],
+      [
+        16,
+        400,
+        865,
+        441
+      ],
+      [
+        16,
+        449,
+        865,
+        491
+      ],
+      [
+        16,
+        491,
+        865,
+        512
+      ]
+    ],
+    "coverage": [
+      "Search is the header",
+      "Title and metadata balance"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; history titles replaced with neutral bars. Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-codex-history-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      1068,
+      512
+    ],
+    "annotations": [
+      {
+        "label": "Search is the header",
+        "observation": "Search replaces a redundant title bar and shares the list text edge.",
+        "sourceBox": [
+          12,
+          8,
+          1050,
+          58
+        ]
+      },
+      {
+        "label": "Title and metadata balance",
+        "observation": "Titles occupy flexible space; age and optional state markers form a trailing group. Title pixels are redacted.",
+        "sourceBox": [
+          12,
+          67,
+          1055,
+          483
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-claude-empty",
+    "title": "Claude Code: empty session",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-claude-empty.png",
+    "width": 1075,
+    "height": 1442,
+    "captureFile": "claude-empty.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      1845,
+      128,
+      2920,
+      1570
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Sparse header",
+      "One composer contour"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-claude-empty-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      1075,
+      1442
+    ],
+    "annotations": [
+      {
+        "label": "Sparse header",
+        "observation": "Title and two actions sit on one row.",
+        "sourceBox": [
+          13,
+          12,
+          1064,
+          58
+        ]
+      },
+      {
+        "label": "One composer contour",
+        "observation": "Input and toolbar share one boundary; auxiliary controls are lighter than the send button.",
+        "sourceBox": [
+          24,
+          1300,
+          1064,
+          1432
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local-claude-models",
+    "title": "Claude Code: descriptive model list",
+    "sourceKind": "local-ui-capture",
+    "captured": "2026-09-29",
+    "sourceLabel": "Installed VS Code extension / Computer Use / 2026-09-29",
+    "file": "local-claude-models.png",
+    "width": 1042,
+    "height": 530,
+    "captureFile": "claude-models.png",
+    "captureDimensions": [
+      2940,
+      1650
+    ],
+    "captureCropPixels": [
+      1866,
+      892,
+      2908,
+      1422
+    ],
+    "redactedRegions": [],
+    "coverage": [
+      "Descriptions justify density",
+      "Secondary parameter band"
+    ],
+    "limits": "Real installed UI; extension version and CSS scale unverified. Dark theme at one window size only. Cropped from a full-window capture; Model names, branding and colors are not pi requirements. No keyboard, responsive or save behavior inferred.",
+    "annotated": "local-claude-models-annotated.png",
+    "cropSourcePixels": [
+      0,
+      0,
+      1042,
+      530
+    ],
+    "annotations": [
+      {
+        "label": "Descriptions justify density",
+        "observation": "Two-line model rows carry explanations; this is a different content need from the simple Codex list.",
+        "sourceBox": [
+          14,
+          46,
+          1030,
+          456
+        ]
+      },
+      {
+        "label": "Secondary parameter band",
+        "observation": "Effort has a separate footer row, label left and control right.",
+        "sourceBox": [
+          14,
+          466,
+          1030,
+          519
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pi · 组件参考库</title>
+  <link rel="stylesheet" href="component-lab.css">
+</head>
+<body>
+  <header class="lab-header">
+    <div class="identity"><span class="lab-mark">π</span><div><h1>组件参考库</h1><p>从视觉参照，到可检查的组件</p></div></div>
+    <a class="candidate" href="model-picker-study.html">模型菜单精修对照 ↗</a>
+  </header>
+  <nav class="lab-tabs" aria-label="参考库页面">
+    <button data-tab="specimens" aria-current="page">交互样板</button>
+    <button data-tab="references">实机／官方图片与标注</button>
+  </nav>
+  <main id="specimens">
+    <section class="lab-controls" aria-label="样板控制">
+      <label>组件<select id="specimen"><option value="composer">作曲区与弹层</option><option value="settings">设置分组</option><option value="history">历史会话</option></select></label>
+      <label>宽度<select id="width"><option>280</option><option>320</option><option selected>400</option></select></label>
+      <label>高度<select id="height"><option selected>480</option><option>640</option></select></label>
+      <label>主题<select id="theme"><option value="dark">深色</option><option value="light">浅色</option><option value="contrast">高对比</option></select></label>
+      <label>文案<select id="language"><option value="zh">中文</option><option value="en">English</option></select></label>
+      <label class="check-label"><input id="guides" type="checkbox" checked>对齐标记</label>
+      <label class="check-label"><input id="long-copy" type="checkbox">长文案</label>
+      <button id="reset" class="reset">重置</button>
+    </section>
+    <div class="workspace">
+      <div class="stage"><div id="surface" data-theme="dark" class="surface guides"></div><p id="dimension" class="dimension">400 × 480 · 独立样板</p></div>
+      <aside class="notes"><p class="eyebrow">观察重点</p><h2 id="note-title"></h2><ol id="note-list"></ol><div class="sample-boundary"><strong>这是视觉样板</strong><p>操作只改变本页内存，不调用模型、不读取会话、不修改设置。示例功能不代表 pi 已实现或已批准。</p></div><details><summary>当前样板状态</summary><pre id="state"></pre></details><a href="../specimens.json">查看机器可读组件契约 ↗</a></aside>
+    </div>
+  </main>
+  <main id="references" hidden>
+    <div class="reference-intro"><h2>先看来源图，再看标注</h2><p>本机实测截图与官方文档素材分别标明来源。历史标题已遮盖；标注解释可见结构，不推断未验证的交互。</p><a href="../sources.md">来源、版本限制与覆盖范围 ↗</a></div>
+    <div id="reference-grid"></div>
+  </main>
+  <footer>Pi UI craft · 原图是参照，样板是候选，产品验收另行确认。</footer>
+  <script src="component-lab.js"></script>
+</body>
+</html>

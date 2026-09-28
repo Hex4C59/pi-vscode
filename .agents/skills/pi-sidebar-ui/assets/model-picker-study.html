@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pi · 模型菜单精修</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#151619;color:#e2e2e6;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}a{color:inherit;text-underline-offset:4px}button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid currentColor;outline-offset:2px}h1,h2,p{margin:0}header,main,footer{max-width:1100px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid #303239}h1{font-size:17px;font-weight:550}header p{color:#a8aab3;margin-top:4px}header a{font-size:12px;color:#a8aab3}.controls{display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:24px}.controls label{display:grid;gap:8px;font-size:12px;color:#b2b4bd}.controls select{background:#24262b;border:1px solid #45474e;border-radius:6px;color:#e2e2e6;padding:4px 8px;min-height:32px}.controls .inline{display:flex;align-items:center;gap:8px;min-height:32px}.controls input{accent-color:#b2b4bd}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:24px}.study{min-width:0}h2{font-size:13px;font-weight:550;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.tag{font-size:12px;font-weight:400;color:#a8aab3}.stage{min-height:390px;background:#1b1c20;border:1px solid #303239;border-radius:8px;padding:24px 12px;display:flex;justify-content:center;align-items:center}.caption{color:#a8aab3;margin-top:16px;line-height:1.7}.caption strong{color:#dedee4;font-weight:500}.comparison-notes{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:32px;padding-top:24px;border-top:1px solid #303239}.comparison-notes h3{font-size:13px;font-weight:550;margin:0 0 8px}.comparison-notes p{color:#a8aab3;font-size:12px;line-height:1.7}footer{color:#a8aab3;font-size:12px}.surface{--bg:#222428;--panel:#27292e;--fg:#dedee3;--muted:#a8aab3;--border:#41434b;--hover:#34373e;--input:#202226;--focus:#e1e2e6;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--r:6px;--rl:8px;width:320px;max-width:100%;height:324px;position:relative;flex:none;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:var(--r);padding:var(--s2);display:flex;align-items:end;font-size:13px;container-type:inline-size;color-scheme:dark}.surface.light{--bg:#f6f6f7;--panel:#fff;--fg:#292a30;--muted:#626571;--border:#c7c9d0;--hover:#eeeef1;--input:#fff;--focus:#42454f;color-scheme:light}.surface.contrast{--bg:#000;--panel:#000;--fg:#fff;--muted:#eee;--border:#fff;--hover:#242424;--input:#000;--focus:#fff}.surface button{color:inherit;background:none;border:0}.surface button:focus-visible{outline-color:var(--focus)}.composer{background:var(--input);border:1px solid var(--border);border-radius:var(--rl);padding:var(--s2);width:100%;position:relative}.draft{font:inherit;color:var(--fg);background:none;border:0;width:100%;height:60px;resize:none;padding:var(--s1);line-height:1.5}.draft::placeholder{color:var(--muted)}.draft:focus{outline:none}.composer:focus-within{border-color:var(--muted)}.toolbar{display:flex;align-items:center;gap:var(--s2);min-height:28px}.glyph{height:16px;width:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}.icon-button{display:grid;place-items:center;width:28px;height:28px;padding:var(--s1);border-radius:var(--rl);flex:none}.surface .send{background:var(--fg);color:var(--bg);opacity:.5}.surface .send:enabled{opacity:1}.surface button:hover{background:var(--hover)}.surface .send:hover{background:var(--fg)}.picker{position:static;min-width:0;margin-left:auto}.trigger{display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s2);min-height:28px;max-width:100%;border-radius:var(--r);font-size:12px;white-space:nowrap}.trigger[aria-expanded=true]{background:var(--hover)}.trigger-label{min-width:0;overflow:hidden;text-overflow:ellipsis}.chevron{width:12px;height:12px;color:var(--muted)}.model-menu{position:absolute;right:calc(28px + var(--s2) + var(--s2));bottom:calc(100% + var(--s2));width:232px;max-width:calc(var(--surface-width) - 72px);padding:var(--s2);border:1px solid var(--border);border-radius:var(--r);background:var(--panel);box-shadow:0 4px 16px var(--vscode-widget-shadow,rgba(0,0,0,.22));z-index:2}.menu-heading{font-size:12px;line-height:1.4;font-weight:400;color:var(--muted);padding:var(--s1) var(--s2) var(--s2);margin:0}.model-row{display:flex;align-items:center;gap:var(--s3);min-height:36px;width:100%;padding:var(--s2);border-radius:var(--r);text-align:left;font-size:13px;line-height:1.5}.model-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.check-slot{width:16px;height:16px;flex:none;color:var(--fg)}.model-row:focus{outline:none}.model-menu[data-keyboard=true] .model-row:focus{outline:1px solid var(--focus);outline-offset:-1px;background:var(--hover)}.old-menu{position:absolute;bottom:calc(100% + var(--s2));left:0;right:0;padding:var(--s2);border:1px solid var(--border);border-radius:var(--r);background:var(--bg)}.old-menu .menu-heading{padding:var(--s1) var(--s2) var(--s2)}.old-row{padding:var(--s2);display:flex;align-items:center;min-height:36px;gap:var(--s2)}.old-row span:first-child{flex:1}.old-trigger{font-size:12px;color:var(--muted);display:flex;gap:var(--s1);align-items:center;margin-left:auto;padding:var(--s1) var(--s2)}.interaction-note{margin-top:8px;font-size:12px;color:#a8aab3;min-height:18px}#live-status{color:#c9cbd2}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}[hidden]{display:none!important}@container(max-width:280px){.trigger{max-width:172px}}@media(max-width:800px){.comparison{grid-template-columns:1fr}.comparison-notes{grid-template-columns:1fr;gap:16px}.stage{min-height:370px}.study{max-width:520px;width:100%;margin:auto}header{align-items:start}.tag{margin-left:8px}}
+</style>
+</head>
+<body>
+<header><div><h1>模型选择菜单 · 精修稿</h1><p>先看轮廓与比例，再试试点击和键盘。</p></div><a href="component-lab.html">返回组件参考库 ↗</a></header>
+<main>
+<div class="controls">
+<label>侧栏宽度<select id="width"><option>280</option><option selected>320</option><option>400</option></select></label>
+<label>主题<select id="theme"><option value="dark">深色</option><option value="light">浅色</option><option value="contrast">高对比</option></select></label>
+<label class="inline"><input id="long" type="checkbox">长模型名称</label>
+</div>
+<div class="comparison">
+<section class="study"><h2>原样板结构<span class="tag">静态对照</span></h2><div class="stage"><div class="surface old-surface" aria-label="原样板静态对照"><div class="composer"><div class="old-menu"><h3 class="menu-heading">选择模型 · 示例名称</h3><div class="old-row"><span>6 Sol</span></div><div class="old-row"><span>6 Astra</span><svg class="glyph" viewBox="0 0 16 16"><path d="m3 8 3 3 7-7"/></svg></div><div class="old-row"><span>6 Luna</span></div></div><div class="draft" style="color:var(--muted)">描述你想完成的任务</div><div class="toolbar"><span class="icon-button">＋</span><span class="old-trigger">6 Astra <svg class="glyph chevron" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg></span><span class="icon-button send">↑</span></div></div></div></div><p class="caption">菜单铺满输入框宽度，标题带演示说明。<br>能用，但菜单和触发入口的关系不够清楚。</p></section>
+<section class="study"><h2>精修稿<span class="tag">可点击 · 视觉已确认</span></h2><div class="stage"><div class="surface" id="refined" aria-label="精修模型选择器"><div class="composer"><textarea class="draft" id="draft" aria-label="示例草稿" placeholder="描述你想完成的任务"></textarea><div class="toolbar"><span class="icon-button" aria-hidden="true"><svg class="glyph" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></svg></span><div class="picker"><button class="trigger" id="trigger" aria-haspopup="menu" aria-controls="model-menu" aria-expanded="true"><span class="trigger-label" id="trigger-label">6 Astra</span><svg class="glyph chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="model-menu" id="model-menu" role="menu" aria-labelledby="menu-heading" data-keyboard="false"><h3 class="menu-heading" id="menu-heading">选择模型</h3><div id="model-rows" role="none"></div></div></div><button class="icon-button send" id="send" aria-label="发送示例" disabled><svg class="glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14V2m-5 5 5-5 5 5"/></svg></button></div></div></div></div><p class="caption"><strong>菜单跟随选择器，内容不随侧栏无限拉宽。</strong><br>名称、选中勾和内边距各有固定位置。</p><p class="interaction-note" id="live-status" role="status">点击模型切换；再次点击入口可展开。</p></section>
+</div>
+<div class="comparison-notes"><section><h3>01 · 收住菜单宽度</h3><p>菜单为 232px，窄侧栏自动约束；与入口右侧对齐。保留现有 6px／8px 圆角。</p></section><section><h3>02 · 减少视觉噪声</h3><p>12px 标题、13px 选项。选中只用右侧勾，悬停整行轻亮，键盘焦点单独描边。</p></section><section><h3>03 · 把状态做完整</h3><p>支持 ↑↓、Home／End、Enter／空格选择、Escape 关闭和焦点返回。长名称截断，勾和箭头保持完整。</p></section></div>
+</main>
+<footer>名称沿用你提供的参考截图，仅作界面样例。此页无模型调用、无设置持久化；精修模型菜单已于 2026-09-29 经维护者确认为视觉基准，正式插件集成另行验收。</footer>
+<script>
+const $ = id => document.getElementById(id);
+const models = ['6 Sol','6 Astra','6 Luna'];
+let selected = 1;
+let expanded = true;
+const name = index => $('long').checked && index === 1 ? '6 Astra · Extended context preview' : models[index];
+const check = '<svg class="glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg>';
+function rows(){
+  $('model-rows').replaceChildren(...models.map((_,index)=>{
+    const button=document.createElement('button');
+    button.className='model-row';button.type='button';button.role='menuitemradio';
+    button.dataset.index=index;button.tabIndex=-1;button.setAttribute('aria-checked',String(index===selected));button.title=name(index);
+    const label=document.createElement('span');label.className='model-name';label.textContent=name(index);
+    const mark=document.createElement('span');mark.className='check-slot';mark.innerHTML=index===selected?check:'';
+    button.append(label,mark);return button;
+  }));
+  $('trigger-label').textContent=name(selected);$('trigger').title=name(selected);$('trigger').setAttribute('aria-label',`选择模型，当前 ${name(selected)}`);
+}
+function open(keyboard=false,last=false){
+  expanded=true;$('model-menu').hidden=false;$('trigger').setAttribute('aria-expanded','true');$('model-menu').dataset.keyboard=String(keyboard);
+  if(keyboard) $('model-rows').children[last?models.length-1:selected].focus();
+}
+function close(restore=true){expanded=false;$('model-menu').hidden=true;$('trigger').setAttribute('aria-expanded','false');if(restore)$('trigger').focus();}
+$('trigger').addEventListener('click',event=>expanded?close():open(event.detail===0));
+$('trigger').addEventListener('keydown',event=>{if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();open(true,event.key==='ArrowUp');}});
+$('model-rows').addEventListener('click',event=>{const button=event.target.closest('[data-index]');if(!button)return;selected=Number(button.dataset.index);rows();close();$('live-status').textContent=`已选择 ${name(selected)}`;});
+$('model-menu').addEventListener('pointermove',()=>{$('model-menu').dataset.keyboard='false';});
+$('model-menu').addEventListener('keydown',event=>{
+  $('model-menu').dataset.keyboard='true';
+  const buttons=[...$('model-rows').children],index=buttons.indexOf(document.activeElement);
+  const keys=['ArrowDown','ArrowUp','Home','End'];
+  if(keys.includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;buttons[next].focus();}
+  if(event.key==='Tab')close();
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&expanded){event.preventDefault();close();}});
+document.addEventListener('pointerdown',event=>{if(expanded&&!event.target.closest('.picker'))close(false);});
+$('long').addEventListener('change',()=>{rows();open();});
+$('width').addEventListener('change',()=>{for(const surface of document.querySelectorAll('.surface')){surface.style.width=$('width').value+'px';surface.style.setProperty('--surface-width',$('width').value+'px');}open();});
+$('theme').addEventListener('change',()=>{for(const surface of document.querySelectorAll('.surface')){surface.classList.remove('light','contrast');if($('theme').value!=='dark')surface.classList.add($('theme').value);}open();});
+$('draft').addEventListener('input',()=>{$('send').disabled=!$('draft').value.trim();});
+$('send').addEventListener('click',()=>{$('live-status').textContent='草稿保留在本页，未发送。';});
+for(const surface of document.querySelectorAll('.surface'))surface.style.setProperty('--surface-width','320px');
+rows();
+</script>
+</body>
+</html>

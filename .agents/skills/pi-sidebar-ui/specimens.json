@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "status": "mixed-see-visualBaselines",
+  "entry": "assets/component-lab.html",
+  "scope": "Isolated visual studies. No product implementation authorization or runtime integration.",
+  "tokenAuthority": "tokens.md",
+  "sourceIndex": "assets/references/catalog.json",
+  "inspection": {
+    "widthsCssPx": [
+      280,
+      320,
+      400
+    ],
+    "heightsCssPx": [
+      480,
+      640
+    ],
+    "themes": [
+      "dark",
+      "light",
+      "contrast"
+    ],
+    "languages": [
+      "zh",
+      "en"
+    ],
+    "stressControls": [
+      "long-copy",
+      "guides"
+    ],
+    "visualAcceptance": "Inspect actual images and interactions. JSON relations and passing checks alone do not establish good aesthetics."
+  },
+  "components": [
+    {
+      "id": "composer",
+      "view": "composer",
+      "selector": ".composer",
+      "slots": {
+        "input": "#draft",
+        "toolbar": ".toolbar",
+        "model": "[data-action=effort]",
+        "send": "[data-action=send]"
+      },
+      "relations": [
+        "input and toolbar share one border",
+        "send remains reachable with long model labels",
+        "auxiliary controls share a visual baseline"
+      ],
+      "states": [
+        "empty draft disables send",
+        "typed draft enables demo action",
+        "long model label truncates"
+      ],
+      "references": [
+        "codex-ide-review",
+        "claude-interface",
+        "claude-composer",
+        "local-claude-empty"
+      ]
+    },
+    {
+      "id": "menus",
+      "view": "composer",
+      "triggers": [
+        "[data-action=add]",
+        "[data-action=permission]",
+        "[data-action=settings-menu]"
+      ],
+      "selector": ".popover",
+      "slots": {
+        "row": ".menu-row",
+        "labelAndDescription": ".menu-copy",
+        "selectedMarker": ".check"
+      },
+      "relations": [
+        "highlight inset from outer boundary",
+        "description starts under label",
+        "trailing check does not overlap text"
+      ],
+      "states": [
+        "open",
+        "hover",
+        "keyboard focus",
+        "selected",
+        "Escape returns focus"
+      ],
+      "references": [
+        "local-codex-settings-menu",
+        "local-codex-permissions",
+        "local-codex-add"
+      ],
+      "basis": "Real local UI captures indexed in sources.md; pi study semantics and product scope remain separate."
+    },
+    {
+      "id": "model-effort",
+      "view": "composer",
+      "triggers": [
+        "[data-action=effort]",
+        "[data-action=models]"
+      ],
+      "slots": {
+        "currentEffort": "#effort-value",
+        "range": "#effort-range",
+        "modelRow": "[data-model]",
+        "levelLabels": "[data-effort]",
+        "stops": "[data-stop]"
+      },
+      "relations": [
+        "current parameter prominent",
+        "model context secondary",
+        "selection check independent of hover",
+        "thick gradient track exposes each discrete effort stop",
+        "thumb, pressed label and current value stay synchronized"
+      ],
+      "states": [
+        "effort panel",
+        "model list",
+        "changed effort",
+        "changed model",
+        "click each labeled level",
+        "keyboard steps and endpoints"
+      ],
+      "references": [
+        "local-codex-effort",
+        "local-codex-models",
+        "local-claude-models"
+      ],
+      "basis": "Real local UI captures indexed in sources.md; pi study semantics and product scope remain separate."
+    },
+    {
+      "id": "settings",
+      "view": "settings",
+      "selector": ".settings-content",
+      "slots": {
+        "group": ".setting-group",
+        "row": ".setting-row",
+        "copy": ".setting-copy",
+        "control": ".setting-control"
+      },
+      "relations": [
+        "related settings share one boundary",
+        "description and name share start edge",
+        "controls fit content",
+        "long descriptions grow rows",
+        "narrow select/segment rows stack controls"
+      ],
+      "states": [
+        "switch on/off",
+        "adjacent choice selected",
+        "language choice",
+        "shortcut choice",
+        "long descriptions"
+      ],
+      "references": [
+        "local-codex-settings"
+      ],
+      "basis": "Real local UI captures indexed in sources.md; pi study semantics and product scope remain separate."
+    },
+    {
+      "id": "history",
+      "view": "history",
+      "selector": ".history-body",
+      "slots": {
+        "search": "#search",
+        "list": ".history-list",
+        "row": ".history-row",
+        "title": ".title",
+        "metadata": ".history-meta"
+      },
+      "relations": [
+        "search remains outside scrolling rows",
+        "title flexes while metadata keeps width",
+        "consistent row rhythm",
+        "full title available via title attribute and accessible name"
+      ],
+      "states": [
+        "selected row",
+        "hover",
+        "keyboard focus",
+        "matching search",
+        "no results",
+        "long titles"
+      ],
+      "references": [
+        "local-codex-history"
+      ],
+      "basis": "Real local UI captures indexed in sources.md; pi study semantics and product scope remain separate."
+    }
+  ],
+  "visualBaselines": [
+    {
+      "id": "refined-model-picker",
+      "entry": "assets/model-picker-study.html",
+      "selector": "#refined",
+      "status": "maintainer-approved-visual-baseline",
+      "acceptedOn": "2026-09-29",
+      "scope": "Refined model-picker visual design only; other specimens and production integration are not accepted by this record.",
+      "acceptanceRecord": "visual-reference.md#approved-model-picker-visual-baseline"
+    }
+  ],
+  "motionAuthority": "motion.md"
+}

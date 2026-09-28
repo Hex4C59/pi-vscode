@@ -79,6 +79,7 @@ Use the rows that match what the current task actually changes. A task may match
 | Checking stale documentation, repairing documentation structure or closing a WI | [`docs/guides/documentation-health.md`](docs/guides/documentation-health.md) |
 | Deciding whether work is worthwhile now, what to do next, or whether to proceed | [`docs/guides/agent/judgment.md`](docs/guides/agent/judgment.md) |
 | Changing system layers, module responsibilities, cross-layer interfaces, data storage or another consequential architecture boundary | [`docs/guides/architecture-governance.md`](docs/guides/architecture-governance.md), [`docs/architecture/vscode-extension-architecture.md`](docs/architecture/vscode-extension-architecture.md) |
+| Changing sidebar Webview layout, CSS, empty session, composer chrome, or visual craft | [pi-sidebar-ui](.agents/skills/pi-sidebar-ui/SKILL.md); user-visible changes still need the PRD row and `ACTIVE.md` approval |
 | Changing behavior that users can see, operate or otherwise experience | [`docs/product-requirements.md`](docs/product-requirements.md), [architecture doc](docs/architecture/vscode-extension-architecture.md) |
 | Adding, investigating or updating an architecture validation gate | [`docs/reference/architecture-gates.md`](docs/reference/architecture-gates.md) |
 | Creating a Git commit or writing a commit message | [`docs/git-commit-convention.md`](docs/git-commit-convention.md) (commit messages in English only) |
