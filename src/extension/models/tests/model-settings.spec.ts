@@ -75,3 +75,30 @@ test("a failed mutation reads back once without retrying or exposing the thrown 
   assert.equal(settings.snapshot.pendingModel, null);
   assert.equal(settings.snapshot.modelError, "Could not apply model settings. Select again to retry.");
 });
+
+test("settings default cannot reach the composer when select requires an RPC catalogue hit", async () => {
+  const calls: string[] = [];
+  const settings = new ModelSettings({
+    async getModelProjection() {
+      return { ok: true, modelLabel: null, thinkingLevel: null, thinkingLevels: [], models: [] };
+    },
+    async setModel(provider, id) {
+      calls.push(`${provider}/${id}`);
+      return {
+        ok: true, modelLabel: `${provider} / ${id}`, thinkingLevel: "off", thinkingLevels: ["off"],
+        models: [{ provider, modelId: id, label: `${provider} / ${id}` }],
+      };
+    },
+    async setThinkingLevel() { throw new Error("Unexpected thinking mutation"); },
+  }, context, () => {});
+  await settings.load(null);
+  assert.equal(settings.snapshot.chatModel, null);
+  assert.equal(settings.snapshot.availableModels.length, 0);
+  await settings.select({ type: "setChatModel", provider: "hellocode", modelId: "gpt-6-sol" });
+  assert.deepEqual(calls, [], "picker select still requires a live catalogue entry");
+  assert.equal(settings.snapshot.chatModel, null);
+  await settings.applyConfiguredModel("hellocode", "gpt-6-sol");
+  assert.deepEqual(calls, ["hellocode/gpt-6-sol"]);
+  assert.equal(settings.snapshot.chatModel, "hellocode / gpt-6-sol");
+  assert.equal(settings.snapshot.availableModels.length, 1);
+});

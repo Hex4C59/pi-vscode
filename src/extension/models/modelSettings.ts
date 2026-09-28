@@ -37,6 +37,23 @@ export class ModelSettings {
     await applying;
   }
 
+  /**
+   * Apply a host-validated provider/model from settings without requiring it to
+   * already appear in the live RPC catalogue (credentials may have just landed).
+   */
+  async applyConfiguredModel(provider: string, modelId: string): Promise<void> {
+    if (!this.canSelect(this.context())) return;
+    const existing = findCatalogEntry(this.value.availableModels, provider, modelId);
+    this.value = {
+      ...this.value,
+      pendingModel: existing ?? { provider, modelId, label: `${provider} / ${modelId}` },
+      modelError: null,
+    };
+    const applying = this.applyPending();
+    this.changed();
+    await applying;
+  }
+
   /** Serialize next-turn intent only after the session-level settled event. */
   async applyPending(): Promise<void> {
     const before = this.context();

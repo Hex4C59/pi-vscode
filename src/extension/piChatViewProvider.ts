@@ -360,11 +360,39 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         runtimeDetail: null,
         messages: preserveMessages ? this.state.messages : [],
       };
-      void this.models.load(result.modelLabel);
-      void this.providerConfig.refresh();
+      void this.loadStartupModels(token, result.modelLabel);
     }
     if (!result.ok) await this.refreshOwnership();
     this.publishSessions(); this.publish();
+  }
+
+  /**
+   * Runs after the ready state is published: provider refresh uses the in-process SDK
+   * and may be slow, so it must never hold the runtime transition or a session switch.
+   */
+  private async loadStartupModels(token: number, modelLabel: string | null): Promise<void> {
+    await Promise.all([this.models.load(modelLabel), this.providerConfig.refresh()]);
+    if (token !== this.reconcileToken || this.disposed || this.state.runtime !== "ready" || this.models.snapshot.chatModel) return;
+    const { defaultProvider, defaultModelId } = this.providerConfig.snapshot;
+    if (defaultProvider && defaultModelId) await this.models.applyConfiguredModel(defaultProvider, defaultModelId);
+  }
+
+  /**
+   * Settings/auth write through the in-process SDK; the composer reads the RPC session.
+   * After credentials or defaults change, push the default into the live session, and
+   * restart once when the child still has no model (auth/--model only loaded at start).
+   */
+  private async syncSessionModelsAfterProviderConfig(provider?: string, modelId?: string): Promise<void> {
+    if (this.state.runtime !== "ready") return;
+    await this.models.load(this.models.snapshot.chatModel);
+    const targetProvider = provider ?? this.providerConfig.snapshot.defaultProvider;
+    const targetModelId = modelId ?? this.providerConfig.snapshot.defaultModelId;
+    if (targetProvider && targetModelId) {
+      await this.models.applyConfiguredModel(targetProvider, targetModelId);
+    }
+    if (this.models.snapshot.chatModel) return;
+    // The restarted child applies the persisted default through loadStartupModels.
+    await this.reconcileRuntime(this.liveConversation, true);
   }
 
   private async refreshOwnership(): Promise<void> {
@@ -668,31 +696,38 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (!message) return;
     this.refresh();
     if (message.type === "ping") { this.post(view, this.envelope("pong")); return; }
-    if (message.type === "getWorkspaceState") { if (this.profilePhase === "recovery-required" && !this.recoveryBusy) void this.refreshOwnership(); this.draft.publish(); this.tools.publishReview(); this.publishSessions(); this.savedHistory.publish(); this.publish(true); return; }
+    if (message.type === "getWorkspaceState") {
+      if (this.profilePhase === "recovery-required" && !this.recoveryBusy) void this.refreshOwnership();
+      this.draft.publish(); this.tools.publishReview(); this.publishSessions(); this.savedHistory.publish();
+      this.publish(true);
+      return;
+    }
     if (message.generation !== this.state.generation || message.viewId !== this.state.viewId) { this.draft.rejectStale(); this.publish(); return; }
     if (message.type === "answerInteraction") { this.interactions.answer(message, message.id, message.answer); return; }
     if (message.type === "cancelInteraction") { this.interactions.cancel(message, message.id); return; }
     if (message.type === "chooseExecutionProfile") { await this.chooseExecutionProfile(view, message.profile); return; }
     if (message.type === "endOwnedRuntime" || message.type === "recoverControlledRuntime") { await this.recoverRuntime(view, message.type); return; }
-    if (message.type === "refreshProviderConfig") { await this.providerConfig.refresh(); this.publish(); return; }
+    if (message.type === "refreshProviderConfig") {
+      await this.providerConfig.refresh();
+      await this.syncSessionModelsAfterProviderConfig();
+      this.publish();
+      return;
+    }
     if (message.type === "openProviderApiKey") {
       await this.providerConfig.openApiKey(message.providerId);
-      if (this.state.runtime === "ready") await this.models.load(this.models.snapshot.chatModel);
+      await this.syncSessionModelsAfterProviderConfig();
       this.publish();
       return;
     }
     if (message.type === "logoutProvider") {
       await this.providerConfig.logout(message.providerId);
-      if (this.state.runtime === "ready") await this.models.load(this.models.snapshot.chatModel);
+      await this.syncSessionModelsAfterProviderConfig();
       this.publish();
       return;
     }
     if (message.type === "setDefaultModel") {
       await this.providerConfig.setDefaultModel(message.provider, message.modelId);
-      if (this.state.runtime === "ready") {
-        await this.models.load(this.models.snapshot.chatModel);
-        await this.models.select({ type: "setChatModel", provider: message.provider, modelId: message.modelId });
-      }
+      await this.syncSessionModelsAfterProviderConfig(message.provider, message.modelId);
       this.publish();
       return;
     }
