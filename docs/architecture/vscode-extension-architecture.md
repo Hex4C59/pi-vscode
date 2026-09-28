@@ -89,6 +89,8 @@ WI-019 language settings are presentation-only: shared components use the public
 
 The candidate no-folder welcome permits draft editing through the existing client `edit` / versioned `updateDraft` path (already independent of runtime readiness). Its Send handler only opens `chat/no-folder-prompt.tsx`, never calls task submission in that state. The prompt uses the existing named `openFolder` intent; host workspace/trust/resource eligibility remains authoritative. It owns no separate draft, workspace selection, persistence or replay. Native modal lifetime and return focus belong to candidate presentation; other blocked states retain their existing eligibility rules.
 
+Unix control endpoints retain their recovery-directory path when it fits the 103-byte portable socket limit. Longer paths use a bounded `/tmp/pi-vscode-<SHA-256>.sock` name derived from the absolute recovery directory and run ID. The supervisor retains binding, mode `0600` and cleanup ownership; it does not remove existing endpoints before binding. Fence/receipt storage and Windows named pipes are unchanged.
+
 **Accepted WI-013 boundary (2026-09-28 Asia/Shanghai):** [Accepted ADR0002](../decisions/0002-interaction-contract-route.md) defines explicit trusted loading, host-owned standard interactions, public adapter seams, passive supervision and a persistent recovery fence; exact v3 DTOs belong to the [message contract](../reference/webview-messages.md). [Delegated acceptance](../archive/2026-09-28-wi-013-acceptance.md) separates real-target, native F5, installed, multiwindow evidence and limits; it does not establish ecosystem-wide compatibility or close the three broad gates.
 
 ### Internal host capability modules

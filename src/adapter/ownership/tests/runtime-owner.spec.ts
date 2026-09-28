@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
+import { runtimeControlPath } from "../control-protocol.js";
 import { test } from "node:test";
 import { createRecoveryObserver, createRecoveryStore, createRuntimeOwner } from "../index.js";
 
@@ -29,7 +30,7 @@ test("manual end waits for exact exit evidence rather than treating a control AC
   const reservation = await createRecoveryStore(directory).reserve();
   if (!reservation.ok) assert.fail("fixture reservation failed");
   const { createServer } = await import("node:net");
-  const address = process.platform === "win32" ? `\\\\.\\pipe\\pi-vscode-runtime-${reservation.fence.runId}` : path.join(directory, `control-${reservation.fence.runId}.sock`);
+  const address = runtimeControlPath(directory, reservation.fence.runId);
   let requested = false;
   const server = createServer(socket => {
     socket.once("data", chunk => {
@@ -111,4 +112,20 @@ test("launch durably reserves first and validates the supervisor identity before
   });
   assert.equal(text, "reserved-before-launch\n");
   assert.deepEqual(await owner.launch({ cwd: directory, cliPath: path.join(directory, "not-executed.js"), args: [], env }), { ok: false, code: "occupied" });
+});
+
+
+test("control endpoints remain bounded and isolate long recovery directories and runs", () => {
+  const run = "11111111-1111-4111-8111-111111111111";
+  const otherRun = "22222222-2222-4222-8222-222222222222";
+  const directory = path.resolve("dist", "长".repeat(100));
+  const endpoint = runtimeControlPath(directory, run);
+  assert.equal(runtimeControlPath(directory, run), endpoint);
+  assert.notEqual(runtimeControlPath(directory, otherRun), endpoint);
+  assert.throws(() => runtimeControlPath(directory, "../invalid"));
+  if (process.platform !== "win32") {
+    assert.ok(Buffer.byteLength(endpoint, "utf8") <= 103);
+    assert.notEqual(runtimeControlPath(`${directory}-other`, run), endpoint);
+    assert.equal(runtimeControlPath("/tmp/pi", run), path.join("/tmp/pi", `control-${run}.sock`));
+  }
 });

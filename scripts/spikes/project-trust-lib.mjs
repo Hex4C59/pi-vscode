@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdtemp, mkdir, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
@@ -18,7 +18,7 @@ export function startIfEligible(workspace, start) {
 }
 
 export async function isolatedFixture(run) {
-  const root = await mkdtemp(path.join(tmpdir(), 'pi-trust-spike-'));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), 'pi-trust-spike-')));
   try {
     for (const name of ['home', 'agent', 'tmp', 'a', 'b']) {
       await mkdir(path.join(root, name));

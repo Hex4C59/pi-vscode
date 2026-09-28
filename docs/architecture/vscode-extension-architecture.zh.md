@@ -94,6 +94,8 @@ WI-019 语言设置仅属于展示：共享组件经 components 公共入口的 
 
 候选无文件夹欢迎页通过既有 client `edit`／版本化 `updateDraft` 编辑草稿（该路径原本独立于运行时就绪状态）。其发送分支只打开 `chat/no-folder-prompt.tsx`，不会在该状态调用任务提交。提示使用既有命名 `openFolder` 意图；工作区／信任／资源资格继续由 host 决定。不另持草稿、不选择工作区、不持久化或重放。原生弹窗寿命与返回焦点归候选展示负责，其他阻断状态保留既有资格规则。
 
+Unix 控制端点在路径不超过 103 字节时继续使用恢复目录内的 socket；超长路径使用由绝对恢复目录与 run ID 派生的有界 `/tmp/pi-vscode-<SHA-256>.sock`。supervisor 继续负责绑定、`0600` 权限与清理；绑定前不删除已有端点。fence／receipt 存储及 Windows named pipe 不变。
+
 **WI-013已接受边界（2026-09-28 Asia/Shanghai）：** [Accepted ADR0002](../decisions/0002-interaction-contract-route.zh.md)规定显式受信加载、host-owned标准交互、公开adapter seam、被动supervisor与持久恢复fence；精确v3 DTO归[消息契约](../reference/webview-messages.zh.md)。[委托验收](../archive/2026-09-28-wi-013-acceptance.zh.md)分别记录真实扩展、原生F5、安装、多窗口及限制，不表示全生态兼容或三项广泛gates关闭。
 
 ### 宿主内部能力模块

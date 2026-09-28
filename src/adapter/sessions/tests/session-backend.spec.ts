@@ -15,7 +15,7 @@ import {
   type SessionInfoLike,
 } from "../sessionWorker.js";
 
-const projectRoot = "C:\\project";
+const projectRoot = process.cwd();
 const signal = new AbortController().signal;
 
 async function tempDirectory(t: { after: (fn: () => void | Promise<void>) => void }): Promise<string> {
@@ -65,7 +65,7 @@ function inspectResponse(session: unknown, history: unknown, anchor = "anchor-1"
 
 const session = {
   id: "session-1",
-  path: "C:\\private\\first.jsonl",
+  path: path.join(projectRoot, "private", "first.jsonl"),
   name: "First",
   firstMessage: "First",
   modified: "2026-09-21T10:00:00.000Z",
@@ -73,7 +73,7 @@ const session = {
 
 test("saved-session backend returns bounded opaque list results from an external worker", async (t) => {
   const workerPath = await workerFixture(t, responseWorker(listResponse([
-    { ...session, id: "session-2", path: "C:\\private\\second.jsonl", name: null, firstMessage: "Second", modified: "2026-09-22T10:00:00.000Z" },
+    { ...session, id: "session-2", path: path.join(projectRoot, "private", "second.jsonl"), name: null, firstMessage: "Second", modified: "2026-09-22T10:00:00.000Z" },
     session,
   ])));
   const backend = createPiSessionBackend(workerPath, { timeoutMs: 2_000 });
@@ -85,7 +85,7 @@ test("saved-session backend returns bounded opaque list results from an external
     page: 1,
     total: 18,
     entries: [
-      { id: "session-2", path: "C:\\private\\second.jsonl", name: null, firstMessage: "Second", modified: "2026-09-22T10:00:00.000Z" },
+      { id: "session-2", path: path.join(projectRoot, "private", "second.jsonl"), name: null, firstMessage: "Second", modified: "2026-09-22T10:00:00.000Z" },
       session,
     ],
   });
@@ -162,7 +162,7 @@ test("saved-session backend blocks retries while an unclosed helper remains owne
     signalCode: null,
     kill: () => true,
   }) as unknown as ChildProcess;
-  const backend = createPiSessionBackend("C:\\worker.mjs", {
+  const backend = createPiSessionBackend(path.join(projectRoot, "worker.mjs"), {
     timeoutMs: 10,
     terminationGraceMs: 5,
     spawn: () => {
@@ -413,18 +413,12 @@ async function buildWorker(t: { after: (fn: () => void | Promise<void>) => void 
   const directory = await tempDirectory(t);
   const workerPath = path.join(process.cwd(), "dist", `session-worker-test-${path.basename(directory)}.mjs`);
   t.after(() => rm(workerPath, { force: true }));
-  const esbuild = path.join(process.cwd(), "node_modules", "esbuild", "bin", "esbuild");
-  const source = path.join(process.cwd(), "src", "adapter", "sessions", "sessionWorker.ts");
-  const built = spawnSync(process.execPath, [
-    esbuild,
-    source,
-    "--bundle",
-    "--platform=node",
-    "--format=esm",
-    "--target=node22",
-    "--external:@earendil-works/pi-coding-agent",
-    `--outfile=${workerPath}`,
-  ], { windowsHide: true, cwd: process.cwd(), env: testEnvironment(directory), encoding: "utf8" });
+  const buildOptions = { entryPoints: [path.join(process.cwd(), "src", "adapter", "sessions", "sessionWorker.ts")],
+    bundle: true, platform: "node", format: "esm", target: "node22",
+    external: ["@earendil-works/pi-coding-agent"], outfile: workerPath };
+  const built = spawnSync(process.execPath, ["--input-type=module", "-e",
+    `import { build } from "esbuild"; await build(${JSON.stringify(buildOptions)});`],
+  { windowsHide: true, cwd: process.cwd(), env: testEnvironment(directory), encoding: "utf8" });
   assert.equal(built.status, 0, built.stderr);
   return workerPath;
 }

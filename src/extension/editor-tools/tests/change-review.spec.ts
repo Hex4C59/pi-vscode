@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
-import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm, realpath } from "node:fs/promises";
 import fileSystem from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -78,7 +78,7 @@ test("an allowed write opens actual immutable before/after in a readonly diff, n
     const source = new Promise<unknown>(resolve => { sourceOpened = resolve; });
     h.api.window.showTextDocument = async uri => { sourceOpened(uri); };
     v.action("openReviewSource", { id: entry.id });
-    assert.equal((await source as vscode.Uri).fsPath, path.join(root, "file.ts"));
+    assert.equal((await source as vscode.Uri).fsPath, await realpath(path.join(root, "file.ts")));
     const oldView = v.state().viewId; v.dispose.fire(); const replacement = h.createView();
     replacement.action("getChangeReview");
     const restored = [...replacement.sent].reverse().find(reviewState);

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type * as vscode from "vscode";
-import { mkdtemp, writeFile, rm, readFile, mkdir, symlink } from "node:fs/promises";
+import { mkdtemp, writeFile, rm, readFile, symlink } from "node:fs/promises";
 import os from "node:os";
+import fs from "node:fs/promises";
 import { unlinkSync } from "node:fs";
 import path from "node:path";
 import { folder, harness, settingsRuntime, tick } from "../../tests/harness.js";
@@ -188,7 +189,7 @@ test("retained bytes equal immutable logical payload, independent of delivery st
   } finally { await f.cleanup(); }
 });
 
-test("canonical junction escapes and ambiguous Windows inputs fail before document loading", async () => {
+test("canonical junction escapes and ambiguous Windows inputs fail before document loading", async (t) => {
   const f = await fixture(); const outside = await mkdtemp(path.join(os.tmpdir(), "pi-outside-"));
   try {
     await writeFile(path.join(outside, "code.ts"), "outside dummy");
@@ -198,10 +199,13 @@ test("canonical junction escapes and ambiguous Windows inputs fail before docume
       f.h.api.window.showOpenDialog = async () => [{ ...f.uri, fsPath: target }];
       await f.add(); assert.equal(f.v.attachments().result?.code, code); assert.equal(opens, 0);
     }
-    let long = f.root;
-    for (let i = 0; i < 6; i++) { long = path.join(long, "a".repeat(180)); await mkdir(long); }
-    const target = path.join(long, "code.ts"); await writeFile(target, "dummy");
-    f.h.api.window.showOpenDialog = async () => [{ ...f.uri, fsPath: target }]; await f.add();
+    // macOS cannot create a path longer than PATH_MAX (1024 bytes). Substitute
+    // only canonicalization so the real metadata guard still runs before loading.
+    const target = path.join(await fs.realpath(f.root), ...Array<string>(6).fill("a".repeat(180)), "code.ts");
+    const realpath = fs.realpath;
+    t.mock.method(fs, "realpath", async (value: Parameters<typeof realpath>[0]) =>
+      value === f.target ? target : realpath(value));
+    f.h.api.window.showOpenDialog = async () => [f.uri]; await f.add();
     assert.equal(f.v.attachments().result?.code, "metadata-too-large"); assert.equal(opens, 0);
   } finally { await f.cleanup(); await rm(outside, { recursive: true, force: true }); }
 });

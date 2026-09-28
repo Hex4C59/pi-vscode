@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -134,5 +135,5 @@ export function main(rootDir = repositoryRoot) {
 }
 
 const isMain = process.argv[1]
-  && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+  && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url;
 if (isMain) process.exitCode = main();

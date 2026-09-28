@@ -63,10 +63,10 @@ process.stdin.on("end", () => { stdinEnded = true; lastInput = "stdin-ended"; cl
 process.on("SIGTERM", () => { clearInterval(timer); process.exit(0); });
 `;
     await writeFile(childPath, source, "utf8");
-    const esbuildCli = path.join(projectRoot, "node_modules", "esbuild", "bin", "esbuild");
-    const result = spawnSync(process.execPath, [esbuildCli,
-      path.join(projectRoot, "src", "adapter", "ownership", "supervisor.ts"),
-      "--bundle", "--format=esm", "--platform=node", "--target=node22", `--outfile=${workerPath}`, "--log-level=error"],
+    const buildOptions = { entryPoints: [path.join(projectRoot, "src", "adapter", "ownership", "supervisor.ts")],
+      bundle: true, format: "esm", platform: "node", target: "node22", outfile: workerPath, logLevel: "error" };
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e",
+      `import { build } from "esbuild"; await build(${JSON.stringify(buildOptions)});`],
     { windowsHide: true, cwd: projectRoot, encoding: "utf8", env: isolatedEnvironment(path.join(evidenceRoot, "build-home")) });
     if (result.error || result.status !== 0) {
       throw new Error(`esbuild supervisor fixture failed: ${result.error?.message ?? result.stderr ?? result.status}`);
