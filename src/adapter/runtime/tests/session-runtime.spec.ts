@@ -9,7 +9,8 @@ const identity = { sessionId: "saved-id", sessionFile: "/private-store/saved.jso
 function fixture(state: unknown = identity, reportedCwd?: string) {
  let output: PassThrough; let gate: { runtime: string; cwd: string }; const replies: Record<string,unknown>[]=[];
  const commands: string[] = []; const launches: string[][] = []; let kills = 0;
- const fakeSpawn = ((_command: string, args: string[], options: { cwd: string; env: Record<string, string> }) => {
+ const fakeSpawn = ((_command: string, args: string[], options: { cwd: string; env: Record<string, string>; windowsHide?: boolean }) => {
+  assert.equal(options.windowsHide, true, "background RPC launch must not allocate a console");
   launches.push(args); const stdout = new PassThrough(); output=stdout; gate={runtime:options.env.PI_VSCODE_GATE_ID,cwd:reportedCwd??options.cwd};
   const child: EventEmitter & { exitCode: number | null; signalCode: null; kill(): boolean } = Object.assign(new EventEmitter(), { exitCode: null, signalCode: null, kill: () => { kills++; child.exitCode = 0; queueMicrotask(() => child.emit("close")); return true; } });
   const stdin = Object.assign(new EventEmitter(), { destroyed: false, writableEnded: false, write(frame: string) {

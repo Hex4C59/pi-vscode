@@ -365,6 +365,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
         child = launched.process;
       } else {
         child = (environment.spawn ?? spawn)(process.execPath, [cliPath, ...args], {
+          windowsHide: true,
           cwd: options.cwd, stdio: ["pipe", "pipe", "pipe"], env: runtimeEnv,
         });
       }

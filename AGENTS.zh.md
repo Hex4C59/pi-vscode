@@ -58,6 +58,8 @@
 
 ## 开始任务时
 
+在Windows上，若提供 `mcp__node_repl`，用Node文件API读取文件；非交互命令通过 `child_process.execFile`／`spawn` 执行，显式设置 `windowsHide: true`、捕获输出并限制生命周期。本环境普通 `functions.exec_command` 的外层shell已复现可见终端闪现（WI-022），常规命令避免走该入口。这是工作流规避措施，不是Codex客户端补丁。仍须遵守全部沙箱／审批限制，不得换通道绕过拒绝；用户需要交互的窗口保持可见，不杀终端宿主。若该通道不可用，报告限制，不宣称静默执行。
+
 1. 按 `AGENTS.kernel.zh.md` 的“开始任务时”要求读取基础上下文，包括当前仓库脚本和相关测试。
 2. 实现代码或继续 WI 前，完整阅读 [`ACTIVE.md`](ACTIVE.md) 中的当前提案及[协作指南](docs/guides/agent-collaboration.zh.md)。只读问答适用内核规定的有限例外，不要把每个问题都转成实现任务。
 3. 按下方加载地图读取所有适用路线；仅在当前问题需要历史证据时读取归档材料。

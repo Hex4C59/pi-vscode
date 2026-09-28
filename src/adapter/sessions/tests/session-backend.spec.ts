@@ -185,6 +185,7 @@ test("saved-session backend maps fixed worker failures and preserves controlled 
   const backend = createPiSessionBackend(workerPath, {
     spawn: (command: string, args: readonly string[], options: SpawnOptions): ChildProcess => {
       invocation = { command, args, options };
+      assert.equal(options.windowsHide, true);
       return nodeSpawn(command, args, options);
     },
     env: { PI_OFFLINE: "0", PI_TELEMETRY: "1", FIXTURE_PROVIDER_KEY: "fixture" },
@@ -423,7 +424,7 @@ async function buildWorker(t: { after: (fn: () => void | Promise<void>) => void 
     "--target=node22",
     "--external:@earendil-works/pi-coding-agent",
     `--outfile=${workerPath}`,
-  ], { cwd: process.cwd(), env: testEnvironment(directory), encoding: "utf8" });
+  ], { windowsHide: true, cwd: process.cwd(), env: testEnvironment(directory), encoding: "utf8" });
   assert.equal(built.status, 0, built.stderr);
   return workerPath;
 }
@@ -438,6 +439,7 @@ manager.appendMessage({ role: "user", content: "Synthetic public SDK history", t
 manager.appendMessage({ role: "assistant", content: [{ type: "text", text: "Synthetic public SDK reply" }], api: "fixture", provider: "fixture", model: "fixture-model", usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } }, stopReason: "stop", timestamp: 0 });
 process.stdout.write(JSON.stringify({ id: manager.getSessionId() }));`;
   const created = spawnSync(process.execPath, ["--input-type=module", "--eval", fixtureCode], {
+    windowsHide: true,
     cwd: process.cwd(),
     env: testEnvironment(agentDirectory),
     encoding: "utf8",

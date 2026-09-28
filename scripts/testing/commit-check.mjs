@@ -47,6 +47,7 @@ export function isImplementationPath(file) {
 
 function runGit(root, args, spawn) {
   const result = spawn('git', args, {
+    windowsHide: true,
     cwd: root,
     shell: false,
     encoding: 'buffer',

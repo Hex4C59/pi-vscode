@@ -42,6 +42,7 @@ export async function isolatedFixture(run) {
 export async function withProcess(args, options, run) {
   options.signal?.throwIfAborted();
   const child = spawn(process.execPath, args, {
+    windowsHide: true,
     cwd: options.cwd, env: options.env, stdio: ['pipe', 'pipe', 'pipe'],
   });
   let rejectFailure;

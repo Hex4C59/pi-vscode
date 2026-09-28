@@ -88,6 +88,7 @@ test('registered resource probe verifies the current pinned release without mode
   const env = { PATH: path.dirname(process.execPath), LANG: 'C.UTF-8', TERM: 'dumb' };
   for (const key of ['SystemRoot', 'WINDIR', 'COMSPEC']) if (process.env[key]) env[key] = process.env[key];
   const result = spawnSync(process.execPath, [fileURLToPath(new URL('./spike-project-trust.mjs', import.meta.url))], {
+    windowsHide: true,
     env, encoding: 'utf8', timeout: 300000, maxBuffer: 1024 * 1024,
   });
   assert.equal(result.status, 0, result.stderr);

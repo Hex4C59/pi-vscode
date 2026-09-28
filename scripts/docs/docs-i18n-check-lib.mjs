@@ -118,7 +118,7 @@ export function parseZhMetadata(content) {
 
 function git(args) {
   try {
-    return execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+    return execFileSync('git', args, { windowsHide: true, cwd: REPO_ROOT, encoding: 'utf8' }).trim();
   } catch {
     return null;
   }
@@ -130,7 +130,7 @@ export function commitExists(sha) {
 
 export function englishChangedSinceCommit(enRel, commit) {
   try {
-    execFileSync('git', ['diff', '--quiet', commit, '--', enRel], { cwd: REPO_ROOT });
+    execFileSync('git', ['diff', '--quiet', commit, '--', enRel], { windowsHide: true, cwd: REPO_ROOT });
     return { unknown: false, changed: false };
   } catch (err) {
     if (err && typeof err === 'object' && 'status' in err && err.status === 1) {

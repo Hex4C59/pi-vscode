@@ -53,6 +53,8 @@ When changing streaming, Stop, view recreation or runtime replacement, read the 
 
 ## Starting a task
 
+On Windows, when `mcp__node_repl` is available, read files through Node filesystem APIs and run noninteractive commands with `child_process.execFile`/`spawn`, explicit `windowsHide: true`, captured output and bounded lifetime. In this environment the ordinary `functions.exec_command` outer shell has produced visible terminal flashes (WI-022); avoid it for routine commands. This is a workflow mitigation, not a Codex client patch. Preserve all sandbox/approval restrictions; never use another transport to evade a denial. Keep user-requested interactive windows visible and do not kill terminal hosts. If this transport is unavailable, report the limitation rather than claiming silent execution.
+
 1. Read the baseline context required by `AGENTS.kernel.md` § Starting a task, including current repository scripts and relevant tests.
 2. Before implementation or continuing a WI, read its current proposal in [`ACTIVE.md`](ACTIVE.md) and the [collaboration guide](docs/guides/agent-collaboration.md) in full. Apply the kernel's limited exception for read-only answers; do not turn every question into implementation work.
 3. Follow the applicable load-map routes below. Read archived material only when the current question needs its evidence.

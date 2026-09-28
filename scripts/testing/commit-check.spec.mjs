@@ -18,6 +18,7 @@ function command(cwd, executable, args, options = {}) {
     shell: false,
     encoding: 'utf8',
     ...options,
+    windowsHide: true,
   });
   assert.ifError(result.error);
   assert.equal(result.signal, null, `${executable} ${args.join(' ')} ended on ${result.signal}`);
@@ -100,7 +101,7 @@ test('parses NUL name-status rename and copy records with spaces and Unicode', (
 
   const raw = spawnSync('git', [
     'diff', '--cached', '--name-status', '-z', '--find-renames', '--find-copies', '--find-copies-harder',
-  ], { cwd: root, shell: false, encoding: 'buffer' });
+  ], { windowsHide: true, cwd: root, shell: false, encoding: 'buffer' });
   assert.ifError(raw.error);
   assert.equal(raw.status, 0);
   const records = parseNameStatusZ(raw.stdout);
@@ -154,5 +155,6 @@ test('uses explicit git arguments with shell disabled and formats sorted paths',
   assert.deepEqual(result.stagedPaths, ['src/a.ts', 'src/z.ts']);
   assert.equal(calls.length, 2);
   assert.ok(calls.every((call) => call.executable === 'git' && call.options.shell === false));
+  assert.ok(calls.every((call) => call.options.windowsHide === true));
   assert.match(formatResult(result), /- src\/a\.ts\n- src\/z\.ts/);
 });

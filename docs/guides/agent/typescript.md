@@ -31,6 +31,8 @@ For new public APIs, cross-layer dependencies or persistence, also use the produ
 
 ## Async work and resource ownership
 
+- Non-interactive Node child-process launches must set `windowsHide: true`, including development scripts and test helpers; redirected output alone does not hide a Windows console. Put this policy after spread options so callers cannot accidentally override it. Keep intentional interactive terminals/native UI visible. Repository flags do not control the agent execution tool’s outer shell. The background-process launch-policy test supplements, not replaces, real Windows observation.
+
 - Await or return promises. Background work needs an explicit owner and rejection handler; `void` alone does not handle rejection. Event callbacks must route failures to the owning error path.
 - Give listeners, subscriptions, timers, streams and child processes a cleanup owner. Release them on success, failure, cancellation and disposal, including partial initialization; use `finally` or the framework's disposal mechanism. Make cleanup safe when called more than once.
 - For operations that can hang, use the existing timeout/cancellation mechanism. A timeout or `Promise.race` does not stop the underlying work: cancel it or prevent late results from changing current state. Recheck identity or generation after `await` when workspace/session/view state may have changed.

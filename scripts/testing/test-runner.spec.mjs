@@ -70,7 +70,7 @@ test('runner ignores linked directories including linked owners and script roots
 
 test('runner library import has no discovery, cleanup or execution side effects', (t) => {
   const root = fixture(t, { 'dist/tests/sentinel': 'keep' });
-  const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `await import(${JSON.stringify(libraryUrl)});`], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `await import(${JSON.stringify(libraryUrl)});`], { windowsHide: true, cwd: root, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, '');
   assert.equal(result.stderr, '');
@@ -105,6 +105,7 @@ test('runner cleans stale tests only, builds same basenames separately and execu
   let launched;
   const result = await runTests(root, { stdio: 'pipe', spawn: (command, args, options) => {
     launched = { command, args, options };
+    assert.equal(options.windowsHide, true);
     return spawnSync(command, args, options);
   } });
   assert.deepEqual(relative(root, result.built), [
@@ -119,6 +120,7 @@ test('runner cleans stale tests only, builds same basenames separately and execu
   assert.equal(launched.command, process.execPath);
   assert.deepEqual(launched.args, ['--test', ...result.built, ...result.scripts]);
   assert.equal(launched.options.shell, false);
+  assert.equal(launched.options.windowsHide, true);
   assert.equal(launched.options.cwd, root);
 });
 
@@ -163,12 +165,12 @@ test('runner CLI resolves its root from its URL with spaces, Unicode and non-roo
     'scripts/testing/run-tests.mjs': runnerSource.replace("'./test-runner-lib.mjs'", JSON.stringify(libraryUrl)),
   });
   const cwd = fixture(t);
-  const result = spawnSync(process.execPath, [path.join(root, 'scripts/testing/run-tests.mjs')], { cwd, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [path.join(root, 'scripts/testing/run-tests.mjs')], { windowsHide: true, cwd, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr + result.stdout);
   assert.ok(fs.existsSync(path.join(root, 'dist/tests/extension/tests/basic.spec.js')));
   assert.equal(fs.existsSync(path.join(cwd, 'dist')), false);
   fs.writeFileSync(path.join(root, 'src/extension/tests/basic.spec.ts'), 'const broken = ;');
-  const failed = spawnSync(process.execPath, [path.join(root, 'scripts/testing/run-tests.mjs')], { cwd, encoding: 'utf8' });
+  const failed = spawnSync(process.execPath, [path.join(root, 'scripts/testing/run-tests.mjs')], { windowsHide: true, cwd, encoding: 'utf8' });
   assert.equal(failed.status, 1);
   assert.match(failed.stderr, /Build failed/);
 });

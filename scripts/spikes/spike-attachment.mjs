@@ -45,7 +45,7 @@ async function worker(root) {
     cliPath: () => path.join(repo, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js'),
     spawn(command, args, options) {
       // Only narrow process setup is substituted; encoder, prepared token, write/ACK and reader are production.
-      child = spawn(command, [...args, '--no-skills', '--no-themes', '-e', extension], options);
+      child = spawn(command, [...args, '--no-skills', '--no-themes', '-e', extension], { ...options, windowsHide: true });
       exit = new Promise(resolve => child.once('close', (code, signal) => resolve({ code, signal })));
       const write = child.stdin.write.bind(child.stdin);
       child.stdin.write = function (frame, ...rest) {

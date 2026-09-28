@@ -49,3 +49,24 @@ test('marker cannot waive differing language tags', () => {
   assert.ok(warnings.some((finding) => finding.code === 'code-fence-lang'));
   assert.ok(warnings.some((finding) => finding.code === 'code-fence-body'));
 });
+
+// Observe the public process boundary while retaining real Git behavior. This
+// checks both metadata queries, including the handled invalid-revision path.
+test('Git metadata queries hide background consoles without changing results', async (t) => {
+  const childProcess = (await import('node:child_process')).default;
+  const { syncBuiltinESMExports } = await import('node:module');
+  const { commitExists, englishChangedSinceCommit } = await import('./docs-i18n-check-lib.mjs');
+  const original = childProcess.execFileSync;
+  const calls = [];
+  t.mock.method(childProcess, 'execFileSync', (command, args, options) => {
+    calls.push({ command, windowsHide: options.windowsHide });
+    return original(command, args, options);
+  });
+  syncBuiltinESMExports();
+  t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+  assert.equal(commitExists('HEAD'), true);
+  assert.equal(commitExists('wi022-nonexistent-revision'), false);
+  assert.equal(englishChangedSinceCommit('README.md', 'HEAD').unknown, false);
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every(call => call.command === 'git' && call.windowsHide === true));
+});

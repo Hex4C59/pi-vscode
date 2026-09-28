@@ -64,6 +64,7 @@ export function executeTests(rootDir, files, { spawn = spawnSync, stdio = 'inher
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   const result = spawn(process.execPath, ['--test', ...files], {
+    windowsHide: true,
     cwd: path.resolve(rootDir), shell: false, stdio, env,
   });
   if (result.error) throw new Error(`Test process launch failed: ${result.error.message}`, { cause: result.error });

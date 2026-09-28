@@ -32,7 +32,7 @@ export async function withFixture(run) {
 }
 
 export async function withRpc(args, options, run) {
-  const child = spawn(process.execPath, args, { cwd: options.cwd, env: options.env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, args, { windowsHide: true, cwd: options.cwd, env: options.env, stdio: ['pipe', 'pipe', 'pipe'] });
   let sequence = 0;
   let bytes = 0;
   let buffer = '';
@@ -165,7 +165,7 @@ export async function withRpc(args, options, run) {
 
 // Transport seam only: tests run harmless Node children, never pi.
 export async function runChild(args, { cwd, env, timeoutMs = 60000, logLimit = 65536 }) {
-  const child = spawn(process.execPath, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, args, { windowsHide: true, cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let failure;
   let stdout = '';
   let bytes = 0;

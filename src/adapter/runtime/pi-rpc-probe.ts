@@ -61,6 +61,7 @@ export async function runPiRuntimeProbe(options?: {
 
   try {
     child = spawn(process.execPath, [cliPath, ...args], {
+      windowsHide: true,
       cwd: options?.cwd,
       stdio: ["pipe", "pipe", "pipe"],
       env: process.env,
