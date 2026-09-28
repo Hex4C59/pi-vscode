@@ -5,14 +5,15 @@ import { focusPiChat } from "../piChatViewProvider.js";
 
 test("focus command reveals existing container before focusing, including repeated invocations", async () => {
   const calls: string[] = []; let reveal!: () => void;
-  const api = { commands: { executeCommand: async (command: string) => {
+  const api = { commands: { getCommands: async () => ["workbench.view.extension.pi-vscode", "pi-vscode.chat.focus"], executeCommand: async (command: string) => {
     calls.push(command);
     if (command === "workbench.view.extension.pi-vscode") await new Promise<void>((resolve) => { reveal = resolve; });
   } } } as unknown as Parameters<typeof focusPiChat>[0];
   const first = focusPiChat(api);
+  await Promise.resolve();
   assert.deepEqual(calls, ["workbench.view.extension.pi-vscode"]);
   reveal(); await first;
-  const second = focusPiChat(api); reveal(); await second;
+  const second = focusPiChat(api); await Promise.resolve(); reveal(); await second;
   assert.deepEqual(calls, ["workbench.view.extension.pi-vscode", "pi-vscode.chat.focus", "workbench.view.extension.pi-vscode", "pi-vscode.chat.focus"]);
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));
   assert.deepEqual(pkg.contributes.menus["editor/title"], [{ command: "pi-vscode.focusChat", group: "navigation" }]);
@@ -23,7 +24,38 @@ test("focus command reveals existing container before focusing, including repeat
 
 test("focus reveal failure does not issue a subsequent focus command", async () => {
   const calls: string[] = [];
-  const api = { commands: { executeCommand: async (command: string) => { calls.push(command); throw new Error("unavailable"); } } };
+  const api = { commands: { getCommands: async () => ["workbench.view.extension.pi-vscode", "pi-vscode.chat.focus"], executeCommand: async (command: string) => { calls.push(command); throw new Error("unavailable"); } } };
   await assert.rejects(focusPiChat(api as unknown as Parameters<typeof focusPiChat>[0]), /unavailable/);
   assert.deepEqual(calls, ["workbench.view.extension.pi-vscode"]);
+});
+
+
+test("focus uses the registered view on hosts without Secondary Side Bar containers", async () => {
+  const calls: string[] = [];
+  const api = { commands: {
+    getCommands: async () => ["pi-vscode.chat.focus"],
+    executeCommand: async (command: string) => { calls.push(command); },
+  } };
+  await focusPiChat(api as unknown as Parameters<typeof focusPiChat>[0]);
+  assert.deepEqual(calls, ["pi-vscode.chat.focus"]);
+});
+
+test("focus reports fallback focus failure", async () => {
+  const failure = new Error("focus unavailable");
+  const api = { commands: {
+    getCommands: async () => [] as string[],
+    executeCommand: async () => { throw failure; },
+  } };
+  await assert.rejects(focusPiChat(api as unknown as Parameters<typeof focusPiChat>[0]), failure);
+});
+
+test("focus reports discovery failure without executing a fallback", async () => {
+  const failure = new Error("command discovery unavailable");
+  const calls: string[] = [];
+  const api = { commands: {
+    getCommands: async () => { throw failure; },
+    executeCommand: async (command: string) => { calls.push(command); },
+  } };
+  await assert.rejects(focusPiChat(api as unknown as Parameters<typeof focusPiChat>[0]), failure);
+  assert.deepEqual(calls, []);
 });

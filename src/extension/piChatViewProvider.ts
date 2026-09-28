@@ -21,7 +21,11 @@ export const PI_CHAT_VIEW_ID = "pi-vscode.chat";
 
 /** Reveal the contributed container, then focus its existing view (never toggle). */
 export async function focusPiChat(api: Pick<typeof vscode, "commands">): Promise<void> {
-  await api.commands.executeCommand("workbench.view.extension.pi-vscode");
+  const containerCommand = "workbench.view.extension.pi-vscode";
+  const registeredCommands = await api.commands.getCommands(true);
+  if (registeredCommands.includes(containerCommand)) {
+    await api.commands.executeCommand(containerCommand);
+  }
   await api.commands.executeCommand(`${PI_CHAT_VIEW_ID}.focus`);
 }
 
