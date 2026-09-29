@@ -1,8 +1,7 @@
-import type { ReactNode } from "react";
 import type {
   WorkspaceStateMessage, ApprovalDecision, AttachmentHistoryEntry,
   AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage,
-  SavedHistoryStateMessage,
+  SavedHistoryStateMessage, ProviderConfigProjection,
 } from "../../extension/contracts/index.js";
 import type { SavedHistoryPreview } from "../index.js";
 
@@ -44,8 +43,6 @@ export interface AttachmentPanelProps {
 }
 
 export interface ChangeReviewProps {
-  caption?: string;
-  introduction?: ReactNode;
   pageSize: number;
   state: ChangeReviewStateMessage | null;
   open: boolean;
@@ -56,8 +53,10 @@ export interface ChangeReviewProps {
   onSource: (id: string) => void;
 }
 
-export interface ModelPickerViewProps {
-  state: Pick<WorkspaceStateMessage, "thinkingLevel" | "pendingThinkingLevel" | "thinkingLevels" | "modelBusy" | "chatBusy" | "chatModel" | "pendingModel" | "availableModels" | "modelError">;
+type LiveModelControlState = Pick<WorkspaceStateMessage, "thinkingLevel" | "pendingThinkingLevel" | "thinkingLevels" | "modelBusy" | "chatBusy" | "chatModel" | "pendingModel" | "availableModels" | "modelError" | "busy" | "runtime" | "execution">;
+
+/** Callers pass either a live workspace slice or a saved default. The view does not choose the intent. */
+export type ModelPickerViewProps = {
   onSettings?: () => void;
   loading?: boolean;
   disabled: boolean;
@@ -65,18 +64,10 @@ export interface ModelPickerViewProps {
   onThinking: (level: string) => void;
   continuousThinkingDrag?: boolean;
   animatePopover?: boolean;
-}
-
-export interface ModelPickerProps {
-  /** Opt into candidate entry/exit motion; the production default stays immediate. */
-  animatePopover?: boolean;
-  /** Continuous pointer feedback; release still commits one supported thinking level. */
-  continuousThinkingDrag?: boolean;
-  state: WorkspaceStateMessage;
-  disabled: boolean;
-  onModel: (provider: string, modelId: string) => void;
-  onThinking: (level: string) => void;
-}
+} & (
+  | { state: LiveModelControlState; savedDefault?: undefined }
+  | { savedDefault: ProviderConfigProjection | null; state?: undefined }
+);
 
 export interface SessionsProps {
   pageSize: number;

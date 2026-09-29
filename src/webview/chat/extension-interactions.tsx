@@ -1,133 +1,56 @@
 import { SessionIcon } from "./session-icon.js";
 import { useId, useLayoutEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
 import type { ExecutionProfileProjection, ExtensionFeedback, ExtensionInteractionProjection, InteractionAnswer } from "../../extension/contracts/index.js";
+import { useUiText, type UiText, type UiTranslator } from "../components/index.js";
 
-type Language = "en" | "zh-CN";
 type ActiveInteraction = NonNullable<ExtensionInteractionProjection["active"]>;
 
-interface InteractionCopy {
-  heading: string;
-  empty: string;
-  selectLabel: string;
-  chooseOption: string;
-  inputLabel: string;
-  editorLabel: string;
-  inputPlaceholder: string;
-  answerTooLarge: string;
-  confirmLegend: string;
-  yes: string;
-  no: string;
-  submit: string;
-  cancel: string;
-  cancellationWarning: string;
-  origin: string;
-  localCutoff: string;
-  unavailableTime: string;
-  limitations: string;
-  blocked: string;
-  unknownError: string;
-  feedbackHeading: string;
-  omittedFeedback(count: number): string;
-  queued(count: number): string;
-  errors: Readonly<Record<string, string>>;
-  feedbackKinds: Readonly<Record<ExtensionFeedback["kind"], string>>;
-  feedbackLevels: Readonly<Record<ExtensionFeedback["level"], string>>;
+const interactionErrors = {
+  "overflow-burst": "Repeated incoming requests exceeded the limit. New interactions are blocked; extension code may still be running.",
+  "reply-failed": "An interaction reply could not be confirmed. The remote result is unknown; answers are blocked.",
+  "timer-failed": "A local cutoff timer failed. Interaction handling is blocked.",
+  "clock-failed": "The local clock is unavailable. Interaction handling is blocked.",
+  "identifier-exhausted": "The interaction identifier budget is exhausted. Interaction handling is blocked.",
+} satisfies Readonly<Record<string, UiText>>;
+const feedbackKinds: Readonly<Record<ExtensionFeedback["kind"], UiText>> = {
+  notify: "Notification", status: "Status", widget: "Widget text", title: "Requested title text", "editor-text": "Requested editor text",
+};
+const feedbackLevels: Readonly<Record<ExtensionFeedback["level"], UiText>> = { info: "Info", warning: "Warning", error: "Error" };
+const profilePhases: Readonly<Record<ExecutionProfileProjection["phase"], UiText>> = {
+  idle: "Runtime is idle.",
+  selecting: "Waiting for the VS Code file picker and host confirmation.",
+  switching: "Changing execution profile. Controls are temporarily disabled.",
+  "recovery-required": "Runtime outcome is uncertain. Reloading or seeing no process does not clear recovery.",
+  error: "Execution profile is not ready.",
+};
+
+function interactionError(code: string, t: UiTranslator): string {
+  return Object.hasOwn(interactionErrors, code) ? t(interactionErrors[code as keyof typeof interactionErrors]) : t("The host reported an interaction error. Remote completion is unknown.");
 }
 
-const interactionCopy: Record<Language, InteractionCopy> = {
-  en: {
-    heading: "Extension interactions",
-    empty: "No extension interaction is active.",
-    selectLabel: "Select an option",
-    chooseOption: "Choose an option…",
-    inputLabel: "Your response",
-    editorLabel: "Editor text",
-    inputPlaceholder: "Type your response…",
-    answerTooLarge: "Response exceeds 32,768 UTF-8 bytes (32 KiB). Shorten the text and submit again, or cancel this interaction.",
-    confirmLegend: "Choose a response",
-    yes: "Yes",
-    no: "No",
-    submit: "Submit response",
-    cancel: "Cancel this interaction",
-    cancellationWarning: "Canceling this request may let the extension continue running. It does not stop the task.",
-    origin: "Origin: trusted runtime extension; not authenticated.",
-    localCutoff: "Local cutoff (receipt-based; not remote expiry):",
-    unavailableTime: "time unavailable",
-    limitations: "Custom/component TUI and arbitrary terminal layouts are not rendered. Only standard forms and bounded literal feedback are shown.",
-    blocked: "Extension interaction handling is blocked. New answers are disabled; runtime work may still be running.",
-    unknownError: "The host reported an interaction error. Remote completion is unknown.",
-    feedbackHeading: "Extension feedback",
-    omittedFeedback: count => `${count} older feedback item${count === 1 ? " was" : "s were"} omitted due to capacity.`,
-    queued: count => `${count} interaction${count === 1 ? "" : "s"} queued.`,
-    errors: {
-      "overflow-burst": "Repeated incoming requests exceeded the limit. New interactions are blocked; extension code may still be running.",
-      "reply-failed": "An interaction reply could not be confirmed. The remote result is unknown; answers are blocked.",
-      "timer-failed": "A local cutoff timer failed. Interaction handling is blocked.",
-      "clock-failed": "The local clock is unavailable. Interaction handling is blocked.",
-      "identifier-exhausted": "The interaction identifier budget is exhausted. Interaction handling is blocked.",
-    },
-    feedbackKinds: { notify: "Notification", status: "Status", widget: "Widget text", title: "Requested title text", "editor-text": "Requested editor text" },
-    feedbackLevels: { info: "Info", warning: "Warning", error: "Error" },
-  },
-  "zh-CN": {
-    heading: "扩展交互",
-    empty: "当前没有待处理的扩展交互。",
-    selectLabel: "选择一个选项",
-    chooseOption: "请选择…",
-    inputLabel: "你的答复",
-    editorLabel: "编辑文本",
-    inputPlaceholder: "输入答复…",
-    answerTooLarge: "答复超过 32,768 UTF-8 字节（32 KiB）。请缩短文本后重新提交，或取消此交互。",
-    confirmLegend: "选择答复",
-    yes: "是",
-    no: "否",
-    submit: "提交答复",
-    cancel: "取消此交互",
-    cancellationWarning: "取消此请求后，扩展仍可能继续运行；这不会停止任务。",
-    origin: "来源：受信运行时扩展；未经认证。",
-    localCutoff: "本地截止时间（基于回执；不代表远端过期）：",
-    unavailableTime: "时间不可用",
-    limitations: "不渲染自定义／组件 TUI 或任意终端布局。此处仅显示标准表单与有界字面反馈。",
-    blocked: "扩展交互处理已阻止。答复已禁用；运行时工作仍可能继续。",
-    unknownError: "宿主报告了交互错误。远端是否完成未知。",
-    feedbackHeading: "扩展反馈",
-    omittedFeedback: count => `因容量限制，已有 ${count} 条较早反馈未显示。`,
-    queued: count => `有 ${count} 个交互正在排队。`,
-    errors: {
-      "overflow-burst": "连续收到的请求超过上限。新交互已阻止；扩展代码仍可能运行。",
-      "reply-failed": "无法确认交互答复是否送达。远端结果未知；答复已阻止。",
-      "timer-failed": "本地截止计时器失败，交互处理已阻止。",
-      "clock-failed": "本地时钟不可用，交互处理已阻止。",
-      "identifier-exhausted": "交互标识预算已耗尽，交互处理已阻止。",
-    },
-    feedbackKinds: { notify: "通知", status: "状态", widget: "组件文本", title: "请求显示的标题文本", "editor-text": "请求显示的编辑器文本" },
-    feedbackLevels: { info: "信息", warning: "警告", error: "错误" },
-  },
-};
 interface InteractionFormProps {
   active: ActiveInteraction;
-  language: Language;
   attempted: boolean;
   onAnswer(id: string, answer: InteractionAnswer): void;
   onCancel(id: string): void;
 }
 
-function formatLocalCutoff(timestamp: number, language: Language): string | null {
+function formatLocalCutoff(timestamp: number, locale: string): string | null {
   const date = new Date(timestamp);
   if (!Number.isFinite(timestamp) || !Number.isFinite(date.getTime())) return null;
-  return new Intl.DateTimeFormat(language === "en" ? "en-US" : "zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat(locale === "zh-CN" ? "zh-CN" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function InteractionContext({ active, language }: Pick<InteractionFormProps, "active" | "language">): ReactElement {
-  const copy = interactionCopy[language];
+function InteractionContext({ active }: Pick<InteractionFormProps, "active">): ReactElement {
+  const { locale, text: t } = useUiText();
   const timestamp = active.localCutoffAt;
-  const formatted = timestamp === undefined ? null : formatLocalCutoff(timestamp, language);
+  const formatted = timestamp === undefined ? null : formatLocalCutoff(timestamp, locale);
   return (
     <div className="extension-interactions__context">
-      <p className="extension-interactions__origin">{copy.origin}</p>
+      <p className="extension-interactions__origin">{t("Origin: trusted runtime extension; not authenticated.")}</p>
       {timestamp !== undefined && <p data-role="local-cutoff" className="extension-interactions__cutoff">
-        <span>{copy.localCutoff}</span>{" "}
-        {formatted === null ? copy.unavailableTime : <time dateTime={new Date(timestamp).toISOString()}>{formatted}</time>}
+        <span>{t("Local cutoff (receipt-based; not remote expiry):")}</span>{" "}
+        {formatted === null ? t("time unavailable") : <time dateTime={new Date(timestamp).toISOString()}>{formatted}</time>}
       </p>}
     </div>
   );
@@ -165,8 +88,8 @@ function interactionKeyDown(
   }
 }
 
-function SelectInteraction({ active, language, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
-  const copy = interactionCopy[language];
+function SelectInteraction({ active, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
+  const { text: t } = useUiText();
   const labelId = useId();
   const [optionId, setOptionId] = useState("");
   const submit = (): void => {
@@ -179,24 +102,24 @@ function SelectInteraction({ active, language, attempted, onAnswer, onCancel }: 
   return (
     <form className="extension-interactions__form" onSubmit={onSubmit} onKeyDown={event => interactionKeyDown(event, active.method, submit, cancel)}>
       <h3 className="extension-interactions__title">{active.title}</h3>
-      <InteractionContext active={active} language={language} />
-      <label htmlFor={labelId}>{copy.selectLabel}</label>
-      <select id={labelId} aria-label={copy.selectLabel} value={optionId} disabled={attempted}
+      <InteractionContext active={active} />
+      <label htmlFor={labelId}>{t("Select an option")}</label>
+      <select id={labelId} aria-label={t("Select an option")} value={optionId} disabled={attempted}
         onChange={event => setOptionId(event.currentTarget.value)}>
-        <option value="">{copy.chooseOption}</option>
+        <option value="">{t("Choose an option…")}</option>
         {active.options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
       </select>
       <div className="extension-interactions__actions">
-        <button type="submit" data-action="answer" disabled={attempted || optionId === ""}>{copy.submit}</button>
-        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{copy.cancel}</button>
+        <button type="submit" data-action="answer" disabled={attempted || optionId === ""}>{t("Submit response")}</button>
+        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{t("Cancel this interaction")}</button>
       </div>
-      <p className="extension-interactions__warning">{copy.cancellationWarning}</p>
+      <p className="extension-interactions__warning">{t("Canceling this request may let the extension continue running. It does not stop the task.")}</p>
     </form>
   );
 }
 
-function ConfirmInteraction({ active, language, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
-  const copy = interactionCopy[language];
+function ConfirmInteraction({ active, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
+  const { text: t } = useUiText();
   const groupName = useId();
   const [value, setValue] = useState<boolean | null>(null);
   const submit = (): void => {
@@ -209,24 +132,24 @@ function ConfirmInteraction({ active, language, attempted, onAnswer, onCancel }:
   return (
     <form className="extension-interactions__form" onSubmit={onSubmit} onKeyDown={event => interactionKeyDown(event, active.method, submit, cancel)}>
       <h3 className="extension-interactions__title">{active.title}</h3>
-      <InteractionContext active={active} language={language} />
+      <InteractionContext active={active} />
       <p className="extension-interactions__literal">{active.message}</p>
       <fieldset disabled={attempted}>
-        <legend>{copy.confirmLegend}</legend>
-        <label><input type="radio" name={groupName} value="true" checked={value === true} onChange={() => setValue(true)} />{copy.yes}</label>
-        <label><input type="radio" name={groupName} value="false" checked={value === false} onChange={() => setValue(false)} />{copy.no}</label>
+        <legend>{t("Choose a response")}</legend>
+        <label><input type="radio" name={groupName} value="true" checked={value === true} onChange={() => setValue(true)} />{t("Yes")}</label>
+        <label><input type="radio" name={groupName} value="false" checked={value === false} onChange={() => setValue(false)} />{t("No")}</label>
       </fieldset>
       <div className="extension-interactions__actions">
-        <button type="submit" data-action="answer" disabled={attempted || value === null}>{copy.submit}</button>
-        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{copy.cancel}</button>
+        <button type="submit" data-action="answer" disabled={attempted || value === null}>{t("Submit response")}</button>
+        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{t("Cancel this interaction")}</button>
       </div>
-      <p className="extension-interactions__warning">{copy.cancellationWarning}</p>
+      <p className="extension-interactions__warning">{t("Canceling this request may let the extension continue running. It does not stop the task.")}</p>
     </form>
   );
 }
 
-function InputInteraction({ active, language, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
-  const copy = interactionCopy[language];
+function InputInteraction({ active, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
+  const { text: t } = useUiText();
   const labelId = useId();
   const [text, setText] = useState("");
   const [sizeError, setSizeError] = useState(false);
@@ -243,22 +166,22 @@ function InputInteraction({ active, language, attempted, onAnswer, onCancel }: I
   return (
     <form className="extension-interactions__form" onSubmit={onSubmit} onKeyDown={event => interactionKeyDown(event, active.method, submit, cancel)}>
       <h3 className="extension-interactions__title">{active.title}</h3>
-      <InteractionContext active={active} language={language} />
-      <label htmlFor={labelId}>{copy.inputLabel}</label>
-      <input id={labelId} type="text" aria-label={copy.inputLabel} value={text} placeholder={active.placeholder ?? copy.inputPlaceholder}
+      <InteractionContext active={active} />
+      <label htmlFor={labelId}>{t("Your response")}</label>
+      <input id={labelId} type="text" aria-label={t("Your response")} value={text} placeholder={active.placeholder ?? t("Type your response…")}
         disabled={attempted} aria-invalid={sizeError || undefined} aria-describedby={sizeError ? errorId : undefined}
         onChange={event => { setText(event.currentTarget.value); setSizeError(false); }} />
-      {sizeError && <p id={errorId} role="alert" className="extension-interactions__warning">{copy.answerTooLarge}</p>}
+      {sizeError && <p id={errorId} role="alert" className="extension-interactions__warning">{t("Response exceeds 32,768 UTF-8 bytes (32 KiB). Shorten the text and submit again, or cancel this interaction.")}</p>}
       <div className="extension-interactions__actions">
-        <button type="submit" data-action="answer" disabled={attempted}>{copy.submit}</button>
-        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{copy.cancel}</button>
+        <button type="submit" data-action="answer" disabled={attempted}>{t("Submit response")}</button>
+        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{t("Cancel this interaction")}</button>
       </div>
-      <p className="extension-interactions__warning">{copy.cancellationWarning}</p>
+      <p className="extension-interactions__warning">{t("Canceling this request may let the extension continue running. It does not stop the task.")}</p>
     </form>
   );
 }
-function EditorInteraction({ active, language, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
-  const copy = interactionCopy[language];
+function EditorInteraction({ active, attempted, onAnswer, onCancel }: InteractionFormProps): ReactElement {
+  const { text: t } = useUiText();
   const labelId = useId();
   const [text, setText] = useState(active.method === "editor" ? active.prefill ?? "" : "");
   const [sizeError, setSizeError] = useState(false);
@@ -275,30 +198,29 @@ function EditorInteraction({ active, language, attempted, onAnswer, onCancel }: 
   return (
     <form className="extension-interactions__form" onSubmit={onSubmit} onKeyDown={event => interactionKeyDown(event, active.method, submit, cancel)}>
       <h3 className="extension-interactions__title">{active.title}</h3>
-      <InteractionContext active={active} language={language} />
-      <label htmlFor={labelId}>{copy.editorLabel}</label>
-      <textarea id={labelId} aria-label={copy.editorLabel} rows={6} value={text} disabled={attempted}
+      <InteractionContext active={active} />
+      <label htmlFor={labelId}>{t("Editor text")}</label>
+      <textarea id={labelId} aria-label={t("Editor text")} rows={6} value={text} disabled={attempted}
         aria-invalid={sizeError || undefined} aria-describedby={sizeError ? errorId : undefined}
         onChange={event => { setText(event.currentTarget.value); setSizeError(false); }} />
-      {sizeError && <p id={errorId} role="alert" className="extension-interactions__warning">{copy.answerTooLarge}</p>}
+      {sizeError && <p id={errorId} role="alert" className="extension-interactions__warning">{t("Response exceeds 32,768 UTF-8 bytes (32 KiB). Shorten the text and submit again, or cancel this interaction.")}</p>}
       <div className="extension-interactions__actions">
-        <button type="submit" data-action="answer" disabled={attempted}>{copy.submit}</button>
-        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{copy.cancel}</button>
+        <button type="submit" data-action="answer" disabled={attempted}>{t("Submit response")}</button>
+        <button type="button" data-action="cancel" disabled={attempted} onClick={cancel}>{t("Cancel this interaction")}</button>
       </div>
-      <p className="extension-interactions__hint">{language === "en" ? "Press Ctrl+Enter to submit; Enter adds a new line." : "按 Ctrl+Enter 提交；按 Enter 换行。"}</p>
-      <p className="extension-interactions__warning">{copy.cancellationWarning}</p>
+      <p className="extension-interactions__hint">{t("Press Ctrl+Enter to submit; Enter adds a new line.")}</p>
+      <p className="extension-interactions__warning">{t("Canceling this request may let the extension continue running. It does not stop the task.")}</p>
     </form>
   );
 }
 export interface ExtensionInteractionsProps {
   state: ExtensionInteractionProjection;
-  language: Language;
   onAnswer(id: string, answer: InteractionAnswer): void;
   onCancel(id: string): void;
 }
 
-export function ExtensionInteractions({ state, language, onAnswer, onCancel }: ExtensionInteractionsProps): ReactElement {
-  const copy = interactionCopy[language];
+export function ExtensionInteractions({ state, onAnswer, onCancel }: ExtensionInteractionsProps): ReactElement {
+  const { text: t } = useUiText();
   const headingId = useId();
   const panelRef = useRef<HTMLDetailsElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -358,7 +280,6 @@ export function ExtensionInteractions({ state, language, onAnswer, onCancel }: E
   };
   const formProps: InteractionFormProps | null = active ? {
     active,
-    language,
     attempted: interactionBlocked || attemptedId === active.id,
     onAnswer: (id, answer) => attempt(id, () => onAnswer(id, answer)),
     onCancel: id => attempt(id, () => onCancel(id)),
@@ -370,20 +291,20 @@ export function ExtensionInteractions({ state, language, onAnswer, onCancel }: E
   else if (formProps?.active.method === "editor") form = <EditorInteraction key={formProps.active.id} {...formProps} />;
   return (
     <details open={active !== null || interactionBlocked || undefined} ref={panelRef} className="extension-interactions" aria-labelledby={headingId} onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}>
-      <summary><h2 id={headingId}>{active !== null || interactionBlocked ? copy.heading : copy.feedbackHeading}</h2></summary>
+      <summary><h2 id={headingId}>{active !== null || interactionBlocked ? t("Extension interactions") : t("Extension feedback")}</h2></summary>
       {interactionBlocked && <div role="alert" className="extension-interactions__error">
-        <p>{copy.blocked}</p>
-        {state.errorCode !== null && <p>{copy.errors[state.errorCode] ?? copy.unknownError}</p>}
+        <p>{t("Extension interaction handling is blocked. New answers are disabled; runtime work may still be running.")}</p>
+        {state.errorCode !== null && <p>{interactionError(state.errorCode, t)}</p>}
       </div>}
-      {form ?? <p role="status">{copy.empty}</p>}
-      {state.queuedCount > 0 && <p role="status" className="extension-interactions__queue">{copy.queued(state.queuedCount)}</p>}
-      <p className="extension-interactions__limitations">{copy.limitations}</p>
-      {(state.feedback.length > 0 || state.omittedFeedback > 0) && <section className="extension-interactions__feedback" aria-label={copy.feedbackHeading}>
-        <h3>{copy.feedbackHeading}</h3>
-        {state.omittedFeedback > 0 && <p className="extension-interactions__omitted" role="status">{copy.omittedFeedback(state.omittedFeedback)}</p>}
+      {form ?? <p role="status">{t("No extension interaction is active.")}</p>}
+      {state.queuedCount > 0 && <p role="status" className="extension-interactions__queue">{t(state.queuedCount === 1 ? "{count} interaction queued." : "{count} interactions queued.", { count: state.queuedCount })}</p>}
+      <p className="extension-interactions__limitations">{t("Custom/component TUI and arbitrary terminal layouts are not rendered. Only standard forms and bounded literal feedback are shown.")}</p>
+      {(state.feedback.length > 0 || state.omittedFeedback > 0) && <section className="extension-interactions__feedback" aria-label={t("Extension feedback")}>
+        <h3>{t("Extension feedback")}</h3>
+        {state.omittedFeedback > 0 && <p className="extension-interactions__omitted" role="status">{t(state.omittedFeedback === 1 ? "{count} older feedback item was omitted due to capacity." : "{count} older feedback items were omitted due to capacity.", { count: state.omittedFeedback })}</p>}
         {state.feedback.length > 0 && <ul className="extension-interactions__feedback-list">
           {state.feedback.map(entry => <li key={entry.id} className={`extension-interactions__feedback-entry is-${entry.level}`}>
-            <p className="extension-interactions__feedback-label">{copy.feedbackKinds[entry.kind]} · {copy.feedbackLevels[entry.level]}</p>
+            <p className="extension-interactions__feedback-label">{t(feedbackKinds[entry.kind])} · {t(feedbackLevels[entry.level])}</p>
             <pre className="extension-interactions__feedback-text">{entry.text}</pre>
           </li>)}
         </ul>}
@@ -391,79 +312,9 @@ export function ExtensionInteractions({ state, language, onAnswer, onCancel }: E
     </details>
   );
 }
-interface ExecutionProfileCopy {
-  heading: string;
-  controlled: string;
-  trusted: string;
-  badgeSeparator: string;
-  phase: Readonly<Record<ExecutionProfileProjection["phase"], string>>;
-  chooserNote: string;
-  chooseControlled: string;
-  chooseTrusted: string;
-  controlledSummary: string;
-  trustedSummary: string;
-  coverageWarning: string;
-  recoveryDomain: string;
-  endWarning: string;
-  endOwned: string;
-  recoverControlled: string;
-  error: string;
-}
-
-const executionProfileCopy: Record<Language, ExecutionProfileCopy> = {
-  en: {
-    heading: "Execution profile",
-    controlled: "Controlled execution",
-    trusted: "Trusted execution",
-    badgeSeparator: " · ",
-    phase: {
-      idle: "Runtime is idle.",
-      selecting: "Waiting for the VS Code file picker and host confirmation.",
-      switching: "Changing execution profile. Controls are temporarily disabled.",
-      "recovery-required": "Runtime outcome is uncertain. Reloading or seeing no process does not clear recovery.",
-      error: "Execution profile is not ready.",
-    },
-    chooserNote: "Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.",
-    chooseControlled: "Use controlled execution",
-    chooseTrusted: "Load a trusted extension…",
-    controlledSummary: "Covered tools ask for approval. This is not a sandbox.",
-    trustedSummary: "Loads an extension after the VS Code file picker and host confirmation. Not a sandbox.",
-    coverageWarning: "Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.",
-    recoveryDomain: "Only one runtime is admitted at a time in the shared recovery domain. Another VS Code window can remain blocked until the exact run is observed ended and deliberately recovered.",
-    endWarning: "Ending an owned runtime may interrupt irreversible work. The host will ask for confirmation.",
-    endOwned: "End owned runtime…",
-    recoverControlled: "Recover controlled execution",
-    error: "The host reported an execution-profile error. No profile change or recovery is implied.",
-  },
-  "zh-CN": {
-    heading: "执行配置",
-    controlled: "受控执行",
-    trusted: "受信执行",
-    badgeSeparator: " · ",
-    phase: {
-      idle: "运行时空闲。",
-      selecting: "正在等待 VS Code 文件选择器和宿主确认。",
-      switching: "正在切换执行配置；控件暂时禁用。",
-      "recovery-required": "运行时结果不确定。重新加载或看不到进程都不能清除恢复状态。",
-      error: "执行配置尚未就绪。",
-    },
-    chooserNote: "选择受信执行后，宿主会先打开 VS Code 原生文件选择器并请求确认，再加载扩展。",
-    chooseControlled: "使用受控执行",
-    chooseTrusted: "加载受信扩展…",
-    controlledSummary: "覆盖的工具会请求审批。这不是安全沙箱。",
-    trustedSummary: "经 VS Code 文件选择器和宿主确认后加载扩展。不是安全沙箱。",
-    coverageWarning: "受信扩展代码不在沙箱中；其内部代码和外部影响不受已覆盖的审批约束。已覆盖工具仍会请求审批。",
-    recoveryDomain: "共享恢复域中同一时间只允许一个运行时。其他 VS Code 窗口可能会保持阻止，直到确认对应运行实例已结束并由用户明确恢复。",
-    endWarning: "结束自有运行时可能中断不可逆工作；宿主会请求确认。",
-    endOwned: "结束自有运行时…",
-    recoverControlled: "恢复受控执行",
-    error: "宿主报告了执行配置错误。不代表配置已切换或恢复已完成。",
-  },
-};
 
 export interface ExecutionProfileControlsProps {
   state: ExecutionProfileProjection;
-  language: Language;
   onChoose(profile: "controlled" | "trusted"): void;
   onEnd(): void;
   onRecover(): void;
@@ -471,89 +322,89 @@ export interface ExecutionProfileControlsProps {
   density?: "settings" | "full";
 }
 
-export function ExecutionProfileControls({ state, language, onChoose, onEnd, onRecover, density = "full" }: ExecutionProfileControlsProps): ReactElement {
-  const copy = executionProfileCopy[language];
+export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, density = "full" }: ExecutionProfileControlsProps): ReactElement {
+  const { text: t } = useUiText();
   const headingId = useId();
   const notesId = useId();
   const isPending = state.phase === "selecting" || state.phase === "switching";
-  const profileLabel = state.profile === "trusted" ? copy.trusted : copy.controlled;
-  const badge = state.displayName === null ? profileLabel : `${profileLabel}${copy.badgeSeparator}${state.displayName}`;
+  const profileLabel = state.profile === "trusted" ? t("Trusted execution") : t("Controlled execution");
+  const badge = state.displayName === null ? profileLabel : `${profileLabel} · ${state.displayName}`;
   const disabledSwitch = !state.canSwitch || (state.phase !== "idle" && state.phase !== "error");
   const disabledLifecycleAction = isPending;
   const showLifecycle = state.canEnd || state.canRecover || state.phase === "recovery-required";
   const compact = density === "settings";
   const notes = (
     <>
-      <p className="execution-profile-controls__coverage">{copy.coverageWarning}</p>
-      <p className="execution-profile-controls__domain">{copy.recoveryDomain}</p>
-      <p className="execution-profile-controls__chooser-note">{copy.chooserNote}</p>
+      <p className="execution-profile-controls__coverage">{t("Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.")}</p>
+      <p className="execution-profile-controls__domain">{t("Only one runtime is admitted at a time in the shared recovery domain. Another VS Code window can remain blocked until the exact run is observed ended and deliberately recovered.")}</p>
+      <p className="execution-profile-controls__chooser-note">{t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}</p>
     </>
   );
   const choices = (
-    <div className={compact ? "execution-profile-controls__choices" : "execution-profile-controls__actions"} role="group" aria-label={copy.heading}>
+    <div className={compact ? "execution-profile-controls__choices" : "execution-profile-controls__actions"} role="group" aria-label={t("Execution profile")}>
       {compact ? <>
         <button type="button" className="execution-profile-controls__choice" data-profile-choice="controlled" aria-pressed={state.profile === "controlled"} disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
-          <span className="execution-profile-controls__choice-title">{copy.controlled}</span>
+          <span className="execution-profile-controls__choice-title">{t("Controlled execution")}</span>
           {state.profile === "controlled" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
-          <span className="execution-profile-controls__choice-note">{copy.controlledSummary}</span>
+          <span className="execution-profile-controls__choice-note">{t("Covered tools ask for approval. This is not a sandbox.")}</span>
         </button>
-        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={copy.chooserNote}>
-          <span className="execution-profile-controls__choice-title">{copy.trusted}</span>
+        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}>
+          <span className="execution-profile-controls__choice-title">{t("Trusted execution")}</span>
           {state.profile === "trusted" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
-          <span className="execution-profile-controls__choice-note">{copy.trustedSummary}</span>
+          <span className="execution-profile-controls__choice-note">{t("Loads an extension after the VS Code file picker and host confirmation. Not a sandbox.")}</span>
         </button>
       </> : <>
         <button type="button" data-profile-choice="controlled" disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
-          {copy.chooseControlled}
+          {t("Use controlled execution")}
         </button>
-        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={copy.chooserNote}>
-          {copy.chooseTrusted}
+        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}>
+          {t("Load a trusted extension…")}
         </button>
       </>}
     </div>
   );
   return (
     <section className={`execution-profile-controls${compact ? " is-settings" : ""}`} aria-labelledby={headingId}>
-      <h2 id={headingId}>{copy.heading}</h2>
+      <h2 id={headingId}>{t("Execution profile")}</h2>
       <p className={`execution-profile-controls__badge is-${state.profile}`} data-profile-badge={state.profile}>{badge}</p>
       {(!compact || state.phase !== "idle") && <p className="execution-profile-controls__phase" role={state.phase === "error" || state.phase === "recovery-required" ? "alert" : "status"}>
-        {copy.phase[state.phase]}
+        {t(profilePhases[state.phase])}
       </p>}
-      {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{copy.error}</p>}
+      {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{t("The host reported an execution-profile error. No profile change or recovery is implied.")}</p>}
       {choices}
       {(!compact || showLifecycle) && <div className="execution-profile-controls__actions">
         <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd || disabledLifecycleAction} onClick={onEnd}>
-          {copy.endOwned}
+          {t("End owned runtime…")}
         </button>
         <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover || disabledLifecycleAction} onClick={onRecover}>
-          {copy.recoverControlled}
+          {t("Recover controlled execution")}
         </button>
       </div>}
       {compact
         ? <details className="execution-profile-controls__notes">
-            <summary id={notesId}>{language === "zh-CN" ? "注意事项" : "Notes"}</summary>
+            <summary id={notesId}>{t("Notes")}</summary>
             {notes}
-            {showLifecycle && <p className="execution-profile-controls__end-warning">{copy.endWarning}</p>}
+            {showLifecycle && <p className="execution-profile-controls__end-warning">{t("Ending an owned runtime may interrupt irreversible work. The host will ask for confirmation.")}</p>}
           </details>
         : <>
             {notes}
-            <p className="execution-profile-controls__end-warning">{copy.endWarning}</p>
+            <p className="execution-profile-controls__end-warning">{t("Ending an owned runtime may interrupt irreversible work. The host will ask for confirmation.")}</p>
           </>}
     </section>
   );
 }
 
 /** Forced-visible strip when recovery cannot stay buried in settings alone. */
-export function RuntimeRecoveryBanner({ state, language, onEnd, onRecover }: Omit<ExecutionProfileControlsProps, "onChoose" | "density">): ReactElement | null {
+export function RuntimeRecoveryBanner({ state, onEnd, onRecover }: Omit<ExecutionProfileControlsProps, "onChoose" | "density">): ReactElement | null {
+  const { text: t } = useUiText();
   if (state.phase !== "recovery-required" && state.phase !== "error") return null;
   if (!state.canEnd && !state.canRecover && state.phase !== "recovery-required") return null;
-  const copy = executionProfileCopy[language];
   return (
     <div className="candidate__runtime-recovery" role="alert">
-      <p>{copy.phase[state.phase]}</p>
+      <p>{t(profilePhases[state.phase])}</p>
       <div className="candidate__runtime-recovery-actions">
-        <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover} onClick={onRecover}>{copy.recoverControlled}</button>
-        <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd} onClick={onEnd}>{copy.endOwned}</button>
+        <button type="button" data-action="recover-controlled-runtime" disabled={!state.canRecover} onClick={onRecover}>{t("Recover controlled execution")}</button>
+        <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd} onClick={onEnd}>{t("End owned runtime…")}</button>
       </div>
     </div>
   );

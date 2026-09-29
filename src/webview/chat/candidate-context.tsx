@@ -12,7 +12,7 @@ type ContextProps = Omit<AttachmentPanelProps, "status"> & {
 };
 type Metadata = AttachmentDetails & { relativePath: string; utf8Bytes: number; unsaved: boolean };
 
-const stateLabels = {
+const compactLabels = {
   "no-editor": "Open a workspace text editor.",
   "empty-selection": "Select a nonempty range.",
   "multiple-selections": "Attach one selection at a time.",
@@ -49,9 +49,35 @@ const stateLabels = {
   "unknown": "Unknown delivery"
 } satisfies Readonly<Record<string, UiText>>;
 
+const previewRecovery = {
+  "no-editor": "Open a workspace text editor and select code first.",
+  "empty-selection": "Select a nonempty range of code first.",
+  "multiple-selections": "Select one range at a time, then attach it.",
+  cancelled: "Selection cancelled. Draft retained.",
+  busy: "Wait for the current operation.",
+  stale: "Draft changed; synchronized with the host.",
+  ineligible: "A trusted local workspace and ready runtime are required.",
+  "attachment-limit": "At most 20 attachments. Remove an item before attaching more.",
+  "total-too-large": "Attachment text exceeds 1 MiB. Reduce or remove attachments before sending.",
+  "sensitive-source": "Credential-like source blocked. Attach only nonsecret code.",
+  "history-full": "Attachment history is full. Inspect history, or use Developer: Reload Window to restart (current chat, attachment snapshots and unsent draft will be lost). Plain chat remains available.",
+  "source-changed": "Sources changed. Send checks all attachments; confirm each marked snapshot or remove and reattach.",
+  "preparation-cancelled": "Preparation cancelled. Draft retained.",
+  "runtime-lost": "Runtime/session ended. In-memory attachment history ended; reattach for the new session.",
+  "write-failed": "Delivery uncertain. No retry was made. Stop or restart before retrying.",
+  "ack-timeout": "Acknowledgement timed out. No retry was made. Stop or restart.",
+  "rpc-rejected": "Runtime rejected this submission. Inspect history before trying again.",
+} satisfies Readonly<Record<string, UiText>>;
+
 function stateLabel(value: string, t: UiTranslator): string {
   // Unknown bounded upstream diagnostics remain literal; only known interface states are localized.
-  return Object.hasOwn(stateLabels, value) ? t(stateLabels[value as keyof typeof stateLabels]) : value;
+  return Object.hasOwn(compactLabels, value) ? t(compactLabels[value as keyof typeof compactLabels]) : value;
+}
+
+function previewError(code: string, t: UiTranslator): string {
+  return Object.hasOwn(previewRecovery, code)
+    ? t(previewRecovery[code as keyof typeof previewRecovery])
+    : t("File could not be attached or sent. Remove and reattach a smaller eligible workspace text file.");
 }
 
 function metadata(a: Metadata, t: UiTranslator): string {
@@ -128,7 +154,7 @@ export function CandidateContext({ pageSize, state, history, historyOpen, histor
     {(historyOpen || preview) && <div className="candidate-context__reader">
       {preview && <section aria-label={t("Attachment preview")}>
         <header className="candidate-context__reader-heading"><strong>{t("Attachment preview")}</strong><button ref={previewClose} type="button" aria-label={t("Close preview")} title={t("Close preview")} onClick={closePreview}><SessionIcon name="x" /></button></header>
-        <pre tabIndex={0} aria-label={t("Literal attachment text")}>{preview.error ?? preview.text}</pre>
+        <pre tabIndex={0} aria-label={t("Literal attachment text")}>{preview.error ? previewError(preview.error, t) : preview.text}</pre>
         <p>{t("Literal retained snapshot, not the current file. Content is never rendered as Markdown or loaded as a resource.")}</p>
       </section>}
       {historyOpen && <section aria-label={t("Retained attachment history")}>

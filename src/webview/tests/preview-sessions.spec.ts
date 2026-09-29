@@ -36,9 +36,9 @@ async function previewHarness(t: TestContext) {
   });
   const root = dom.window.document.getElementById("root");
   assert.ok(root);
-  const { mountApp } = await import("../mount.js");
+  const { mountChat } = await import("../chat/index.js");
   let dispose: () => void = () => undefined;
-  await act(async () => { dispose = mountApp(root, bridge); });
+  await act(async () => { dispose = mountChat(root, bridge); });
 
   const get = <T extends HTMLElement = HTMLElement>(selector: string): T => {
     const element = root.querySelector<T>(selector);

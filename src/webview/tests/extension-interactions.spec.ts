@@ -5,6 +5,13 @@ import type { Root } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import type { ExecutionProfileProjection, ExtensionInteractionProjection, InteractionAnswer } from "../../extension/contracts/index.js";
 import { ExecutionProfileControls, ExtensionInteractions } from "../chat/extension-interactions.js";
+import { UiTextProvider, englishUi, formatUiText, type UiLanguage } from "../components/ui-text.js";
+import { chineseUi } from "../chat/ui-zh-cn.js";
+
+const chineseLanguage: UiLanguage = { locale: "zh-CN", text: (message, values) => formatUiText(chineseUi[message], values) };
+function localized(element: ReactElement, locale: "en" | "zh-CN" = "en"): ReactElement {
+  return createElement(UiTextProvider, { value: locale === "zh-CN" ? chineseLanguage : englishUi }, element);
+}
 
 const globalNames = ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLSelectElement", "HTMLTextAreaElement", "Node", "Event", "MouseEvent", "KeyboardEvent", "IS_REACT_ACT_ENVIRONMENT"] as const;
 
@@ -70,7 +77,6 @@ test("select interaction submits the opaque option ID and renders labels as lite
   }, { queuedCount: 2 });
   const view = await mount(createElement(ExtensionInteractions, {
     state,
-    language: "en",
     onAnswer: (id, answer) => answers.push({ id, answer }),
     onCancel: id => cancellations.push(id),
   }));
@@ -108,7 +114,7 @@ test("confirm false is an answer, while Cancel remains a distinct intent", async
     message: "Choose yes or no; neither is cancellation.",
     origin: "trusted runtime extension; not authenticated",
   });
-  const view = await mount(createElement(ExtensionInteractions, { state: makeConfirm("confirm-false-1"), language: "en", ...callbacks }));
+  const view = await mount(createElement(ExtensionInteractions, { state: makeConfirm("confirm-false-1"), ...callbacks }));
   try {
     const no = view.get<HTMLInputElement>('input[type="radio"][value="false"]');
     assert.equal(no.labels?.[0]?.textContent?.trim(), "No");
@@ -117,7 +123,7 @@ test("confirm false is an answer, while Cancel remains a distinct intent", async
     assert.deepEqual(answers, [{ id: "confirm-false-1", answer: { method: "confirm", value: false } }]);
     assert.deepEqual(cancellations, []);
 
-    await view.render(createElement(ExtensionInteractions, { state: makeConfirm("confirm-cancel-1"), language: "zh-CN", ...callbacks }));
+    await view.render(localized(createElement(ExtensionInteractions, { state: makeConfirm("confirm-cancel-1"), ...callbacks }), "zh-CN"));
     assert.equal(view.get<HTMLButtonElement>('[data-action="cancel"]').textContent, "取消此交互");
     await act(async () => view.get<HTMLButtonElement>('[data-action="cancel"]').click());
     assert.deepEqual(cancellations, ["confirm-cancel-1"]);
@@ -137,7 +143,6 @@ test("input interaction preserves and submits an empty string with Enter", async
   });
   const view = await mount(createElement(ExtensionInteractions, {
     state,
-    language: "en",
     onAnswer: (id, answer) => answers.push({ id, answer }),
     onCancel: () => undefined,
   }));
@@ -164,7 +169,6 @@ test("editor keeps Enter for newlines and submits its empty value only with Ctrl
   });
   const view = await mount(createElement(ExtensionInteractions, {
     state,
-    language: "en",
     onAnswer: (id, answer) => answers.push({ id, answer }),
     onCancel: () => undefined,
   }));
@@ -197,7 +201,7 @@ test("bounded feedback stays literal, queue and local cutoff stay labeled, and b
     onAnswer: (id: string, answer: InteractionAnswer) => answers.push({ id, answer }),
     onCancel: () => undefined,
   };
-  const view = await mount(createElement(ExtensionInteractions, { state, language: "en", ...callbacks }));
+  const view = await mount(createElement(ExtensionInteractions, { state, ...callbacks }));
   try {
     assert.match(view.get('[data-role="local-cutoff"]').textContent ?? "", /local cutoff.*receipt-based.*not remote expiry/i);
     assert.equal(view.get("time").getAttribute("datetime"), new Date(state.active?.localCutoffAt ?? 0).toISOString());
@@ -209,7 +213,7 @@ test("bounded feedback stays literal, queue and local cutoff stay labeled, and b
     assert.match(view.get(".extension-interactions__limitations").textContent ?? "", /custom.*terminal/i);
 
     const blocked = projection(state.active, { phase: "blocked", errorCode: "reply-failed", feedback: state.feedback, omittedFeedback: 2 });
-    await view.render(createElement(ExtensionInteractions, { state: blocked, language: "en", ...callbacks }));
+    await view.render(createElement(ExtensionInteractions, { state: blocked, ...callbacks }));
     assert.match(view.get('[role="alert"]').textContent ?? "", /reply.*could not be confirmed/i);
     assert.equal(view.get<HTMLInputElement>('input[aria-label="Your response"]').disabled, true);
     assert.equal(view.get<HTMLButtonElement>('[data-action="answer"]').disabled, true);
@@ -232,7 +236,6 @@ test("execution profile shows trusted identity and only dispatches host-approved
   };
   const view = await mount(createElement(ExecutionProfileControls, {
     state: profile,
-    language: "en",
     onChoose: value => chosen.push(value),
     onEnd: () => undefined,
     onRecover: () => undefined,
@@ -265,7 +268,6 @@ test("a host-enabled profile switch can be retried after a non-pending error", a
   };
   const view = await mount(createElement(ExecutionProfileControls, {
     state,
-    language: "en",
     onChoose: value => chosen.push(value),
     onEnd: () => undefined,
     onRecover: () => undefined,
@@ -291,13 +293,12 @@ test("recovery actions are separate host intents and pending profile operations 
     canEnd: true,
     canRecover: true,
   };
-  const view = await mount(createElement(ExecutionProfileControls, {
+  const view = await mount(localized(createElement(ExecutionProfileControls, {
     state,
-    language: "zh-CN",
     onChoose: value => chosen.push(value),
     onEnd: () => ended.push("end"),
     onRecover: () => recovered.push("recover"),
-  }));
+  }), "zh-CN"));
   let browserConfirmCalls = 0;
   Object.defineProperty(view.dom.window, "confirm", { configurable: true, value: () => { browserConfirmCalls++; return true; } });
   try {
@@ -314,13 +315,12 @@ test("recovery actions are separate host intents and pending profile operations 
     assert.equal(browserConfirmCalls, 0);
 
     const pending: ExecutionProfileProjection = { ...state, profile: "controlled", displayName: null, phase: "switching", errorCode: null, canSwitch: true };
-    await view.render(createElement(ExecutionProfileControls, {
+    await view.render(localized(createElement(ExecutionProfileControls, {
       state: pending,
-      language: "zh-CN",
       onChoose: value => chosen.push(value),
       onEnd: () => ended.push("pending-end"),
       onRecover: () => recovered.push("pending-recover"),
-    }));
+    }), "zh-CN"));
     for (const button of view.root.querySelectorAll<HTMLButtonElement>("button")) assert.equal(button.disabled, true);
     assert.match(view.get('[role="status"]').textContent ?? "", /正在切换/);
     assert.equal(browserConfirmCalls, 0);
@@ -342,7 +342,7 @@ test("new interaction focuses its field without stealing the composer and restor
     createElement("button", { id: "prior-focus", type: "button" }, "Prior focus"),
     createElement("button", { id: "elsewhere", type: "button" }, "Elsewhere"),
     createElement("textarea", { id: "chat-composer", "aria-label": "Chat composer" }),
-    createElement(ExtensionInteractions, { state, language: "en", ...callbacks }),
+    createElement(ExtensionInteractions, { state, ...callbacks }),
   );
   const view = await mount(tree(noActive));
   try {
@@ -372,7 +372,7 @@ for (const language of ["en", "zh-CN"] as const) test(`oversized input answers r
   const cancellations: string[] = [];
   const state = projection({ id: "input-byte-limit", method: "input", title: "Response", origin: "trusted runtime extension; not authenticated" });
   const callbacks = { onAnswer: (_id: string, answer: InteractionAnswer) => answers.push(answer), onCancel: (id: string) => cancellations.push(id) };
-  const view = await mount(createElement(ExtensionInteractions, { state, language, ...callbacks }));
+  const view = await mount(localized(createElement(ExtensionInteractions, { state, ...callbacks }), language));
   try {
     const input = view.get<HTMLInputElement>("input");
     const setText = async (text: string) => act(async () => {
@@ -392,7 +392,7 @@ for (const language of ["en", "zh-CN"] as const) test(`oversized input answers r
     await act(async () => input.dispatchEvent(new view.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
     assert.deepEqual(answers, [{ method: "input", text: valid }]);
     const next = projection({ id: "input-cancel", method: "input", title: "Response", origin: "trusted runtime extension; not authenticated" });
-    await view.render(createElement(ExtensionInteractions, { state: next, language, ...callbacks }));
+    await view.render(localized(createElement(ExtensionInteractions, { state: next, ...callbacks }), language));
     const nextInput = view.get<HTMLInputElement>("input");
     await act(async () => {
       Object.getOwnPropertyDescriptor(view.dom.window.HTMLInputElement.prototype, "value")?.set?.call(nextInput, "a".repeat(32769));
@@ -410,7 +410,7 @@ for (const language of ["en", "zh-CN"] as const) test(`oversized editor answers 
   const cancellations: string[] = [];
   const state = projection({ id: "editor-byte-limit", method: "editor", title: "Response", origin: "trusted runtime extension; not authenticated", prefill: "" });
   const callbacks = { onAnswer: (_id: string, answer: InteractionAnswer) => answers.push(answer), onCancel: (id: string) => cancellations.push(id) };
-  const view = await mount(createElement(ExtensionInteractions, { state, language, ...callbacks }));
+  const view = await mount(localized(createElement(ExtensionInteractions, { state, ...callbacks }), language));
   try {
     const editor = view.get<HTMLTextAreaElement>("textarea");
     const setText = async (text: string) => act(async () => {
@@ -431,7 +431,7 @@ for (const language of ["en", "zh-CN"] as const) test(`oversized editor answers 
     assert.deepEqual(answers, [{ method: "editor", text: valid }]);
 
     const next = projection({ id: "editor-cancel", method: "editor", title: "Response", origin: "trusted runtime extension; not authenticated", prefill: "a".repeat(32768) });
-    await view.render(createElement(ExtensionInteractions, { state: next, language, ...callbacks }));
+    await view.render(localized(createElement(ExtensionInteractions, { state: next, ...callbacks }), language));
     const nextEditor = view.get<HTMLTextAreaElement>("textarea");
     await act(async () => {
       Object.getOwnPropertyDescriptor(view.dom.window.HTMLTextAreaElement.prototype, "value")?.set?.call(nextEditor, "a".repeat(32769));
@@ -448,7 +448,7 @@ test("returning focus to an active form reveals the field in nested scroll conta
   const state = projection({ id: "refocus-editor", method: "editor", title: "Edit", origin: "trusted runtime extension; not authenticated" });
   const view = await mount(createElement(Fragment, null,
     createElement("button", { id: "outside-form" }, "Settings"),
-    createElement(ExtensionInteractions, { state, language: "en", onAnswer: () => undefined, onCancel: () => undefined })));
+    createElement(ExtensionInteractions, { state, onAnswer: () => undefined, onCancel: () => undefined })));
   try {
     const field = view.get<HTMLTextAreaElement>("textarea");
     const scrolls: unknown[] = [];

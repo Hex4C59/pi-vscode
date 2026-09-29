@@ -201,10 +201,10 @@ Pi 聊天侧栏
 | 侧栏整体／会话导航栏 | [candidate.tsx](../../src/webview/chat/candidate.tsx)、[session-navigation.tsx](../../src/webview/chat/session-navigation.tsx) | 页面负责共享状态与跨区域焦点；导航负责其控件和设置意图 |
 | 会话内容区 | [candidate-conversation.tsx](../../src/webview/chat/candidate-conversation.tsx)、[reply-markdown.tsx](../../src/webview/chat/reply-markdown.tsx)、[candidate-conversation.css](../../src/webview/chat/candidate-conversation.css) | 消息／活动、Markdown 与其样式已独立，滚动容器与空状态仍由主组件管理；消息行不显示说话人标签，无活动的回复不再显示占位说明 |
 | 欢迎区 | [pi-welcome-mark.tsx](../../src/webview/chat/pi-welcome-mark.tsx) | 标志动画已独立；问候语及欢迎布局仍在主组件 |
-| 任务状态与操作区 | [task-status.tsx](../../src/webview/chat/task-status.tsx)、[candidate-review.tsx](../../src/webview/chat/candidate-review.tsx)、[approvals.tsx](../../src/webview/components/approvals.tsx)、[extension-interactions.tsx](../../src/webview/chat/extension-interactions.tsx) | 状态行、审批、审阅、扩展交互与恢复提示各自就近维护；区域组合、显示条件与跨区域高度预算仍在主组件 |
+| 任务状态与操作区 | [task-status.tsx](../../src/webview/chat/task-status.tsx)、[change-review.tsx](../../src/webview/components/change-review.tsx)、[approvals.tsx](../../src/webview/components/approvals.tsx)、[extension-interactions.tsx](../../src/webview/chat/extension-interactions.tsx) | 状态行、审批、审阅、扩展交互与恢复提示各自就近维护；区域组合、显示条件与跨区域高度预算仍在主组件 |
 | 消息编辑区 | [message-composer.tsx](../../src/webview/chat/message-composer.tsx) | 负责输入高度、输入交互、工具栏、权限与发送／停止，接收页面快照及客户端意图 |
 | 上下文附件区 | [candidate-context.tsx](../../src/webview/chat/candidate-context.tsx) | 管理附件／菜单状态和焦点，通过内容与操作插槽由编辑区安排位置 |
-| 模型与推理设置 | [model-picker.tsx](../../src/webview/components/model-picker.tsx)、[default-model-picker.tsx](../../src/webview/chat/default-model-picker.tsx) | 准备阶段与运行会话共用 ModelPickerView；默认设置与活跃会话仍由各自宿主管理 |
+| 模型与推理设置 | [model-picker.tsx](../../src/webview/components/model-picker.tsx)、[message-composer.tsx](../../src/webview/chat/message-composer.tsx) | 作曲区在准备阶段（已保存默认）与运行会话中都直接渲染 ModelPickerView；默认设置与活跃会话仍由各自宿主管理 |
 | 历史会话面板 | [candidate-sessions.tsx](../../src/webview/chat/candidate-sessions.tsx) | 面板框架、正常流返回／标题、列表、反馈和分页集中维护；显示切换、滚动恢复与跨区域焦点仍在主组件 |
 | 设置页与确认对话框 | [settings/index.tsx](../../src/webview/settings/index.tsx)、[project-resources-prompt.tsx](../../src/webview/chat/project-resources-prompt.tsx)、[no-folder-prompt.tsx](../../src/webview/chat/no-folder-prompt.tsx)、[chat-dialog.tsx](../../src/webview/chat/chat-dialog.tsx) | ChatDialog 拥有原生模态壳、钉住的标题／底部操作和内容区局部滚动；SettingsPage 拥有分类、详情和设置意图；确认提示拥有各自文案与同意操作 |
 

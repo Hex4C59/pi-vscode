@@ -35,7 +35,7 @@
 
 runner 只清理 `dist/tests/`，保留 `dist/` 下其他 bundle，再用 esbuild 打包应用 spec 并保留相对于源码根目录的层级：`src/extension/bridge/tests/webview-messages.spec.ts` 输出为 `dist/tests/extension/bridge/tests/webview-messages.spec.js`。它只将确切的编译输出清单与发现的脚本 spec 传给 `node:test`，cwd 为仓库根目录；陈旧 bundle 和宽泛输出 glob 不作为执行输入。构建或测试进程失败会使命令失败。
 
-Webview 应用 spec 使用 jsdom 与 synthetic bridge/host。默认 `uiHarness` 挂载实际交付的 `mountApp`；candidate spec 验证同一共享 `chat` 组合，但使用仅预览的说明文案；设置 spec 挂载 `mountSettings`。新增交付行为应进入生产／共享 chat 挂载测试。打包依赖图测试排除生产中的预览和测试模块。已退役的 baseline-app 夹具与内联字符串 VM harness 不是当前测试路径。
+Webview 应用 spec 使用 jsdom 与 synthetic bridge/host。默认 `uiHarness` 挂载实际交付的 `mountChat`；candidate spec 验证同一共享 `chat` 组合，但使用仅预览的说明文案；设置 spec 挂载 `mountSettings`。新增交付行为应进入生产／共享 chat 挂载测试。打包依赖图测试排除生产中的预览和测试模块。已退役的 baseline-app 夹具与内联字符串 VM harness 不是当前测试路径。
 
 类型／lint 范围从仓库配置核对；脚本 `.mjs` 当前不在 lint 范围。实际 CI 检查由 [workflow](../../../.github/workflows/ci.yml) 定义，不能从本地 runner 推断 CI 执行全部测试。
 

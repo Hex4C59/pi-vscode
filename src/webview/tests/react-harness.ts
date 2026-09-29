@@ -32,7 +32,6 @@ export async function uiHarness(initial = true, candidate = false, settings = fa
   const bridge: WebviewBridge = { postMessage(message) { assert.ok(parseWebviewMessage(message), `invalid outbound ${JSON.stringify(message)}`); sent.push(message); },
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; } };
   const root = dom.window.document.getElementById("root"); assert.ok(root);
-  const { mountApp } = await import("../mount.js");
   let dispose: () => void = () => undefined;
   await act(async () => {
     if (settings) {
@@ -42,7 +41,10 @@ export async function uiHarness(initial = true, candidate = false, settings = fa
       const { mountCandidate } = await import("../preview/candidate.js");
       const { createPreviewLanguage } = await import("../preview/ui-language.js");
       dispose = mountCandidate(root, bridge, createPreviewLanguage());
-    } else dispose = mountApp(root, bridge);
+    } else {
+      const { mountChat } = await import("../chat/index.js");
+      dispose = mountChat(root, bridge);
+    }
   });
   const receive = async (value: unknown) => { await act(async () => { for (const listener of [...listeners]) listener(value); }); };
   const render = (patch: Partial<WorkspaceStateMessage> = {}) => receive({ ...readyState, ...patch });

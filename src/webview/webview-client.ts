@@ -1,5 +1,5 @@
 import { SavedHistoryClient } from "./saved-history-client.js";
-import { attachmentError, availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE, type ClientSnapshot, type Intent } from "./client-state.js";
+import { availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE, type ClientSnapshot, type Intent } from "./client-state.js";
 import type { WebviewBridge } from "./bridge.js";
 import { parseHostMessage } from "./parse-host-message.js";
 
@@ -333,7 +333,7 @@ export class WebviewClient {
     const preview = this.snapshot.preview;
     if (!preview || preview.requestId !== message.requestId) return;
     if ("code" in message) {
-      this.update({ preview: { ...preview, error: attachmentError(message.code) } });
+      this.update({ preview: { ...preview, error: message.code } });
       return;
     }
     const chunkContinues = message.snapshotId === preview.snapshotId

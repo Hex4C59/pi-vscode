@@ -1,3 +1,4 @@
+import { useChatPreview } from "./chat-preview.js";
 import { useUiText, type UiText, type UiTranslator } from "./ui-text.js";
 import type { ReactElement } from "react";
 import type { ChangeReviewEntry, ReviewReason } from "../../extension/contracts/index.js";
@@ -63,51 +64,69 @@ function ReviewEntry({ entry, onDiff, onSource }: Pick<ChangeReviewProps, "onDif
   );
 }
 
-export function ChangeReview({ pageSize, state, open, page, onToggle, onPage, onDiff, onSource, caption, introduction }: ChangeReviewProps): ReactElement {
+export function ChangeReview({ pageSize, state, open, page, onToggle, onPage, onDiff, onSource }: ChangeReviewProps): ReactElement | null {
   const { text: t } = useUiText();
-  const entries = state?.entries ?? [];
+  const preview = useChatPreview();
+  if (!state || (state.entries.length === 0 && !state.limited && !state.reset && state.error === null)) return null;
+
+  const entries = state.entries;
+  const captured = entries.filter(entry => entry.source === "tool" && (entry.diff === "ready" || entry.diff === "unchanged")).length;
+  const reported = entries.filter(entry => entry.source === "tool").length;
+  const observed = entries.filter(entry => entry.source === "observed").length;
+  const unavailable = entries.filter(entry => entry.diff === "unavailable").length;
+  const caption = t("Review changes ({count})", { count: entries.length });
   const lastPage = Math.max(0, Math.ceil(entries.length / pageSize) - 1);
   const currentPage = Math.min(Math.max(0, page), lastPage);
   const offset = currentPage * pageSize;
   const visibleEntries = entries.slice(offset, offset + pageSize);
-  const pageStatus = state === null
-    ? t("Review data will load when this panel is opened.")
-    : entries.length === 0
-      ? t("No captured changes in this live session.")
-      : t("Changes {start}–{end} of {total} · Page {page} of {pages}", { start: offset + 1, end: offset + visibleEntries.length, total: entries.length, page: currentPage + 1, pages: lastPage + 1 });
+  const pageStatus = entries.length === 0
+    ? t("No captured changes in this live session.")
+    : t("Changes {start}–{end} of {total} · Page {page} of {pages}", { start: offset + 1, end: offset + visibleEntries.length, total: entries.length, page: currentPage + 1, pages: lastPage + 1 });
 
   return (
-    <section id="change-review-panel" className="change-review" aria-labelledby="change-review-heading">
-      <button
-        id="change-review-toggle"
-        className="change-review__toggle"
-        type="button"
-        aria-expanded={open}
-        aria-controls="change-review-content"
-        onClick={onToggle}
-      >
-        <span id="change-review-heading">{caption ?? t("Review changes")}</span>
-        <svg className="change-review__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6" /></svg>
-      </button>
-      <div id="change-review-content" className="change-review__content" hidden={!open}>
-        {open && introduction}
-        <p className="muted">{t("Already-applied review: inspect captured changes after a task. This is not patch approval.")}</p>
-        {state?.limited && <p className="change-review__notice" role="status">{t("Review capture capacity was reached; some changes could not be retained.")}</p>}
-        {state?.reset && <p className="change-review__notice" role="status">{t("Review history was reset for the current runtime or resource session.")}</p>}
-        {state?.error === "unavailable" && <p className="change-review__warning" role="alert">{t("Review data is unavailable; no captured diff can be opened for missing entries.")}</p>}
-        {state?.error === "stale" && <p className="change-review__warning" role="status">{t("Review data is stale; the runtime or source changed. Refresh the review before relying on it.")}</p>}
-        {state && <p className="change-review__retention" role="status">{t("Review text retained: {bytes} / 8 MiB.", { bytes: formatBytes(state.retainedBytes) })}</p>}
-        <p id="change-review-page-status" className="change-review__page-status" role="status" aria-live="polite">{pageStatus}</p>
-        {state && entries.length > 0 && <nav className="change-review__pagination" aria-label={t("Review changes pages")}>
-          <button id="change-review-first" className="btn-secondary" type="button" disabled={currentPage === 0} onClick={() => onPage(0)}>{t("First page")}</button>
-          <button id="change-review-previous" className="btn-secondary" type="button" disabled={currentPage === 0} onClick={() => onPage(currentPage - 1)}>{t("Previous page")}</button>
-          <button id="change-review-next" className="btn-secondary" type="button" disabled={currentPage === lastPage} onClick={() => onPage(currentPage + 1)}>{t("Next page")}</button>
-          <button id="change-review-latest" className="btn-secondary" type="button" disabled={currentPage === lastPage} onClick={() => onPage(lastPage)}>{t("Latest page")}</button>
-        </nav>}
-        <div className="change-review__entries">
-          {visibleEntries.map(entry => <ReviewEntry key={entry.id} entry={entry} onDiff={onDiff} onSource={onSource} />)}
+    <div className="candidate-review" data-candidate-review>
+      {!open && state.error && <p className="candidate-review__warning" role="alert">{t(state.error === "unavailable"
+        ? "Review data is unavailable; no captured diff can be opened for missing entries."
+        : "Review data is stale; the runtime or source changed. Refresh the review before relying on it.")}</p>}
+      <section id="change-review-panel" className="change-review" aria-labelledby="change-review-heading">
+        <button
+          id="change-review-toggle"
+          className="change-review__toggle"
+          type="button"
+          aria-expanded={open}
+          aria-controls="change-review-content"
+          onClick={onToggle}
+        >
+          <span id="change-review-heading">{caption}</span>
+          <svg className="change-review__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+        <div id="change-review-content" className="change-review__content" hidden={!open}>
+          {open && <>
+            <p className="candidate-review__summary" role="status">
+              {t("Review summary: {captured} captured · {reported} reported · {observed} observed · {unavailable} unavailable", {
+                captured, reported, observed, unavailable,
+              })}
+            </p>
+            {preview && <p className="candidate-review__simulation" role="note">{t("Preview only: diff and source opening are simulated.")}</p>}
+          </>}
+          <p className="muted">{t("Already-applied review: inspect captured changes after a task. This is not patch approval.")}</p>
+          {state.limited && <p className="change-review__notice" role="status">{t("Review capture capacity was reached; some changes could not be retained.")}</p>}
+          {state.reset && <p className="change-review__notice" role="status">{t("Review history was reset for the current runtime or resource session.")}</p>}
+          {state.error === "unavailable" && <p className="change-review__warning" role="alert">{t("Review data is unavailable; no captured diff can be opened for missing entries.")}</p>}
+          {state.error === "stale" && <p className="change-review__warning" role="status">{t("Review data is stale; the runtime or source changed. Refresh the review before relying on it.")}</p>}
+          <p className="change-review__retention" role="status">{t("Review text retained: {bytes} / 8 MiB.", { bytes: formatBytes(state.retainedBytes) })}</p>
+          <p id="change-review-page-status" className="change-review__page-status" role="status" aria-live="polite">{pageStatus}</p>
+          {entries.length > 0 && <nav className="change-review__pagination" aria-label={t("Review changes pages")}>
+            <button id="change-review-first" className="btn-secondary" type="button" disabled={currentPage === 0} onClick={() => onPage(0)}>{t("First page")}</button>
+            <button id="change-review-previous" className="btn-secondary" type="button" disabled={currentPage === 0} onClick={() => onPage(currentPage - 1)}>{t("Previous page")}</button>
+            <button id="change-review-next" className="btn-secondary" type="button" disabled={currentPage === lastPage} onClick={() => onPage(currentPage + 1)}>{t("Next page")}</button>
+            <button id="change-review-latest" className="btn-secondary" type="button" disabled={currentPage === lastPage} onClick={() => onPage(lastPage)}>{t("Latest page")}</button>
+          </nav>}
+          <div className="change-review__entries">
+            {visibleEntries.map(entry => <ReviewEntry key={entry.id} entry={entry} onDiff={onDiff} onSource={onSource} />)}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

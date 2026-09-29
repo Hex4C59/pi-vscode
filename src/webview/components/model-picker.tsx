@@ -1,16 +1,31 @@
 import { useUiText } from "./ui-text.js";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
-import type { ModelPickerProps, ModelPickerViewProps } from "./types.js";
-export type { ModelPickerProps } from "./types.js";
+import type { ProviderConfigProjection } from "../../extension/contracts/index.js";
+import type { ModelPickerViewProps } from "./types.js";
 
-
-export function ModelPicker(props: ModelPickerProps): ReactElement {
-  const { state, disabled } = props;
-  return <ModelPickerView {...props} disabled={disabled || state.busy || state.runtime !== "ready" || state.execution === "stopping"} />;
+/** Saved default has no live runtime. Disable conditions stay on the live workspace slice. */
+function savedDefaultPickerState(config: ProviderConfigProjection | null) {
+  return {
+    chatModel: config?.defaultProvider && config.defaultModelId ? `${config.defaultProvider} / ${config.defaultModelId}` : null,
+    thinkingLevel: config?.defaultThinkingLevel ?? null,
+    thinkingLevels: config?.thinkingLevels ?? [],
+    availableModels: config?.catalog ?? [],
+    modelError: config?.error ?? null,
+    modelBusy: !config || config.busy,
+    chatBusy: false,
+    pendingModel: null,
+    pendingThinkingLevel: null,
+    busy: false,
+    runtime: "ready" as const,
+    execution: "idle" as const,
+  };
 }
 
 /** Shared presentation only: the caller owns live-session or saved-default semantics. */
-export function ModelPickerView({ state, disabled, onModel, onThinking, onSettings, loading = false, continuousThinkingDrag = false, animatePopover = false }: ModelPickerViewProps): ReactElement {
+export function ModelPickerView({ state: liveState, savedDefault, disabled: callerDisabled, onModel, onThinking, onSettings, loading: callerLoading = false, continuousThinkingDrag = false, animatePopover = false }: ModelPickerViewProps): ReactElement {
+  const state = savedDefault !== undefined ? savedDefaultPickerState(savedDefault) : liveState;
+  const loading = savedDefault !== undefined ? !savedDefault || savedDefault.busy : callerLoading;
+  const disabled = callerDisabled || state.busy || state.runtime !== "ready" || state.execution === "stopping";
   const { text: t } = useUiText();
   const thinkingText = (level: string) => {
     switch (level) {

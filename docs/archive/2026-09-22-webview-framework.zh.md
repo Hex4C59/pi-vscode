@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[2026-09-22-webview-framework.md](2026-09-22-webview-framework.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-27
+- 最近同步：2026-09-29
 
 - 类型：讨论
 - 状态：Archived
@@ -65,7 +65,7 @@ Q1–Q16 访谈已经完成。维护者确认共同理解并授权交互预览�
 
 沿用 ADR 0003 的 React／TypeScript、普通 CSS／VS Code 主题变量、既有浏览器构建和 `WebviewClient`／`WebviewBridge` 职责。复用 pi 投影／意图契约；Roo 提供布局与交互证据，不复制它的 Agent 状态机、审批协议或依赖栈。此处不选择新 API、存储格式或运行时行为。
 
-**预览隔离是必要条件。** 9 月 23 日提案基线的两个入口均调用 [mountApp](../../src/webview/mount.tsx) 并渲染同一应用。直接修改共享根组件／CSS，会在 Q16 视觉确认之前改变正式侧栏。建议采用仅预览入口使用的候选页面组合和局部样式，复用既有 client 与模拟 bridge；视觉批准前保持打包根入口及正式导入不变。这是临时设计候选，不是永久第二套产品前端或运行时功能开关。批准后接入应收敛为一个共享应用，并移除临时候选组合。具体挂载接缝是实现选择，必须保留既有所有权／清理契约，并通过候选的真实入口测试。
+**预览隔离是必要条件。** 9 月 23 日提案基线的两个入口均调用 `mountApp`（`src/webview/mount.tsx`，已于 2026-09-29 删除）并渲染同一应用。直接修改共享根组件／CSS，会在 Q16 视觉确认之前改变正式侧栏。建议采用仅预览入口使用的候选页面组合和局部样式，复用既有 client 与模拟 bridge；视觉批准前保持打包根入口及正式导入不变。这是临时设计候选，不是永久第二套产品前端或运行时功能开关。批准后接入应收敛为一个共享应用，并移除临时候选组合。具体挂载接缝是实现选择，必须保留既有所有权／清理契约，并通过候选的真实入口测试。
 
 组件仅拥有导航、展开、所选待审批卡身份和展示状态。client 继续拥有投影协调与已确认草稿；host 继续管理权限、有效期、会话身份与执行。浏览列表不能销毁／重启 client、重置草稿或发出会话变更。所选审批被移除／过期后，选择另一有效待处理项，不复活旧请求。活动汇总使用既有助手消息 ID，不推测整轮归因。
 
@@ -208,9 +208,9 @@ flowchart TD
 
 ## 仓库证据
 
-迁移前实现现已移除。历史只读检查发现 `src/webview/placeholderHtml.ts` 共 682 行，其中 432 行为 TypeScript 字符串内的 JavaScript。该历史脚本本身没有 TypeScript 检查，集中维护模型控件、附件草稿／预览／历史、按 ID 更新的消息／活动／审批渲染及工作区状态同步。它的按 ID 更新刻意保留节点身份、焦点、展开状态和滚动；当前 React 应用须保留这些行为。当前 host 壳与打包资源加载位于 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)，当前 React 应用位于 [app.tsx](../../src/webview/tests/baseline-app.tsx)。
+迁移前实现现已移除。历史只读检查发现 `src/webview/placeholderHtml.ts` 共 682 行，其中 432 行为 TypeScript 字符串内的 JavaScript。该历史脚本本身没有 TypeScript 检查，集中维护模型控件、附件草稿／预览／历史、按 ID 更新的消息／活动／审批渲染及工作区状态同步。它的按 ID 更新刻意保留节点身份、焦点、展开状态和滚动；当前 React 应用须保留这些行为。当前 host 壳与打包资源加载位于 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)，归档时 React 应用位于 `src/webview/tests/baseline-app.tsx`（已于 2026-09-29 删除；正式聊天现经 [candidate.tsx](../../src/webview/chat/candidate.tsx) 中的 `mountChat` 挂载）。
 
-历史上，[esbuild.mjs](../../esbuild.mjs) 有 host、探针及审批 gate 入口，但没有浏览器入口。当前浏览器应用由 Vite 驱动并使用 [app.tsx](../../src/webview/tests/baseline-app.tsx)；host HTML／CSP 与资源加载使用 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)。已移除的迁移前 HTML 测试为 `src/webview/tests/placeholder-html.spec.ts`；当前壳／资源检查在 [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts)。迁移前 UI 测试使用手写 DOM 的 VM；当前 [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) 挂载 React 应用。本讨论保存迁移理由，不表示应用、包或宿主检查通过。
+历史上，[esbuild.mjs](../../esbuild.mjs) 有 host、探针及审批 gate 入口，但没有浏览器入口。浏览器应用由 Vite 驱动，归档时使用 `src/webview/tests/baseline-app.tsx`（已于 2026-09-29 删除）；host HTML／CSP 与资源加载使用 [webviewHtml.ts](../../src/extension/bridge/webviewHtml.ts)。已移除的迁移前 HTML 测试为 `src/webview/tests/placeholder-html.spec.ts`；当前壳／资源检查在 [webview-html.spec.ts](../../src/extension/bridge/tests/webview-html.spec.ts)。迁移前 UI 测试使用手写 DOM 的 VM；当前 [执行 UI specs](../../src/webview/tests/execution-ui.spec.ts) 挂载 React 应用。本讨论保存迁移理由，不表示应用、包或宿主检查通过。
 
 ## 确认前比较的候选
 
