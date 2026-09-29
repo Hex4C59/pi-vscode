@@ -5,7 +5,7 @@ import { createMemoryConnection, createMemoryProcess } from "./memory-process.js
 import type { RuntimeEvent } from "../../../extension/contracts/runtimeLifecycle.js";
 import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
 
-test("review completion events survive activity overflow and reject malformed or old-runtime frames", async () => {
+test("review completion events survive activity overflow and reject old-runtime frames", async () => {
   const outputs: PassThrough[] = [];
   const memory = createMemoryProcess(options => {
     const connection = createMemoryConnection((frame, done) => {
@@ -13,7 +13,7 @@ test("review completion events survive activity overflow and reject malformed or
       const command = JSON.parse(frame);
       if (command.type === "get_state") queueMicrotask(() => {
         stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
-        stdout.write(JSON.stringify({ type: "response", id: command.id, success: true, ...(command.type === "get_state" ? { data: { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } } : {}) }) + "\n");
+        stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, ...(command.type === "get_state" ? { data: { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } } : {}) }) + "\n");
       }); done(); return true;
     });
     outputs.push(connection.stdout);
@@ -32,13 +32,11 @@ test("review completion events survive activity overflow and reject malformed or
     const completed = events.filter(event => event.kind === "tool_finished");
     assert.equal(completed.length, 70); assert.deepEqual(completed.at(-1), { kind: "tool_finished", session, toolCallId: "call-69", failed: true });
     assert.ok(events.some(event => event.kind === "activity" && event.item.id === "activity-overflow"));
-    for (const bad of [{ toolCallId: "", isError: false }, { toolCallId: "x".repeat(201), isError: false }, { toolCallId: "bad", isError: "false" }]) frame({ type: "tool_execution_end", ...bad });
-    assert.equal(events.filter(event => event.kind === "tool_finished").length, 70);
     await runtime.stop();
     assert.equal((await runtime.start({ cwd: "/new", projectTrust: "no-approve" })).ok, true);
     frame({ type: "tool_execution_end", toolCallId: "late-old", isError: false });
     assert.equal(events.filter(event => event.kind === "tool_finished").length, 70);
-    outputs[1].write(JSON.stringify({ type: "tool_execution_end", toolCallId: "new", isError: false }) + "\n");
+    outputs[1].write(JSON.stringify({ type: "tool_execution_end", toolCallId: "new", isError: false, result: { content: [] } }) + "\n");
     assert.deepEqual(events.filter(event => event.kind === "tool_finished").at(-1), { kind: "tool_finished", session: runtime.getSession(), toolCallId: "new", failed: false });
   } finally { unsubscribe(); await runtime.stop(); }
 });

@@ -12,23 +12,16 @@ function interpret(frames: ReturnType<typeof createRpcFrames>, value: unknown, o
   return frames.interpret(typeof value === "string" ? value : JSON.stringify(value), context(overrides));
 }
 
-test("invalid or unknown frames are ignored and do not invent runtime events", () => {
+test("unrecognized frames are ignored and recognized malformed frames fail", () => {
   const frames = createRpcFrames();
   assert.equal(interpret(frames, "not-json").kind, "ignored");
   assert.equal(interpret(frames, "").kind, "ignored");
   assert.equal(interpret(frames, []).kind, "ignored");
-  const unknown = interpret(frames, { type: "not_a_protocol_event" });
-  assert.equal(unknown.kind, "runtime");
-  if (unknown.kind === "runtime") {
-    assert.deepEqual(unknown.events, []);
-    assert.equal(unknown.agentSettled, undefined);
-  }
-  assert.equal(interpret(frames, { type: "compaction_start", reason: "invented" }).kind, "runtime");
-  const invented = interpret(frames, { type: "compaction_start", reason: "invented" });
-  if (invented.kind === "runtime") assert.deepEqual(invented.events, []);
+  assert.equal(interpret(frames, { type: "not_a_protocol_event" }).kind, "ignored");
+  assert.equal(interpret(frames, { type: "compaction_start", reason: "invented" }).kind, "protocol-error");
 });
 
-test("event order keeps tool completion, activity, final text and error on one assistant frame", () => {
+test("assistant completion orders activity, final text and error", () => {
   const frames = createRpcFrames();
   interpret(frames, { type: "message_start", message: { role: "assistant" } });
   const result = interpret(frames, {
@@ -91,6 +84,7 @@ test("final and delta text stay within the projection budget after redaction exp
   const text = delta.events.find(event => event.kind === "text_delta");
   assert.ok(text?.kind === "text_delta");
   assert.equal(text.delta.length, 65_536);
+  assert.equal(text.delta, "b".repeat(65_526) + "password=[");
 });
 
 test("a private-key marker redacts the whole final answer", () => {
@@ -128,4 +122,84 @@ test("session-less runtime frames are ignored while RPC replies still classify",
   assert.equal(interpret(frames, { type: "agent_settled" }, { session: 0 }).kind, "ignored");
   const rpc = interpret(frames, { type: "response", id: "req-1", success: true }, { session: 0 });
   assert.equal(rpc.kind, "rpc");
+});
+
+for (const bad of [null, false, 1, "text", [], {}, { type: "text", text: 1 }, { type: "thinking", thinking: null }]) {
+  for (const event of [
+    { type: "message_end", message: { role: "assistant", content: [{ type: "thinking", thinking: "must not mutate" }, bad] } },
+    { type: "tool_execution_update", toolCallId: "tool", partialResult: { content: [{ type: "text", text: "must not project" }, bad] } },
+    { type: "tool_execution_end", toolCallId: "tool", isError: false, result: { content: [bad] } },
+  ]) test(`${event.type} rejects mixed malformed content ${JSON.stringify(bad)} atomically`, () => {
+    const frames = createRpcFrames();
+    assert.deepEqual(interpret(frames, event), { kind: "protocol-error" });
+    const valid = interpret(frames, { type: "message_update", assistantMessageEvent: { type: "thinking_delta", contentIndex: 0, delta: "first" } });
+    assert.equal(valid.kind, "runtime");
+    if (valid.kind !== "runtime") return;
+    const activity = valid.events.find(event => event.kind === "activity");
+    assert.equal(activity?.kind === "activity" && activity.item.text, "first");
+  });
+}
+
+for (const event of [
+  { type: "message_start", message: null },
+  { type: "message_start", message: { role: "assistant", content: [null] } },
+  { type: "message_end", message: [] },
+  { type: "message_end", message: { role: "assistant", content: null } },
+  { type: "message_end", message: { role: "assistant", content: [], errorMessage: {} } },
+  { type: "message_update", assistantMessageEvent: [] },
+  { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: {} } },
+  { type: "message_update", assistantMessageEvent: { type: "thinking_delta", contentIndex: -1, delta: "text" } },
+  { type: "message_update", assistantMessageEvent: { type: "thinking_end", contentIndex: 0, content: null } },
+  { type: "tool_execution_start", toolCallId: "" },
+  { type: "tool_execution_start", toolCallId: "x".repeat(201) },
+  { type: "tool_execution_start", toolCallId: "tool", toolName: {} },
+  { type: "tool_execution_update", toolCallId: "tool", partialResult: null },
+  { type: "tool_execution_end", toolCallId: "tool", isError: "false", result: { content: [] } },
+  { type: "tool_execution_end", toolCallId: "tool", isError: false, result: [] },
+  { type: "compaction_end", reason: "overflow", aborted: "false", willRetry: true },
+  { type: "auto_retry_start", attempt: -1, maxAttempts: 3, delayMs: 100 },
+  { type: "auto_retry_start", attempt: 1, maxAttempts: 0, delayMs: 100 },
+  { type: "auto_retry_end", success: "true" },
+]) test(`recognized malformed event is a protocol failure: ${JSON.stringify(event)}`, () => {
+  const frames = createRpcFrames();
+  assert.deepEqual(interpret(frames, event), { kind: "protocol-error" });
+  interpret(frames, { type: "message_start", message: { role: "assistant" } });
+  const delta = interpret(frames, { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "valid" } });
+  assert.equal(delta.kind, "runtime");
+  if (delta.kind === "runtime") assert.deepEqual(delta.events, [{ kind: "text_delta", delta: "valid", session: 1, messageId: "message-1" }]);
+});
+
+test("empty and undisplayed content preserve text, thinking indexes, extra fields and event order", () => {
+  const frames = createRpcFrames();
+  interpret(frames, { type: "message_start", message: { role: "assistant", content: [] } });
+  for (const content of [[], [{ type: "image", data: "opaque" }, { type: "toolCall", id: "opaque" }, { type: "thinking", thinking: "thought", signature: "not-projected" }, { type: "text", text: "answer", extra: true }]]) {
+    const result = interpret(frames, { type: "message_end", message: { role: "assistant", content, extra: true }, extra: true });
+    assert.equal(result.kind, "runtime");
+    if (result.kind !== "runtime") return;
+    const final = result.events.at(-1);
+    assert.ok(final?.kind === "message_final");
+    assert.equal(final.text, content.length ? "answer" : "");
+    assert.doesNotMatch(JSON.stringify(result), /opaque|signature|not-projected|extra/);
+    if (content.length) {
+      const activity = result.events[0];
+      assert.ok(activity.kind === "activity");
+      assert.equal(activity.item.contentIndex, 2);
+      assert.equal(activity.item.text, "thought");
+    }
+  }
+});
+
+test("deep tool arguments either project within bounds or fail explicitly without throwing", () => {
+  const frames = createRpcFrames();
+  const line = '{"type":"tool_execution_start","toolCallId":"deep","args":' + '['.repeat(20000) + '0' + ']'.repeat(20000) + '}';
+  const result = interpret(frames, line);
+  // Newer V8 can stringify deeply nested JSON iteratively; older engines can reject it.
+  assert.ok(result.kind === "protocol-error" || result.kind === "runtime");
+  if (result.kind === "runtime") {
+    assert.equal(result.events.length, 1);
+    const event = result.events[0];
+    assert.ok(event.kind === "activity");
+    assert.equal(event.item.input?.length, 16_384);
+    assert.equal(event.item.truncated, true);
+  }
 });

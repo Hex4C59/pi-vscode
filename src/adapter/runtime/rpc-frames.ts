@@ -1,7 +1,7 @@
 import { parseGateEnvelope, type ExtensionExecutionProfile, type RuntimeEvent } from "../../extension/contracts/index.js";
 import { sameNativePath } from "../index.js";
 import { ActivityProjection, displayText } from "./activityProjection.js";
-import type { RpcResponse } from "./rpc-replies.js";
+import { decodeRuntimeEvent, isRecord, type RuntimeFrameEvent } from "./rpc-events.js";
 import { formatRuntimeError } from "./runtime-errors.js";
 
 type HelloEnvelope = Extract<NonNullable<ReturnType<typeof parseGateEnvelope>>, { kind: "hello" }>;
@@ -24,7 +24,8 @@ export type FrameContext = {
 
 export type InterpretedFrame =
   | { kind: "ignored" }
-  | { kind: "rpc"; response: RpcResponse; parsed: Record<string, unknown> }
+  | { kind: "rpc"; parsed: Record<string, unknown> }
+  | { kind: "protocol-error" }
   | { kind: "extension_error" }
   | { kind: "hello"; envelope: HelloEnvelope }
   | { kind: "feedback"; parsed: Record<string, unknown> }
@@ -44,7 +45,7 @@ const DIALOG_METHODS = ["select", "confirm", "input", "editor"];
 export function createRpcFrames() {
   const activity = new ActivityProjection();
 
-  const project = (parsed: Record<string, unknown>, context: FrameContext): InterpretedFrame => {
+  const project = (parsed: RuntimeFrameEvent, context: FrameContext): InterpretedFrame => {
     const session = context.session;
     if (!session) return { kind: "ignored" };
     const events: RuntimeEvent[] = [];
@@ -53,27 +54,26 @@ export function createRpcFrames() {
       events.push({ kind: "tool_finished", session, toolCallId: parsed.toolCallId, failed: parsed.isError });
     }
     for (const item of activity.parse(parsed)) events.push({ kind: "activity", session, item });
-    const finalMessage = parsed.message as Record<string, unknown> | undefined;
+    const finalMessage = "message" in parsed ? parsed.message : undefined;
     if (parsed.type === "message_end" && finalMessage?.role === "assistant" && Array.isArray(finalMessage.content)) {
-      const text = finalMessage.content.filter((p: Record<string, unknown>) => p.type === "text" && typeof p.text === "string").map((p: Record<string, unknown>) => p.text).join("");
+      const text = finalMessage.content.filter((p) => p.type === "text" && typeof p.text === "string").map((p) => p.text).join("");
       events.push({ kind: "message_final", session, messageId: activity.currentMessageId(), text: displayText(text).slice(0, 65536) });
     }
     if (parsed.type === "message_end" && finalMessage?.role === "assistant" && finalMessage.stopReason === "error") {
       events.push({ kind: "stream_error", session, detail: formatRuntimeError(typeof finalMessage.errorMessage === "string" && finalMessage.errorMessage.trim() ? finalMessage.errorMessage : "Assistant request failed.") });
     }
     if (parsed.type === "message_update") {
-      const assistantMessageEvent = parsed.assistantMessageEvent as Record<string, unknown> | undefined;
+      const assistantMessageEvent = parsed.assistantMessageEvent;
       if (assistantMessageEvent?.type === "text_delta" && typeof assistantMessageEvent.delta === "string") {
         events.push({ kind: "text_delta", delta: displayText(assistantMessageEvent.delta).slice(0, 65536), session, messageId: activity.currentMessageId() });
       }
       return { kind: "runtime", events, ...(conversationTouched ? { conversationTouched } : {}) };
     }
-    const compactionReason = parsed.reason === "manual" || parsed.reason === "threshold" || parsed.reason === "overflow";
-    if (parsed.type === "compaction_start" && compactionReason) {
+    if (parsed.type === "compaction_start") {
       events.push({ kind: "workflow", session, phase: "compacting" });
       return { kind: "runtime", events, ...(conversationTouched ? { conversationTouched } : {}) };
     }
-    if (parsed.type === "compaction_end" && compactionReason && typeof parsed.aborted === "boolean" && typeof parsed.willRetry === "boolean") {
+    if (parsed.type === "compaction_end" && typeof parsed.aborted === "boolean" && typeof parsed.willRetry === "boolean") {
       if (typeof parsed.errorMessage === "string" && parsed.errorMessage.trim() && !parsed.willRetry && !parsed.aborted) {
         events.push({ kind: "stream_error", session, detail: formatRuntimeError(parsed.errorMessage) });
       } else events.push({ kind: "workflow", session, phase: "waiting" });
@@ -110,16 +110,15 @@ export function createRpcFrames() {
     reset(): void {
       activity.reset();
     },
-    project,
     interpret(line: string, context: FrameContext): InterpretedFrame {
       if (!line.trim()) return { kind: "ignored" };
-      let parsed: Record<string, unknown>;
+      let parsed: unknown;
       try {
-        parsed = JSON.parse(line) as Record<string, unknown>;
+        parsed = JSON.parse(line);
       } catch {
         return { kind: "ignored" };
       }
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { kind: "ignored" };
+      if (!isRecord(parsed)) return { kind: "ignored" };
       const id = typeof parsed.id === "string" ? parsed.id : undefined;
       if (parsed.type === "extension_error") return { kind: "extension_error" };
       if (parsed.type === "extension_ui_request") {
@@ -128,10 +127,10 @@ export function createRpcFrames() {
         if (envelope?.runtime === context.gateId && sameGateCwd(envelope.cwd, context.cwd) && envelope.kind === "hello" && parsed.method === "notify") {
           return { kind: "hello", envelope };
         }
-        if (context.executionProfile.kind === "trusted" && FEEDBACK_METHODS.includes(String(parsed.method))) {
+        if (context.executionProfile.kind === "trusted" && typeof parsed.method === "string" && FEEDBACK_METHODS.includes(parsed.method)) {
           return { kind: "feedback", parsed };
         }
-        if (id && DIALOG_METHODS.includes(String(parsed.method)) && envelope?.kind !== "call") {
+        if (id && typeof parsed.method === "string" && DIALOG_METHODS.includes(parsed.method) && envelope?.kind !== "call") {
           return { kind: "interaction", parsed };
         }
         if (id && parsed.method === "confirm") {
@@ -140,9 +139,10 @@ export function createRpcFrames() {
         return { kind: "ignored" };
       }
       if (parsed.type === "response" && id) {
-        return { kind: "rpc", response: parsed as RpcResponse, parsed };
+        return { kind: "rpc", parsed };
       }
-      return project(parsed, context);
+      const decoded = decodeRuntimeEvent(parsed);
+      return decoded.kind === "event" ? project(decoded.event, context) : decoded;
     },
   };
 }

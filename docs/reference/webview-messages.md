@@ -69,6 +69,14 @@ The host sends `version: 3, type: "workspaceState"`. [`WorkspaceStateMessage`](.
 
 **Producer-side display bounds (WI-010 correction):** active model labels, including provider/ID fallback, are at most 200 UTF-16 units. Final assistant text/deltas are capped at 65,536 units after redaction; activity text/input at 16,384 after redaction, with truncation reported. Workspace alias labels are at most 512 units (ellipsis, no split surrogate); ineligible non-file URI labels at most 65,536. The actual native local cwd is never shortened. Trusted-entry display names are at most 512 UTF-8 bytes, code-point safe with ellipsis; the native consent dialog and host retain the full canonical path. The model summary keeps thinking separately visible, while title/accessibility text and the scrollable, wrapped current-model menu retain the full bounded label. These are producer/UI contracts, not secret-scrubbing guarantees for arbitrary intentional content.
 
+## Runtime protocol failures (WI-033)
+
+The adapter decodes only consumed event fields before any activity, final-message or tool-completion projection. Recognized malformed message/content, tool-result, retry or compaction fields produce a fixed protocol error and revoke the connection. Content arrays preserve indexes for undisplayed image/toolcall/unknown object types; empty arrays and extra upstream metadata remain valid. Unknown event/update types, empty lines, non-JSON and non-object input retain ignored handling. Extension dialogs, approval envelopes and feedback keep their existing validators and rejection policies.
+
+Pending RPCs bind both ID and command. A matching response must have the expected command and boolean `success`; unknown, duplicate and retired IDs are ignored. Internally, validated responses are separate from protocol-error, disconnected and timeout results. Command-specific `data` stays with existing domain parsers. A valid `success: false` remains an upstream rejection; malformed acknowledgement cannot invent readiness, applied settings, successful Stop or remote prompt rejection.
+
+A protocol fault synchronously retires transport/answer authority, settles pending calls and clears their timers/listeners through the existing uncertain-runtime release. No partial projection from the bad event, automatic termination or task replay follows. A written prompt without valid acknowledgement remains delivery-unknown. Stop cannot succeed because fault cleanup reset occupancy. Detachment discards the remaining lines in the current stdout chunk as well as future old-connection frames. UI receives only the bounded fixed error and existing runtime-failure projection; no raw bad payload is exposed. Host lifecycle and Webview v3 interfaces are unchanged.
+
 ## Controlled execution contract
 
 Execution actions use the envelope rules above and these inbound shapes:

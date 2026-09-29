@@ -25,7 +25,7 @@ function fixture(state: unknown = identity, reportedCwd?: string) {
      stdout.write(JSON.stringify({type:"auto_retry_end",success:false,attempt:1,finalError:"Retry cancelled"})+"\n");
      stdout.write(JSON.stringify({type:"agent_settled"})+"\n");
     }
-    stdout.write(JSON.stringify({type:"response",id:command.id,success:true})+"\n");
+    stdout.write(JSON.stringify({type:"response",id:command.id,command:command.type,success:true})+"\n");
    }); done(); return true;
   });
   output = connection.stdout;
@@ -97,7 +97,7 @@ test("public retry events remain a running phase until agent settlement", async 
   assert.deepEqual(events.at(-1),{kind:"agent_settled",session});
  } finally {unsubscribe();await f.runtime.stop();}
 });
-test("compaction end never invents settlement and malformed phase frames are ignored", async () => {
+test("compaction end never invents settlement and a malformed phase fails the connection", async () => {
  const f=fixture(); const events: unknown[]=[]; const unsubscribe=f.runtime.subscribe(event=>events.push(event));
  try {
   assert.equal((await f.runtime.start({cwd:"/project",projectTrust:"no-approve"})).ok,true);
@@ -107,8 +107,11 @@ test("compaction end never invents settlement and malformed phase frames are ign
   f.frame({type:"compaction_end",reason:"overflow",aborted:false,willRetry:true,result:{summary:"synthetic"}});
   assert.deepEqual(events.at(-1),{kind:"workflow",session,phase:"waiting"});
   const before=events.length;
-  for(const frame of [{type:"compaction_start",reason:"invented"},{type:"compaction_end",reason:"overflow",aborted:"false",willRetry:true},{type:"auto_retry_start",attempt:-1,maxAttempts:3,delayMs:100},{type:"auto_retry_start",attempt:1,maxAttempts:0,delayMs:100}]) f.frame(frame);
-  assert.equal(events.length,before);
+  // Other malformed phase fields are independently covered in rpc-frames.spec.ts.
+  f.frame({type:"compaction_start",reason:"invented"});
+  assert.equal(events.length,before+1);
+  assert.equal((events.at(-1) as {kind:string}).kind,"runtime_error");
+  assert.equal(f.runtime.getSession(),0);
   assert.equal(events.some(event=>(event as {kind:string}).kind==="agent_settled"),false);
  } finally {unsubscribe();await f.runtime.stop();}
 });

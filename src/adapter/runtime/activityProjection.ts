@@ -1,4 +1,5 @@
 import { redactCredentialLikeText, type ActivityItem } from "../../extension/contracts/index.js";
+import type { RuntimeFrameEvent } from "./rpc-events.js";
 const LIMIT = 16_384;
 export function displayText(value: string): string { return redactCredentialLikeText(value); }
 export class ActivityProjection {
@@ -7,10 +8,10 @@ export class ActivityProjection {
   private items = new Map<string,ActivityItem>();
   currentMessageId():string {return this.messageId;}
   reset():void {this.sequence=0;this.messageId='message-0';this.items.clear();}
-  parse(e:Record<string,unknown>):ActivityItem[] {
-    const msg=e.message as Record<string,unknown>|undefined;
+  parse(e:RuntimeFrameEvent):ActivityItem[] {
+    const msg='message' in e ? e.message : undefined;
     if(e.type==='message_start' && msg?.role==='assistant')this.messageId=`message-${++this.sequence}`;
-    const a=e.assistantMessageEvent as Record<string,unknown>|undefined;
+    const a=e.type === 'message_update' ? e.assistantMessageEvent : undefined;
     if(e.type==='message_update' && a && ['thinking_start','thinking_delta','thinking_end'].includes(String(a.type)) && Number.isSafeInteger(a.contentIndex) && (a.contentIndex as number)>=0) {
       const id=`${this.messageId}-thinking-${a.contentIndex}`; const previous=this.items.get(id);
       const final = a.type === 'thinking_end' && typeof a.content === 'string';
@@ -18,13 +19,12 @@ export class ActivityProjection {
       return this.put({id,kind:'thinking',messageId:this.messageId,contentIndex:a.contentIndex as number,text,status:a.type==='thinking_end'?'complete':'thinking',truncated:final?false:previous?.truncated??false});
     }
     if(e.type==='message_end' && msg?.role==='assistant' && Array.isArray(msg.content)) {
-      return msg.content.flatMap((part:Record<string,unknown>,index:number)=>part.type==='thinking' && typeof part.thinking==='string'?this.put({id:`${this.messageId}-thinking-${index}`,kind:'thinking',messageId:this.messageId,contentIndex:index,text:part.thinking,status:'complete',truncated:false}):[]);
+      return msg.content.flatMap((part,index:number)=>part.type==='thinking' && typeof part.thinking==='string'?this.put({id:`${this.messageId}-thinking-${index}`,kind:'thinking',messageId:this.messageId,contentIndex:index,text:part.thinking,status:'complete',truncated:false}):[]);
     }
-    if(typeof e.toolCallId==='string' && e.toolCallId.length<=200 && typeof e.type==='string' && e.type.startsWith('tool_execution_')) {
+    if(e.type==='tool_execution_start' || e.type==='tool_execution_update' || e.type==='tool_execution_end') {
       const id=`tool-${e.toolCallId}`;const prior=this.items.get(id);
-      const result=(e.partialResult??e.result) as Record<string,unknown>|undefined;
-      const text=Array.isArray(result?.content)?result.content.filter((p:Record<string,unknown>)=>p.type==='text'&&typeof p.text==='string').map((p:Record<string,unknown>)=>p.text).join('\n'):prior?.text??'';
-      return this.put({id,kind:'tool',messageId:prior?.messageId??this.messageId,toolCallId:e.toolCallId,tool:typeof e.toolName==='string'?e.toolName.slice(0,100):prior?.tool,text,input:prior?.input??(e.args?JSON.stringify(e.args):undefined),status:e.type==='tool_execution_start'?'preparing':e.type==='tool_execution_end'?(e.isError?'failed':'complete'):'executing',truncated:prior?.truncated??false});
+      const text=e.content?e.content.filter(p=>p.type==='text').map(p=>p.text).join('\n'):prior?.text??'';
+      return this.put({id,kind:'tool',messageId:prior?.messageId??this.messageId,toolCallId:e.toolCallId,tool:typeof e.toolName==='string'?e.toolName.slice(0,100):prior?.tool,text,input:prior?.input??e.input,status:e.type==='tool_execution_start'?'preparing':e.type==='tool_execution_end'?(e.isError?'failed':'complete'):'executing',truncated:prior?.truncated??false});
     }
     return [];
   }

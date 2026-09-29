@@ -4,7 +4,7 @@ import { createInteractionWriter } from "./interaction-writer.js";
 import { createRpcDialogs } from "./rpc-dialogs.js";
 import { createRpcFrames, sameGateCwd } from "./rpc-frames.js";
 import { createRpcOccupancy } from "./rpc-occupancy.js";
-import { createRpcReplies, type RpcResponse } from "./rpc-replies.js";
+import { createRpcReplies, requireRpcResponse, RPC_PROTOCOL_ERROR, type RpcReplyResult, type RpcResponse } from "./rpc-replies.js";
 import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
 import type { RuntimeLink } from "./process/types.js";
 import { randomUUID } from "node:crypto";
@@ -69,7 +69,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     for (const listener of listeners) listener(event);
   };
 
-  const applyRuntime = (result: Extract<ReturnType<ReturnType<typeof createRpcFrames>["project"]>, { kind: "runtime" }>): void => {
+  const applyRuntime = (result: Extract<ReturnType<ReturnType<typeof createRpcFrames>["interpret"]>, { kind: "runtime" }>): void => {
     if (result.conversationTouched) untouchedConversation = false;
     if (result.agentSettled) occupancy.noteAgentSettled();
     for (const event of result.events) emit(event);
@@ -77,6 +77,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   };
 
   const handleLine = (line: string): void => {
+    if (!child) return;
     const interpreted = frames.interpret(line, {
       session: activeSession,
       aborting: occupancy.isStopping(),
@@ -85,17 +86,10 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       executionProfile,
     });
     if (interpreted.kind === "rpc") {
-      if (replies.receive(interpreted.parsed)) return;
-      const projected = frames.project(interpreted.parsed, {
-        session: activeSession,
-        aborting: occupancy.isStopping(),
-        gateId,
-        cwd,
-        executionProfile,
-      });
-      if (projected.kind === "runtime") applyRuntime(projected);
+      if (replies.receive(interpreted.parsed) === "protocol-error") protocolFault();
       return;
     }
+    if (interpreted.kind === "protocol-error") { protocolFault(); return; }
     if (interpreted.kind === "ignored") return;
     if (interpreted.kind === "extension_error") {
       if (!activeSession) { initializationFailed = true; void faultStop(); }
@@ -181,7 +175,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     });
   };
 
-  const release = async (uncertain = false): Promise<void> => {
+  const release = async (uncertain = false, failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => {
     const owned = child;
     const reason = occupancy.classifyRelease({ forcedUncertain: uncertain, sessionActive: activeSession !== 0 });
     const cancelling = [...occupancy.approvalIds()];
@@ -194,17 +188,24 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     commandNames = new Set();
     gateReady = false; verifiedCustomTools = new Set();
     frames.reset();
-    for (const id of cancelling) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
-    replies.failAll();
     if (detachReader) {
       detachReader();
       detachReader = null;
     }
     detachLost?.(); detachLost = undefined;
+    for (const id of cancelling) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
+    replies.failAll(failure);
     await environment.process.release(reason);
   };
   const stop = (): Promise<void> => release();
-  const faultStop = (): Promise<void> => release(true);
+  const faultStop = (failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => release(true, failure);
+  const protocolFault = (): void => {
+    if (!child) return;
+    const session = activeSession;
+    // release revokes the connection synchronously before pending callers or UI observe failure.
+    void faultStop("protocol-error").catch(() => undefined);
+    emit({ kind: "runtime_error", session, detail: RPC_PROTOCOL_ERROR });
+  };
 
   const start = async (options: {
     cwd: string;
@@ -271,9 +272,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       attachReader(child.stdout);
 
       const requestId = replies.startupId(token);
-      const waiting = replies.wait(requestId, START_TIMEOUT_MS, { pauseable: executionProfile.kind === "trusted", outstanding: () => occupancy.dialogs() });
+      const waiting = replies.wait(requestId, "get_state", START_TIMEOUT_MS, { pauseable: executionProfile.kind === "trusted", outstanding: () => occupancy.dialogs() });
       child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
-      const response = await waiting;
+      const response = requireRpcResponse(await waiting);
 
       if (token !== startToken) {
         return { ok: false, detail: "Runtime start superseded" };
@@ -313,7 +314,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   };
 
   const invokeRpc = async (
-    body: Record<string, unknown>,
+    body: { type: string; [key: string]: unknown },
     timeoutMs: number,
   ): Promise<RpcResponse> => {
     if (!child || !activeSession) {
@@ -321,9 +322,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     }
     const session = activeSession;
     const requestId = replies.rpcId(session);
-    const waiting = replies.wait(requestId, timeoutMs);
+    const waiting = replies.wait(requestId, body.type, timeoutMs);
     child.stdin?.write(serializeJsonLine({ id: requestId, ...body }));
-    const response = await waiting;
+    const response = requireRpcResponse(await waiting);
     if (session !== activeSession) {
       throw new Error("Runtime restarted during request.");
     }
@@ -334,7 +335,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     const session = activeSession;
     const idle = () => session !== 0 && session === activeSession && gateReady && occupancy.allowsRestart();
     const stateMatches = (response: RpcResponse, count?: number): boolean => {
-      if (response.success !== true || response.command !== "get_state" || !response.data || typeof response.data !== "object") return false;
+      if (!response.success || !response.data || typeof response.data !== "object") return false;
       const state = response.data as Record<string, unknown>;
       return state.sessionId === expected.id && typeof state.sessionFile === "string" && sameNativePath(state.sessionFile, expected.path)
         && state.isStreaming === false && state.isCompacting === false && state.pendingMessageCount === 0
@@ -347,7 +348,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       const before = await invokeRpc({ type: "get_state" }, 5000);
       if (!idle() || !stateMatches(before)) return { kind: "unavailable" };
       const response = await invokeRpc({ type: "get_session_stats" }, 5000);
-      if (!idle() || response.success !== true || response.command !== "get_session_stats" || !response.data || typeof response.data !== "object") return { kind: "unavailable" };
+      if (!idle() || !response.success || !response.data || typeof response.data !== "object") return { kind: "unavailable" };
       const stats = response.data as Record<string, unknown>;
       if (stats.sessionId !== expected.id || typeof stats.sessionFile !== "string" || !sameNativePath(stats.sessionFile, expected.path)
         || !Number.isSafeInteger(stats.assistantMessages) || !Number.isSafeInteger(stats.totalMessages)
@@ -438,9 +439,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     const requestId = replies.promptId(session);
     occupancy.beginPrompt(); untouchedConversation = false;
     try {
-      const waiting = replies.wait(requestId, PROMPT_TIMEOUT_MS);
+      const waiting = replies.wait(requestId, "prompt", PROMPT_TIMEOUT_MS);
       child.stdin?.write(serializePromptFrame(requestId, { kind: "plain", body: text }));
-      const response = await waiting;
+      const response = requireRpcResponse(await waiting);
       if (session !== activeSession) {
         occupancy.rejectSend(child);
         return { ok: false, detail: "Runtime restarted during send." };
@@ -475,7 +476,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       consumed = true; occupancy.beginSend({ command: command !== undefined });
       return new Promise(resolve => {
         let attempted = false; let finished = false; let callback = false; let drained = false; let returned = false;
-        let response: RpcResponse | undefined;
+        let reply: RpcReplyResult | undefined;
         const finish = (delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown", code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost") => {
           if (finished) return; finished = true;
           occupancy.clearAck(expectedSession);
@@ -483,28 +484,30 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
           stream.off("error", lost); stream.off("close", lost); stream.off("drain", drain); frame = "";
           if (delivery !== "rpc-accepted" && child === owned) occupancy.rejectSend(owned);
           if (command && child === owned) occupancy.finishCommand(owned);
+          const response = reply?.kind === "response" ? reply.response : undefined;
           const rejection = delivery === "rpc-rejected" && typeof response?.error === "string" && isAuthenticationError(response.error)
             ? "authentication" as const : undefined;
           resolve({ delivery, ...(code ? { code } : {}), ...(rejection ? { rejection } : {}) });
           if (command && delivery === "rpc-accepted" && child === owned) emit({ kind: "command_handled", session: expectedSession, agentRunning: occupancy.agentRunning() });
-          if (delivery === "unknown" && child === owned) {
+          if (delivery === "unknown" && child === owned && reply?.kind !== "failure") {
             emit({ kind: "runtime_error", session: expectedSession, detail: environment.process.describeFailure("prompt-delivery") });
             void faultStop();
           }
         };
         const check = () => {
+          if (reply?.kind === "failure") { finish(attempted ? "unknown" : "not-sent", "runtime-lost"); return; }
           if (!returned || !callback || !drained) return;
           clearTimeout(writeTimer);
-          if (response) {
-            if (activeSession !== expectedSession || response.command !== "prompt" || typeof response.success !== "boolean") finish("unknown", "runtime-lost");
-            else finish(response.success ? "rpc-accepted" : "rpc-rejected", response.success ? undefined : "rpc-rejected");
+          if (reply?.kind === "response") {
+            if (activeSession !== expectedSession) finish("unknown", "runtime-lost");
+            else finish(reply.response.success ? "rpc-accepted" : "rpc-rejected", reply.response.success ? undefined : "rpc-rejected");
           }
         };
         const lost = () => finish(attempted ? "unknown" : "not-sent", "write-failed");
         const drain = () => { drained = true; check(); };
         const writeTimer = setTimeout(lost, 5000);
         const ackTimer = command ? undefined : setTimeout(() => finish("unknown", "ack-timeout"), 30000);
-        replies.watch(requestId, value => { response = value; check(); });
+        replies.watch(requestId, "prompt", value => { reply = value; check(); });
         stream.on("error", lost); stream.on("close", lost); stream.on("drain", drain);
         try {
           attempted = true; untouchedConversation = false; onAttempt();
@@ -537,6 +540,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     setInteractionHandler(handler) { interactionHandler = handler; },
     setApprovalHandler(handler) { approvalHandler = handler; },
     async abortTask() {
+      const session = activeSession;
       const deadline = performance.now() + STOP_TIMEOUT_MS;
       const remaining = (): number => {
         const budget = deadline - performance.now();
@@ -555,12 +559,13 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
           await new Promise<void>(resolve => {
             const timer = setTimeout(() => { unsubscribe(); resolve(); }, remaining());
             const unsubscribe = (() => {
-              const listener = (event: RuntimeEvent): void => { if ((event.kind === 'agent_settled' || event.kind === 'command_handled') && !occupancy.sending()) { clearTimeout(timer); listeners.delete(listener); resolve(); } };
+              const listener = (event: RuntimeEvent): void => { if (event.kind === 'runtime_error' || ((event.kind === 'agent_settled' || event.kind === 'command_handled') && !occupancy.sending())) { clearTimeout(timer); listeners.delete(listener); resolve(); } };
               listeners.add(listener);
               return () => listeners.delete(listener);
             })();
           });
         }
+        if (!session || session !== activeSession) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
         if (occupancy.sending()) {
           await faultStop();
           return {ok:false,detail:environment.process.describeFailure("stop-unconfirmed")};

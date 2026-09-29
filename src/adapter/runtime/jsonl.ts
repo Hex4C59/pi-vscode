@@ -44,28 +44,34 @@ export function attachJsonlLineReader(
 ): () => void {
   const decoder = new StringDecoder("utf8");
   let buffer = "";
+  let active = true;
 
   const emitLine = (line: string) => {
+    if (!active) return;
     onLine(line.endsWith("\r") ? line.slice(0, -1) : line);
   };
 
   const onData = (chunk: string | Buffer) => {
+    if (!active) return;
     buffer += typeof chunk === "string" ? chunk : decoder.write(chunk);
 
     while (true) {
       const newlineIndex = buffer.indexOf("\n");
       if (newlineIndex === -1) {
-        if(buffer.length>8*1024*1024){buffer='';stream.off('data',onData);onOverflow();}
+        if(buffer.length>8*1024*1024){detach();onOverflow();}
         return;
       }
-      if(newlineIndex>8*1024*1024){buffer='';stream.off('data',onData);onOverflow();return;}
+      if(newlineIndex>8*1024*1024){detach();onOverflow();return;}
 
-      emitLine(buffer.slice(0, newlineIndex));
+      const line = buffer.slice(0, newlineIndex);
       buffer = buffer.slice(newlineIndex + 1);
+      emitLine(line);
+      if (!active) return;
     }
   };
 
   const onEnd = () => {
+    if (!active) return;
     buffer += decoder.end();
     if (buffer.length > 0) {
       emitLine(buffer);
@@ -76,8 +82,11 @@ export function attachJsonlLineReader(
   stream.on("data", onData);
   stream.on("end", onEnd);
 
-  return () => {
+  function detach(): void {
+    active = false;
+    buffer = "";
     stream.off("data", onData);
     stream.off("end", onEnd);
-  };
+  }
+  return detach;
 }
