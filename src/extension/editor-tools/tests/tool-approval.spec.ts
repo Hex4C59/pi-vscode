@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, mkdir, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { credentialLikeSamples } from '../../contracts/tests/credential-samples.js';
 import { ToolApprovals, inspectScope, unambiguousPath } from '../toolApproval.js';
 import { parseGateEnvelope, type GateCall } from '../../contracts/approvalProtocol.js';
 import { parseWebviewMessage } from '../../bridge/webviewMessages.js';
@@ -17,6 +18,25 @@ test('readonly realpath policy rejects escapes, junctions and ambiguous Windows 
     for(const p of ['C:relative','file:ads','NUL','foo.','\\\\?\\C:\\foo'])assert.equal(unambiguousPath(p),false);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+test('credential-like approval input is denied and ordinary input can still be offered', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'approval-credential-'));
+  let notify: () => void = () => {};
+  const manager = new ToolApprovals(() => notify());
+  try {
+    await writeFile(path.join(root, 'file'), 'x');
+    for (const [index, sample] of credentialLikeSamples.entries()) {
+      assert.equal(await manager.request({ ...call(root, `cred-${index}`), input: { path: 'file', content: sample } }), false);
+      assert.equal(manager.cards().length, 0);
+    }
+    const changed = new Promise<void>(resolve => { notify = resolve; });
+    const pending = manager.request(call(root, 'ordinary'));
+    await changed;
+    assert.equal(manager.cards().length, 1);
+    manager.decide('ordinary', 'deny');
+    assert.equal(await pending, false);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('approval deny timeout cancellation late replies and exact session grant revoke', { timeout: 5000 }, async t => {
   t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
   const root=await mkdtemp(path.join(tmpdir(),'approval-state-'));

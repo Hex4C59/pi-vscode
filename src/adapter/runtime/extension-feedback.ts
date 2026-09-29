@@ -1,4 +1,4 @@
-import type { ExtensionFeedback } from "../../extension/contracts/index.js";
+import { containsCredentialLikeText, type ExtensionFeedback } from "../../extension/contracts/index.js";
 
 type Entry = { feedback: ExtensionFeedback; key?: string };
 type Parsed = { kind: ExtensionFeedback["kind"]; level: ExtensionFeedback["level"]; text?: string; key?: string };
@@ -6,11 +6,9 @@ const WARNING = "Extension feedback omitted: unsafe or oversized content.";
 const FRAME_BYTES = 65_536;
 const TEXT_BYTES = 32_768;
 
-// Same credential-like patterns as rpc-dialogs; text is never interpreted as markup or commands.
+// Text is never interpreted as markup or commands.
 function safeText(value: string): boolean {
-  return !/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/i.test(value)
-    && !/["']?(?:api[_ -]?key|authorization|password|secret|access[_ -]?token)["']?\s*[:=]\s*["']?[^\s"',;}]+/i.test(value)
-    && !/\bBearer\s+[\w.+/=-]+/i.test(value);
+  return !containsCredentialLikeText(value);
 }
 
 // Copy only own data properties: no accessors, inherited fields, symbols or toJSON execution.

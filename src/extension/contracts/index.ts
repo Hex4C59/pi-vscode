@@ -30,3 +30,4 @@ export {
   MAX_MODEL_PROVIDER_CHARS,
   MAX_THINKING_LEVEL_CHARS,
 } from "./modelCatalog.js";
+export { containsCredentialLikeText, redactCredentialLikeText } from "./credentialText.js";

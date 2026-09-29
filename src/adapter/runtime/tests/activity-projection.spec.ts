@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { bearerText, fieldAssignmentText, ordinaryText, privateKeyText } from '../../../extension/contracts/tests/credential-samples.js';
 import { ActivityProjection } from '../activityProjection.js';
 
 test('activity snapshots replace cumulative output and cap thinking; no synthetic thinking',()=>{
@@ -23,6 +24,20 @@ test('thinking start and end without deltas preserve true empty state and final 
   const start=p.parse({type:'message_update',assistantMessageEvent:{type:'thinking_start',contentIndex:0}})[0];assert.equal(start.text,'');assert.equal(start.status,'thinking');
   const end=p.parse({type:'message_update',assistantMessageEvent:{type:'thinking_end',contentIndex:0,content:''}})[0];assert.equal(end.id,start.id);assert.equal(end.text,'');assert.equal(end.status,'complete');
   const final=p.parse({type:'message_update',assistantMessageEvent:{type:'thinking_end',contentIndex:1,content:'Actual summary'}})[0];assert.equal(final.text,'Actual summary');
+});
+
+test('shared credential samples are redacted and ordinary activity text stays', () => {
+  const projection = new ActivityProjection();
+  const plain = projection.parse({ type: 'message_update', assistantMessageEvent: { type: 'thinking_end', contentIndex: 0, content: ordinaryText } })[0];
+  assert.equal(plain.text, ordinaryText);
+  const key = projection.parse({ type: 'message_update', assistantMessageEvent: { type: 'thinking_end', contentIndex: 1, content: privateKeyText } })[0];
+  assert.equal(key.text, '[redacted]');
+  assert.equal(key.text.includes('PRIVATE KEY'), false);
+  const field = projection.parse({ type: 'tool_execution_start', toolCallId: 'field', toolName: 'read', args: { note: fieldAssignmentText } })[0];
+  assert.match(field.input ?? '', /password=\[redacted\]/);
+  assert.equal(field.input?.includes('synthetic'), false);
+  const bearer = projection.parse({ type: 'tool_execution_end', toolCallId: 'bearer', toolName: 'read', result: { content: [{ type: 'text', text: bearerText }] } })[0];
+  assert.equal(bearer.text, 'Bearer [redacted]');
 });
 
 test('activity enforces its budget after sanitization and reports expansion truncation', () => {

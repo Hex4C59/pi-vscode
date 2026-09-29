@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import type * as vscode from "vscode";
 import type { GateCall } from "../../contracts/approvalProtocol.js";
+import { bearerText, fieldAssignmentText, ordinaryText, privateKeyText } from "../../contracts/tests/credential-samples.js";
 import type { ChangeReviewStateMessage, WorkspaceStateMessage } from "../../contracts/webviewProtocol.js";
 import { folder, settingsRuntime, tick, harness } from "../../tests/harness.js";
 import { ChangeReview } from "../changeReview.js";
@@ -159,6 +160,9 @@ test("unsafe or unreliable image sources disclose unavailability without truncat
     { name: "binary.bin", content: Buffer.from([0, 1, 2]), reason: "not-text" },
     { name: "invalid.bin", content: Buffer.from([255, 254]), reason: "not-text" },
     { name: "large.ts", content: "x".repeat(262145), reason: "too-large" },
+    { name: "private-key.ts", content: privateKeyText, reason: "sensitive-source" },
+    { name: "field.ts", content: fieldAssignmentText, reason: "sensitive-source" },
+    { name: "bearer.ts", content: bearerText, reason: "sensitive-source" },
   ];
   for (let i = 0; i < fixtures.length; i++) {
     const fixture = fixtures[i]; await writeFile(path.join(f.root, fixture.name), fixture.content);
@@ -167,6 +171,10 @@ test("unsafe or unreliable image sources disclose unavailability without truncat
     assert.equal(finished?.diff, "unavailable"); assert.equal(finished?.reason, fixture.reason);
   }
   assert.equal(f.state().retainedBytes, 0);
+  await writeFile(path.join(f.root, "note.ts"), ordinaryText);
+  const entry = await f.request("ordinary", "note.ts"); assert.ok(entry);
+  const finished = await f.finish("ordinary", entry.id);
+  assert.equal(finished?.diff, "unchanged"); assert.equal(finished?.reason, null);
 });
 
 test("image retention is bounded at 8 MiB without evicting older exact snapshots", { timeout: 10000 }, async t => {

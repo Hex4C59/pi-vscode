@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { credentialLikeSamples } from "../../../extension/contracts/tests/credential-samples.js";
 import { createExtensionFeedback } from "../extension-feedback.js";
 
 function frame(method: string, fields: Record<string, unknown> = {}): Record<string, unknown> {
@@ -80,11 +81,12 @@ test("malformed frames are rejected and unsafe or oversized content becomes only
     frame("notify", { id: "", message: "ok" }),
   ]) assert.equal(store.accept(value), false);
   assert.deepEqual(store.snapshot(), { feedback: [], omittedFeedback: 0 });
-  for (const message of ["password=synthetic", "Bearer synthetic-token", "-----BEGIN PRIVATE KEY-----", "é".repeat(16385), "x".repeat(65537), "\t".repeat(32768)]) {
+  for (const message of [...credentialLikeSamples, "é".repeat(16385), "x".repeat(65537), "\t".repeat(32768)]) {
     assert.equal(store.accept(frame("notify", { message })), false);
     const warning = store.snapshot().feedback.at(-1);
     assert.equal(warning?.level, "warning");
     assert.equal(warning?.text, "Extension feedback omitted: unsafe or oversized content.");
+    assert.equal(JSON.stringify(store.snapshot()).includes(message), false);
   }
   assert.equal(store.snapshot().omittedFeedback, 6);
 });

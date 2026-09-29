@@ -2,7 +2,7 @@ import type * as vscode from "vscode";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type { AttachmentCode, SelectionRange } from "../contracts/index.js";
+import { containsCredentialLikeText, type AttachmentCode, type SelectionRange } from "../contracts/index.js";
 export type { AttachmentCode } from "../contracts/index.js";
 export class AttachmentFailure extends Error {
   constructor(readonly code: AttachmentCode) { super(code); }
@@ -40,8 +40,7 @@ function captureText(document: vscode.TextDocument): string {
 }
 function checkedText(text: string): string {
   if (Buffer.byteLength(text, "utf8") > 262144) fail("text-too-large");
-  if (/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/i.test(text)
-    || /["']?(?:api[_ -]?key|authorization|password|secret|access[_ -]?token)["']?\s*[:=]\s*["']?[^\s"',;}]+/i.test(text)) fail("sensitive-source");
+  if (containsCredentialLikeText(text)) fail("sensitive-source");
   return text;
 }
 export async function captureFile(workspace: Pick<typeof vscode.workspace, "textDocuments" | "openTextDocument">, rootPath: string, uri: vscode.Uri, current: () => boolean): Promise<FileSnapshot> {

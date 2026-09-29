@@ -2,8 +2,7 @@ import { open, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type * as vscode from "vscode";
-import type { ChangeReviewEntry, ChangeReviewStateMessage, ReviewReason } from "../contracts/index.js";
-import type { GateCall } from "../contracts/index.js";
+import { containsCredentialLikeText, type ChangeReviewEntry, type ChangeReviewStateMessage, type GateCall, type ReviewReason } from "../contracts/index.js";
 import { unambiguousPath } from "./toolApproval.js";
 import { resolveWriteTargetPath } from "./writeProtection.js";
 
@@ -54,7 +53,7 @@ async function captureDisk(root: string, requested: string): Promise<Capture> {
       let text: string;
       try { text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(buffer.subarray(0, length)); } catch { return { reason: "not-text" }; }
       if (text.includes("\0")) return { reason: "not-text" };
-      if (/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/i.test(text) || /["']?(?:api[_ -]?key|authorization|password|secret|access[_ -]?token)["']?\s*[:=]\s*["']?[^\s"',;}]+/i.test(text)) return { reason: "sensitive-source" };
+      if (containsCredentialLikeText(text)) return { reason: "sensitive-source" };
       const after = await handle.stat(); const currentTarget = await realpath(requested);
       if (revision(before) !== revision(after) || !samePath(target, currentTarget) || revision(await stat(target)) !== revision(after)) return { reason: "changed-during-capture" };
       return { image: { text, bytes: length, exists: true, target, relative, revision: revision(after) } };

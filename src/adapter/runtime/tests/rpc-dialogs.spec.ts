@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { credentialLikeSamples, ordinaryText } from "../../../extension/contracts/tests/credential-samples.js";
 import { createRpcDialogs } from "../rpc-dialogs.js";
 
 test("standard select uses opaque local options and writes the original value only once", () => {
@@ -32,6 +33,17 @@ test("standard confirm, input and editor preserve method-specific values and can
     { type: "extension_ui_response", id: "input", value: "" },
     { type: "extension_ui_response", id: "editor", value: "" },
   ]);
+});
+
+test("shared credential-like dialog text is cancelled and ordinary text still opens", () => {
+  const written: unknown[] = [];
+  const dialogs = createRpcDialogs(frame => { written.push(JSON.parse(frame) as unknown); });
+  credentialLikeSamples.forEach((text, index) => {
+    assert.equal(dialogs.open({ type: "extension_ui_request", id: `cred-${index}`, method: "confirm", title: "Form", message: text }).kind, "rejected");
+  });
+  assert.deepEqual(written, credentialLikeSamples.map((_text, index) => ({ type: "extension_ui_response", id: `cred-${index}`, cancelled: true })));
+  assert.equal(JSON.stringify(written).includes("synthetic"), false);
+  assert.equal(dialogs.open({ type: "extension_ui_request", id: "plain", method: "confirm", title: "Form", message: ordinaryText }).kind, "dialog");
 });
 
 test("unreviewable or credential-like dialogs are cancelled without projecting their contents", () => {

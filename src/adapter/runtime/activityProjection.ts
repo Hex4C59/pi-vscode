@@ -1,6 +1,6 @@
-import type { ActivityItem } from "../../extension/contracts/index.js";
+import { redactCredentialLikeText, type ActivityItem } from "../../extension/contracts/index.js";
 const LIMIT = 16_384;
-export function displayText(value: string): string { return value.replace(/\b(Bearer\s+)[\w.+/=-]+/gi,'$1[redacted]').replace(/((?:api[_-]?key|password|secret|access[_-]?token)\s*["']?\s*[:=]\s*["']?)[^\s"',;}]+/gi,'$1[redacted]'); }
+export function displayText(value: string): string { return redactCredentialLikeText(value); }
 export class ActivityProjection {
   private sequence = 0;
   private messageId = 'message-0';

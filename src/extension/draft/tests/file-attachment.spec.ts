@@ -8,6 +8,7 @@ import { unlinkSync } from "node:fs";
 import path from "node:path";
 import { folder, harness, settingsRuntime, tick } from "../../tests/harness.js";
 import type { PromptInput } from "../../contracts/runtimeLifecycle.js";
+import { credentialLikeSamples, ordinaryText } from "../../contracts/tests/credential-samples.js";
 import { parseWebviewMessage } from "../../bridge/webviewMessages.js";
 import { captureSelection, AttachmentFailure } from "../fileAttachment.js";
 
@@ -260,6 +261,34 @@ test("both live history caps block admission without eviction and preserve plain
       await f.send("plain"); assert.equal(f.inputs.length, capacity + 1);
     } finally { await f.cleanup(); }
   }
+});
+
+test("shared credential-like file and selection text is refused while ordinary text is admitted", async () => {
+  for (const text of credentialLikeSamples) {
+    const file = await fixture(text);
+    try {
+      await file.add();
+      assert.equal(file.v.attachments().result?.code, "sensitive-source");
+      assert.equal(file.v.attachments().draft.attachments[0], undefined);
+      assert.equal(file.inputs.length, 0);
+    } finally { await file.cleanup(); }
+    const lines = text.split("\n");
+    const last = lines[lines.length - 1] ?? "";
+    const range = { start: { line: 0, character: 0 }, end: { line: lines.length - 1, character: last.length } };
+    const selection = await selectionFixture(text, range);
+    try {
+      await selection.addSelection();
+      assert.equal(selection.v.attachments().result?.code, "sensitive-source");
+      assert.equal(selection.v.attachments().draft.attachments[0], undefined);
+      assert.equal(selection.inputs.length, 0);
+    } finally { await selection.cleanup(); }
+  }
+  const plain = await fixture(ordinaryText);
+  try {
+    await plain.add();
+    assert.ok(plain.v.attachments().draft.attachments[0]);
+    assert.equal(plain.v.attachments().result, null);
+  } finally { await plain.cleanup(); }
 });
 
 test("sensitive and over-budget dummy sources are blocked before admission", async () => {

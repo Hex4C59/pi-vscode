@@ -1,12 +1,10 @@
+import { containsCredentialLikeText } from "../../extension/contracts/index.js";
 import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
 import { serializeJsonLine } from "./jsonl.js";
 
 type OpenResult = { kind: "dialog"; form: InteractionFormInput; reply: InteractionReplyCallback } | { kind: "duplicate" } | { kind: "rejected"; code?: "identity-budget"; cancellation?: Promise<void> };
 function safeText(value: unknown, limit: number): value is string {
-  return typeof value === "string" && Buffer.byteLength(value, "utf8") <= limit
-    && !/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/i.test(value)
-    && !/["']?(?:api[_ -]?key|authorization|password|secret|access[_ -]?token)["']?\s*[:=]\s*["']?[^\s"',;}]+/i.test(value)
-    && !/\bBearer\s+[\w.+/=-]+/i.test(value);
+  return typeof value === "string" && Buffer.byteLength(value, "utf8") <= limit && !containsCredentialLikeText(value);
 }
 function readForm(record: Record<string, unknown>): InteractionFormInput | undefined {
   if (!safeText(record.title, 512)) return;

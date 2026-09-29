@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { privateKeyText } from "../../../extension/contracts/tests/credential-samples.js";
 import type { FrameContext } from "../rpc-frames.js";
 import { createRpcFrames } from "../rpc-frames.js";
 
@@ -90,6 +91,18 @@ test("final and delta text stay within the projection budget after redaction exp
   const text = delta.events.find(event => event.kind === "text_delta");
   assert.ok(text?.kind === "text_delta");
   assert.equal(text.delta.length, 65_536);
+});
+
+test("a private-key marker redacts the whole final answer", () => {
+  const frames = createRpcFrames();
+  interpret(frames, { type: "message_start", message: { role: "assistant" } });
+  const final = interpret(frames, { type: "message_end", message: { role: "assistant", content: [{ type: "text", text: privateKeyText }] } });
+  assert.equal(final.kind, "runtime");
+  if (final.kind !== "runtime") return;
+  const message = final.events.find(event => event.kind === "message_final");
+  assert.ok(message?.kind === "message_final");
+  assert.equal(message.text, "[redacted]");
+  assert.equal(message.text.includes("MII-synthetic-body"), false);
 });
 
 test("provider failure paths redact untrusted bodies and Stop-cancelled retry is silent", () => {

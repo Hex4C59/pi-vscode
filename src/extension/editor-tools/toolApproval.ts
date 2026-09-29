@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { resolveWriteTargetPath } from "./writeProtection.js";
 
-import type { ApprovalCard } from "../contracts/index.js";
+import { containsCredentialLikeText, type ApprovalCard } from "../contracts/index.js";
 export type { ApprovalCard } from "../contracts/index.js";
 import type { SessionGrant } from "../contracts/index.js";
 export type { SessionGrant } from "../contracts/index.js";
@@ -59,7 +59,7 @@ export class ToolApprovals {
     const expiresAt = Date.now() + this.timeout;
     const current = () => epoch === this.epoch && Date.now() < expiresAt;
     // Full snapshot must be reviewable; credential-like fields are not sent to UI.
-    if(input.length>32_768 || /(?:api[_-]?key|authorization|password|secret|access[_-]?token)\s*["']?\s*[:=]/i.test(input) || this.pending.size>=8)return false;
+    if(input.length>32_768 || containsCredentialLikeText(input) || this.pending.size>=8)return false;
     if (!await this.canExecute(call, "initial") || !current()) return false;
     let policy;try{policy=await inspectScope(call);}catch{return false;}
     if(!current())return false;
