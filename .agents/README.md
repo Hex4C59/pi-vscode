@@ -1,10 +1,11 @@
-# `.agents` — 工程 Skills 说明
+# `.agents` — engineering skills catalog
 
 English | [中文](README.zh.md)
 
 - Type: Guide
 - Status: Accepted
 - Created: 2026-09-28
+- Last reviewed: 2026-09-29
 - Authority: human-oriented catalog of skills under this repository’s `.agents/skills/`; not a substitute for each skill’s own `SKILL.md`
 
 This folder holds **Agent Skills** used while developing **pi VS Code**. Each skill is a directory under `.agents/skills/<name>/` with a `SKILL.md` the agent loads when that skill is selected.
@@ -33,6 +34,18 @@ Recommended path for most feature work (from `/ask-matt`):
 4. Review with **`/code-review`** before commit when you want a Standards + Spec pass.
 
 Keep grilling → spec → tickets in one context window when possible; start implement tickets fresh.
+
+## Codebase health (structure)
+
+Use this path when the question is **module depth, seams, and dependencies**, not a new feature spec:
+
+1. **`/improve-codebase-architecture`** — scan `src/` for shallow modules and leakage; write a **temporary HTML report** (not in the repo); you pick one candidate.
+2. **`/grilling`** (or `/grill-with-docs` if the decision should land in `CONTEXT.md` / an ADR) — settle constraints, what sits behind the seam, and tests before any diff.
+3. **`/implement`** or a small direct change — only after maintainer **Build** authorization in [`ACTIVE.md`](../ACTIVE.md) when the repo requires it.
+
+Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, seam, adapter, leverage, locality). Layer rules and public `index.ts` entries for this repo: [`docs/architecture/vscode-extension-architecture.md`](../docs/architecture/vscode-extension-architecture.md); automated public-entry checks live in `src/extension/tests/architecture-boundaries.spec.ts`.
+
+`/diagnosing-bugs` may hand off here when the real fix is a missing seam, not a one-line patch.
 
 ## Catalog
 
@@ -158,9 +171,9 @@ Keep grilling → spec → tickets in one context window when possible; start im
 
 #### `improve-codebase-architecture`
 
-- **What:** Scan for deepening opportunities, HTML report, then grill the pick.
-- **When:** You want a structured architecture improvement pass.
-- **How:** `/improve-codebase-architecture`. Explicit only.
+- **What:** Scan for **deepening opportunities** (shallow modules, seam leakage, weak test surfaces); emit a self-contained HTML report under the OS temp directory; then **grill** whichever candidate you choose. Does not propose final interfaces in the report phase.
+- **When:** Periodic codebase health, before a refactor slice, or after `/diagnosing-bugs` finds structural root cause.
+- **How:** `/improve-codebase-architecture`. Explicit only (`disable-model-invocation`). Uses **`/codebase-design`** vocabulary; may call **`/grilling`** and **`/domain-modeling`** after you pick a candidate.
 
 #### `domain-modeling`
 
@@ -288,6 +301,9 @@ Keep grilling → spec → tickets in one context window when possible; start im
 |---------|--------|
 | Current WI, approval, gates | [`ACTIVE.md`](../ACTIVE.md), [`AGENTS.md`](../AGENTS.md) |
 | Collaboration Prepare/Build/Close | [`docs/guides/agent-collaboration.md`](../docs/guides/agent-collaboration.md) |
+| Layer model, module owners, trust boundaries | [`docs/architecture/vscode-extension-architecture.md`](../docs/architecture/vscode-extension-architecture.md) |
+| Architecture review checklist (before claiming “correct”) | [`docs/guides/architecture-governance.md`](../docs/guides/architecture-governance.md) |
+| Domain glossary (`CONTEXT.md`) | [`CONTEXT.md`](../CONTEXT.md) |
 | Test file layout | [`docs/guides/agent/testing.md`](../docs/guides/agent/testing.md) |
 | Skill procedures | `.agents/skills/<name>/SKILL.md` |
 

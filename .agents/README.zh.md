@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-28
+- 最近同步：2026-09-29
 - Type: Guide
 - Status: Accepted
 - Created: 2026-09-28
@@ -37,6 +37,18 @@
 4. 需要时用 **`/code-review`** 做标准轴＋规格轴审查，再提交。
 
 grilling → spec → tickets 尽量留在同一上下文；implement 各票宜新开会话。
+
+## 代码库健康（结构）
+
+问题若是 **模块深度、缝、依赖方向**，而不是新功能规格，可走这条路径：
+
+1. **`/improve-codebase-architecture`** — 扫 `src/`，找浅模块与跨缝泄漏；在 **系统临时目录** 写自包含 HTML 报告（不进仓库）；你选中一条候选。
+2. **`/grilling`**（若结论要进 `CONTEXT.md`／ADR 则用 **`/grill-with-docs`**）— 在改代码前定约束、缝后职责、测试面。
+3. **`/implement`** 或小范围直接改 — 本仓库需要时，须先有维护者在 [`ACTIVE.md`](../ACTIVE.md) 的 **Build** 授权（例如口头「可以实现」）。
+
+步骤 1–2 的用语：**`/codebase-design`**（module、interface、depth、seam、adapter、leverage、locality）。本仓库分层与公共 `index.ts` 入口见 [`docs/architecture/vscode-extension-architecture.zh.md`](../docs/architecture/vscode-extension-architecture.zh.md)；公共入口自动化检查在 `src/extension/tests/architecture-boundaries.spec.ts`。
+
+`/diagnosing-bugs` 若发现根因是缺缝而非一行修补，可转到这里。
 
 ## 目录
 
@@ -162,9 +174,9 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 
 #### `improve-codebase-architecture`
 
-- **做什么：** 扫描加深机会 → HTML 报告 → 对你选中的项再 grill。
-- **何时用：** 要做一次结构化的架构改进巡检。
-- **怎么用：** `/improve-codebase-architecture`（仅显式）。
+- **做什么：** 扫描 **加深机会**（浅模块、缝泄漏、难测接口）；在 OS 临时目录生成自包含 HTML 报告；对你选中的候选再 **grill**。报告阶段不写最终接口方案。
+- **何时用：** 定期结构巡检、重构切片前，或 `/diagnosing-bugs` 判定根因在结构。
+- **怎么用：** `/improve-codebase-architecture`（仅显式，`disable-model-invocation`）。用语来自 **`/codebase-design`**；选中候选后可接 **`/grilling`**、**`/domain-modeling`**。
 
 #### `domain-modeling`
 
@@ -292,6 +304,9 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 |------|----------|
 | 当前 WI、批准、gate | [`ACTIVE.md`](../ACTIVE.md)、[`AGENTS.md`](../AGENTS.md) |
 | Prepare／Build／Close 协作 | [`docs/guides/agent-collaboration.zh.md`](../docs/guides/agent-collaboration.zh.md) |
+| 分层、模块职责、信任边界 | [`docs/architecture/vscode-extension-architecture.zh.md`](../docs/architecture/vscode-extension-architecture.zh.md) |
+| 架构审查清单（声称「正确」前） | [`docs/guides/architecture-governance.zh.md`](../docs/guides/architecture-governance.zh.md) |
+| 领域术语（`CONTEXT.md`） | [`CONTEXT.md`](../CONTEXT.md) |
 | 测试文件布局 | [`docs/guides/agent/testing.zh.md`](../docs/guides/agent/testing.zh.md) |
 | Skill 具体步骤 | `.agents/skills/<name>/SKILL.md` |
 
@@ -305,4 +320,46 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 
 ## Skill 目录一览
 
-见英文版 [README.md](README.md) 文末列表（与磁盘目录一致）。
+与 `.agents/skills/` 一致（39 个）：
+
+```text
+ask-matt
+code-review
+codebase-design
+diagnosing-bugs
+documentation-health
+domain-modeling
+git-guardrails-claude-code
+grill-me
+grill-with-docs
+grilling
+handoff
+implement
+implement-spec
+improve-codebase-architecture
+loop-me
+migrate-to-shoehorn
+pi-sidebar-ui
+pr
+prototype
+research
+resolving-merge-conflicts
+retro
+scaffold-exercises
+setup-matt-pocock-skills
+setup-pre-commit
+setup-ts-deep-modules
+tdd
+teach
+to-questionnaire
+to-spec
+to-tickets
+triage
+wait-what
+wayfinder
+wizard
+writing-beats
+writing-for-agents
+writing-fragments
+writing-shape
+```

@@ -1,4 +1,6 @@
-/** Bounds for model / thinking catalog projected to the webview. */
+/** Bounds and validators for model / thinking catalog projected to the webview. */
+import type { ModelCatalogEntry } from "./webviewProtocol.js";
+
 export const MAX_MODEL_CATALOG_ENTRIES = 64;
 export const MAX_MODEL_ID_CHARS = 128;
 export const MAX_MODEL_PROVIDER_CHARS = 64;
@@ -7,9 +9,6 @@ export const MAX_THINKING_LEVEL_CHARS = 16;
 
 const THINKING_LEVEL_PATTERN = /^[a-z0-9]+$/;
 const MODEL_TOKEN_PATTERN = /^[\w.-]+$/;
-
-import type { ModelCatalogEntry } from "../contracts/index.js";
-export type { ModelCatalogEntry } from "../contracts/index.js";
 
 export function isValidThinkingLevel(level: string): boolean {
   return level.length > 0

@@ -1,4 +1,4 @@
-import { findCatalogEntry } from "./modelCatalog.js";
+import { findCatalogEntry } from "../contracts/index.js";
 import type { ModelSettingsSnapshot, ModelSettingsSelection, ModelSettingsContext, ModelSettingsRuntime } from "./types.js";
 export type { ModelSettingsSnapshot } from "./types.js";
 const empty = (): ModelSettingsSnapshot => ({

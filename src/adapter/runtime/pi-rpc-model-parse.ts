@@ -4,7 +4,7 @@ import {
   MAX_MODEL_LABEL_CHARS,
   MAX_MODEL_PROVIDER_CHARS,
   isValidThinkingLevel,
-} from "../../extension/models/index.js";
+} from "../../extension/contracts/index.js";
 import type { ModelCatalogEntry } from "../../extension/contracts/index.js";
 
 export function formatModelLabel(data: unknown): string | null {

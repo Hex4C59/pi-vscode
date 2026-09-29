@@ -15,3 +15,14 @@ export type { GateCall } from "./approvalProtocol.js";
 export { parseGateEnvelope } from "./approvalProtocol.js";
 export type { ExtensionFeedback, ExtensionInteractionProjection, ExecutionProfileProjection, ExtensionInteractionIntent, InteractionAnswer, InteractionFormProjection } from "./extensionInteractions.js";
 export type { ProviderConfigProjection, ProviderConfigEntry, ProviderConfigIntent } from "./providerConfig.js";
+export {
+  findCatalogEntry,
+  isValidModelRef,
+  isValidProviderId,
+  isValidThinkingLevel,
+  MAX_MODEL_CATALOG_ENTRIES,
+  MAX_MODEL_ID_CHARS,
+  MAX_MODEL_LABEL_CHARS,
+  MAX_MODEL_PROVIDER_CHARS,
+  MAX_THINKING_LEVEL_CHARS,
+} from "./modelCatalog.js";

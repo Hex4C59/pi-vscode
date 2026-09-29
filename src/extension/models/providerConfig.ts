@@ -4,7 +4,7 @@ import path from "node:path";
 import type { ProviderConfigEntry, ProviderConfigProjection, ModelCatalogEntry } from "../contracts/index.js";
 import {
   MAX_MODEL_CATALOG_ENTRIES, MAX_MODEL_ID_CHARS, MAX_MODEL_LABEL_CHARS, MAX_MODEL_PROVIDER_CHARS,
-} from "./modelCatalog.js";
+} from "../contracts/index.js";
 
 type AuthPrompt =
   | { type: "text"; message: string; placeholder?: string; signal?: AbortSignal }

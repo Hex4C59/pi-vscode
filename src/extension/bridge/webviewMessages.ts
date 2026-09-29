@@ -3,7 +3,7 @@ export type * from "../contracts/index.js";
 import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/index.js";
 
 import { MAX_CHAT_MESSAGE_CHARS } from "./chatBounds.js";
-import { isValidModelRef, isValidProviderId, isValidThinkingLevel } from "../models/index.js";
+import { isValidModelRef, isValidProviderId, isValidThinkingLevel } from "../contracts/index.js";
 
 
 
