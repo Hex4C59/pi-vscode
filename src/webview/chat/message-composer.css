@@ -68,6 +68,8 @@
 /* Opens above the composer (the positioned form), never over the draft. */
 .candidate-permissions__content { position: absolute; z-index: 2; bottom: calc(100% + var(--ui-space-2)); right: 0; width: 100%; max-width: 320px; max-height: min(160px, 25dvh); overflow: auto; padding: var(--ui-space-3); color: var(--ui-fg); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); background: var(--ui-surface-raised); box-shadow: var(--ui-shadow); }
 .candidate-permissions__content p { margin: 0 0 var(--ui-space-2); }
+.candidate-permissions__content.candidate-settings { max-height: min(420px, 55dvh); }
+.candidate-permissions__content .execution-profile-controls__badge { display: none; }
 .candidate-context__content:not(:empty) { margin-bottom: var(--ui-space-2); }
 .candidate-context__menu [role="menuitem"]:is(:hover, :focus-visible):not(:disabled) { background: var(--ui-hover); }
 .candidate-context__menu [role="menuitem"]:disabled { opacity: .45; }

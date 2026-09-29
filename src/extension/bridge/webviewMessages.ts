@@ -18,6 +18,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   const message = value as Record<string, unknown>;
   if (message.version !== WEBVIEW_MESSAGE_VERSION) return undefined;
   const actions: Record<string, string[]> = {
+    openSettings: [], setUiLanguage: ["locale"],
     newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
     chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
     openProviderApiKey: ["providerId"], logoutProvider: ["providerId"], setDefaultModel: ["provider", "modelId"], setDefaultThinkingLevel: ["provider", "modelId", "level"], refreshProviderConfig: [],
@@ -46,6 +47,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     if (message.type === 'decideApproval' && (typeof message.decision !== 'string' || !['once','session','deny'].includes(message.decision))) return undefined;
   }
   if (message.type === "chooseResources" && message.choice !== "allow" && message.choice !== "decline") return undefined;
+  if (message.type === "setUiLanguage" && message.locale !== "en" && message.locale !== "zh-CN") return undefined;
   if (message.type === "updateDraft" && (typeof message.text !== "string" || message.text.length > MAX_CHAT_MESSAGE_CHARS)) return undefined;
   if ((message.type === "setThinkingLevel" || message.type === "setDefaultThinkingLevel")) {
     if (typeof message.level !== "string" || !isValidThinkingLevel(message.level)) return undefined;

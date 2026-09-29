@@ -2,11 +2,11 @@ import { unavailableSessionBackend, type SessionBackend, type SavedSession, type
 import type { SessionStateMessage, SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
-import { getWebviewHtml, getWebviewResourceRoot } from "./bridge/index.js";
+import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel } from "./bridge/index.js";
 import { ModelSettings, ProviderConfig, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { PiRuntimeLifecycle, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
-import type { WorkspaceStateMessage } from "./contracts/index.js";
+import type { WorkspaceStateMessage, ProviderConfigIntent } from "./contracts/index.js";
 
 import { SavedHistory } from "./sessions/index.js";
 import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
@@ -62,6 +62,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private lastProfileProjection = "";
   private lastProviderConfigProjection = "";
   private readonly providerConfig: ProviderConfig;
+  private readonly settingsPanel: SettingsPanel;
+  private uiLocale: "en" | "zh-CN" = "en";
   private liveConversation: { id: string; path: string } | undefined;
   private untouchedControlledConversation = false;
   private interactionFailureReported = false;
@@ -102,6 +104,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       showQuickPick: (items, options) => this.api.window.showQuickPick(items, options),
       showInformationMessage: message => this.api.window.showInformationMessage(message),
     }), () => this.publish());
+    this.settingsPanel = new SettingsPanel(this.api.window, this.extensionUri, () => {
+      if (!this.disposed) this.refresh();
+      return { generation: this.state.generation, locale: this.uiLocale, config: this.providerConfig.snapshot };
+    }, intent => this.configureProvider(intent), locale => this.setUiLanguage(locale));
     this.savedHistory = new SavedHistory(sessionBackend, () => ({
       cwd: this.state.folder?.path,
       key: this.state.generation + ":" + this.state.viewId,
@@ -633,6 +639,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private envelope<T extends string>(type: T) { return { version: 3 as const, type, generation: this.state.generation, viewId: this.state.viewId }; }
 
   private publish(forceExtensions = false): void {
+    if (!this.disposed) this.settingsPanel?.publish(forceExtensions);
     if (!this.view || this.disposed) return;
     const interactions = { ...this.envelope("interactionState"), ...this.interactions.snapshot(), ...this.extensionFeedback };
     const interactionKey = JSON.stringify(interactions);
@@ -699,41 +706,20 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === "getWorkspaceState") {
       if (this.profilePhase === "recovery-required" && !this.recoveryBusy) void this.refreshOwnership();
       this.draft.publish(); this.tools.publishReview(); this.publishSessions(); this.savedHistory.publish();
+      this.post(view, { ...this.envelope("uiLanguageState"), locale: this.uiLocale });
       this.publish(true);
       return;
     }
     if (message.generation !== this.state.generation || message.viewId !== this.state.viewId) { this.draft.rejectStale(); this.publish(); return; }
+    if (message.type === "openSettings") { this.settingsPanel.open(); return; }
+    if (message.type === "setUiLanguage") { this.setUiLanguage(message.locale); return; }
     if (message.type === "answerInteraction") { this.interactions.answer(message, message.id, message.answer); return; }
     if (message.type === "cancelInteraction") { this.interactions.cancel(message, message.id); return; }
     if (message.type === "chooseExecutionProfile") { await this.chooseExecutionProfile(view, message.profile); return; }
     if (message.type === "endOwnedRuntime" || message.type === "recoverControlledRuntime") { await this.recoverRuntime(view, message.type); return; }
-    if (message.type === "refreshProviderConfig") {
-      await this.providerConfig.refresh();
-      await this.syncSessionModelsAfterProviderConfig();
-      this.publish();
-      return;
-    }
-    if (message.type === "openProviderApiKey") {
-      await this.providerConfig.openApiKey(message.providerId);
-      await this.syncSessionModelsAfterProviderConfig();
-      this.publish();
-      return;
-    }
-    if (message.type === "logoutProvider") {
-      await this.providerConfig.logout(message.providerId);
-      await this.syncSessionModelsAfterProviderConfig();
-      this.publish();
-      return;
-    }
-    if (message.type === "setDefaultThinkingLevel") {
-      await this.providerConfig.setDefaultThinkingLevel(message.provider, message.modelId, message.level);
-      this.publish();
-      return;
-    }
-    if (message.type === "setDefaultModel") {
-      await this.providerConfig.setDefaultModel(message.provider, message.modelId);
-      await this.syncSessionModelsAfterProviderConfig(message.provider, message.modelId);
-      this.publish();
+    if (message.type === "refreshProviderConfig" || message.type === "openProviderApiKey" || message.type === "logoutProvider"
+      || message.type === "setDefaultThinkingLevel" || message.type === "setDefaultModel") {
+      await this.configureProvider(message);
       return;
     }
     if (this.profilePhase !== "idle" && message.type !== "stopChat") { this.publish(); return; }
@@ -805,9 +791,32 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
   }
 
+  private setUiLanguage(locale: "en" | "zh-CN"): void {
+    this.uiLocale = locale;
+    if (this.view) this.post(this.view, { ...this.envelope("uiLanguageState"), locale });
+    this.settingsPanel.publish(true);
+  }
+
+  private async configureProvider(message: ProviderConfigIntent): Promise<void> {
+    if (this.disposed) return;
+    switch (message.type) {
+      case "refreshProviderConfig": await this.providerConfig.refresh(); break;
+      case "openProviderApiKey": await this.providerConfig.openApiKey(message.providerId); break;
+      case "logoutProvider": await this.providerConfig.logout(message.providerId); break;
+      case "setDefaultModel": await this.providerConfig.setDefaultModel(message.provider, message.modelId); break;
+      case "setDefaultThinkingLevel":
+        await this.providerConfig.setDefaultThinkingLevel(message.provider, message.modelId, message.level);
+        this.publish(); return;
+    }
+    if (message.type === "setDefaultModel") await this.syncSessionModelsAfterProviderConfig(message.provider, message.modelId);
+    else await this.syncSessionModelsAfterProviderConfig();
+    this.publish();
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.settingsPanel.dispose();
     this.reconcileToken += 1;
     this.unsubscribeRuntime();
     void this.interactions.dispose();

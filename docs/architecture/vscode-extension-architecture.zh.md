@@ -90,7 +90,10 @@ flowchart TD
 
 **已接受 WI-015／WI-019 前端边界：** host `bridge/webviewHtml.ts` 仅提供资源壳，`main.tsx` 经 `mount.tsx` 与 `chat/index.ts` 挂载共享 React 展示。`chat/types.ts` 定义挂载与页面语言契约。真实 bridge 管理传输寿命，WebviewClient 保持投影、身份与草稿权威；host 保持执行、审批、附件、会话与持久化权威。浏览器不导入 Node、VS Code 或 pi 运行时代码。Vite 构建浏览器，esbuild 构建 host／gate。Q16 由代理按本次委托完成评估后，正式与预览共享 chat 组合、样式、消息／活动／安全 Markdown、会话／历史／审批／审阅控件。预览 owner 仅保留合成 bridge、场景、计时器及开发控件，生产图排除 preview 和 tests。原 App 仅作为 tests/baseline-app 的历史共享控件夹具，不是第二套生产界面。卸载释放 client、root 及监听；合成 owner 另释放自己的定时器。Markdown 仅由白名单 React 元素呈现，不注入 HTML／嵌入资源，不新增 host 意图或改变审批／附件原文。[Accepted ADR 0003](../decisions/0003-react-webview.zh.md) 记录委托验收与独立宿主／安装证据；[ACTIVE](../../ACTIVE.md) 持有剩余工作。
 
-WI-019 语言设置仅属于展示：共享组件经 components 公共入口的 UI 文案 Context 取文案，默认英文。语言包、注册表、挂载级 locale 与设置视图位于 `chat/`，正式与预览共享。语言变更不替换 client／bridge、不发送 host 意图、不持久化或翻译原始内容。预览 Reset 保留本页语言；重新挂载恢复英文。这不建立 host 偏好契约。
+**WI-026 方案 A（Build，维护者选择）：** `bridge/settingsPanel.ts` 拥有单实例编辑区 WebviewPanel，重复 `openSettings` 揭示已有页面。它使用相同打包资源和 CSP、独立随机 viewId 及当前宿主 generation；入站白名单只允许 bootstrap、界面语言和供应商／默认意图，不投影工作区／聊天、草稿、审批或历史。ProviderConfig 和默认应用到会话仍由 PiChatViewProvider 及现有宿主服务处理。关闭面板只清理自己的监听与标识，聊天／runtime 继续；Provider dispose 同时释放设置面板。`main.tsx` 按宿主写入的 surface 标记选择 `settings/index.tsx`，该标记不授权渲染器改变宿主能力。
+
+界面语言仍属展示层，语言包及本地 store 留在 `chat/`。协调器新增共享内存 locale（初始英文），向两个视图投影经验证的 `uiLanguageState` 并接收 `setUiLanguage`。任一视图重建恢复宿主语言，宿主重启重置；这替代 WI-019 仅挂载期的语言寿命。切换保留 client、草稿、会话与原文，不引入磁盘偏好；预览 Reset 保留自身语言 store。Decision none：既有低信任渲染器／特权宿主边界、持久化和 runtime 集成策略不变。F5 验收在 ACTIVE 跟踪。
+
 
 候选无文件夹欢迎页通过既有 client `edit`／版本化 `updateDraft` 编辑草稿（该路径原本独立于运行时就绪状态）。其发送分支只打开 `chat/no-folder-prompt.tsx`，不会在该状态调用任务提交。提示使用既有命名 `openFolder` 意图；工作区／信任／资源资格继续由 host 决定。不另持草稿、不选择工作区、不持久化或重放。原生弹窗寿命与返回焦点归候选展示负责，其他阻断状态保留既有资格规则。
 

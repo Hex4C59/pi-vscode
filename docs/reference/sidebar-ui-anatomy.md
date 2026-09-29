@@ -16,7 +16,7 @@ This document provides stable names for Pi's interface. Use region names when in
 
 A ready-to-use introduction:
 
-> Pi's chat sidebar consists of session navigation, a conversation area, task status and actions, and a message composer at the bottom. The composer toolbar lets users add context, open model and reasoning settings to select a model and adjust effort, and inspect permissions. The session history panel and settings dialog provide conversation management and configuration entry points.
+> Pi's chat sidebar consists of session navigation, a conversation area, task status and actions, and a message composer at the bottom. The composer toolbar lets users add context, open model and reasoning settings to select a model and adjust effort, and inspect permissions. The session history panel and editor settings page provide conversation management and configuration entry points.
 
 The four regions describe responsibilities, not four permanently bordered rectangles. Task status and actions appear as needed. The welcome state and session history panel are alternative presentations of the middle space.
 
@@ -61,9 +61,9 @@ The middle content can scroll; the composer sits at the bottom. Opening history 
 | Current conversation title | Shows the current name, constrained by available width |
 | Session history button | Opens or closes the session history panel |
 | New conversation button | Initiates a new conversation through the existing handoff and confirmation flow |
-| Settings button | Opens the interface settings dialog |
+| Settings button | Opens the interface editor settings page |
 
-“Navigation” is an appropriate shorthand. “Title bar” is ambiguous because VS Code has its own title bars. The settings button belongs to navigation; the dialog it opens is a separate supporting surface.
+“Navigation” is an appropriate shorthand. “Title bar” is ambiguous because VS Code has its own title bars. The settings button belongs to navigation; the page it opens is a separate supporting surface.
 
 **Example:** “Use the session navigation at the top to start conversations, browse history and open settings.”
 
@@ -142,17 +142,17 @@ These open near a trigger for local selection or action, generally without repla
 
 The tricolor gradient and maximum-level flow are visual feedback within the reasoning slider. They express selected intensity, not evidence that the model is currently computing. Supported levels depend on model capabilities, so introductions should not promise exactly five levels. Before startup, the default-model wrapper and live-session wrapper share `ModelPickerView`, including the supported-level slider. Preparation saves per-model pi defaults; live-session selection retains applied/pending semantics.
 
-### Settings and Confirmation Dialogs — 设置与确认对话框
+### Settings Page and Confirmation Dialogs — 设置页与确认对话框
 
 A dialog provides a relatively independent task space for configuration, confirmation or recovery. Current examples:
 
 | Dialog | Contents |
 |---|---|
-| Interface settings | Language, providers/default model and execution profile |
+| Editor settings | General/language, default model and provider details; execution profile is in the composer permissions disclosure |
 | Project setup | Explicit choice about project-local pi settings and resources, with expandable scope details |
 | Open-folder prompt | Recovery entry when an action needs a folder, preserving the draft |
 
-Describe settings as a configuration entry point, but do not call every item a persistent global setting. For example, the current language choice is view-local and resets on reload. Project-resource consent, tool approval and execution profile have different scopes; precise semantics belong to the [domain glossary](../../CONTEXT.md).
+Describe settings as a configuration entry point, but do not call every item a persistent global setting. For example, the current language choice is shared in host memory and resets on host restart. Project-resource consent, tool approval and execution profile have different scopes; precise semantics belong to the [domain glossary](../../CONTEXT.md).
 
 API keys are entered in a **VS Code host password input**, not a Webview credential form. A suitable description is: “Start from provider settings and enter the key through VS Code's password input.”
 
@@ -165,7 +165,7 @@ API keys are entered in a **VS Code host password input**, not a Webview credent
 | The box at the bottom | Message composer; message input if referring only to text entry | Distinguishing container from editable content |
 | Row under the input | Composer toolbar | Spacing and alignment |
 | Model bar / colored bar | Model selector / reasoning effort slider | Distinguishing model from effort |
-| That popup | Model settings popover / interface settings dialog, etc. | Identifying the trigger and task |
+| That popup | Model settings popover / interface editor settings page, etc. | Identifying the trigger and task |
 | History | Session history panel / restored messages / attachment history | Identifying the record type |
 | Where changes are confirmed | Tool approval card or change review panel | Distinguishing authorization before execution from review afterwards |
 
@@ -184,7 +184,7 @@ Follow one user task rather than listing every button:
 2. **Prepare:** write a task, use + to select files/selections, then choose a model and inspect supported reasoning levels.
 3. **Observe:** after sending, read the streaming reply and activity details; inspect scope and decide when approval is requested.
 4. **Review:** read the reply and, when captured changes are available, inspect their differences through change review. Use Stop when interruption is needed.
-5. **Manage:** open session history to explain restoration, then settings to explain providers, default model and execution profile.
+5. **Manage:** open session history to explain restoration, then settings to explain providers and the default model; explain execution profile from composer permissions.
 
 Demonstrate controls and states actually available in the current implementation. Specimen-only search or candidate layouts are not production features. This vocabulary supports introductions, not product acceptance.
 
@@ -202,7 +202,7 @@ A UI region is not necessarily an independent code module. Production and previe
 | Context attachments | [candidate-context.tsx](../../src/webview/chat/candidate-context.tsx) | Owns attachment/menu state and focus; exposes content and actions for composer placement |
 | Model and reasoning settings | [model-picker.tsx](../../src/webview/components/model-picker.tsx), [default-model-picker.tsx](../../src/webview/chat/default-model-picker.tsx) | Preparation and live-session wrappers share the same ModelPickerView; host owners retain distinct default/live semantics |
 | Session history panel | [candidate-sessions.tsx](../../src/webview/chat/candidate-sessions.tsx) | Panel frame, flow-based Back/heading, list, feedback and pagination stay together; visibility, reading-position restoration and cross-region focus remain in the main component |
-| Settings and confirmation dialogs | [interface-settings.tsx](../../src/webview/chat/interface-settings.tsx), [project-resources-prompt.tsx](../../src/webview/chat/project-resources-prompt.tsx), [no-folder-prompt.tsx](../../src/webview/chat/no-folder-prompt.tsx), [chat-dialog.tsx](../../src/webview/chat/chat-dialog.tsx) | ChatDialog owns native modal chrome, sticky header/footer and local body scroll; InterfaceSettings owns settings entry, sections and host intents; confirmation prompts own their copy and consent actions |
+| Settings page and confirmation dialogs | [settings/index.tsx](../../src/webview/settings/index.tsx), [project-resources-prompt.tsx](../../src/webview/chat/project-resources-prompt.tsx), [no-folder-prompt.tsx](../../src/webview/chat/no-folder-prompt.tsx), [chat-dialog.tsx](../../src/webview/chat/chat-dialog.tsx) | ChatDialog owns native modal chrome, sticky header/footer and local body scroll; SettingsPage owns categories/details and settings intents; confirmation prompts own their copy and consent actions |
 
 [styles.css](../../src/webview/styles.css) assembles component styles and region rules concentrated in [candidate.css](../../src/webview/chat/candidate.css). [message-composer.css](../../src/webview/chat/message-composer.css) owns the input, toolbar, context and permissions surfaces; shared height budgets remain with the page. [candidate-conversation.css](../../src/webview/chat/candidate-conversation.css) owns message rows, Markdown, code blocks and tool activity presentation. Task-status-and-operations styles stay near their modules: [task-status.css](../../src/webview/chat/task-status.css) owns the status markers and motion, [candidate-approvals.css](../../src/webview/chat/candidate-approvals.css) owns approval card internals, [candidate-review.css](../../src/webview/chat/candidate-review.css) owns the review panel, and [extension-interactions.css](../../src/webview/chat/extension-interactions.css) owns interaction forms, feedback and the recovery banner; cross-region `:has()` height budgets remain concentrated in candidate.css. Settings and confirmation chrome live in [chat-dialog.css](../../src/webview/chat/chat-dialog.css) and [interface-settings.css](../../src/webview/chat/interface-settings.css). State and host communication belong to files such as [webview-client.ts](../../src/webview/webview-client.ts); they are not a fifth visible region.
 

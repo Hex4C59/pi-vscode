@@ -2,24 +2,20 @@ import { SessionIcon } from "./session-icon.js";
 import type { ReactElement, RefObject } from "react";
 import { availability, type ClientSnapshot, type WebviewClient } from "../index.js";
 import { useUiText } from "../components/index.js";
-import { InterfaceSettings } from "./interface-settings.js";
-import type { UiLanguageState } from "./types.js";
 
 type NavigationProps = {
   snapshot: ClientSnapshot;
   client: Pick<WebviewClient, "action" | "newConversation">;
-  language: UiLanguageState;
   canBrowse: boolean;
   canCompose: boolean;
   historyOpen: boolean;
   historyId: string;
   browse: RefObject<HTMLButtonElement | null>;
   onBrowse: () => void;
-  settingsOpenRequest: number;
 };
 
 /** Navigation and global settings intents; transcript scroll restoration stays with the page. */
-export function SessionNavigation({ snapshot, client, language, canBrowse, canCompose, historyOpen, historyId, browse, onBrowse, settingsOpenRequest }: NavigationProps): ReactElement {
+export function SessionNavigation({ snapshot, client, canBrowse, canCompose, historyOpen, historyId, browse, onBrowse }: NavigationProps): ReactElement {
   const { text: t } = useUiText();
   const controls = availability(snapshot);
   return <nav className="candidate__navigation" aria-label={t("Conversation navigation")}>
@@ -32,19 +28,9 @@ export function SessionNavigation({ snapshot, client, language, canBrowse, canCo
         onClick={event => { event.currentTarget.focus(); client.newConversation(); }}>
         <SessionIcon name="plus" />
       </button>
-      <InterfaceSettings
-        language={language}
-        openRequest={settingsOpenRequest}
-        sessionModel={snapshot.workspace?.chatModel}
-        executionProfile={snapshot.executionProfile}
-        providerConfig={snapshot.providerConfig}
-        onChooseProfile={profile => client.action({ type: "chooseExecutionProfile", profile })}
-        onEndRuntime={() => client.action({ type: "endOwnedRuntime" })}
-        onRecoverRuntime={() => client.action({ type: "recoverControlledRuntime" })}
-        onAddApiKey={providerId => client.action({ type: "openProviderApiKey", providerId })}
-        onLogoutProvider={providerId => client.action({ type: "logoutProvider", providerId })}
-        onSetDefaultModel={(provider, modelId) => client.action({ type: "setDefaultModel", provider, modelId })}
-        onRefreshProviders={() => client.action({ type: "refreshProviderConfig" })}
-      />
+      <button className="candidate__icon session-icon-button" type="button" disabled={!snapshot.workspace}
+        aria-label={t("Interface settings")} title={t("Interface settings")} onClick={() => client.action({ type: "openSettings" })}>
+        <SessionIcon name="settings" />
+      </button>
     </nav>;
 }

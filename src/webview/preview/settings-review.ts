@@ -1,6 +1,7 @@
 import "../styles.css";
 import "./preview.css";
 import { mountChat, createUiLanguage } from "../chat/index.js";
+import { mountSettings } from "../settings/index.js";
 import { PreviewBridge, type PreviewBridgeOptions, type SettingsFixture } from "./preview-bridge.js";
 import { createHandoffConfirmation } from "./handoff-confirmation.js";
 import type { PreviewScenario } from "./scenarios.js";
@@ -55,7 +56,7 @@ if (!params.has("panel")) {
     const link = document.createElement("a"); link.href = `?${next}`; link.textContent = label; link.style.color = "inherit"; links.append(link);
   }
   const panels = document.createElement("div"); panels.style.cssText = "display:flex;align-items:start;gap:24px";
-  for (const width of [280, 320, 400]) {
+  for (const width of params.get("width") === "editor" ? [800] : [280, 320, 400]) {
     const column = document.createElement("section");
     const label = document.createElement("p"); label.textContent = `${width}px · ${theme} · ${chinese ? "中文" : "English"} · ${state}`;
     const frame = document.createElement("iframe");
@@ -73,12 +74,13 @@ if (!params.has("panel")) {
   const confirmation = createHandoffConfirmation(root, language.getSnapshot);
   const fixture = fixtureFor(state);
   const view = document.createElement("div"); view.className = "candidate-mount"; root.append(view);
-  const synthetic = new PreviewBridge(fixture.scenario, confirmation.confirm, fixture.options);
-  const dispose = mountChat(view, synthetic, { language, preview: true });
+  const synthetic = new PreviewBridge(fixture.scenario, confirmation.confirm, { ...fixture.options, locale: chinese ? "zh-CN" : "en",
+    openSettings: () => { location.search = `?panel=true&state=ready&theme=${theme}&language=${chinese ? "zh" : "en"}`; },
+  });
+  const dispose = fixture.open === "settings" ? mountSettings(view, synthetic) : mountChat(view, synthetic, { language, preview: true });
   const open = () => {
     if (fixture.open === "model") { view.querySelector<HTMLButtonElement>("#model-effort-trigger")?.click(); return; }
     if (fixture.open === "settings") {
-      view.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')?.click();
       return;
     }
     if (fixture.open === "prompt") {

@@ -45,8 +45,8 @@ test("no-folder model loading, errors and empty catalogue keep settings reachabl
       busy: false, error: "Could not load provider configuration.", defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], providers: [], catalog: [] });
     assert.match(h.get("#model-popover").textContent ?? "", /Could not load provider configuration/);
     await h.click("[data-provider-settings]");
-    assert.ok(h.get<HTMLDialogElement>(".candidate-settings").open);
-    await h.click('button[aria-label="Close settings"]');
+    assert.equal(h.sent.at(-1)?.type, "openSettings");
+    assert.equal(h.root.querySelector("dialog"), null);
     await h.click("#model-effort-trigger");
     await act(async () => { h.get("#model-effort-trigger").dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
     assert.equal(h.get("#model-popover").getAttribute("aria-hidden"), "true");

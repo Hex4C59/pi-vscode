@@ -12,8 +12,7 @@ test("candidate language changes translate review controls without translating c
   const h=await uiHarness(true,true);
   try {
     await h.receive(review);await h.click('#change-review-toggle');
-    await h.click('button[aria-label="Interface settings"]');
-    await act(async()=> {const select=h.get<HTMLSelectElement>('.candidate-settings select');select.value="zh-CN";select.dispatchEvent(new h.dom.window.Event("change",{bubbles:true}));});
+    await h.receive({version:3,type:"uiLanguageState",viewId:"view",generation:1,locale:"zh-CN"});
     assert.match(h.get('#change-review-toggle').textContent ?? "", /审阅修改/);
     assert.match(h.get('[data-review-action="diff"]').textContent ?? "", /查看捕获的差异/);
     assert.equal(h.get('.change-review__path').textContent, 'src/literal.ts');

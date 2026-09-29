@@ -3,6 +3,16 @@ import { attachmentError, availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REV
 import type { WebviewBridge } from "./bridge.js";
 import { parseHostMessage } from "./parse-host-message.js";
 
+const MAX_DRAFT_CHARACTERS = 8000;
+const MAX_ATTACHMENTS = 20;
+const MAX_PREVIEW_CHARACTERS = 262144;
+
+type HostMessage = NonNullable<ReturnType<typeof parseHostMessage>>;
+
+function lastPage(count: number, pageSize: number): number {
+  return Math.max(0, Math.ceil(count / pageSize) - 1);
+}
+
 function sessionActionsBlocked(snapshot: ClientSnapshot): boolean {
   const phase = snapshot.sessions?.phase;
   return phase === "listing" || phase === "confirming" || phase === "switching";
@@ -27,6 +37,10 @@ function blockedDuringSessionSwitch(intent: Intent): boolean {
     default:
       return false;
   }
+}
+
+function identifiersExhausted(sequence: number, revision: number): boolean {
+  return sequence >= Number.MAX_SAFE_INTEGER || revision >= Number.MAX_SAFE_INTEGER;
 }
 
 /** Owns view-local reconciliation only. The host decides all business transitions. */
@@ -67,54 +81,74 @@ export class WebviewClient {
     for (const listener of this.listeners) listener();
   }
   action = (intent: Intent): void => {
-    if (!this.identity || this.disposed || this.snapshot.error || (availability(this.snapshot).sessionTransitioning && blockedDuringSessionSwitch(intent))) return;
+    const blockedByHandoff = availability(this.snapshot).sessionTransitioning && blockedDuringSessionSwitch(intent);
+    if (!this.identity || this.disposed || this.snapshot.error || blockedByHandoff) return;
     try { this.bridge.postMessage({ version: 3, ...this.identity, ...intent }); }
     catch { this.pending = null; this.update({ error: "Connection to the extension host was lost. Reopen the view; no automatic retry was made." }); }
   };
   private syncDraft(): void {
-    const d = this.snapshot.attachments?.draft;
-    const blocked = !d || !!this.snapshot.workspace?.busy || !!this.snapshot.error || this.pending !== null || this.sequence >= Number.MAX_SAFE_INTEGER || d.revision >= Number.MAX_SAFE_INTEGER || this.snapshot.text.length > 8000;
-    if (!blocked && d && this.snapshot.text !== d.text) {
+    const draft = this.snapshot.attachments?.draft;
+    if (draft && !this.draftSyncBlocked(draft) && this.snapshot.text !== draft.text) {
       this.pending = ++this.sequence;
       this.update({ synchronizing: true });
-      this.action({ type: "updateDraft", draftRevision: d.revision, editSequence: this.pending, text: this.snapshot.text });
+      this.action({ type: "updateDraft", draftRevision: draft.revision, editSequence: this.pending, text: this.snapshot.text });
     }
     const current = this.snapshot.attachments?.draft;
-    this.update({ synchronizing: !current || this.pending !== null || this.snapshot.text !== current.text || this.sequence >= Number.MAX_SAFE_INTEGER || current.revision >= Number.MAX_SAFE_INTEGER });
+    this.update({
+      synchronizing: !current
+        || this.pending !== null
+        || this.snapshot.text !== current.text
+        || identifiersExhausted(this.sequence, current?.revision ?? 0),
+    });
+  }
+  private draftSyncBlocked(draft: { revision: number }): boolean {
+    return !!this.snapshot.workspace?.busy
+      || !!this.snapshot.error
+      || this.pending !== null
+      || identifiersExhausted(this.sequence, draft.revision)
+      || this.snapshot.text.length > MAX_DRAFT_CHARACTERS;
   }
   edit = (text: string): void => { this.update({ text }); this.syncDraft(); };
   submit = (): void => {
-    const d = this.snapshot.attachments?.draft;
-    if (!d || availability(this.snapshot).sendDisabled) return;
-    this.submitted = { revision: d.revision, sequence: this.sequence, text: this.snapshot.text };
+    const draft = this.snapshot.attachments?.draft;
+    if (!draft || availability(this.snapshot).sendDisabled) return;
+    this.submitted = { revision: draft.revision, sequence: this.sequence, text: this.snapshot.text };
     this.update({ submitting: true });
-    this.action({ type: "sendChat", draftRevision: d.revision });
+    this.action({ type: "sendChat", draftRevision: draft.revision });
   };
   stop = (): void => {
-    const a = availability(this.snapshot);
-    if (!a.showStop || a.stopping) return;
-    this.update({ stopRequested: true }); this.action({ type: "stopChat" });
+    const controls = availability(this.snapshot);
+    if (!controls.showStop || controls.stopping) return;
+    this.update({ stopRequested: true });
+    this.action({ type: "stopChat" });
   };
-  addAttachment = (): void => {
-    const d = this.snapshot.attachments?.draft;
-    if (!d || d.attachments.length >= 20 || availability(this.snapshot).attachmentDisabled) return;
-    this.action({ type: "addFileAttachment", draftRevision: d.revision });
-  };
-  addSelection = (): void => {
-    const d = this.snapshot.attachments?.draft;
-    if (!d || d.attachments.length >= 20 || availability(this.snapshot).attachmentDisabled) return;
-    this.action({ type: "addSelectionAttachment", draftRevision: d.revision });
-  };
+  addAttachment = (): void => { this.beginAttachment("file"); };
+  addSelection = (): void => { this.beginAttachment("selection"); };
+  private beginAttachment(kind: "file" | "selection"): void {
+    const draft = this.snapshot.attachments?.draft;
+    if (!draft || draft.attachments.length >= MAX_ATTACHMENTS || availability(this.snapshot).attachmentDisabled) return;
+    this.action({
+      type: kind === "file" ? "addFileAttachment" : "addSelectionAttachment",
+      draftRevision: draft.revision,
+    });
+  }
   confirmAttachment = (attachmentId: string): void => {
-    const d = this.snapshot.attachments?.draft; const a = d?.attachments.find(item => item.attachmentId === attachmentId);
-    if (!d || !a || a.state !== "confirmation-required" || availability(this.snapshot).attachmentDisabled) return;
-    this.action({ type: a.kind === "selection" ? "confirmSelectionAttachment" : "confirmFileAttachment", draftRevision: d.revision, attachmentId: a.attachmentId, snapshotId: a.snapshotId });
+    const draft = this.snapshot.attachments?.draft;
+    const attachment = draft?.attachments.find(item => item.attachmentId === attachmentId);
+    if (!draft || !attachment || attachment.state !== "confirmation-required" || availability(this.snapshot).attachmentDisabled) return;
+    this.action({
+      type: attachment.kind === "selection" ? "confirmSelectionAttachment" : "confirmFileAttachment",
+      draftRevision: draft.revision,
+      attachmentId: attachment.attachmentId,
+      snapshotId: attachment.snapshotId,
+    });
   };
   removeAttachment = (attachmentId: string): void => {
-    const d = this.snapshot.attachments?.draft; const a = d?.attachments.find(item => item.attachmentId === attachmentId);
-    if (!d || !a || availability(this.snapshot).attachmentDisabled) return;
-    if (this.snapshot.preview?.snapshotId === a.snapshotId) this.closePreview();
-    this.action({ type: "removeAttachment", draftRevision: d.revision, attachmentId: a.attachmentId });
+    const draft = this.snapshot.attachments?.draft;
+    const attachment = draft?.attachments.find(item => item.attachmentId === attachmentId);
+    if (!draft || !attachment || availability(this.snapshot).attachmentDisabled) return;
+    if (this.snapshot.preview?.snapshotId === attachment.snapshotId) this.closePreview();
+    this.action({ type: "removeAttachment", draftRevision: draft.revision, attachmentId: attachment.attachmentId });
   };
   openSessions = (): void => {
     if (!this.snapshot.sessions?.loaded) this.getSavedSessions(0);
@@ -125,7 +159,7 @@ export class WebviewClient {
   };
   navigateSessions = (page: number): void => {
     const sessions = this.snapshot.sessions;
-    const last = Math.max(0, Math.ceil((sessions?.total ?? 0) / SESSION_PAGE_SIZE) - 1);
+    const last = lastPage(sessions?.total ?? 0, SESSION_PAGE_SIZE);
     if (!sessions?.loaded || sessionActionsBlocked(this.snapshot) || !Number.isSafeInteger(page) || page < 0 || page > last || page === sessions.page) return;
     this.getSavedSessions(page);
   };
@@ -144,7 +178,7 @@ export class WebviewClient {
     if (open) this.action({ type: "getAttachmentHistory" });
   };
   navigateHistory = (page: number): void => {
-    const last = Math.max(0, Math.ceil(this.snapshot.history.length / ATTACHMENT_HISTORY_PAGE_SIZE) - 1);
+    const last = lastPage(this.snapshot.history.length, ATTACHMENT_HISTORY_PAGE_SIZE);
     if (!this.snapshot.historyOpen || this.snapshot.historyPage === null || !Number.isSafeInteger(page) || page < 0 || page > last || page === this.snapshot.historyPage) return;
     this.update({ historyPage: page, ...this.historyPreviewReset() });
   };
@@ -154,8 +188,7 @@ export class WebviewClient {
     if (open) this.action({ type: "getChangeReview" });
   };
   navigateChangeReview = (page: number): void => {
-    const count = this.snapshot.changeReview?.entries.length ?? 0;
-    const last = Math.max(0, Math.ceil(count / CHANGE_REVIEW_PAGE_SIZE) - 1);
+    const last = lastPage(this.snapshot.changeReview?.entries.length ?? 0, CHANGE_REVIEW_PAGE_SIZE);
     if (!this.snapshot.changeReviewOpen || !Number.isSafeInteger(page) || page < 0 || page > last || page === this.snapshot.changeReviewPage) return;
     this.update({ changeReviewPage: page });
   };
@@ -183,75 +216,132 @@ export class WebviewClient {
   private receive(value: unknown): void {
     if (this.disposed) return;
     const message = parseHostMessage(value);
-    if (!message || (this.identity && (message.viewId !== this.identity.viewId || message.generation < this.identity.generation))) return;
-    if (this.identity && message.generation > this.identity.generation) {
-      // Only new-generation switching commits the host's confirmed draft loss.
-      // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
-      const committedHandoff = message.type === "sessionState" && message.phase === "switching";
-      this.pending = null; this.submitted = null;
-      this.update({ workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, sessions: null, ...this.savedHistory.reset(),
-        changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
-        ...(committedHandoff ? { text: "" } : {}) });
+    if (!message || this.isStale(message)) return;
+    this.adoptGeneration(message);
+    switch (message.type) {
+      case "pong":
+        return;
+      case "uiLanguageState":
+        this.update({ uiLocale: message.locale });
+        return;
+      case "interactionState":
+        this.update({ interactions: message });
+        return;
+      case "executionProfileState":
+        this.update({ executionProfile: message });
+        return;
+      case "providerConfigState":
+        this.update({ providerConfig: message });
+        return;
+      case "sessionState":
+        this.applySessionState(message);
+        return;
+      case "savedHistoryState":
+      case "savedHistoryPreview":
+        this.savedHistory.receive(message);
+        return;
+      case "workspaceState":
+        this.applyWorkspaceState(message);
+        return;
+      case "attachmentState":
+        this.applyAttachmentState(message);
+        return;
+      case "attachmentHistory":
+        this.applyAttachmentHistory(message);
+        return;
+      case "changeReviewState":
+        this.applyChangeReview(message);
+        return;
+      case "attachmentPreview":
+        this.applyAttachmentPreview(message);
+        return;
     }
+  }
+  private isStale(message: HostMessage): boolean {
+    return !!this.identity && (message.viewId !== this.identity.viewId || message.generation < this.identity.generation);
+  }
+  private adoptGeneration(message: HostMessage): void {
+    if (!this.identity || message.generation <= this.identity.generation) {
+      this.identity = { generation: message.generation, viewId: message.viewId };
+      return;
+    }
+    // Only new-generation switching commits the host's confirmed draft loss.
+    // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
+    const committedHandoff = message.type === "sessionState" && message.phase === "switching";
+    this.pending = null;
+    this.submitted = null;
+    this.update({
+      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, sessions: null,
+      ...this.savedHistory.reset(),
+      changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
+      ...(committedHandoff ? { text: "" } : {}),
+    });
     this.identity = { generation: message.generation, viewId: message.viewId };
-    if (message.type === "pong") return;
-    if (message.type === "interactionState") { this.update({ interactions: message }); return; }
-    if (message.type === "executionProfileState") { this.update({ executionProfile: message }); return; }
-    if (message.type === "providerConfigState") { this.update({ providerConfig: message }); return; }
-    if (message.type === "sessionState") {
-      // The host cancels retained-history reads before its native modal and suppresses their replies.
-      const cancelsHistoryRead = message.phase === "confirming" || message.phase === "switching";
-      this.update({ sessions: message, ...(cancelsHistoryRead ? this.savedHistory.invalidatePreview() : {}) });
-      return;
+  }
+  private applySessionState(message: Extract<HostMessage, { type: "sessionState" }>): void {
+    // The host cancels retained-history reads before its native modal and suppresses their replies.
+    const cancelsHistoryRead = message.phase === "confirming" || message.phase === "switching";
+    this.update({ sessions: message, ...(cancelsHistoryRead ? this.savedHistory.invalidatePreview() : {}) });
+  }
+  private applyWorkspaceState(message: Extract<HostMessage, { type: "workspaceState" }>): void {
+    const settled = !message.chatBusy && message.execution !== "stopping";
+    this.update({ workspace: message, stopRequested: settled ? false : this.snapshot.stopRequested });
+    this.syncDraft();
+  }
+  private applyAttachmentState(message: Extract<HostMessage, { type: "attachmentState" }>): void {
+    const previous = this.snapshot.attachments;
+    if (previous && message.draft.revision < previous.draft.revision) return;
+    let text = this.snapshot.text;
+    if (!previous && !text) text = message.draft.text;
+    if (this.submitted && message.lastSubmission?.draftRevision === this.submitted.revision) {
+      if (text === this.submitted.text && this.sequence === this.submitted.sequence) text = "";
+      this.submitted = null;
+    } else if (message.preparation === "idle" && (message.result || (this.submitted && message.draft.revision > this.submitted.revision))) {
+      this.submitted = null;
     }
-    if (message.type === "savedHistoryState" || message.type === "savedHistoryPreview") {
-      this.savedHistory.receive(message);
-      return;
-    }
-    if (message.type === "workspaceState") {
-      const settled = !message.chatBusy && message.execution !== "stopping";
-      this.update({ workspace: message, stopRequested: settled ? false : this.snapshot.stopRequested });
-      this.syncDraft(); return;
-    }
-    if (message.type === "attachmentState") {
-      const old = this.snapshot.attachments;
-      if (old && message.draft.revision < old.draft.revision) return;
-      let text = this.snapshot.text;
-      if (!old && !text) text = message.draft.text;
-      if (this.submitted && message.lastSubmission?.draftRevision === this.submitted.revision) {
-        if (text === this.submitted.text && this.sequence === this.submitted.sequence) text = "";
-        this.submitted = null;
-      } else if (message.preparation === "idle" && (message.result || (this.submitted && message.draft.revision > this.submitted.revision))) this.submitted = null;
-      if (this.pending !== null && (message.draft.acceptedEditSequence >= this.pending || message.result?.code === "stale")) this.pending = null;
-      this.sequence = Math.max(this.sequence, message.draft.acceptedEditSequence);
-      const lost = message.result?.code === "runtime-lost";
-      const previewId = this.snapshot.preview?.snapshotId;
-      const replacedPreview = !!previewId && !!old?.draft.attachments.some(a => a.snapshotId === previewId) && !message.draft.attachments.some(a => a.snapshotId === previewId);
-      this.update({ attachments: message, text, submitting: this.submitted !== null,
-        ...(lost ? { history: [], historyPage: 0, preview: null } : replacedPreview ? { preview: null } : {}),
-        ...(message.preparation === "idle" && !this.snapshot.workspace?.chatBusy ? { stopRequested: false } : {}),
-      });
-      this.syncDraft();
-      if (this.snapshot.historyOpen) this.action({ type: "getAttachmentHistory" });
-      return;
-    }
-    if (message.type === "attachmentHistory") {
-      if (this.snapshot.historyOpen) {
-        const last = Math.max(0, Math.ceil(message.entries.length / ATTACHMENT_HISTORY_PAGE_SIZE) - 1);
-        this.update({ history: message.entries, historyPage: this.snapshot.historyPage === null ? last : Math.min(this.snapshot.historyPage, last) });
-      }
-      return;
-    }
-    if (message.type === "changeReviewState") {
-      const last = Math.max(0, Math.ceil(message.entries.length / CHANGE_REVIEW_PAGE_SIZE) - 1);
-      this.update({ changeReview: message, changeReviewPage: Math.min(this.snapshot.changeReviewPage, last) });
-      return;
-    }
+    if (this.pending !== null && (message.draft.acceptedEditSequence >= this.pending || message.result?.code === "stale")) this.pending = null;
+    this.sequence = Math.max(this.sequence, message.draft.acceptedEditSequence);
+    const lost = message.result?.code === "runtime-lost";
+    const previewId = this.snapshot.preview?.snapshotId;
+    const replacedPreview = !!previewId
+      && !!previous?.draft.attachments.some(attachment => attachment.snapshotId === previewId)
+      && !message.draft.attachments.some(attachment => attachment.snapshotId === previewId);
+    const clearStop = message.preparation === "idle" && !this.snapshot.workspace?.chatBusy;
+    this.update({
+      attachments: message,
+      text,
+      submitting: this.submitted !== null,
+      ...(lost ? { history: [], historyPage: 0, preview: null } : replacedPreview ? { preview: null } : {}),
+      ...(clearStop ? { stopRequested: false } : {}),
+    });
+    this.syncDraft();
+    if (this.snapshot.historyOpen) this.action({ type: "getAttachmentHistory" });
+  }
+  private applyAttachmentHistory(message: Extract<HostMessage, { type: "attachmentHistory" }>): void {
+    if (!this.snapshot.historyOpen) return;
+    const last = lastPage(message.entries.length, ATTACHMENT_HISTORY_PAGE_SIZE);
+    this.update({
+      history: message.entries,
+      historyPage: this.snapshot.historyPage === null ? last : Math.min(this.snapshot.historyPage, last),
+    });
+  }
+  private applyChangeReview(message: Extract<HostMessage, { type: "changeReviewState" }>): void {
+    const last = lastPage(message.entries.length, CHANGE_REVIEW_PAGE_SIZE);
+    this.update({ changeReview: message, changeReviewPage: Math.min(this.snapshot.changeReviewPage, last) });
+  }
+  private applyAttachmentPreview(message: Extract<HostMessage, { type: "attachmentPreview" }>): void {
     const preview = this.snapshot.preview;
     if (!preview || preview.requestId !== message.requestId) return;
-    if ("code" in message) { this.update({ preview: { ...preview, error: attachmentError(message.code) } }); return; }
-    if (message.snapshotId !== preview.snapshotId || message.offset !== preview.offset || message.nextOffset !== message.offset + message.text.length
-      || (!message.done && message.nextOffset <= message.offset) || preview.text.length + message.text.length > 262144) return;
+    if ("code" in message) {
+      this.update({ preview: { ...preview, error: attachmentError(message.code) } });
+      return;
+    }
+    const chunkContinues = message.snapshotId === preview.snapshotId
+      && message.offset === preview.offset
+      && message.nextOffset === message.offset + message.text.length
+      && (message.done || message.nextOffset > message.offset)
+      && preview.text.length + message.text.length <= MAX_PREVIEW_CHARACTERS;
+    if (!chunkContinues) return;
     this.update({ preview: { ...preview, offset: message.nextOffset, text: preview.text + message.text } });
     if (!message.done) this.action({ type: "getAttachmentPreview", requestId: preview.requestId, snapshotId: preview.snapshotId, offset: message.nextOffset });
   }

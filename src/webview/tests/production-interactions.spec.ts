@@ -24,7 +24,7 @@ test("production chat renders separate extension forms and emits only typed host
   } finally { await h.close(); }
 });
 
-test("idle execution profile lives in settings and keeps the composer model control visible", async () => {
+test("idle execution profile opens beside the composer and keeps the model control visible", async () => {
   const h = await uiHarness(true, false, true);
   try {
     const envelope = { version: 3, generation: 1, viewId: "view" };
@@ -33,12 +33,16 @@ test("idle execution profile lives in settings and keeps the composer model cont
     assert.equal(h.root.querySelector(".candidate__extension-profile"), null);
     assert.equal(h.root.querySelector(".candidate__runtime-recovery"), null);
     assert.ok(h.root.querySelector("#model-effort-trigger"));
-    await h.click('button[aria-label="Interface settings"]');
+    await h.click('.candidate-permissions > summary');
     assert.match(h.get(".candidate-settings").textContent ?? "", /Execution profile|执行配置/);
+    assert.equal(h.root.querySelector(".candidate-settings .execution-profile-controls__phase"), null);
     assert.ok(h.get('.candidate-settings [data-profile-choice="trusted"]'));
-    assert.ok(h.get(".candidate-settings .execution-profile-controls__notes"));
     await h.click('.candidate-settings [data-profile-choice="trusted"]');
     assert.ok(h.sent.some(message => message.type === "chooseExecutionProfile" && message.profile === "trusted"));
+    await h.receive({ ...envelope, type: "executionProfileState", profile: "controlled", displayName: null, phase: "switching", errorCode: null, canSwitch: false, canEnd: false, canRecover: false });
+    assert.match(h.get(".candidate-settings .execution-profile-controls__phase").textContent ?? "", /Changing execution profile|正在切换执行配置/);
+    assert.ok(h.get(".candidate-settings .execution-profile-controls__notes"));
+    assert.equal(h.get<HTMLButtonElement>('.candidate-settings [data-profile-choice="trusted"]').disabled, true);
   } finally { await h.close(); }
 });
 

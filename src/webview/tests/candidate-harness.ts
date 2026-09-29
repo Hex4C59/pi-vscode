@@ -43,6 +43,7 @@ export async function candidateHarness(t: TestContext, scenario: PreviewScenario
   });
   const advance = (milliseconds: number) => act(async () => { t.mock.timers.tick(milliseconds); });
   return { root, get, click, input, advance, dom,
+    selectLanguage: (locale: string) => act(async () => language.select(locale)),
     recover: () => act(async () => preview?.recover()),
     changeSources: () => act(async () => preview?.changeSources()),
     completeReview: () => act(async () => preview?.completeReview()),

@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { act } from "react";
-import { uiHarness } from "./react-harness.js";
+import { settingsHarness } from "./react-harness.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
 
-test("interface settings selects a provider and opens API-key intent without secrets", async () => {
-  const h = await uiHarness(true, false, true);
+test("editor settings selects a provider and opens API-key intent without secrets", async () => {
+  const h = await settingsHarness();
   try {
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: null,
@@ -26,27 +25,23 @@ test("interface settings selects a provider and opens API-key intent without sec
         { provider: "anthropic", modelId: "claude", label: "Claude" },
       ],
     });
-    await h.click('button[aria-label="Interface settings"]');
-    const settings = h.get(".candidate-settings");
-    assert.match(settings.textContent ?? "", /Providers and models|供应商与模型/);
-    assert.match(h.get('[data-testid="configured-providers"]').textContent ?? "", /OpenAI/);
-    assert.doesNotMatch(settings.textContent ?? "", /sk-/);
-    const select = h.get<HTMLSelectElement>('select[aria-label="Provider"]');
-    assert.equal(select.value, "openai");
-    assert.match(h.get('[data-testid="selected-provider"]').textContent ?? "", /Configured|已配置/);
-    await act(async () => {
-      select.value = "anthropic";
-      select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true }));
-    });
-    assert.equal(h.get<HTMLSelectElement>('select[aria-label="Provider"]').value, "anthropic");
-    assert.match(h.get('[data-testid="selected-provider"]').textContent ?? "", /Not configured|未配置/);
-    await h.click(".candidate-settings__provider-actions button");
+
+    assert.equal(h.root.querySelector('input[type="password"]'), null);
+    assert.equal(h.root.querySelector(".settings-page__actions"), null);
+    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__providers button:last-child");
+    assert.match(h.get(".settings-page__actions").textContent ?? "", /Update API key/);
+    assert.equal(h.get(".settings-page__actions").querySelectorAll("button").length, 2);
+    await h.click('button[aria-label="Back to providers"]');
+    await h.click(".settings-page__providers button:first-child");
+    assert.equal(h.get(".settings-page__actions").querySelectorAll("button").length, 1);
+    await h.click(".settings-page__actions button");
     assert.ok(h.sent.some(message => message.type === "openProviderApiKey" && message.providerId === "anthropic"));
   } finally { await h.close(); }
 });
 
-test("interface settings keeps the global default-model catalogue", async () => {
-  const h = await uiHarness(true, false, true);
+test("editor settings keeps the global default-model catalogue", async () => {
+  const h = await settingsHarness();
   try {
     await h.receive({
       ...envelope, type: "providerConfigState", busy: false, error: null,
@@ -60,14 +55,12 @@ test("interface settings keeps the global default-model catalogue", async () => 
         { provider: "anthropic", modelId: "claude", label: "Claude" },
       ],
     });
-    await h.click('button[aria-label="Interface settings"]');
-    const modelSelect = h.get<HTMLSelectElement>('select[aria-label="Default model"]');
-    assert.equal(modelSelect.options.length, 3);
-    assert.ok([...modelSelect.options].some(option => option.textContent === "Claude"));
-    await act(async () => {
-      modelSelect.value = "anthropic\0claude";
-      modelSelect.dispatchEvent(new h.dom.window.Event("change", { bubbles: true }));
-    });
+
+    assert.equal(h.root.querySelectorAll(".settings-page__model").length, 2);
+    assert.equal(h.get('.settings-page__model[aria-pressed="true"]').textContent, "GPTopenai");
+    await h.input("claude", "#settings-model-search");
+    assert.equal(h.root.querySelectorAll(".settings-page__model").length, 1);
+    await h.click(".settings-page__model");
     assert.ok(h.sent.some(message =>
       message.type === "setDefaultModel" && message.provider === "anthropic" && message.modelId === "claude"));
   } finally { await h.close(); }

@@ -32,6 +32,7 @@ type WithoutEnvelope<T> = T extends { generation: number; viewId: string } ? Omi
 export type Intent = WithoutEnvelope<WebviewMessage>;
 export type Preview = { snapshotId: string; requestId: string; offset: number; text: string; error: string | null };
 export type ClientSnapshot = SavedHistorySnapshot & {
+  uiLocale?: "en" | "zh-CN";
   workspace: WorkspaceStateMessage | null;
   interactions: InteractionStateMessage | null;
   executionProfile: ExecutionProfileStateMessage | null;

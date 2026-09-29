@@ -516,9 +516,9 @@ export function ExecutionProfileControls({ state, language, onChoose, onEnd, onR
     <section className={`execution-profile-controls${compact ? " is-settings" : ""}`} aria-labelledby={headingId}>
       <h2 id={headingId}>{copy.heading}</h2>
       <p className={`execution-profile-controls__badge is-${state.profile}`} data-profile-badge={state.profile}>{badge}</p>
-      <p className="execution-profile-controls__phase" role={state.phase === "error" || state.phase === "recovery-required" ? "alert" : "status"}>
+      {(!compact || state.phase !== "idle") && <p className="execution-profile-controls__phase" role={state.phase === "error" || state.phase === "recovery-required" ? "alert" : "status"}>
         {copy.phase[state.phase]}
-      </p>
+      </p>}
       {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{copy.error}</p>}
       {choices}
       {(!compact || showLifecycle) && <div className="execution-profile-controls__actions">

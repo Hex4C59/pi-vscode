@@ -18,6 +18,12 @@ _Avoid_: blanket project permission.
 **Live session**: The currently running agent conversation instance in its project; distinct from its saved history.
 _Avoid_: saved transcript when describing temporary authorization lifetime.
 
+**Saved default**: The user's persisted pi-global model identity and per-model thinking level, used before a Live session exists and when starting a new conversation.
+_Avoid_: live session model, already-applied chat model, Saved session.
+
+**Live session model**: The model identity and thinking level currently applied, or pending for the next turn, on a Live session.
+_Avoid_: saved default presented as already applied, global default.
+
 **Saved session**: A conversation retained for later restoration, not a snapshot of project files or a running process.
 _Avoid_: code checkpoint, live process takeover.
 

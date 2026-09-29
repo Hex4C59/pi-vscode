@@ -20,7 +20,7 @@
 
 可以直接使用这段介绍：
 
-> Pi 的聊天侧栏由会话导航栏、会话内容区、任务状态与操作区，以及底部消息编辑区组成。用户可以在输入工具栏中添加上下文，并通过模型与推理设置入口选择模型、调整推理强度，也可以查看当前权限。历史会话面板与设置对话框分别提供会话管理和配置入口。
+> Pi 的聊天侧栏由会话导航栏、会话内容区、任务状态与操作区，以及底部消息编辑区组成。用户可以在输入工具栏中添加上下文，并通过模型与推理设置入口选择模型、调整推理强度，也可以查看当前权限。历史会话面板与编辑区设置页分别提供会话管理和配置入口。
 
 这里的“四个区域”是功能划分，不表示屏幕上永远存在四个有边框的矩形。任务状态与操作区按需显示，欢迎区和历史会话面板则对应中部内容的不同状态。
 
@@ -65,9 +65,9 @@ Pi 聊天侧栏
 | 当前会话标题 | 显示当前会话名称；长名称受可用宽度约束 |
 | 历史会话按钮 | 打开或收起历史会话面板 |
 | 新建会话按钮 | 发起新会话操作，沿用既有会话切换与确认流程 |
-| 设置按钮 | 打开界面设置对话框 |
+| 设置按钮 | 打开编辑区设置页 |
 
-它可以简称“导航栏”，但不建议简称“标题栏”：VS Code 也有自己的标题栏，容易指错位置。设置按钮属于导航栏，打开后的设置对话框是独立辅助界面。
+它可以简称“导航栏”，但不建议简称“标题栏”：VS Code 也有自己的标题栏，容易指错位置。设置按钮属于导航栏，打开后的编辑区设置页是独立辅助界面。
 
 **介绍示例：** “顶部会话导航栏用于新建会话、浏览历史和打开设置。”
 
@@ -146,17 +146,17 @@ Pi 聊天侧栏
 
 当前三色渐变与最高档流水属于推理强度滑条的视觉反馈。它表达所选强度，不表示模型此刻正在计算。支持的档位取决于模型能力，介绍时不应固定说成“五档”。启动前默认模型包装组件与运行会话包装组件共用 `ModelPickerView`，包含上游支持档位的强度滑条。准备阶段按模型保存 pi 默认值；运行会话仍区分已应用与下一轮待生效设置。
 
-### 设置与确认对话框 — Settings and Confirmation Dialogs
+### 设置页与确认对话框 — Settings Page and Confirmation Dialogs
 
 对话框提供相对独立的任务空间，适合配置、确认或恢复流程。当前示例包括：
 
 | 对话框 | 内容 |
 |---|---|
-| 界面设置对话框 | 语言、供应商与默认模型、执行配置 |
+| 编辑区设置页 | 通用／语言、默认模型、供应商详情；执行配置位于输入区权限展开层 |
 | 项目设置对话框 | 显式选择是否使用项目本地 pi 设置和资源，完整说明可展开 |
 | 打开文件夹提示对话框 | 当前操作需要文件夹时提供恢复入口，并保留草稿 |
 
-介绍时可以把设置称为“配置入口”，但不要把其中所有项都叫“全局持久设置”：例如当前界面语言是视图内选择，重载后恢复默认。项目资源同意、工具审批和执行配置也有不同作用范围，准确语义见[领域词汇表](../../CONTEXT.zh.md)。
+介绍时可以把设置称为“配置入口”，但不要把其中所有项都叫“全局持久设置”：例如当前界面语言在宿主内存共享，宿主重启后恢复默认。项目资源同意、工具审批和执行配置也有不同作用范围，准确语义见[领域词汇表](../../CONTEXT.zh.md)。
 
 输入 API Key 时实际出现的是 **VS Code 宿主密码输入框**，不是 Webview 内的密钥表单。介绍这一功能时可以说：“从供应商设置发起，通过 VS Code 的密码输入框录入。”
 
@@ -169,7 +169,7 @@ Pi 聊天侧栏
 | 下面那个框 | 消息编辑区；若只指文字部分则说消息输入框 | 讨论容器还是输入内容 |
 | 输入框下面一排 | 输入工具栏 | 调整控件间距和对齐 |
 | 模型条／颜色条 | 模型选择器／推理强度滑条 | 区分模型与强度 |
-| 那个弹窗 | 模型设置弹层／界面设置对话框等具体名称 | 明确触发来源和任务 |
+| 那个弹窗 | 模型设置弹层／编辑区设置页等具体名称 | 明确触发来源和任务 |
 | 历史记录 | 历史会话面板／已恢复历史消息／附件历史 | 区分记录的对象 |
 | 确认修改的地方 | 工具审批卡片或修改审阅面板 | 区分执行前授权与执行后检查 |
 
@@ -188,7 +188,7 @@ Pi 聊天侧栏
 2. **准备任务：** 在消息输入框写任务，通过「＋」选择文件／选区；从模型入口选择模型，查看可用推理档位。
 3. **观察执行：** 发送后阅读流式回复和活动详情，需要审批时在任务操作区查看范围并决定。
 4. **查看结果：** 阅读回复；有可审阅修改时打开修改审阅面板查看捕获的差异。需要中断时使用停止按钮。
-5. **管理会话与配置：** 打开历史会话面板说明恢复流程，再打开设置对话框说明供应商、默认模型和执行配置。
+5. **管理会话与配置：** 打开历史会话面板说明恢复流程，再打开设置页说明供应商和默认模型；执行配置从输入区权限入口说明。
 
 演示当前代码时，应按实际出现的控件和可用状态讲解；参考样板中的搜索或候选布局不作为正式功能展示。上述名称是讲解辅助，不取代产品验收。
 
@@ -206,9 +206,9 @@ Pi 聊天侧栏
 | 上下文附件区 | [candidate-context.tsx](../../src/webview/chat/candidate-context.tsx) | 管理附件／菜单状态和焦点，通过内容与操作插槽由编辑区安排位置 |
 | 模型与推理设置 | [model-picker.tsx](../../src/webview/components/model-picker.tsx)、[default-model-picker.tsx](../../src/webview/chat/default-model-picker.tsx) | 准备阶段与运行会话共用 ModelPickerView；默认设置与活跃会话仍由各自宿主管理 |
 | 历史会话面板 | [candidate-sessions.tsx](../../src/webview/chat/candidate-sessions.tsx) | 面板框架、正常流返回／标题、列表、反馈和分页集中维护；显示切换、滚动恢复与跨区域焦点仍在主组件 |
-| 设置与确认对话框 | [interface-settings.tsx](../../src/webview/chat/interface-settings.tsx)、[project-resources-prompt.tsx](../../src/webview/chat/project-resources-prompt.tsx)、[no-folder-prompt.tsx](../../src/webview/chat/no-folder-prompt.tsx)、[chat-dialog.tsx](../../src/webview/chat/chat-dialog.tsx) | ChatDialog 拥有原生模态壳、钉住的标题／底部操作和内容区局部滚动；InterfaceSettings 拥有设置入口、分区和宿主意图；确认提示拥有各自文案与同意操作 |
+| 设置页与确认对话框 | [settings/index.tsx](../../src/webview/settings/index.tsx)、[project-resources-prompt.tsx](../../src/webview/chat/project-resources-prompt.tsx)、[no-folder-prompt.tsx](../../src/webview/chat/no-folder-prompt.tsx)、[chat-dialog.tsx](../../src/webview/chat/chat-dialog.tsx) | ChatDialog 拥有原生模态壳、钉住的标题／底部操作和内容区局部滚动；SettingsPage 拥有分类、详情和设置意图；确认提示拥有各自文案与同意操作 |
 
-样式由 [styles.css](../../src/webview/styles.css) 汇入，既有组件样式，也有集中在 [candidate.css](../../src/webview/chat/candidate.css) 的区域样式。[message-composer.css](../../src/webview/chat/message-composer.css) 负责输入、工具栏、上下文及权限表面，共享高度预算仍由页面管理。[candidate-conversation.css](../../src/webview/chat/candidate-conversation.css) 负责消息行、Markdown、代码块与工具活动记录的呈现。任务状态与操作区的样式就近拆分：[task-status.css](../../src/webview/chat/task-status.css) 负责状态行标记与动效，[candidate-approvals.css](../../src/webview/chat/candidate-approvals.css) 负责审批卡片内部布局，[candidate-review.css](../../src/webview/chat/candidate-review.css) 负责审阅面板，[extension-interactions.css](../../src/webview/chat/extension-interactions.css) 负责扩展交互表单、反馈与恢复横幅；跨区域 `:has()` 高度预算仍集中在 candidate.css。设置与确认对话框的壳和分区样式分别在 [chat-dialog.css](../../src/webview/chat/chat-dialog.css) 与 [interface-settings.css](../../src/webview/chat/interface-settings.css)。状态和宿主通信由 [webview-client.ts](../../src/webview/webview-client.ts) 等文件承担，不属于可见的第五个区域。
+样式由 [styles.css](../../src/webview/styles.css) 汇入，既有组件样式，也有集中在 [candidate.css](../../src/webview/chat/candidate.css) 的区域样式。[message-composer.css](../../src/webview/chat/message-composer.css) 负责输入、工具栏、上下文及权限表面，共享高度预算仍由页面管理。[candidate-conversation.css](../../src/webview/chat/candidate-conversation.css) 负责消息行、Markdown、代码块与工具活动记录的呈现。任务状态与操作区的样式就近拆分：[task-status.css](../../src/webview/chat/task-status.css) 负责状态行标记与动效，[candidate-approvals.css](../../src/webview/chat/candidate-approvals.css) 负责审批卡片内部布局，[candidate-review.css](../../src/webview/chat/candidate-review.css) 负责审阅面板，[extension-interactions.css](../../src/webview/chat/extension-interactions.css) 负责扩展交互表单、反馈与恢复横幅；跨区域 `:has()` 高度预算仍集中在 candidate.css。确认对话框壳与输入区执行控件样式分别在 [chat-dialog.css](../../src/webview/chat/chat-dialog.css) 与 [interface-settings.css](../../src/webview/chat/interface-settings.css)。状态和宿主通信由 [webview-client.ts](../../src/webview/webview-client.ts) 等文件承担，不属于可见的第五个区域。
 
 [session-navigation.css](../../src/webview/chat/session-navigation.css) 维护导航布局和导航／历史共享图标按钮反馈；[candidate-sessions.css](../../src/webview/chat/candidate-sessions.css) 维护历史面板布局及当前行、焦点、禁用状态。[session-icon.tsx](../../src/webview/chat/session-icon.tsx) 使用本地官方 Lucide 几何；来源与许可保留在 assets/icons/lucide。当前行的勾选标记独立于悬停与键盘焦点，完整标题保留在可访问名称和悬停提示中。
 

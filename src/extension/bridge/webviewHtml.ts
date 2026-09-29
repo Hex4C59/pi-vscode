@@ -15,7 +15,7 @@ export function getWebviewResourceRoot(extensionUri: vscode.Uri): vscode.Uri {
   return joinPath(extensionUri, "dist", "webview");
 }
 
-export function getWebviewHtml(webview: WebviewResource, extensionUri: vscode.Uri, nonce: string): string {
+export function getWebviewHtml(webview: WebviewResource, extensionUri: vscode.Uri, nonce: string, surface: "chat" | "settings" = "chat"): string {
   const resourceRoot = getWebviewResourceRoot(extensionUri);
   const scriptUri = webview.asWebviewUri(joinPath(resourceRoot, "webview.js"));
   const styleUri = webview.asWebviewUri(joinPath(resourceRoot, "webview.css"));
@@ -43,7 +43,7 @@ export function getWebviewHtml(webview: WebviewResource, extensionUri: vscode.Ur
   <meta http-equiv="Content-Security-Policy" content="${csp}">
   <link rel="stylesheet" href="${stylesheet}">
 </head>
-<body>
+<body${surface === "settings" ? ' data-pi-surface="settings"' : ""}>
   <div id="root"><p role="alert">Pi interface unavailable until local resources finish loading. Reopen the view to retry if this message remains.</p></div>
   <script type="module" nonce="${safeNonce}" src="${script}"></script>
 </body>

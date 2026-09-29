@@ -47,7 +47,7 @@ test("v3 host DTO parsing rejects accessors and extra fields while preserving re
       assert.equal(parseHostMessage({ ...projection, unexpected: true }), undefined, `${parsed.type} rejects unknown fields`);
       ui.receive(projection);
     }
-    assert.deepEqual([...observedTypes].sort(), ["attachmentHistory", "attachmentPreview", "attachmentState", "changeReviewState", "executionProfileState", "interactionState", "providerConfigState", "savedHistoryState", "sessionState", "workspaceState"]);
+    assert.deepEqual([...observedTypes].sort(), ["attachmentHistory", "attachmentPreview", "attachmentState", "changeReviewState", "executionProfileState", "interactionState", "providerConfigState", "savedHistoryState", "sessionState", "uiLanguageState", "workspaceState"]);
 
     const workspace = v.state();
     const pong = { version: 3, type: "pong", viewId: workspace.viewId, generation: workspace.generation } as const;

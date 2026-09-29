@@ -5,6 +5,7 @@ import { CandidateContext } from "./candidate-context.js";
 import { DefaultModelPicker } from "./default-model-picker.js";
 import { ComposerIcon } from "./composer-icon.js";
 import { useChatPreview } from "./environment.js";
+import { ExecutionProfileControls } from "./extension-interactions.js";
 
 type ComposerProps = {
   snapshot: ClientSnapshot;
@@ -21,7 +22,7 @@ type ComposerProps = {
 
 /** One subscription owner upstream; local layout and input behavior live here. */
 export function MessageComposer({ snapshot, client, input, canPrepare, canBrowse, canCompose, readableRuntimeError, submit, onRequireWorkspace, onSettings }: ComposerProps): ReactElement {
-  const { text: t } = useUiText();
+  const { locale, text: t } = useUiText();
   const preview = useChatPreview();
   const state = snapshot.workspace;
   const controls = availability(snapshot);
@@ -59,15 +60,18 @@ export function MessageComposer({ snapshot, client, input, canPrepare, canBrowse
               <span className="model-effort-trigger__thinking"> · —</span>
             </button>}
       </div>
-      {canBrowse && state && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
+      {(snapshot.executionProfile || canBrowse) && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
         if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
       }}>
-        <summary aria-label={t("Permissions ({count})", { count: state.grants.length })} title={t("Permissions ({count})", { count: state.grants.length })}>
+        <summary aria-label={t("Permissions ({count})", { count: state?.grants.length ?? 0 })} title={t("Permissions ({count})", { count: state?.grants.length ?? 0 })}>
           <ComposerIcon name="shield-check" />
         </summary>
-        <div className="candidate-permissions__content">
-          <p>{state.controlledExecution ? t("Controlled execution: covered tools ask for approval; this is not a sandbox.") : t("Trusted extension code runs outside covered tool approvals; this is not a sandbox.")}</p>
-          <SessionGrants grants={state.grants} disabled={controls.stopping || !!snapshot.error} onRevoke={id => client.action({ type: "revokeGrant", id })} />
+        <div className="candidate-permissions__content candidate-settings">
+          {!snapshot.executionProfile && state && <p>{state.controlledExecution ? t("Controlled execution: covered tools ask for approval; this is not a sandbox.") : t("Trusted extension code runs outside covered tool approvals; this is not a sandbox.")}</p>}
+          {snapshot.executionProfile && <ExecutionProfileControls state={snapshot.executionProfile} language={locale === "zh-CN" ? "zh-CN" : "en"} density="settings"
+            onChoose={profile => client.action({ type: "chooseExecutionProfile", profile })}
+            onEnd={() => client.action({ type: "endOwnedRuntime" })} onRecover={() => client.action({ type: "recoverControlledRuntime" })} />}
+          {canBrowse && state && <SessionGrants grants={state.grants} disabled={controls.stopping || !!snapshot.error} onRevoke={id => client.action({ type: "revokeGrant", id })} />}
         </div>
       </details>}
       {controls.showStop

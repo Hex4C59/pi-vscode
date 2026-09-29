@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, { type TestContext } from "node:test";
 import { readFileSync } from "node:fs";
 import { candidateHarness } from "./candidate-harness.js";
-import { readAppStyles, uiHarness } from "./react-harness.js";
+import { readAppStyles, settingsHarness } from "./react-harness.js";
 import { chineseUi } from "../chat/ui-zh-cn.js";
 
 async function styledEmptySession(t: TestContext) {
@@ -52,8 +52,8 @@ test("theme is monochrome: emphasis follows the host foreground and buttons use 
   }
 });
 
-test("settings dialog uses section headings with an icon refresh and a borderless provider status", async () => {
-  const h = await uiHarness(true, false, true);
+test("settings page uses categories, icon refresh and separate provider details", async () => {
+  const h = await settingsHarness();
   try {
     await h.receive({
       version: 3, generation: 1, viewId: "view", type: "providerConfigState", busy: false, error: null,
@@ -61,15 +61,17 @@ test("settings dialog uses section headings with an icon refresh and a borderles
       providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true }],
       catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
     });
-    await h.click('button[aria-label="Interface settings"]');
-    const settings = h.get(".candidate-settings");
-    const refresh = settings.querySelector<HTMLButtonElement>('.candidate-settings__heading button[aria-label="Refresh providers"]');
+
+    const settings = h.get(".settings-page");
+    const refresh = settings.querySelector<HTMLButtonElement>('.settings-page__header button[aria-label="Refresh providers"]');
     assert.ok(refresh, "refresh lives in the providers heading as an icon button");
     assert.equal(refresh.textContent, "");
     assert.equal(settings.querySelector(".candidate-settings__secondary, .candidate-settings__panel"), null);
-    assert.equal(h.get('[data-testid="selected-provider"]').className, "candidate-settings__provider");
-    assert.ok(h.get(".candidate-settings__status.is-ready .candidate-settings__dot"));
-    await h.click('.candidate-settings__heading button[aria-label="Refresh providers"]');
+    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__providers button");
+    assert.equal(settings.querySelector(".candidate-settings__status"), null);
+    assert.equal(h.get(".settings-page__actions").querySelectorAll("button").length, 2);
+    await h.click('.settings-page__header button[aria-label="Refresh providers"]');
     assert.ok(h.sent.some(message => message.type === "refreshProviderConfig"));
   } finally { await h.close(); }
 });
@@ -130,6 +132,4 @@ test("settings dialog motion is open-only and yields to reduced motion", () => {
   assert.match(css, /@keyframes candidate-dialog-in/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate-dialog\[open\] \{ animation: none; \}\s*\}/s);
   assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "settings content updates must not replay a second entrance");
-  const settings = readFileSync("src/webview/chat/interface-settings.css", "utf8");
-  assert.match(settings, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate-settings__refresh\[aria-busy="true"\] svg \{ animation: none; \}\s*\}/s);
 });

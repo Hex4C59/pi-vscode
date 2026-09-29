@@ -22,6 +22,8 @@ export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceStat
   | Action & ExtensionInteractionIntent
   | Action & ProviderConfigIntent
   | Action & (
+    | { type: "openSettings" }
+    | { type: "setUiLanguage"; locale: "en" | "zh-CN" }
     | { type: "stopChat" | "openFolder" | "manageTrust" | "getAttachmentHistory" | "getChangeReview" | "newConversation" }
     | { type: "decideApproval"; id: string; decision: ApprovalDecision }
     | { type: "revokeGrant" | "openReviewDiff" | "openReviewSource" | "resumeConversation"; id: string }
@@ -95,7 +97,8 @@ export type AttachmentPreviewMessage = HostEnvelope & { type: "attachmentPreview
 export type InteractionStateMessage = HostEnvelope & ExtensionInteractionProjection & { type: "interactionState" };
 export type ExecutionProfileStateMessage = HostEnvelope & ExecutionProfileProjection & { type: "executionProfileState" };
 export type ProviderConfigStateMessage = HostEnvelope & ProviderConfigProjection & { type: "providerConfigState" };
-export type HostMessage = InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
+export type UiLanguageStateMessage = HostEnvelope & { type: "uiLanguageState"; locale: "en" | "zh-CN" };
+export type HostMessage = UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

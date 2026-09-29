@@ -1,6 +1,6 @@
 import type { UiLanguage } from "../components/index.js";
 
-/** Mount-local interface language; never persisted or sent to the host. */
+/** Presentation language store; production follows the host's shared in-memory locale. */
 export interface UiLanguageState {
   getSnapshot(): UiLanguage;
   subscribe(listener: () => void): () => void;

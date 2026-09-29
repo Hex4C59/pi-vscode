@@ -225,6 +225,8 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
   const envelope = ["version", "type", "generation", "viewId"];
 
   switch (message.type) {
+    case "uiLanguageState":
+      return hasFields(message, [...envelope, "locale"]) && oneOf(message.locale, ["en", "zh-CN"]) ? message as unknown as HostMessage : undefined;
     case "interactionState": {
       if (!hasFields(message, [...envelope, "active", "queuedCount", "phase", "errorCode", "feedback", "omittedFeedback"])
         || !integer(message.queuedCount) || message.queuedCount > 7 || !integer(message.omittedFeedback)

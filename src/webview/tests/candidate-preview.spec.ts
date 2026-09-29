@@ -807,15 +807,13 @@ test("candidate language settings switch UI immediately without replacing a draf
   const h = await candidateHarness(t);
   await h.input("Keep 原文 exactly");
   const composer = h.get<HTMLTextAreaElement>("textarea");
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value = "zh-CN"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
+  await h.selectLanguage("zh-CN");
   assert.match(h.root.textContent ?? "", /今天想做些什么/);
   assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="消息"]').value, "Keep 原文 exactly");
   assert.equal(h.get("textarea"), composer);
   assert.ok(h.root.querySelector('button[aria-label="发送消息"]'));
-  assert.equal(h.get<HTMLSelectElement>('select[aria-label="语言"]').value, "zh-CN");
-  await act(async () => { select.value = "en"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
+  assert.ok(h.root.querySelector('button[aria-label="界面设置"]'));
+  await h.selectLanguage("en");
   assert.match(h.root.textContent ?? "", /What should we work on/);
   assert.equal(h.get("textarea"), composer);
   assert.equal(composer.value, "Keep 原文 exactly");
@@ -827,10 +825,8 @@ test("candidate language switch preserves a live reply and model settings while 
   const code = h.get("pre code").textContent;
   const reply = h.get("pre code").closest(".candidate__message--assistant"); assert.ok(reply);
   await h.input("newer draft");
-  await h.click('button[aria-label="Interface settings"]');
-  const language = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { language.value = "zh-CN"; language.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
-  await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
+
   assert.ok(h.root.querySelector('button[aria-label="停止当前任务"]'));
   assert.equal(h.get("pre code").closest(".candidate__message--assistant"), reply);
   assert.equal(h.get("pre code").textContent, code);
@@ -851,9 +847,7 @@ test("candidate language switch preserves expanded activity and literal tool inp
   const tool = h.get<HTMLDetailsElement>('details[aria-label="Tool details"]');
   await act(async () => { activity.open = true; tool.open = true; });
   const raw = h.get('pre[aria-label="Tool input"]').textContent;
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value = "zh-CN"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
+  await h.selectLanguage("zh-CN");
   assert.equal(h.get('details[aria-label="消息活动"]'), activity);
   assert.equal(activity.open, true); assert.equal(tool.open, true);
   assert.equal(h.get('pre[aria-label="工具输入"]').textContent, raw);
@@ -867,10 +861,8 @@ test("candidate language selection covers history, confirmation and retained con
   await h.click('button[aria-label="Browse saved conversations"]');
   await h.advance(220);
   const title = h.get(".candidate__session-title").textContent;
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value = "zh-CN"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
-  await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
+
   assert.equal(h.get(".candidate__session-title").textContent, title);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "preserve until confirmation");
   assert.ok(h.root.querySelector('button[aria-label="下一页对话"]'));
@@ -890,10 +882,8 @@ test("candidate language selection covers history, confirmation and retained con
 test("candidate language settings translate the deferred folder prompt and recovery actions", async t => {
   const h = await candidateHarness(t, "no-folder");
   await h.input("保留草稿");
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value = "zh-CN"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
-  await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
+
   assert.equal(h.root.textContent?.includes("没有工作区文件夹"), false);
   assert.match(h.root.textContent ?? "", /今天想做些什么/);
   await h.click('button[aria-label="发送消息"]');
@@ -910,10 +900,8 @@ test("candidate language switch translates approval actions but never approval i
   const h = await candidateHarness(t, "approval");
   const rawInput = h.get(".approval-input").textContent;
   const scope = h.get(".grant-scope").textContent;
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value = "zh-CN"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
-  await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
+
   assert.equal(h.get('[data-decision="once"]').textContent?.trim(), "仅允许一次");
   assert.equal(h.get(".approval-input").textContent, rawInput);
   assert.ok(scope?.includes("src/preview"));
@@ -924,14 +912,11 @@ test("candidate language switch translates approval actions but never approval i
 
 test("candidate page language survives Reset and a fresh preview is isolated after unmount", async t => {
   const h = await candidateHarness(t);
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value = "zh-CN"; select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
+  await h.selectLanguage("zh-CN");
   await h.reset(); await h.advance(10000);
   assert.match(h.root.textContent ?? "", /今天想做些什么/);
   assert.equal(h.root.querySelectorAll("dialog").length, 0);
-  await h.click('button[aria-label="界面设置"]');
-  assert.equal(h.get<HTMLSelectElement>('select[aria-label="语言"]').value, "zh-CN");
+  assert.ok(h.root.querySelector('button[aria-label="界面设置"]'));
   await h.dispose(); await h.advance(10000);
   assert.equal(h.root.childElementCount, 0);
   const { mountCandidatePreview } = await import("../preview/candidate-preview.js");
@@ -942,19 +927,12 @@ test("candidate page language survives Reset and a fresh preview is isolated aft
   } finally { await act(async () => fresh?.dispose()); }
 });
 
-test("candidate settings owns Escape without dismissing an underlying model popup or history", async t => {
+test("candidate settings opens outside chat without replacing the draft", async t => {
   const h = await candidateHarness(t);
-  await h.click('button[aria-label="Browse saved conversations"]');
-  await h.advance(220);
-  await h.click("#model-effort-trigger");
+  await h.input("Preserve while settings opens");
   await h.click('button[aria-label="Interface settings"]');
-  await act(async () => h.get("dialog").dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
-  assert.equal(h.get("#model-popover").hidden, false);
-  assert.equal(h.get('[aria-label="Conversation history"]').hidden, false);
-  // jsdom does not implement native Escape dismissal; Chrome verifies that default action.
-  await h.click('button[aria-label="Close settings"]');
-  assert.equal(h.root.querySelectorAll("dialog").length, 0);
-  assert.equal(h.dom.window.document.activeElement?.getAttribute("aria-label"), "Interface settings");
+  assert.equal(h.root.querySelector("dialog"), null);
+  assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Preserve while settings opens");
 });
 
 test("candidate no-folder welcome accepts a draft and defers the folder explanation until Send", async t => {
@@ -1274,10 +1252,8 @@ test("candidate retained attachment outcomes settle after completion and interru
 test("candidate Chinese context feedback translates capacity state while preserving the draft", async t => {
   const h = await candidateHarness(t, "attachment-capacity");
   await h.input("中文原始草稿"); await h.click('button[aria-label="Add context"]'); await h.click('[role="menuitem"][aria-label="Add file"]'); await h.advance(420);
-  await h.click('button[aria-label="Interface settings"]');
-  const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value='zh-CN'; select.dispatchEvent(new h.dom.window.Event('change', {bubbles:true})); });
-  await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
+
   assert.match(h.get('.candidate-context__status').textContent ?? "", /附件总量超过 1 MiB/);
   assert.equal(h.get<HTMLTextAreaElement>('textarea').value, "中文原始草稿");
 });
@@ -1297,8 +1273,7 @@ test("candidate plus menu exposes retained history during streaming without enab
 test("candidate Chinese uncertain delivery and retained outcome labels preserve literal snapshots", async t => {
   const h = await candidateHarness(t, "attachment-uncertain");
   await h.input("投递原文"); await h.click('button[aria-label="Add context"]'); await h.click('[role="menuitem"][aria-label="Add file"]'); await h.advance(420); await h.click(send);
-  await h.click('button[aria-label="Interface settings"]'); const select = h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value='zh-CN'; select.dispatchEvent(new h.dom.window.Event('change', {bubbles:true})); }); await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
   assert.match(h.get('.candidate-context__status').textContent ?? "", /投递不确定，未自动重试/);
   await h.click('button[aria-label="附件历史"]');
   assert.match(h.get('[aria-label="保留附件历史"]').textContent ?? "", /src\/preview\/example.ts.*投递不确定/);
@@ -1310,8 +1285,7 @@ test("candidate Chinese completed attachment history reports a settled task, not
   const h = await candidateHarness(t); await h.input("历史原文");
   await h.click('button[aria-label="Add context"]'); await h.click('[role="menuitem"][aria-label="Add file"]'); await h.advance(420); await h.click(send);
   for(let i=0;i<6;i++) await h.advance(420);
-  await h.click('button[aria-label="Interface settings"]'); const select=h.get<HTMLSelectElement>('select[aria-label="Language"]');
-  await act(async () => { select.value='zh-CN'; select.dispatchEvent(new h.dom.window.Event('change', {bubbles:true})); }); await h.click('button[aria-label="关闭设置"]');
+  await h.selectLanguage("zh-CN");
   await h.click('button[aria-label="附件历史"]');
   assert.match(h.get('[aria-label="保留附件历史"]').textContent ?? "", /运行时已接纳 \/ 任务已结束/);
   assert.equal(h.get('[aria-label="保留附件历史"]').textContent?.includes('rpc-accepted'), false);

@@ -22,6 +22,10 @@ Choose composer, settings or history; switch width, height, theme, language and 
 
 Reproducible initial views accept URL parameters: `specimen=composer|settings|history`, `width=280|320|400`, `height=480|640`, `theme=dark|light|contrast`, `language=zh|en`, `long=true`, `guides=false`, and composer `popup=add|permission|effort|models|settings-menu`. Controls change memory rather than rewriting the URL; reloading restores the specified initial view.
 
+## Settings structure candidates
+
+For the maintainer-requested fundamental settings redesign, open the isolated [settings structure study](assets/settings-redesign-study.html) with `?variant=A` (custom editor page) or `?variant=B` (sidebar navigation). The maintainer selected A on 2026-09-29 for WI-026 implementation; B remains a study alternative. Both study pages use sample data and memory-only actions, and selection is not production visual acceptance. The [research](../../../docs/discussions/2026-09-29-settings-redesign-research.md) distinguishes official native-Settings guidance, local visual evidence, tradeoffs and sampled checks. This study does not replace the approved model-picker baseline below or establish production behavior.
+
 ## Approved model-picker visual baseline
 
 Open [the before/after model-picker study](assets/model-picker-study.html) for the first focused refinement. The left side illustrates the previous specimen structure; the right side supports selection, keyboard navigation, long names, widths 280/320/400 and three themes. The maintainer approved the refined right-hand component on 2026-09-29: “可以，非常不错，精修稿我很满意”. Use it as the visual baseline for model menus: bounded width, alignment with the trigger, clear space above the composer, stable label/check slots, and distinct selected/hover/keyboard-focus states. This acceptance covers the refinement’s visual design; other specimens and production integration retain their own acceptance requirements.

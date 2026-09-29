@@ -16,6 +16,12 @@
 
 > 连通性、工作区选择、宿主拥有的 pi RPC 子进程（WI-007）、纯文本聊天（WI-004）、模型／thinking 设置（WI-008／WI-009）及受控执行（WI-010）。不暴露密钥、Webview 内 pi SDK、文件系统访问或通用宿主操作。三项信任／会话 gates 已在 ADR0004 的明确证据与排除项内接受。
 
+## 编辑区设置界面（WI-026）
+
+`openSettings` 无额外字段，仅当前聊天视图可发送，打开／揭示单实例编辑区面板。`setUiLanguage` 只携带 `locale: "en" | "zh-CN"`；宿主仅内存保存，并向各视图投影带标准宿主信封与 locale 的 `uiLanguageState`。
+
+设置面板拥有独立随机 viewId 和共享宿主 generation，白名单更窄：bootstrap `ping/getWorkspaceState`、`setUiLanguage`、`refreshProviderConfig`、`openProviderApiKey`、`logoutProvider`、`setDefaultModel`、`setDefaultThinkingLevel`。Bootstrap 仅返回 `uiLanguageState` 与 `providerConfigState`。它不能启动聊天、改草稿、批准工具、切换执行配置或读取历史。供应商操作前执行原有精确解析与当前身份／generation 检查；过期身份仅重新同步设置投影。关闭重开生成新标识，不关闭聊天／runtime；两个渲染器均拒绝外来及旧投影。密钥仍在原生宿主提示输入。
+
 ## 消息封装与允许列表
 
 当前只接纳数字 `version: 3`。完整类型归[webviewProtocol.ts](../../src/extension/contracts/webviewProtocol.ts)，运行时精确校验归[webviewMessages.ts](../../src/extension/bridge/webviewMessages.ts)。v1／v2与单文件首片演进已移到[历史快照](../archive/2026-09-28-webview-contract-history.zh.md)；它们不是兼容路径。独立的pi审批gate envelope仍为v1，不与Webview版本混用。

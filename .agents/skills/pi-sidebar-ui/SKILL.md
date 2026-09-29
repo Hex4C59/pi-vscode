@@ -56,7 +56,7 @@ Greeting copy stays an invitation to act (current English: “What should we wor
 - Few type roles, stable weight, line-height, and spacing. See [tokens.md](tokens.md).
 - Hairline borders and one-step lightness, not gradients, glass, heavy shadows, decorative cards, or motion for its own sake.
 - Outside the welcome-mark and effort-control exceptions in tokens.md, pi is monochrome (grey / off-white, maintainer decision 2026-09-28). `--ui-brand` is the host foreground and is used only on the π mark, send / Stop fill, and a few key states. No hue: not coral, not the host's blue primary button, not blue sliders or checkmarks. Buttons use the host's secondary (grey) style.
-- Dialogs and settings: retain the approved header and section structure. Use legible setting names, quieter descriptions, and consistent control alignment. A subtle container may group related settings when that layout is in scope; rows do not each need their own card. See [Settings](components.md#settings) for row anatomy. Secondary actions (refresh) are icon buttons in the section heading.
+- Dialogs and settings: retain the approved header and section structure. Start with a setting name and control; add visible explanation only when it changes the choice. Do not stack routine persistence, status or implementation notes around selectors and buttons in the narrow sidebar. A subtle container may group related settings when that layout is in scope; rows do not each need their own card. See [Settings](components.md#settings) for row anatomy. Secondary actions (refresh) are icon buttons in the section heading.
 
 ## Guardrails
 

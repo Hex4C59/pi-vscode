@@ -1,73 +1,68 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { act } from "react";
-import { productionHarness, uiHarness } from "./react-harness.js";
+import { productionHarness, settingsHarness } from "./react-harness.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
+const config = { ...envelope, type: "providerConfigState", busy: false, error: null,
+  defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
+  providers: [
+    { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
+    { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+  ], catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
+};
 
-test("settings keep default-model choice distinct from the live session model", async () => {
-  const h = await uiHarness(true, false, true);
+test("settings separate tasks without routine explanation paragraphs and language waits for host", async () => {
+  const h = await settingsHarness();
   try {
-    await h.render({ chatModel: "GPT-5" });
-    await h.receive({
-      ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
-      providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true }],
-      catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
-    });
-    await h.click('button[aria-label="Interface settings"]');
-    const settings = h.get(".candidate-settings");
-    assert.match(settings.textContent ?? "", /Saved default\. This is not a connection test/);
-    assert.match(h.get('[data-testid="session-model"]').textContent ?? "", /This session: GPT-5/);
-    assert.match(settings.textContent ?? "", /Changing the default does not replace the current session model/);
-    assert.match(settings.textContent ?? "", /not that a connection test succeeded/);
+    assert.match(h.root.textContent ?? "", /Loading providers/);
+    await h.receive(config);
+    assert.equal(h.root.querySelectorAll(".settings-page__actions").length, 0);
+    assert.doesNotMatch(h.root.textContent ?? "", /This session:|connection test|Configured providers:|Runtime is idle/);
+    await h.click(".settings-page__nav button:first-of-type");
+    assert.equal(h.dom.window.document.activeElement, h.get("h2"));
+    const language = h.get<HTMLSelectElement>("select");
+    await act(async () => { language.value = "zh-CN"; language.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
+    assert.deepEqual(h.sent.at(-1), { ...envelope, type: "setUiLanguage", locale: "zh-CN" });
+    await h.receive({ ...envelope, type: "uiLanguageState", locale: "zh-CN" });
+    assert.equal(h.get("h2").textContent, "通用");
+    assert.equal(h.get<HTMLSelectElement>("select").value, "zh-CN");
+    assert.doesNotMatch(h.root.textContent ?? "", /仅用于本视图|当前会话：|已配置：|运行时空闲/);
   } finally { await h.close(); }
 });
 
-test("provider errors stay beside provider actions and refresh keeps the selected provider", async () => {
-  const h = await uiHarness(true, false, true);
+test("provider detail survives refresh and keeps busy guards and errors visible", async () => {
+  const h = await settingsHarness();
   try {
-    await h.receive({
-      ...envelope, type: "providerConfigState", busy: false, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
-      providers: [
-        { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-        { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
-      ],
-      catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
-    });
-    await h.click('button[aria-label="Interface settings"]');
-    const select = h.get<HTMLSelectElement>('select[aria-label="Provider"]');
-    await act(async () => {
-      select.value = "anthropic";
-      select.dispatchEvent(new h.dom.window.Event("change", { bubbles: true }));
-    });
-    await h.receive({
-      ...envelope, type: "providerConfigState", busy: true, error: null,
-      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
-      providers: [
-        { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-        { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
-      ],
-      catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
-    });
-    assert.equal(h.get<HTMLSelectElement>('select[aria-label="Provider"]').value, "anthropic");
-    assert.equal(h.get('[data-provider-status]').getAttribute("data-provider-status"), "busy");
-    await h.receive({
-      ...envelope, type: "providerConfigState", busy: false, error: "Could not refresh provider configuration.",
-      defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
-      providers: [
-        { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-        { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
-      ],
-      catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
-    });
-    assert.equal(h.get<HTMLSelectElement>('select[aria-label="Provider"]').value, "anthropic");
-    const error = h.get(".candidate-settings__error");
-    assert.equal(h.get('[data-testid="selected-provider"]').contains(error), true);
-    const defaultModel = h.get('select[aria-label="Default model"]');
-    assert.equal(defaultModel.compareDocumentPosition(error) & h.dom.window.Node.DOCUMENT_POSITION_FOLLOWING, h.dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
-    assert.doesNotMatch(h.get(".candidate-settings").textContent ?? "", /sk-/);
+    await h.receive(config);
+    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__providers button:last-child");
+    await h.receive({ ...config, busy: true });
+    assert.equal(h.get("h2").textContent, "Anthropic");
+    assert.equal(h.get<HTMLButtonElement>(".settings-page__actions button").disabled, true);
+    assert.equal(h.get('[aria-label="Refreshing providers…"]').getAttribute("aria-busy"), "true");
+    await h.receive({ ...config, error: "Could not refresh provider configuration." });
+    assert.equal(h.get("h2").textContent, "Anthropic");
+    assert.match(h.get('[role="alert"]').textContent ?? "", /Could not refresh/);
+    assert.doesNotMatch(h.root.textContent ?? "", /sk-/);
+  } finally { await h.close(); }
+});
+
+test("settings rejects obsolete and foreign projections, and handles empty search results", async () => {
+  const h = await settingsHarness();
+  try {
+    await h.receive(config);
+    await h.receive({ ...config, generation: 2 });
+    await h.receive({ ...config, catalog: [] });
+    await h.receive({ ...config, generation: 2, viewId: "foreign", catalog: [] });
+    await h.receive({ ...envelope, type: "uiLanguageState", locale: "fr" });
+    assert.equal(h.root.querySelectorAll(".settings-page__model").length, 1);
+    await h.input("missing", "#settings-model-search");
+    assert.match(h.get('[role="status"]').textContent ?? "", /No matching models/);
+    await h.receive({ ...config, generation: 3, catalog: [] });
+    assert.match(h.get('[role="status"]').textContent ?? "", /No models available/);
+    await h.unmount();
+    assert.equal(h.listeners.size, 0);
   } finally { await h.close(); }
 });
 

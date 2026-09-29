@@ -18,7 +18,7 @@ export function attachmentState(patch: Partial<AttachmentStateMessage> = {}): At
   return { version: 3, type: "attachmentState", viewId: "view", generation: 1, draft: { revision: 0, text: "", acceptedEditSequence: 0, attachments: [] },
     preparation: "idle", result: null, historyCount: 0, retainedBytes: 0, lastSubmission: null, ...patch };
 }
-export async function uiHarness(initial = true, candidate = false, production = false) {
+export async function uiHarness(initial = true, candidate = false, production = false, settings = false) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });
   const previous = new Map<string, PropertyDescriptor | undefined>();
   const globals: Record<string, unknown> = { window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
@@ -35,7 +35,10 @@ export async function uiHarness(initial = true, candidate = false, production = 
   const { mountBaselineApp } = await import("./baseline-mount.js");
   let dispose: () => void = () => undefined;
   await act(async () => {
-    if (candidate) {
+    if (settings) {
+      const { mountSettings } = await import("../settings/index.js");
+      dispose = mountSettings(root, bridge);
+    } else if (candidate) {
       const { mountCandidate } = await import("../preview/candidate.js");
       const { createPreviewLanguage } = await import("../preview/ui-language.js");
       dispose = mountCandidate(root, bridge, createPreviewLanguage());
@@ -48,7 +51,7 @@ export async function uiHarness(initial = true, candidate = false, production = 
   const input = async (value: string, selector = "#chat-input") => { await act(async () => {
     const el = get<HTMLTextAreaElement>(selector);
     // Bypass React's value tracker just as a native user edit would.
-    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value")?.set?.call(el, value);
+    Object.getOwnPropertyDescriptor(el.tagName === "INPUT" ? dom.window.HTMLInputElement.prototype : dom.window.HTMLTextAreaElement.prototype, "value")?.set?.call(el, value);
     el.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
     el.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   }); };
@@ -68,4 +71,8 @@ export function readAppStyles(file = "src/webview/styles.css"): string {
 /** Exercises the shipped mounting entry, rather than a historical composition fixture. */
 export async function productionHarness(initial = true) {
   return uiHarness(initial, false, true);
+}
+
+export async function settingsHarness() {
+  return uiHarness(false, false, false, true);
 }

@@ -27,6 +27,24 @@ function resourceUri(path: string, scheme = "file") {
   };
 }
 export const tick = async () => { await new Promise<void>((resolve) => setImmediate(resolve)); };
+function panelFixture(type: string, title: string, column: unknown, options: unknown) {
+  const receive = new Event<unknown>();
+  const closed = new Event<void>();
+  const sent: unknown[] = [];
+  let reveals = 0;
+  let disposed = false;
+  return { type, title, column, options, receive, sent, closed,
+    get reveals() { return reveals; }, get disposed() { return disposed; },
+    reveal() { reveals++; },
+    dispose() { if (disposed) return; disposed = true; closed.fire(); },
+    onDidDispose: closed.subscribe,
+    webview: { html: "", cspSource: "vscode-webview://settings-test",
+      asWebviewUri: (resource: { with: (changes: { scheme: string }) => unknown }) => resource.with({ scheme: "vscode-webview-resource" }),
+      onDidReceiveMessage: receive.subscribe,
+      postMessage: async (message: unknown) => { sent.push(message); return true; },
+    },
+  };
+}
 export function hostFixture(folders = [folder()], trusted = true, remoteName: string | undefined = undefined) {
   const change = new Event<void>();
   const trust = new Event<void>();
@@ -41,6 +59,7 @@ export function hostFixture(folders = [folder()], trusted = true, remoteName: st
   const commands: unknown[][] = [];
   const updates: unknown[][] = [];
   let picks = 0;
+  const panels: ReturnType<typeof panelFixture>[] = [];
   const api = {
     Uri: { file: (value: string) => resourceUri(value), parse: (value: string) => resourceUri(value.slice(value.indexOf(":") + 1), value.slice(0, value.indexOf(":"))) },
     RelativePattern: class { constructor(readonly base: string, readonly pattern: string) {} },
@@ -53,6 +72,9 @@ export function hostFixture(folders = [folder()], trusted = true, remoteName: st
       updateWorkspaceFolders: (...args: unknown[]): boolean => { updates.push(args); return true; } },
     env: { remoteName },
     window: {
+      createWebviewPanel: (type: string, title: string, column: unknown, options: unknown) => {
+        const panel = panelFixture(type, title, column, options); panels.push(panel); return panel;
+      },
       showWarningMessage: async (_message: string, _options: vscode.MessageOptions, ..._items: string[]): Promise<string | undefined> => undefined,
       showInformationMessage: async (_message: string): Promise<string | undefined> => undefined,
       showInputBox: async (_options?: vscode.InputBoxOptions): Promise<string | undefined> => undefined,
@@ -62,7 +84,7 @@ export function hostFixture(folders = [folder()], trusted = true, remoteName: st
     },
     commands: { executeCommand: async (...args: unknown[]) => { commands.push(args); executed.fire(args); } },
   };
-  return { api, change, trust, documentChange, documentClose, fileCreate, fileChange, fileDelete, contentProviders, shown, executed, commands, updates, get picks() { return picks; } };
+  return { api, panels, change, trust, documentChange, documentClose, fileCreate, fileChange, fileDelete, contentProviders, shown, executed, commands, updates, get picks() { return picks; } };
 }
 
 export function harness(

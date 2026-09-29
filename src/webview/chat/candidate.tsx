@@ -12,7 +12,7 @@ import { ChatPreviewContext, useChatPreview } from "./environment.js";
 import { SESSION_PAGE_SIZE, SAVED_HISTORY_PAGE_SIZE } from "../index.js";
 import { CandidateSessions } from "./candidate-sessions.js";
 import { CandidateConversation } from "./candidate-conversation.js";
-import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactElement } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { WebviewClient, availability, type WebviewBridge } from "../index.js";
 import { WorkspaceSetup, SavedHistory, Approvals, UiTextProvider, useUiText } from "../components/index.js";
@@ -28,6 +28,7 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
   const { locale, text: t } = useUiText();
   const preview = useChatPreview();
   const snapshot = useSyncExternalStore(client.subscribe, client.getSnapshot);
+  useEffect(() => { if (snapshot.uiLocale) language.select(snapshot.uiLocale); }, [snapshot.uiLocale, language]);
   const state = snapshot.workspace;
   const controls = availability(snapshot);
   const short = useSyncExternalStore(subscribeViewport, shortViewport);
@@ -67,7 +68,6 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
   const back = useRef<HTMLButtonElement>(null);
   const readingPosition = useRef(0);
   const wasBrowsing = useRef(false);
-  const [settingsOpenRequest, setSettingsOpenRequest] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const historyId = useId();
   useLayoutEffect(() => {
@@ -128,8 +128,8 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
     if (event.currentTarget.querySelector('[role="dialog"]:not([hidden]), dialog[open]')) return;
     event.preventDefault(); setHistoryOpen(false);
   }}>
-    <SessionNavigation snapshot={snapshot} client={client} language={language} canBrowse={canBrowse} canCompose={canCompose}
-      historyOpen={historyOpen} historyId={historyId} browse={browse} settingsOpenRequest={settingsOpenRequest}
+    <SessionNavigation snapshot={snapshot} client={client} canBrowse={canBrowse} canCompose={canCompose}
+      historyOpen={historyOpen} historyId={historyId} browse={browse}
       onBrowse={() => { if (historyOpen) { setHistoryOpen(false); return; } readingPosition.current = messages.current?.scrollTop ?? 0; setHistoryOpen(true); client.openSessions(); }} />
     <CandidateSessions open={historyOpen} id={historyId} back={back} onBack={() => setHistoryOpen(false)}
       state={snapshot.sessions} pageSize={SESSION_PAGE_SIZE} onResume={client.resumeConversation} onPage={client.navigateSessions} onRefresh={() => client.getSavedSessions(0)} />
@@ -154,7 +154,7 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
         {(canCompose || readableRuntimeError) && <>
           {!state.chatModel && <div className="candidate__error" role="alert">
             <p>{t(preview ? "No configured model is available. Use Simulate recovery in the preview toolbar." : "No configured model is available. Open Interface settings to configure a provider API key.")}</p>
-            {!preview && <button type="button" className="candidate__link-button" onClick={() => setSettingsOpenRequest(value => value + 1)}>{t("Open provider settings")}</button>}
+            {!preview && <button type="button" className="candidate__link-button" onClick={() => client.action({ type: "openSettings" })}>{t("Open provider settings")}</button>}
           </div>}
           {snapshot.savedHistory && (snapshot.savedHistory.available || snapshot.savedHistory.error) && <SavedHistory
             pageSize={SAVED_HISTORY_PAGE_SIZE} state={snapshot.savedHistory} pendingPage={snapshot.savedHistoryPendingPage} preview={snapshot.savedHistoryPreview}
@@ -189,7 +189,7 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
       </div>
       <MessageComposer snapshot={snapshot} client={client} input={input} canPrepare={canPrepare} canBrowse={canBrowse}
         canCompose={canCompose} readableRuntimeError={readableRuntimeError} submit={submit}
-        onSettings={() => setSettingsOpenRequest(value => value + 1)}
+        onSettings={() => client.action({ type: "openSettings" })}
         onRequireWorkspace={canPrepare && !state.busy && !snapshot.error ? () => { if (needsResources) setResourcesPrompt(true); else { setContextPrompt(true); setFolderPrompt(true); } } : undefined} />
       {snapshot.synchronizing && snapshot.text && <p className="candidate__sync" role="status">{t("Synchronizing draft…")}</p>}
     </footer>

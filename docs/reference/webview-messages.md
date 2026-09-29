@@ -11,6 +11,12 @@ English | [中文](webview-messages.zh.md)
 
 > Connectivity, workspace choice, a host-owned pi RPC subprocess (WI-007), plain-text chat (WI-004), model/thinking settings (WI-008/WI-009) and controlled execution (WI-010). No secrets, pi SDK in the webview, filesystem access or generic host operations are exposed. The three trust/session gates are Accepted within ADR0004’s explicit evidence and exclusions.
 
+## Editor settings surface (WI-026)
+
+`openSettings` has no extra payload and is admitted only from the current chat view. It opens/reveals a single editor panel. `setUiLanguage` carries exactly `locale: "en" | "zh-CN"`; the host keeps it only in memory and publishes `uiLanguageState` with the standard host envelope and locale to each view.
+
+The settings panel has a separate random viewId, shared host generation, and a narrower allowlist: bootstrap `ping/getWorkspaceState`, `setUiLanguage`, `refreshProviderConfig`, `openProviderApiKey`, `logoutProvider`, `setDefaultModel`, `setDefaultThinkingLevel`. Bootstrap returns only `uiLanguageState` and `providerConfigState`. It cannot start chat, mutate drafts, approve tools, switch execution profiles or access history. The existing exact parser and current identity/generation checks run before provider actions; stale identities resynchronize only these settings projections. Closing/reopening generates a new identity and does not close chat or runtime. Both renderers reject foreign and older projections. API key entry remains a native host prompt.
+
 ## Envelope and allowlist
 
 Only numeric `version: 3` is accepted. [webviewProtocol.ts](../../src/extension/contracts/webviewProtocol.ts) owns complete types; [webviewMessages.ts](../../src/extension/bridge/webviewMessages.ts) owns exact runtime validation. v1/v2 and single-file-slice evolution are preserved in the [historical snapshot](../archive/2026-09-28-webview-contract-history.md), not compatibility paths. The separate pi approval-gate envelope remains v1; it is not the Webview version.

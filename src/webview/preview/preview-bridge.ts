@@ -57,6 +57,8 @@ export type PreviewBridgeOptions = {
   loading?: boolean;
   settings?: SettingsFixture;
   resourcesPending?: boolean;
+  locale?: "en" | "zh-CN";
+  openSettings?: () => void;
 };
 
 function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection {
@@ -191,6 +193,7 @@ export class PreviewBridge implements WebviewBridge {
       this.emitAttachment();
       this.emitReview();
       this.emitSettings();
+      if (this.previewOptions?.locale) this.emit({ version: 3, type: "uiLanguageState", viewId: this.viewId, generation: this.workspace.generation, locale: this.previewOptions.locale });
       this.emitInteractions();
       if (this.scenario === "sessions") {
         this.emitSession();
@@ -203,6 +206,11 @@ export class PreviewBridge implements WebviewBridge {
       this.attachment = { ...this.attachment, result: { code: "stale" } }; this.emitAttachment(); return;
     }
     switch (message.type) {
+      case "openSettings": this.previewOptions?.openSettings?.(); return;
+      case "setUiLanguage":
+        if (this.previewOptions) this.previewOptions.locale = message.locale;
+        this.emit({ version: 3, type: "uiLanguageState", viewId: this.viewId, generation: this.workspace.generation, locale: message.locale });
+        return;
       case "openFolder":
         this.openFolder();
         break;
