@@ -57,7 +57,7 @@ export class SettingsPanel implements vscode.Disposable {
     if (message.viewId !== this.viewId || message.generation !== state.generation) { this.publish(true); return; }
     if (message.type === "setUiLanguage") { this.language(message.locale); return; }
     switch (message.type) {
-      case "refreshProviderConfig": case "openProviderApiKey": case "logoutProvider":
+      case "refreshProviderConfig": case "openProviderApiKey": case "openProviderOAuth": case "addCustomEndpoint": case "removeCustomEndpoint": case "logoutProvider":
       case "setDefaultModel": case "setDefaultThinkingLevel":
         await this.action(message);
         this.publish(true);

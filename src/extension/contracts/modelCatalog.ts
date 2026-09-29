@@ -23,10 +23,7 @@ export function isValidProviderId(provider: string): boolean {
 }
 
 export function isValidModelRef(provider: string, modelId: string): boolean {
-  return isValidProviderId(provider)
-    && modelId.length > 0
-    && modelId.length <= MAX_MODEL_ID_CHARS
-    && MODEL_TOKEN_PATTERN.test(modelId);
+  return isValidProviderId(provider) && isCustomModelId(modelId);
 }
 
 export function findCatalogEntry(
@@ -35,4 +32,52 @@ export function findCatalogEntry(
   modelId: string,
 ): ModelCatalogEntry | undefined {
   return models.find((entry) => entry.provider === provider && entry.modelId === modelId);
+}
+
+const MAX_ENDPOINT_URL_CHARS = 512;
+const MAX_ENDPOINT_NAME_CHARS = 200;
+
+function hasUnsafeMarker(value: string): boolean {
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    if (code <= 31 || char === "!" || char === "$") return true;
+  }
+  return false;
+}
+
+function endpointSlug(displayName: string): string {
+  return displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+}
+
+/** Provider id derived from a display name. Empty when the name cannot be a pi provider id. */
+export function endpointProviderId(displayName: string): string | undefined {
+  if (!isEndpointDisplayName(displayName)) return undefined;
+  if (isValidProviderId(displayName)) return displayName;
+  const slug = endpointSlug(displayName);
+  return isValidProviderId(slug) ? slug : undefined;
+}
+
+export function isEndpointDisplayName(value: string): boolean {
+  return value.length > 0
+    && value.length <= MAX_ENDPOINT_NAME_CHARS
+    && value === value.trim()
+    && !hasUnsafeMarker(value)
+    && (isValidProviderId(value) || isValidProviderId(endpointSlug(value)));
+}
+
+/** http(s) URL with a host and no embedded userinfo, shell prefix or environment marker. */
+export function isPublicHttpUrl(value: string): boolean {
+  if (value.length === 0 || value.length > MAX_ENDPOINT_URL_CHARS || value !== value.trim() || /\s/.test(value) || hasUnsafeMarker(value)) return false;
+  let url: URL;
+  try { url = new URL(value); } catch { return false; }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+  if (url.username !== "" || url.password !== "") return false;
+  return url.hostname.length > 0;
+}
+
+export function isCustomModelId(value: string): boolean {
+  return value.length > 0
+    && value.length <= MAX_MODEL_ID_CHARS
+    && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(value)
+    && !value.includes("..");
 }

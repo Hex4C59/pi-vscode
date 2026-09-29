@@ -254,9 +254,10 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
         || !(message.defaultThinkingLevel === null || string(message.defaultThinkingLevel, 16))) return;
       const thinkingLevels = list(message.thinkingLevels, 16, item => string(item, 16) ? item : undefined);
       const providers = list(message.providers, 64, item => {
-        const entry = exactRecord(item, ["providerId", "displayName", "configured", "authLabel", "canAddApiKey", "canLogout"]);
+        const entry = exactRecord(item, ["providerId", "displayName", "configured", "authLabel", "canAddApiKey", "canLogout", "canSignIn", "canRemoveEndpoint"]);
         return entry && string(entry.providerId, 64) && string(entry.displayName, 200)
           && typeof entry.configured === "boolean" && typeof entry.canAddApiKey === "boolean" && typeof entry.canLogout === "boolean"
+          && typeof entry.canSignIn === "boolean" && typeof entry.canRemoveEndpoint === "boolean"
           && (entry.authLabel === null || string(entry.authLabel, 200)) ? entry : undefined;
       });
       const catalog = list(message.catalog, 64, parseModel);

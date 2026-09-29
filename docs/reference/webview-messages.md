@@ -15,7 +15,7 @@ English | [中文](webview-messages.zh.md)
 
 `openSettings` has no extra payload and is admitted only from the current chat view. It opens/reveals a single editor panel. `setUiLanguage` carries exactly `locale: "en" | "zh-CN"`; the host keeps it only in memory and publishes `uiLanguageState` with the standard host envelope and locale to each view.
 
-The settings panel has a separate random viewId, shared host generation, and a narrower allowlist: bootstrap `ping/getWorkspaceState`, `setUiLanguage`, `refreshProviderConfig`, `openProviderApiKey`, `logoutProvider`, `setDefaultModel`, `setDefaultThinkingLevel`. Bootstrap returns only `uiLanguageState` and `providerConfigState`. It cannot start chat, mutate drafts, approve tools, switch execution profiles or access history. The existing exact parser and current identity/generation checks run before provider actions; stale identities resynchronize only these settings projections. Closing/reopening generates a new identity and does not close chat or runtime. Both renderers reject foreign and older projections. API key entry remains a native host prompt.
+The settings panel has a separate random viewId, shared host generation, and a narrower allowlist: bootstrap `ping/getWorkspaceState`, `setUiLanguage`, `refreshProviderConfig`, `openProviderApiKey`, `openProviderOAuth`, `addCustomEndpoint`, `removeCustomEndpoint`, `logoutProvider`, `setDefaultModel`, `setDefaultThinkingLevel`. Bootstrap returns only `uiLanguageState` and `providerConfigState`. It cannot start chat, mutate drafts, approve tools, switch execution profiles or access history. The existing exact parser and current identity/generation checks run before provider actions; stale identities resynchronize only these settings projections. Closing/reopening generates a new identity and does not close chat or runtime. Both renderers reject foreign and older projections. API key entry and OAuth device codes remain native host prompts. A custom endpoint message carries a display name, http(s) base URL and model id, never an API key.
 
 ## Envelope and allowlist
 
@@ -36,8 +36,11 @@ Accept plain/null-prototype objects with exact own enumerable data fields; rejec
 | openReviewDiff / openReviewSource / resumeConversation | id selecting a currently admitted host record |
 | getSavedSessions / getSavedHistory | page |
 | getSavedHistoryPreview | id, requestId, offset |
-| setChatModel / setThinkingLevel | provider + modelId / level; bounded token and current host catalogue/capability checks |
+| setChatModel / setThinkingLevel | provider + modelId / level; model ids may include `.` `_` `:` `/` and `-`; current host catalogue and capability checks still apply |
 | openProviderApiKey / logoutProvider | providerId; host collects API keys only via native password InputBox — never in the webview payload |
+| openProviderOAuth | providerId; host runs pi OAuth login. URLs and device codes stay in native prompts, never in the webview payload |
+| addCustomEndpoint | displayName, baseUrl, modelId; host merges one OpenAI-compatible models.json entry and then collects the API key natively. No apiKey field is accepted |
+| removeCustomEndpoint | providerId of a non-built-in models.json provider; host deletes that object and logs out |
 | setDefaultModel | provider + modelId; persists pi default via SettingsManager, then refreshes/applies session model when ready |
 | setDefaultThinkingLevel | provider + modelId + level; current default identity and supported level required; saves per-model defaults without starting a runtime |
 | refreshProviderConfig | None; reloads non-secret provider status and default-model catalogue |

@@ -20,7 +20,7 @@
 
 `openSettings` 无额外字段，仅当前聊天视图可发送，打开／揭示单实例编辑区面板。`setUiLanguage` 只携带 `locale: "en" | "zh-CN"`；宿主仅内存保存，并向各视图投影带标准宿主信封与 locale 的 `uiLanguageState`。
 
-设置面板拥有独立随机 viewId 和共享宿主 generation，白名单更窄：bootstrap `ping/getWorkspaceState`、`setUiLanguage`、`refreshProviderConfig`、`openProviderApiKey`、`logoutProvider`、`setDefaultModel`、`setDefaultThinkingLevel`。Bootstrap 仅返回 `uiLanguageState` 与 `providerConfigState`。它不能启动聊天、改草稿、批准工具、切换执行配置或读取历史。供应商操作前执行原有精确解析与当前身份／generation 检查；过期身份仅重新同步设置投影。关闭重开生成新标识，不关闭聊天／runtime；两个渲染器均拒绝外来及旧投影。密钥仍在原生宿主提示输入。
+设置面板拥有独立随机 viewId 和共享宿主 generation，白名单更窄：bootstrap `ping/getWorkspaceState`、`setUiLanguage`、`refreshProviderConfig`、`openProviderApiKey`、`openProviderOAuth`、`addCustomEndpoint`、`removeCustomEndpoint`、`logoutProvider`、`setDefaultModel`、`setDefaultThinkingLevel`。Bootstrap 仅返回 `uiLanguageState` 与 `providerConfigState`。它不能启动聊天、改草稿、批准工具、切换执行配置或读取历史。供应商操作前执行原有精确解析与当前身份／generation 检查；过期身份仅重新同步设置投影。关闭重开生成新标识，不关闭聊天／runtime；两个渲染器均拒绝外来及旧投影。API key 与 OAuth 设备码仍在原生宿主提示中收集。自定义端点消息只含显示名称、http(s) Base URL 和模型 id，不接受 API key。
 
 ## 消息封装与允许列表
 
@@ -41,8 +41,11 @@
 | openReviewDiff／openReviewSource／resumeConversation | id；只能引用host当前允许的记录 |
 | getSavedSessions／getSavedHistory | page |
 | getSavedHistoryPreview | id、requestId、offset |
-| setChatModel／setThinkingLevel | provider＋modelId／level；须匹配有界token及当前host目录／能力 |
+| setChatModel／setThinkingLevel | provider＋modelId／level；模型 id 可含 `.` `_` `:` `/` 与 `-`；仍须匹配当前 host 目录与能力 |
 | openProviderApiKey／logoutProvider | providerId；API 密钥仅经宿主原生密码 InputBox 收集，永不进入 webview 载荷 |
+| openProviderOAuth | providerId；宿主执行 pi OAuth 登录。URL 与设备码只出现在原生提示，永不进入 webview 载荷 |
+| addCustomEndpoint | displayName、baseUrl、modelId；宿主合并一条 OpenAI 兼容 models.json 记录，随后在原生提示收集 API key。不接受 apiKey 字段 |
+| removeCustomEndpoint | 非内置 models.json 供应商的 providerId；宿主删除该对象并登出 |
 | setDefaultModel | provider＋modelId；经 SettingsManager 持久化 pi 默认，runtime 就绪时刷新／应用会话模型 |
 | setDefaultThinkingLevel | provider＋modelId＋level；须匹配当前默认模型身份及支持档位；按模型保存默认值，不启动 runtime |
 | refreshProviderConfig | 无；重载无密钥的供应商状态与默认模型目录 |

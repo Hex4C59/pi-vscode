@@ -103,6 +103,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       showInputBox: options => this.api.window.showInputBox(options),
       showQuickPick: (items, options) => this.api.window.showQuickPick(items, options),
       showInformationMessage: message => this.api.window.showInformationMessage(message),
+      openExternal: url => this.api.env.openExternal(this.api.Uri.parse(url)),
     }), () => this.publish());
     this.settingsPanel = new SettingsPanel(this.api.window, this.extensionUri, () => {
       if (!this.disposed) this.refresh();
@@ -717,7 +718,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === "cancelInteraction") { this.interactions.cancel(message, message.id); return; }
     if (message.type === "chooseExecutionProfile") { await this.chooseExecutionProfile(view, message.profile); return; }
     if (message.type === "endOwnedRuntime" || message.type === "recoverControlledRuntime") { await this.recoverRuntime(view, message.type); return; }
-    if (message.type === "refreshProviderConfig" || message.type === "openProviderApiKey" || message.type === "logoutProvider"
+    if (message.type === "refreshProviderConfig" || message.type === "openProviderApiKey" || message.type === "openProviderOAuth"
+      || message.type === "addCustomEndpoint" || message.type === "removeCustomEndpoint" || message.type === "logoutProvider"
       || message.type === "setDefaultThinkingLevel" || message.type === "setDefaultModel") {
       await this.configureProvider(message);
       return;
@@ -802,6 +804,15 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     switch (message.type) {
       case "refreshProviderConfig": await this.providerConfig.refresh(); break;
       case "openProviderApiKey": await this.providerConfig.openApiKey(message.providerId); break;
+      case "openProviderOAuth": await this.providerConfig.openOAuth(message.providerId); break;
+      case "addCustomEndpoint": {
+        const saved = await this.providerConfig.addCustomEndpoint(message);
+        if (saved && this.state.runtime === "ready") await this.syncSessionModelsAfterProviderConfig(saved.providerId, saved.modelId);
+        else await this.syncSessionModelsAfterProviderConfig();
+        this.publish();
+        return;
+      }
+      case "removeCustomEndpoint": await this.providerConfig.removeCustomEndpoint(message.providerId); break;
       case "logoutProvider": await this.providerConfig.logout(message.providerId); break;
       case "setDefaultModel": await this.providerConfig.setDefaultModel(message.provider, message.modelId); break;
       case "setDefaultThinkingLevel":

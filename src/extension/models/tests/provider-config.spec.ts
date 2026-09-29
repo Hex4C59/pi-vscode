@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
+import { mkdtempSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { test } from "node:test";
 import { ProviderConfig, resolvePiAgentDir, type ProviderConfigDeps } from "../providerConfig.js";
 
 function deps(overrides: Partial<ProviderConfigDeps> = {}): ProviderConfigDeps {
+  const file = path.join(mkdtempSync(path.join(os.tmpdir(), "pi-models-")), "models.json");
   const providers = [{
     id: "anthropic",
     name: "Anthropic",
@@ -43,7 +47,9 @@ function deps(overrides: Partial<ProviderConfigDeps> = {}): ProviderConfigDeps {
       showInputBox: async options => { prompts.push(options.prompt); return options.password ? "sk-test" : "value"; },
       showQuickPick: async () => undefined,
       showInformationMessage: async () => undefined,
+      openExternal: async () => true,
     },
+    modelsPath: () => file,
     ...overrides,
   };
 }
@@ -131,6 +137,7 @@ test("cancelled API key prompt does not report a hard error", async () => {
       showInputBox: async () => undefined,
       showQuickPick: async () => undefined,
       showInformationMessage: async () => undefined,
+      openExternal: async () => false,
     },
   }), () => {});
   await config.refresh();

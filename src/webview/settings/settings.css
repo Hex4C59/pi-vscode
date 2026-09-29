@@ -23,6 +23,9 @@
 .settings-page__model[aria-pressed="true"] { background: var(--ui-hover); }
 .settings-page__model:not([aria-pressed="true"]) .settings-page__check { visibility: hidden; }
 .settings-page__trailing { display: flex; align-items: center; gap: 12px; }
+.settings-page__fields { display: grid; gap: 16px; }
+.settings-page__fields label { display: grid; gap: 8px; }
+.settings-page__fields input { color: var(--ui-fg); background: var(--ui-input); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); padding: 8px 12px; min-width: 0; width: 100%; }
 .settings-page__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
 .settings-page__actions button { padding: 8px 12px; border-radius: var(--ui-radius); background: transparent; }
 .settings-page__actions .settings-page__button { border: 1px solid var(--ui-border-strong); }

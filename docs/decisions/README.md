@@ -33,8 +33,11 @@ Initial proposals and unexplained spike failures retain their pending state and 
 
 ## Draft ADRs
 
+| ID | Title | Gate | File |
+|----|-------|------|------|
+| 0005 | Custom OpenAI-compatible endpoints in models.json (WI-030) | none | [0005-custom-endpoint-file.md](0005-custom-endpoint-file.md) |
 
-No current Draft ADRs. ADR0004 accepts the remaining WI-010 boundary decisions; WI-010/Goal closure is recorded in the archive linked from ACTIVE.
+0005 stays Draft until WI-030 verification is recorded. It does not accept a gate.
 
 ## Agent workflow
 

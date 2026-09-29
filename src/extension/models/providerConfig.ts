@@ -3,8 +3,10 @@ import type { ModelThinkingLevel } from "@earendil-works/pi-ai" with { "resoluti
 import path from "node:path";
 import type { ProviderConfigEntry, ProviderConfigProjection, ModelCatalogEntry } from "../contracts/index.js";
 import {
+  endpointProviderId, isPublicHttpUrl,
   MAX_MODEL_CATALOG_ENTRIES, MAX_MODEL_ID_CHARS, MAX_MODEL_LABEL_CHARS, MAX_MODEL_PROVIDER_CHARS,
 } from "../contracts/index.js";
+import { addOpenAiEndpoint, listRemovableEndpointIds, removeOpenAiEndpoint } from "./customEndpoints.js";
 
 type AuthPrompt =
   | { type: "text"; message: string; placeholder?: string; signal?: AbortSignal }
@@ -29,7 +31,7 @@ type ProviderAuthStatus = { configured: boolean; source?: string; label?: string
 type SdkProvider = {
   id: string;
   name: string;
-  auth: { apiKey?: { login?: unknown }; oauth?: unknown };
+  auth: { apiKey?: { login?: unknown }; oauth?: { login?: unknown } };
   getModels(): readonly { id: string; name?: string }[];
 };
 
@@ -42,7 +44,9 @@ type ModelRuntimeLike = {
   listCredentials(options?: { signal?: AbortSignal }): Promise<readonly { providerId: string; type: string }[]>;
   getModels(providerId?: string): readonly { id: string; name?: string; provider?: string }[];
   getAvailable(providerId?: string): Promise<readonly { id: string; name?: string; provider?: string }[]>;
-  login(providerId: string, type: "api_key", interaction: AuthInteraction): Promise<unknown>;
+  getRegisteredNativeProvider?(providerId: string): unknown;
+  reloadModels?(): Promise<void>;
+  login(providerId: string, type: "api_key" | "oauth", interaction: AuthInteraction): Promise<unknown>;
   logout(providerId: string): Promise<void>;
 };
 
@@ -70,12 +74,14 @@ export type ProviderConfigPromptUi = {
     options: { title: string; ignoreFocusOut?: boolean },
   ): Thenable<{ id: string } | undefined>;
   showInformationMessage(message: string): Thenable<unknown>;
+  openExternal(url: string): Thenable<boolean>;
 };
 
 export type ProviderConfigDeps = {
   createRuntime(): Promise<ModelRuntimeLike>;
   createSettings(): Promise<SettingsManagerLike>;
   promptUi: ProviderConfigPromptUi;
+  modelsPath(): string;
 };
 
 const empty = (): ProviderConfigProjection => ({
@@ -128,6 +134,8 @@ export function createDefaultProviderConfigDeps(promptUi: ProviderConfigPromptUi
         listCredentials: options => runtime.listCredentials(options),
         getModels: id => runtime.getModels(id),
         getAvailable: id => runtime.getAvailable(id),
+        getRegisteredNativeProvider: id => runtime.getRegisteredNativeProvider(id),
+        reloadModels: async () => { await runtime.refresh({ allowNetwork: false }); },
         login: (id, type, interaction) => runtime.login(id, type, interaction),
         logout: id => runtime.logout(id),
         thinkingOptions(provider: string, modelId: string, level: ModelThinkingLevel): ThinkingOptions | null {
@@ -143,11 +151,23 @@ export function createDefaultProviderConfigDeps(promptUi: ProviderConfigPromptUi
       return SettingsManager.create(os.homedir(), agentDir);
     },
     promptUi,
+    modelsPath: () => path.join(resolvePiAgentDir(), "models.json"),
   };
 }
 
 function canLoginWithApiKey(provider: SdkProvider): boolean {
   return typeof provider.auth.apiKey?.login === "function";
+}
+
+function canLoginWithOAuth(provider: SdkProvider): boolean {
+  return typeof provider.auth.oauth?.login === "function";
+}
+
+function boundedNotice(value: string): string {
+  let text = "";
+  for (const char of value) text += char.charCodeAt(0) <= 31 ? " " : char;
+  text = text.trim();
+  return text.length <= 240 ? text : `${text.slice(0, 239)}…`;
 }
 
 /** Owns non-secret provider status, API-key login/logout and default model persistence. */
@@ -157,6 +177,7 @@ export class ProviderConfig {
   private runtime: ModelRuntimeLike | undefined;
   private settings: SettingsManagerLike | undefined;
   private saving = false;
+  private removable = new Set<string>();
 
   constructor(
     private readonly deps: ProviderConfigDeps,
@@ -188,7 +209,20 @@ export class ProviderConfig {
       },
       notify(event) {
         if (event.type === "info" || event.type === "progress") {
-          void ui.showInformationMessage(event.message);
+          const message = boundedNotice(event.message);
+          if (message) void ui.showInformationMessage(message);
+          return;
+        }
+        if (event.type === "auth_url") {
+          if (isPublicHttpUrl(event.url)) void ui.openExternal(event.url);
+          const instructions = event.instructions ? boundedNotice(event.instructions) : "";
+          if (instructions) void ui.showInformationMessage(instructions);
+          return;
+        }
+        if (event.type === "device_code" && isPublicHttpUrl(event.verificationUri)) {
+          const code = boundedNotice(event.userCode);
+          if (code) void ui.showInformationMessage(`Sign-in code: ${code}`);
+          void ui.openExternal(event.verificationUri);
         }
       },
     };
@@ -227,10 +261,14 @@ export class ProviderConfig {
         authLabel,
         canAddApiKey: canLoginWithApiKey(provider),
         canLogout: stored.has(provider.id),
+        canSignIn: canLoginWithOAuth(provider),
+        canRemoveEndpoint: this.removable.has(provider.id),
       });
     };
     for (const provider of runtime.getProviders()) {
-      if (canLoginWithApiKey(provider) || stored.has(provider.id) || runtime.getProviderAuthStatus(provider.id).configured) {
+      const status = runtime.getProviderAuthStatus(provider.id);
+      if (canLoginWithApiKey(provider) || canLoginWithOAuth(provider) || this.removable.has(provider.id)
+        || stored.has(provider.id) || status.configured) {
         push(provider);
       }
     }
@@ -280,6 +318,8 @@ export class ProviderConfig {
     this.changed();
     try {
       const runtime = await this.ensureRuntime();
+      await runtime.reloadModels?.();
+      this.removable = await this.removableIds(runtime);
       const settings = await this.ensureSettings();
       await settings.reload();
       if (settings.drainErrors().length) throw new Error("settings unavailable");
@@ -294,7 +334,15 @@ export class ProviderConfig {
     this.changed();
   }
 
-  async openApiKey(providerId: string): Promise<void> {
+  private async removableIds(runtime: ModelRuntimeLike): Promise<Set<string>> {
+    const ids = await listRemovableEndpointIds(
+      this.deps.modelsPath(),
+      id => runtime.getRegisteredNativeProvider?.(id) !== undefined,
+    );
+    return new Set(ids ?? []);
+  }
+
+  private async loginWith(providerId: string, type: "api_key" | "oauth"): Promise<void> {
     if (this.saving) return;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
@@ -302,8 +350,9 @@ export class ProviderConfig {
     try {
       const runtime = await this.ensureRuntime();
       const provider = runtime.getProviders().find(item => item.id === providerId);
-      if (!provider || !canLoginWithApiKey(provider)) throw new Error("unsupported");
-      await runtime.login(providerId, "api_key", this.interaction());
+      const supported = provider && (type === "oauth" ? canLoginWithOAuth(provider) : canLoginWithApiKey(provider));
+      if (!supported) throw new Error("unsupported");
+      await runtime.login(providerId, type, this.interaction());
       if (token !== this.revision) return;
       await this.refresh();
     } catch (error) {
@@ -312,11 +361,95 @@ export class ProviderConfig {
       this.value = {
         ...this.value,
         busy: false,
-        error: cancelled ? null : "Could not save the API key. Try again.",
+        error: cancelled ? null : type === "oauth" ? "Could not sign in. Try again." : "Could not save the API key. Try again.",
       };
       this.changed();
       if (!cancelled) await this.refresh();
     }
+  }
+
+  async openApiKey(providerId: string): Promise<void> {
+    await this.loginWith(providerId, "api_key");
+  }
+
+  async openOAuth(providerId: string): Promise<void> {
+    await this.loginWith(providerId, "oauth");
+  }
+
+  async addCustomEndpoint(input: { displayName: string; baseUrl: string; modelId: string }): Promise<{ providerId: string; modelId: string } | undefined> {
+    if (this.saving) return undefined;
+    const providerId = endpointProviderId(input.displayName);
+    if (!providerId) {
+      this.value = { ...this.value, error: "Could not save the endpoint. Use a name with letters or numbers." };
+      this.changed();
+      return undefined;
+    }
+    this.saving = true;
+    const token = ++this.revision;
+    this.value = { ...this.value, busy: true, error: null };
+    this.changed();
+    let saved: { providerId: string; modelId: string } | undefined;
+    let cancelled = false;
+    let invalid = false;
+    try {
+      const runtime = await this.ensureRuntime();
+      const failure = await addOpenAiEndpoint(this.deps.modelsPath(), {
+        providerId, displayName: input.displayName, baseUrl: input.baseUrl, modelId: input.modelId,
+      }, id => runtime.getRegisteredNativeProvider?.(id) !== undefined);
+      if (failure) throw new Error(failure);
+      await runtime.reloadModels?.();
+      if (token !== this.revision) return undefined;
+      await runtime.login(providerId, "api_key", this.interaction());
+      if (token === this.revision) saved = { providerId, modelId: input.modelId };
+    } catch (error) {
+      cancelled = error instanceof Error && error.message === "cancelled";
+      invalid = error instanceof Error && error.message === "invalid";
+    } finally { this.saving = false; }
+    if (token !== this.revision) return undefined;
+    const beforeRefresh = this.revision;
+    await this.refresh();
+    if (this.revision !== beforeRefresh + 1 || saved || cancelled) return saved;
+    this.value = {
+      ...this.value,
+      busy: false,
+      error: invalid ? "The endpoint file is invalid, so it was not changed." : "Could not save the endpoint. Try again.",
+    };
+    this.changed();
+    return undefined;
+  }
+
+  async removeCustomEndpoint(providerId: string): Promise<void> {
+    if (this.saving) return;
+    this.saving = true;
+    const token = ++this.revision;
+    this.value = { ...this.value, busy: true, error: null };
+    this.changed();
+    let removed = false;
+    let invalid = false;
+    try {
+      const runtime = await this.ensureRuntime();
+      const result = await removeOpenAiEndpoint(
+        this.deps.modelsPath(),
+        providerId,
+        id => runtime.getRegisteredNativeProvider?.(id) !== undefined,
+      );
+      if (result !== "removed") throw new Error(result);
+      await runtime.reloadModels?.();
+      await runtime.logout(providerId);
+      removed = true;
+    } catch (error) {
+      invalid = error instanceof Error && error.message === "invalid";
+    } finally { this.saving = false; }
+    if (token !== this.revision) return;
+    const beforeRefresh = this.revision;
+    await this.refresh();
+    if (this.revision !== beforeRefresh + 1 || removed) return;
+    this.value = {
+      ...this.value,
+      busy: false,
+      error: invalid ? "The endpoint file is invalid, so it was not changed." : "Could not remove the endpoint. Try again.",
+    };
+    this.changed();
   }
 
   async logout(providerId: string): Promise<void> {

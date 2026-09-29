@@ -8,6 +8,8 @@ export type ProviderConfigEntry = {
   authLabel: string | null;
   canAddApiKey: boolean;
   canLogout: boolean;
+  canSignIn: boolean;
+  canRemoveEndpoint: boolean;
 };
 
 /** Host-owned provider/default-model snapshot; never includes secrets. */
@@ -24,6 +26,9 @@ export type ProviderConfigProjection = {
 
 export type ProviderConfigIntent =
   | { type: "openProviderApiKey"; providerId: string }
+  | { type: "openProviderOAuth"; providerId: string }
+  | { type: "addCustomEndpoint"; displayName: string; baseUrl: string; modelId: string }
+  | { type: "removeCustomEndpoint"; providerId: string }
   | { type: "logoutProvider"; providerId: string }
   | { type: "setDefaultModel"; provider: string; modelId: string }
   | { type: "setDefaultThinkingLevel"; provider: string; modelId: string; level: string }

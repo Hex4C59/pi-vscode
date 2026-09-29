@@ -18,16 +18,20 @@ function SettingsPage({ config, locale, onLanguage, onAction }: Props): ReactEle
   const { text: t } = useUiText();
   const [page, setPage] = useState<Page>("models");
   const [providerId, setProviderId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [endpointName, setEndpointName] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [modelId, setModelId] = useState("");
   const [query, setQuery] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
   const provider = config?.providers.find(item => item.providerId === providerId);
-  const title = provider?.displayName ?? t(page === "general" ? "General" : page === "models" ? "Default model" : "Providers");
+  const title = adding ? t("Add endpoint") : provider?.displayName ?? t(page === "general" ? "General" : page === "models" ? "Default model" : "Providers");
   useLayoutEffect(() => {
     if (first.current) { first.current = false; return; }
     heading.current?.focus();
-  }, [page, providerId]);
-  const navigate = (next: Page) => { setPage(next); setProviderId(null); setQuery(""); };
+  }, [page, providerId, adding]);
+  const navigate = (next: Page) => { setPage(next); setProviderId(null); setAdding(false); setQuery(""); };
   const models = config?.catalog.filter(item => `${item.label} ${item.provider} ${item.modelId}`.toLocaleLowerCase().includes(query.toLocaleLowerCase())) ?? [];
   return <main className="settings-page" lang={locale}>
     <nav className="settings-page__nav" aria-label={t("Settings categories")}>
@@ -37,7 +41,7 @@ function SettingsPage({ config, locale, onLanguage, onAction }: Props): ReactEle
     </nav>
     <section className="settings-page__content" aria-labelledby="settings-page-heading">
       <header className="settings-page__header">
-        {provider && <button type="button" className="settings-page__icon" aria-label={t("Back to providers")} onClick={() => setProviderId(null)}><SessionIcon name="arrow-left" /></button>}
+        {(provider || adding) && <button type="button" className="settings-page__icon" aria-label={t("Back to providers")} onClick={() => { setProviderId(null); setAdding(false); }}><SessionIcon name="arrow-left" /></button>}
         <h2 id="settings-page-heading" tabIndex={-1} ref={heading}>{title}</h2>
         {page !== "general" && <button type="button" className="settings-page__icon" disabled={!config || config.busy} aria-busy={config?.busy ?? false}
           aria-label={t(config?.busy ? "Refreshing providers…" : "Refresh providers")} onClick={() => onAction({ type: "refreshProviderConfig" })}><SessionIcon name="refresh-cw" /></button>}
@@ -62,18 +66,35 @@ function SettingsPage({ config, locale, onLanguage, onAction }: Props): ReactEle
             {!models.length && <p role="status">{t(config.busy ? "Loading providers…" : config.catalog.length ? "No matching models" : "No models available")}</p>}
           </div>
           <button className="settings-page__row settings-page__link" type="button" onClick={() => navigate("providers")}><span>{t("Manage providers")}</span><SessionIcon name="chevron-right" /></button>
-        </> : provider ? <>
+        </> : adding ? <form className="settings-page__fields" onSubmit={event => {
+          event.preventDefault();
+          onAction({ type: "addCustomEndpoint", displayName: endpointName.trim(), baseUrl: baseUrl.trim(), modelId: modelId.trim() });
+        }}>
+          <label>{t("Endpoint name")}<input value={endpointName} disabled={config.busy} autoComplete="off" onChange={event => setEndpointName(event.currentTarget.value)} /></label>
+          <label>{t("Base URL")}<input value={baseUrl} disabled={config.busy} autoComplete="off" inputMode="url" spellCheck={false} onChange={event => setBaseUrl(event.currentTarget.value)} /></label>
+          <label>{t("Model ID")}<input value={modelId} disabled={config.busy} autoComplete="off" spellCheck={false} onChange={event => setModelId(event.currentTarget.value)} /></label>
+          <div className="settings-page__actions">
+            <button className="settings-page__button" type="submit" disabled={config.busy || !endpointName.trim() || !baseUrl.trim() || !modelId.trim()}>{t("Save endpoint")}</button>
+          </div>
+        </form> : provider ? <>
           <div className="settings-page__row"><span>{t("API key")}</span><span className="settings-page__muted">{t(provider.configured ? "Configured" : "Not configured")}</span></div>
           <div className="settings-page__actions">
+            {provider.canSignIn && <button className="settings-page__button" type="button" disabled={config.busy} onClick={() => onAction({ type: "openProviderOAuth", providerId: provider.providerId })}>{t("Sign in")}</button>}
             {provider.canAddApiKey && <button className="settings-page__button" type="button" disabled={config.busy} onClick={() => onAction({ type: "openProviderApiKey", providerId: provider.providerId })}>{t(provider.configured ? "Update API key" : "Add API key")}</button>}
             {provider.canLogout && <button type="button" disabled={config.busy} onClick={() => onAction({ type: "logoutProvider", providerId: provider.providerId })}>{t("Remove credentials")}</button>}
+            {provider.canRemoveEndpoint && <button type="button" disabled={config.busy} onClick={() => onAction({ type: "removeCustomEndpoint", providerId: provider.providerId })}>{t("Remove endpoint")}</button>}
           </div>
-        </> : <div className="settings-page__providers">
-          {config.providers.map(item => <button className="settings-page__row settings-page__link" key={item.providerId} type="button" onClick={() => setProviderId(item.providerId)}>
-            <span>{item.displayName}</span><span className="settings-page__trailing"><small>{t(item.configured ? "Configured" : "Not configured")}</small><SessionIcon name="chevron-right" /></span>
-          </button>)}
-          {!config.providers.length && <p role="status">{t(config.busy ? "Loading providers…" : "No API-key providers are available yet.")}</p>}
-        </div>}
+        </> : <>
+          <div className="settings-page__actions">
+            <button className="settings-page__button" type="button" disabled={config.busy} onClick={() => setAdding(true)}>{t("Add endpoint")}</button>
+          </div>
+          <div className="settings-page__providers">
+            {config.providers.map(item => <button className="settings-page__row settings-page__link" key={item.providerId} type="button" onClick={() => setProviderId(item.providerId)}>
+              <span>{item.displayName}</span><span className="settings-page__trailing"><small>{t(item.configured ? "Configured" : "Not configured")}</small><SessionIcon name="chevron-right" /></span>
+            </button>)}
+            {!config.providers.length && <p role="status">{t(config.busy ? "Loading providers…" : "No API-key providers are available yet.")}</p>}
+          </div>
+        </>}
       </>}
     </section>
   </main>;

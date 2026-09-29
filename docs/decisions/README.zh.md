@@ -38,8 +38,11 @@
 
 ## Draft ADR
 
+| ID | 标题 | Gate | 文件 |
+|----|------|------|------|
+| 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 无 | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
 
-当前无 Draft ADR。ADR0004已接受WI-010剩余边界决定；WI-010／Goal已收尾，归档由ACTIVE链接。
+0005 在 WI-030 验证记入前保持 Draft。它不接受任何 gate。
 
 ## Agent 流程
 

@@ -3,7 +3,7 @@ export type * from "../contracts/index.js";
 import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/index.js";
 
 import { MAX_CHAT_MESSAGE_CHARS } from "./chatBounds.js";
-import { isValidModelRef, isValidProviderId, isValidThinkingLevel } from "../contracts/index.js";
+import { isValidModelRef, isValidProviderId, isValidThinkingLevel, isCustomModelId, isEndpointDisplayName, isPublicHttpUrl } from "../contracts/index.js";
 
 
 
@@ -21,7 +21,9 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     openSettings: [], setUiLanguage: ["locale"],
     newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
     chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
-    openProviderApiKey: ["providerId"], logoutProvider: ["providerId"], setDefaultModel: ["provider", "modelId"], setDefaultThinkingLevel: ["provider", "modelId", "level"], refreshProviderConfig: [],
+    openProviderApiKey: ["providerId"], openProviderOAuth: ["providerId"], logoutProvider: ["providerId"],
+    addCustomEndpoint: ["displayName", "baseUrl", "modelId"], removeCustomEndpoint: ["providerId"],
+    setDefaultModel: ["provider", "modelId"], setDefaultThinkingLevel: ["provider", "modelId", "level"], refreshProviderConfig: [],
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
@@ -60,8 +62,13 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     if (typeof message.provider !== "string" || typeof message.modelId !== "string") return undefined;
     if (!isValidModelRef(message.provider, message.modelId)) return undefined;
   }
-  if (message.type === "openProviderApiKey" || message.type === "logoutProvider") {
+  if (message.type === "openProviderApiKey" || message.type === "openProviderOAuth" || message.type === "logoutProvider" || message.type === "removeCustomEndpoint") {
     if (typeof message.providerId !== "string" || !isValidProviderId(message.providerId)) return undefined;
+  }
+  if (message.type === "addCustomEndpoint") {
+    if (typeof message.displayName !== "string" || !isEndpointDisplayName(message.displayName)) return undefined;
+    if (typeof message.baseUrl !== "string" || !isPublicHttpUrl(message.baseUrl)) return undefined;
+    if (typeof message.modelId !== "string" || !isCustomModelId(message.modelId)) return undefined;
   }
   if (message.type === "chooseExecutionProfile" && message.profile !== "controlled" && message.profile !== "trusted") return undefined;
   if (message.type === "answerInteraction") {

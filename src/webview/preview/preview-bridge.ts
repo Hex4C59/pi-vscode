@@ -66,8 +66,8 @@ function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection 
     busy: false, error: null,
     defaultProvider: "synthetic", defaultModelId: "sonnet", defaultThinkingLevel: "medium", thinkingLevels: ["off", "minimal", "low", "medium", "high"],
     providers: [
-      { providerId: "synthetic", displayName: "Synthetic provider", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-      { providerId: "other", displayName: "Other provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+      { providerId: "synthetic", displayName: "Synthetic provider", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true, canSignIn: true, canRemoveEndpoint: false },
+      { providerId: "other", displayName: "Other provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false, canSignIn: false, canRemoveEndpoint: true },
     ],
     catalog: [
       { provider: "synthetic", modelId: "sonnet", label: "Claude Sonnet" },
@@ -88,8 +88,8 @@ function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection 
     return {
       ...ready,
       providers: [
-        { providerId: "synthetic", displayName: "Synthetic Anthropic Messages API With An Unreasonably Long Provider Title", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-        { providerId: "other", displayName: "Other Extremely Verbose Compatibility Provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+        { providerId: "synthetic", displayName: "Synthetic Anthropic Messages API With An Unreasonably Long Provider Title", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true, canSignIn: true, canRemoveEndpoint: false },
+        { providerId: "other", displayName: "Other Extremely Verbose Compatibility Provider", configured: false, authLabel: null, canAddApiKey: true, canLogout: false, canSignIn: false, canRemoveEndpoint: true },
       ],
       catalog: [
         { provider: "synthetic", modelId: "sonnet", label: "claude-opus-4-thinking-preview-unreasonably-long-model-name" },
@@ -271,6 +271,32 @@ export class PreviewBridge implements WebviewBridge {
           this.providerConfig = { ...this.providerConfig, busy: false };
           this.emitSettings();
         }, 400);
+        break;
+      case "openProviderOAuth":
+        this.providerConfig = {
+          ...this.providerConfig,
+          providers: this.providerConfig.providers.map(provider => provider.providerId === message.providerId
+            ? { ...provider, configured: true, authLabel: "subscription", canLogout: true }
+            : provider),
+        };
+        this.emitSettings();
+        break;
+      case "addCustomEndpoint":
+        this.providerConfig = {
+          ...this.providerConfig,
+          providers: [...this.providerConfig.providers, {
+            providerId: "custom-endpoint", displayName: message.displayName, configured: true, authLabel: "stored",
+            canAddApiKey: true, canLogout: true, canSignIn: false, canRemoveEndpoint: true,
+          }],
+        };
+        this.emitSettings();
+        break;
+      case "removeCustomEndpoint":
+        this.providerConfig = {
+          ...this.providerConfig,
+          providers: this.providerConfig.providers.filter(provider => provider.providerId !== message.providerId),
+        };
+        this.emitSettings();
         break;
       case "openProviderApiKey":
         this.providerConfig = {

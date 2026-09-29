@@ -11,6 +11,8 @@ import {
 test("model catalog validators accept bounded tokens", () => {
   assert.ok(isValidThinkingLevel("high"));
   assert.ok(isValidModelRef("openai", "gpt-4"));
+  assert.ok(isValidModelRef("ollama", "llama3.1:8b"));
+  assert.equal(isValidModelRef("ollama", "a..b"), false);
   assert.equal(
     findCatalogEntry(
       [{ provider: "openai", modelId: "gpt-4", label: "GPT-4" }],

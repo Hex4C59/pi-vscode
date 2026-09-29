@@ -7,8 +7,8 @@ const envelope = { version: 3, generation: 1, viewId: "view" };
 const config = { ...envelope, type: "providerConfigState", busy: false, error: null,
   defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
   providers: [
-    { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true },
-    { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false },
+    { providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true, canSignIn: false, canRemoveEndpoint: false },
+    { providerId: "anthropic", displayName: "Anthropic", configured: false, authLabel: null, canAddApiKey: true, canLogout: false, canSignIn: false, canRemoveEndpoint: false },
   ], catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
 };
 

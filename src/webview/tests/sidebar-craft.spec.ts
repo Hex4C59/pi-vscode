@@ -58,7 +58,7 @@ test("settings page uses categories, icon refresh and separate provider details"
     await h.receive({
       version: 3, generation: 1, viewId: "view", type: "providerConfigState", busy: false, error: null,
       defaultProvider: "openai", defaultModelId: "gpt", defaultThinkingLevel: null, thinkingLevels: [],
-      providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true }],
+      providers: [{ providerId: "openai", displayName: "OpenAI", configured: true, authLabel: "stored", canAddApiKey: true, canLogout: true, canSignIn: false, canRemoveEndpoint: false }],
       catalog: [{ provider: "openai", modelId: "gpt", label: "GPT" }],
     });
 
