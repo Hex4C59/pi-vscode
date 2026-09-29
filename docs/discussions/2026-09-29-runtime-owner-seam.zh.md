@@ -47,7 +47,7 @@
 记下来，免得下次审查从头再找：
 
 - `createPiRpcRuntime` 内部可分为请求应答配对、帧翻译、任务忙闲三块；"空闲 / 能发送"定义了四次（`stop`、`checkpointRestart`、`prompt`、`preparePrompt`）。本切片之后更好做。
-- 会话 worker 协议（请求类型、上限、校验）在 `sessions/pi-session-backend.ts` 与 `sessions/sessionWorker.ts` 各写一份，已漂移（历史页大小一边是字面量 `32`，一边是 `HISTORY_PAGE_SIZE`）。
+- 会话 worker 协议（请求类型、上限、校验）曾在 `sessions/pi-session-backend.ts` 与 `sessions/sessionWorker.ts` 各写一份。WI-031 已抽取，数值未改。
 - 凭据样式正则在 `src/adapter/runtime/` 与 `src/extension/` 共复制六份，已漂移（`activityProjection.ts` 的打码缺 `authorization` 与私钥规则）。
 - 托管控制消息（`initialize`、`spawned`、控制请求 / 应答）两侧各自手写校验；`control-protocol.ts` 只管 socket 路径。
 - 生产宿主不使用 `PiRuntimeLifecycle.prompt()`（`src/extension/tests/harness.ts:132-137` 仍在用）；八个生命周期方法标为可选，但生产全部实现。

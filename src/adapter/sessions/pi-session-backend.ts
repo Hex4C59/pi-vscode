@@ -1,43 +1,25 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 
-import type {
-  SavedHistoryPage,
-  SavedHistoryPreview,
-  SavedSession,
-  SessionBackend,
-  SessionBackendFailure,
-} from "../../extension/contracts/index.js";
+import type { SessionBackend, SessionBackendFailure } from "../../extension/contracts/index.js";
 import { controlledEnvironment } from "../index.js";
+import type { PiSessionBackendEnvironment } from "./types.js";
+import {
+  SESSION_WORKER_ARG,
+  SESSION_WORKER_PROTOCOL_VERSION,
+  SESSION_WORKER_REQUEST_LIMIT_BYTES,
+  SESSION_WORKER_RESPONSE_LIMIT_BYTES,
+  isSessionWorkerRequest,
+  parseSessionWorkerResponse,
+  type SessionWorkerRequest,
+} from "./session-worker-protocol.js";
 
-export const SESSION_WORKER_ARG = "--pi-vscode-session-worker";
-export const SESSION_WORKER_PROTOCOL_VERSION = 1;
-export const SESSION_PAGE_SIZE = 16;
+export { SESSION_WORKER_ARG, SESSION_WORKER_PROTOCOL_VERSION, SESSION_PAGE_SIZE } from "./session-worker-protocol.js";
+export type { PiSessionBackendEnvironment } from "./types.js";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_TERMINATION_GRACE_MS = 1_000;
-const DEFAULT_REQUEST_LIMIT_BYTES = 64 * 1024;
-const DEFAULT_STDOUT_LIMIT_BYTES = 1024 * 1024;
 const DEFAULT_STDERR_LIMIT_BYTES = 64 * 1024;
-const MAX_ROOT_LENGTH = 32 * 1024;
-const MAX_ID_LENGTH = 200;
-const MAX_PATH_LENGTH = 32 * 1024;
-const MAX_NAME_LENGTH = 160;
-const MAX_FIRST_MESSAGE_LENGTH = 256;
-const MAX_MODIFIED_LENGTH = 40;
-const MAX_HISTORY_ROWS = 32;
-const MAX_HISTORY_TEXT_LENGTH = 8_000;
-const MAX_HISTORY_TOTAL_BYTES = 128 * 1024;
-const MAX_PREVIEW_TEXT_LENGTH = 8_192;
-
-type WorkerListRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "list"; root: string; page: number };
-type WorkerInspectRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "inspect"; root: string; id: string };
-type WorkerHistoryRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "history"; root: string; id: string; anchor: string; page: number };
-type WorkerPreviewRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "preview"; root: string; id: string; anchor: string; index: number; offset: number };
-type WorkerRequest = WorkerListRequest | WorkerInspectRequest | WorkerHistoryRequest | WorkerPreviewRequest;
-
-type HistoryProjection = SavedHistoryPage;
-type PreviewProjection = SavedHistoryPreview;
 const LOCAL_FAILURE = Symbol("session-backend-local-failure");
 type LocalFailure = { ok: false; code: SessionBackendFailure["code"]; [LOCAL_FAILURE]: true };
 
@@ -54,16 +36,6 @@ function isLocalFailure(value: unknown): value is LocalFailure {
     && typeof value.code === "string";
 }
 
-type ParsedWorkerResponse =
-  | { ok: true; kind: "list"; entries: SavedSession[]; page: number; total: number }
-  | { ok: true; kind: "inspect"; session: SavedSession; history: HistoryProjection; anchor: string | null }
-  | { ok: true; kind: "history"; history: HistoryProjection }
-  | { ok: true; kind: "preview"; preview: PreviewProjection }
-  | SessionBackendFailure;
-
-import type { PiSessionBackendEnvironment } from "./types.js";
-export type { PiSessionBackendEnvironment } from "./types.js";
-
 type CloseResult = { code: number | null; signal: NodeJS.Signals | null };
 type WorkerExit =
   | { kind: "close"; result: CloseResult }
@@ -73,119 +45,6 @@ type WorkerExit =
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
-  const actual = Object.keys(value);
-  return actual.length === keys.length && keys.every((key) => Object.hasOwn(value, key));
-}
-
-function isBoundedText(value: unknown, maxCharacters: number): value is string {
-  return typeof value === "string" && Array.from(value).length <= maxCharacters;
-}
-
-function isValidRoot(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0 && value.length <= MAX_ROOT_LENGTH && path.isAbsolute(value);
-}
-
-function isValidId(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0 && value.length <= MAX_ID_LENGTH && /^[A-Za-z0-9_-]+$/.test(value);
-}
-
-function isValidPage(value: unknown, pageSize: number): value is number {
-  return Number.isSafeInteger(value)
-    && (value as number) >= 0
-    && (value as number) <= Math.floor(Number.MAX_SAFE_INTEGER / pageSize);
-}
-
-function isValidHistory(value: unknown): value is HistoryProjection {
-  if (!isRecord(value)
-    || !hasExactKeys(value, ["messages", "page", "total"])
-    || !Array.isArray(value.messages)
-    || value.messages.length > MAX_HISTORY_ROWS
-    || !isValidPage(value.page, 32)
-    || !Number.isSafeInteger(value.total)
-    || (value.total as number) < 0
-    || (value.total as number) < value.messages.length) return false;
-
-  let totalBytes = 0;
-  for (const message of value.messages) {
-    if (!isRecord(message)
-      || (!hasExactKeys(message, ["role", "text"]) && !hasExactKeys(message, ["role", "text", "id"]))
-      || (message.role !== "user" && message.role !== "assistant")
-      || !isBoundedText(message.text, MAX_HISTORY_TEXT_LENGTH)
-      || (Object.hasOwn(message, "id") && !isBoundedText(message.id, MAX_ID_LENGTH))) return false;
-    totalBytes += Buffer.byteLength(message.text, "utf8");
-    if (totalBytes > MAX_HISTORY_TOTAL_BYTES) return false;
-  }
-  return true;
-}
-
-function isValidPreview(value: unknown): value is PreviewProjection {
-  return isRecord(value)
-    && hasExactKeys(value, ["text", "offset", "nextOffset", "done", "totalChars"])
-    && typeof value.text === "string"
-    && value.text.length <= MAX_PREVIEW_TEXT_LENGTH
-    && Number.isSafeInteger(value.offset)
-    && (value.offset as number) >= 0
-    && Number.isSafeInteger(value.nextOffset)
-    && (value.nextOffset as number) >= (value.offset as number)
-    && Number.isSafeInteger(value.totalChars)
-    && (value.totalChars as number) >= (value.nextOffset as number)
-    && typeof value.done === "boolean";
-}
-
-function isValidSavedSession(value: unknown): value is SavedSession {
-  return isRecord(value)
-    && hasExactKeys(value, ["id", "path", "name", "firstMessage", "modified"])
-    && isValidId(value.id)
-    && isBoundedText(value.path, MAX_PATH_LENGTH)
-    && path.isAbsolute(value.path)
-    && (value.name === null || isBoundedText(value.name, MAX_NAME_LENGTH))
-    && isBoundedText(value.firstMessage, MAX_FIRST_MESSAGE_LENGTH)
-    && isBoundedText(value.modified, MAX_MODIFIED_LENGTH)
-    && Number.isFinite(Date.parse(value.modified));
-}
-
-function parseWorkerResponse(value: unknown, request: WorkerRequest): ParsedWorkerResponse {
-  if (!isRecord(value) || value.version !== SESSION_WORKER_PROTOCOL_VERSION || typeof value.ok !== "boolean") return { ok: false, code: "unavailable" };
-  if (!value.ok) {
-    if (!hasExactKeys(value, ["version", "ok", "code"])) return { ok: false, code: "unavailable" };
-    if (value.code === "wrong-project" || value.code === "stale") return { ok: false, code: value.code };
-    return { ok: false, code: "unavailable" };
-  }
-
-  if (request.action === "list") {
-    if (!hasExactKeys(value, ["version", "ok", "action", "entries", "page", "total"])
-      || value.action !== "list"
-      || !Array.isArray(value.entries)
-      || value.entries.length > SESSION_PAGE_SIZE
-      || !isValidPage(value.page, SESSION_PAGE_SIZE)
-      || (value.page as number) !== request.page
-      || !Number.isSafeInteger(value.total)
-      || (value.total as number) < 0
-      || (value.total as number) < value.entries.length) return { ok: false, code: "unavailable" };
-    const entries = value.entries.filter(isValidSavedSession);
-    if (entries.length !== value.entries.length || new Set(entries.map((entry) => entry.id)).size !== entries.length) return { ok: false, code: "unavailable" };
-    return { ok: true, kind: "list", entries, page: value.page as number, total: value.total as number };
-  }
-
-  if (request.action === "inspect") {
-    if (!hasExactKeys(value, ["version", "ok", "action", "session", "history", "anchor"])
-      || value.action !== "inspect"
-      || !isValidSavedSession(value.session)
-      || !isValidHistory(value.history)
-      || (value.anchor !== null && !isValidId(value.anchor))) return { ok: false, code: "unavailable" };
-    return { ok: true, kind: "inspect", session: value.session, history: value.history, anchor: value.anchor };
-  }
-
-  if (request.action === "history") {
-    if (!hasExactKeys(value, ["version", "ok", "action", "history"]) || value.action !== "history" || !isValidHistory(value.history)) return { ok: false, code: "unavailable" };
-    return { ok: true, kind: "history", history: value.history };
-  }
-
-  if (!hasExactKeys(value, ["version", "ok", "action", "preview"]) || value.action !== "preview" || !isValidPreview(value.preview)) return { ok: false, code: "unavailable" };
-  return { ok: true, kind: "preview", preview: value.preview };
 }
 
 function asBuffer(chunk: string | Buffer): Buffer {
@@ -224,10 +83,10 @@ async function terminateChild(child: ChildProcess, closePromise: Promise<CloseRe
 
 type WorkerLifecycle = { onSpawned: () => void; onClosed: () => void };
 
-async function runWorker(workerPath: string, request: WorkerRequest, signal: AbortSignal, environment: PiSessionBackendEnvironment, lifecycle?: WorkerLifecycle): Promise<unknown | LocalFailure> {
+async function runWorker(workerPath: string, request: SessionWorkerRequest, signal: AbortSignal, environment: PiSessionBackendEnvironment, lifecycle?: WorkerLifecycle): Promise<unknown | LocalFailure> {
   if (signal.aborted) return localFailure("cancelled");
   const requestLine = `${JSON.stringify(request)}\n`;
-  if (Buffer.byteLength(requestLine, "utf8") > (environment.requestLimitBytes ?? DEFAULT_REQUEST_LIMIT_BYTES)) return localFailure("unavailable");
+  if (Buffer.byteLength(requestLine, "utf8") > (environment.requestLimitBytes ?? SESSION_WORKER_REQUEST_LIMIT_BYTES)) return localFailure("unavailable");
 
   let child: ChildProcess;
   try {
@@ -252,7 +111,7 @@ async function runWorker(workerPath: string, request: WorkerRequest, signal: Abo
   let errorResolve!: (exit: WorkerExit) => void;
   const childErrorPromise = new Promise<WorkerExit>((resolve) => { errorResolve = resolve; });
   const markError = (): void => { childError = true; errorResolve({ kind: "error" }); };
-  const stdoutLimit = environment.stdoutLimitBytes ?? DEFAULT_STDOUT_LIMIT_BYTES;
+  const stdoutLimit = environment.stdoutLimitBytes ?? SESSION_WORKER_RESPONSE_LIMIT_BYTES;
   const stderrLimit = environment.stderrLimitBytes ?? DEFAULT_STDERR_LIMIT_BYTES;
 
   child.once("error", markError);
@@ -308,22 +167,10 @@ async function runWorker(workerPath: string, request: WorkerRequest, signal: Abo
   try { return JSON.parse(stdout) as unknown; } catch { return localFailure("unavailable"); }
 }
 
-function validListInput(cwd: string, page: number): boolean {
-  return isValidRoot(cwd) && isValidPage(page, SESSION_PAGE_SIZE);
-}
-
-function validHistoryInput(cwd: string, id: string, anchor: string, page: number): boolean {
-  return isValidRoot(cwd) && isValidId(id) && isValidId(anchor) && isValidPage(page, 32);
-}
-
-function validPreviewInput(cwd: string, id: string, anchor: string, index: number, offset: number): boolean {
-  return isValidRoot(cwd) && isValidId(id) && isValidId(anchor) && isValidPage(index, 1) && isValidPage(offset, 1);
-}
-
 export function createPiSessionBackend(workerPath: string, environment: PiSessionBackendEnvironment = {}): SessionBackend {
   const resolvedWorkerPath = typeof workerPath === "string" && workerPath.length > 0 ? path.resolve(workerPath) : "";
   let blockedClose: Promise<void> | undefined;
-  const call = async (request: WorkerRequest, signal: AbortSignal): Promise<unknown | LocalFailure> => {
+  const call = async (request: SessionWorkerRequest, signal: AbortSignal): Promise<unknown | LocalFailure> => {
     if (blockedClose) return localFailure("unavailable");
     let spawned = false;
     let resolveClose!: () => void;
@@ -345,34 +192,35 @@ export function createPiSessionBackend(workerPath: string, environment: PiSessio
 
   return {
     async list(cwd, page, signal) {
-      if (!resolvedWorkerPath || !validListInput(cwd, page)) return { ok: false, code: "unavailable" };
-      const response = await call({ version: SESSION_WORKER_PROTOCOL_VERSION, action: "list", root: cwd, page }, signal);
+      const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "list" as const, root: cwd, page };
+      if (!resolvedWorkerPath || !isSessionWorkerRequest(request)) return { ok: false, code: "unavailable" };
+      const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
-      const parsed = parseWorkerResponse(response, { version: SESSION_WORKER_PROTOCOL_VERSION, action: "list", root: cwd, page });
+      const parsed = parseSessionWorkerResponse(response, request);
       return !parsed.ok ? parsed : parsed.kind === "list" ? { ok: true, entries: parsed.entries, page: parsed.page, total: parsed.total } : { ok: false, code: "unavailable" };
     },
     async inspect(cwd, id, signal) {
-      if (!resolvedWorkerPath || !isValidRoot(cwd) || !isValidId(id)) return { ok: false, code: "unavailable" };
-      const request: WorkerInspectRequest = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "inspect", root: cwd, id };
+      const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "inspect" as const, root: cwd, id };
+      if (!resolvedWorkerPath || !isSessionWorkerRequest(request)) return { ok: false, code: "unavailable" };
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
-      const parsed = parseWorkerResponse(response, request);
+      const parsed = parseSessionWorkerResponse(response, request);
       return !parsed.ok ? parsed : parsed.kind === "inspect" ? { ok: true, session: parsed.session, history: parsed.history, anchor: parsed.anchor } : { ok: false, code: "unavailable" };
     },
     async history(cwd, id, anchor, page, signal) {
-      if (!resolvedWorkerPath || !validHistoryInput(cwd, id, anchor, page)) return { ok: false, code: "unavailable" };
-      const request: WorkerHistoryRequest = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "history", root: cwd, id, anchor, page };
+      const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "history" as const, root: cwd, id, anchor, page };
+      if (!resolvedWorkerPath || !isSessionWorkerRequest(request)) return { ok: false, code: "unavailable" };
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
-      const parsed = parseWorkerResponse(response, request);
+      const parsed = parseSessionWorkerResponse(response, request);
       return !parsed.ok ? parsed : parsed.kind === "history" ? { ok: true, history: parsed.history } : { ok: false, code: "unavailable" };
     },
     async preview(cwd, id, anchor, index, offset, signal) {
-      if (!resolvedWorkerPath || !validPreviewInput(cwd, id, anchor, index, offset)) return { ok: false, code: "unavailable" };
-      const request: WorkerPreviewRequest = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "preview", root: cwd, id, anchor, index, offset };
+      const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "preview" as const, root: cwd, id, anchor, index, offset };
+      if (!resolvedWorkerPath || !isSessionWorkerRequest(request)) return { ok: false, code: "unavailable" };
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
-      const parsed = parseWorkerResponse(response, request);
+      const parsed = parseSessionWorkerResponse(response, request);
       return !parsed.ok ? parsed : parsed.kind === "preview" ? { ok: true, preview: parsed.preview } : { ok: false, code: "unavailable" };
     },
   };

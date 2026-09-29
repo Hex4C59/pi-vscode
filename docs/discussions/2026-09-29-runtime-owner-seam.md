@@ -42,7 +42,7 @@ Consequences: two stop semantics are interleaved in one 750-line closure; error 
 Recorded so a later review does not rediscover them from scratch:
 
 - `createPiRpcRuntime` could be split internally into request/response correlation, frame translation and task busy state; "idle / can send" is defined four times (`stop`, `checkpointRestart`, `prompt`, `preparePrompt`). Easier after this slice.
-- Session worker protocol (request types, limits, validators) is duplicated between `sessions/pi-session-backend.ts` and `sessions/sessionWorker.ts`, with drift (history page size literal `32` vs `HISTORY_PAGE_SIZE`).
+- Session worker protocol (request types, limits, validators) was duplicated between `sessions/pi-session-backend.ts` and `sessions/sessionWorker.ts`. WI-031 extracted it; the values are unchanged.
 - Credential-pattern regexes are copied six times across `src/adapter/runtime/` and `src/extension/`, with drift (`activityProjection.ts` redaction lacks `authorization` and private-key patterns).
 - Ownership control messages (`initialize`, `spawned`, control request/response) are hand-validated on both sides; `control-protocol.ts` only owns the socket path.
 - `PiRuntimeLifecycle.prompt()` is unused by the production host (`src/extension/tests/harness.ts:132-137` still uses it); eight lifecycle methods are optional although production implements all.
