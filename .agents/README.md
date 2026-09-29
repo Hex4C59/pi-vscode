@@ -29,7 +29,7 @@ Always prefer reading the skill’s `SKILL.md` after invocation; this catalog is
 Recommended path for most feature work (from `/ask-matt`):
 
 1. **`/grill-with-docs`** — sharpen the idea; leave `CONTEXT.md` / ADRs when in a working tree.
-2. Optional: **`/prototype`** (+ **`/handoff`**) when you need a runnable answer before locking the design.
+2. Optional: **`/prototype`** when you need a runnable answer before locking the design.
 3. Multi-session build → **`/to-spec`** → **`/to-tickets`**, then **`/implement`** per ticket (often with fresh context). Small job → **`/implement`** (or **`/tdd`**) in the same thread.
 4. Review with **`/code-review`** before commit when you want a Standards + Spec pass.
 
@@ -56,12 +56,6 @@ Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, se
 - **What:** Router over this skill set; explains main flow, on-ramps, and standalones.
 - **When:** You do not know which skill or sequence to use.
 - **How:** `/ask-matt`. Explicit only.
-
-#### `handoff`
-
-- **What:** Compact the current conversation into a handoff document for another agent or session.
-- **When:** Context is full, you switch machines/agents, or a prototype lives in another directory and must carry learning back.
-- **How:** `/handoff`. Explicit only.
 
 #### `wait-what`
 
@@ -135,13 +129,7 @@ Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, se
 
 - **What:** Throwaway prototype to answer a design question (state/UI feel).
 - **When:** Conversation cannot settle a question without something runnable.
-- **How:** Auto or by name; pair with `/handoff` when the prototype tree is separate.
-
-#### `triage`
-
-- **What:** Move incoming issues/PRs through triage roles into agent-ready briefs.
-- **When:** Bugs/requests you did **not** author arrive raw. Do **not** triage tickets `/to-tickets` already produced.
-- **How:** `/triage`. Explicit only.
+- **How:** Auto or by name.
 
 #### `wayfinder`
 
@@ -227,12 +215,6 @@ Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, se
 - **When:** Merge/rebase is stuck on conflicts.
 - **How:** Auto or by name.
 
-#### `git-guardrails-claude-code`
-
-- **What:** Claude Code hooks that block dangerous git commands before execution.
-- **When:** You want safety rails in Claude Code (force push, hard reset, etc.).
-- **How:** Auto or by name when setting up those hooks.
-
 #### `setup-pre-commit`
 
 - **What:** Husky + lint-staged (Prettier) + typecheck/tests at commit time.
@@ -241,8 +223,8 @@ Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, se
 
 #### `setup-matt-pocock-skills`
 
-- **What:** One-time setup: issue tracker, triage labels, domain doc layout for this skill pack.
-- **When:** Before first use of tracker-backed skills (`to-spec`, `to-tickets`, `triage`, …).
+- **What:** One-time setup: issue tracker and domain doc layout for this skill pack.
+- **When:** Before first use of tracker-backed skills (`to-spec`, `to-tickets`, …).
 - **How:** `/setup-matt-pocock-skills`. Explicit only.
 
 #### `setup-ts-deep-modules`
@@ -324,11 +306,9 @@ codebase-design
 diagnosing-bugs
 documentation-health
 domain-modeling
-git-guardrails-claude-code
 grill-me
 grill-with-docs
 grilling
-handoff
 implement
 implement-spec
 improve-codebase-architecture
@@ -349,7 +329,6 @@ teach
 to-questionnaire
 to-spec
 to-tickets
-triage
 wait-what
 wayfinder
 wizard

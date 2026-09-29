@@ -32,7 +32,7 @@
 多数功能工作可按 `/ask-matt` 推荐路径：
 
 1. **`/grill-with-docs`** — 把想法问清楚；在工作区里留下 `CONTEXT.md`／ADR。
-2. 可选：**`/prototype`**（配合 **`/handoff`**）——对话定不下、需要可跑答案时。
+2. 可选：**`/prototype`** ——对话定不下、需要可跑答案时。
 3. 跨会话大构建 → **`/to-spec`** → **`/to-tickets`**，再按票 **`/implement`**（建议换新上下文）。小改动 → 同一会话直接 **`/implement`**（或 **`/tdd`**）。
 4. 需要时用 **`/code-review`** 做标准轴＋规格轴审查，再提交。
 
@@ -59,12 +59,6 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 - **做什么：** 本仓库 skill 路由器；说明主流程、入口与独立 skill。
 - **何时用：** 不知道该用哪个 skill／顺序。
 - **怎么用：** `/ask-matt`（仅显式）。
-
-#### `handoff`
-
-- **做什么：** 把当前对话压成交接文档，给另一个 agent／会话接续。
-- **何时用：** 上下文将满、换人／换会话，或原型在别的目录需要带回结论。
-- **怎么用：** `/handoff`（仅显式）。
 
 #### `wait-what`
 
@@ -138,13 +132,7 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 
 - **做什么：** 扔弃式原型，回答设计问题（状态／UI 手感）。
 - **何时用：** 纯对话定不下，需要可跑的东西。
-- **怎么用：** 自动或点名；原型在别的目录时配合 `/handoff`。
-
-#### `triage`
-
-- **做什么：** 把外来 issue／PR 经分流角色收成 agent-ready brief。
-- **何时用：** **别人**报来的 bug／需求。**不要** triage `/to-tickets` 已经产出的票。
-- **怎么用：** `/triage`（仅显式）。
+- **怎么用：** 自动或点名。
 
 #### `wayfinder`
 
@@ -230,12 +218,6 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 - **何时用：** 卡在冲突上。
 - **怎么用：** 自动或点名。
 
-#### `git-guardrails-claude-code`
-
-- **做什么：** 给 Claude Code 加 hook，拦截危险 git 命令。
-- **何时用：** 要在 Claude Code 里挡强推、硬重置等。
-- **怎么用：** 配置这类防护时自动或点名。
-
 #### `setup-pre-commit`
 
 - **做什么：** Husky + lint-staged（Prettier）+ 提交时类型检查／测试。
@@ -244,8 +226,8 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 
 #### `setup-matt-pocock-skills`
 
-- **做什么：** 一次性配置：issue 跟踪、triage 标签、领域文档布局。
-- **何时用：** 首次用依赖跟踪器的 skill（`to-spec`、`to-tickets`、`triage` 等）之前。
+- **做什么：** 一次性配置：issue 跟踪与领域文档布局。
+- **何时用：** 首次用依赖跟踪器的 skill（`to-spec`、`to-tickets` 等）之前。
 - **怎么用：** `/setup-matt-pocock-skills`（仅显式）。
 
 #### `setup-ts-deep-modules`
@@ -320,7 +302,7 @@ grilling → spec → tickets 尽量留在同一上下文；implement 各票宜�
 
 ## Skill 目录一览
 
-与 `.agents/skills/` 一致（39 个）：
+与 `.agents/skills/` 一致（36 个）：
 
 ```text
 ask-matt
@@ -329,11 +311,9 @@ codebase-design
 diagnosing-bugs
 documentation-health
 domain-modeling
-git-guardrails-claude-code
 grill-me
 grill-with-docs
 grilling
-handoff
 implement
 implement-spec
 improve-codebase-architecture
@@ -354,7 +334,6 @@ teach
 to-questionnaire
 to-spec
 to-tickets
-triage
 wait-what
 wayfinder
 wizard
