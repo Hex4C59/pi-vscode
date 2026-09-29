@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-28
+- 最近同步：2026-09-29
 - Type: Reference
 - Status: Accepted
 - Authority: **仅历史上下文**——被替代的PRD、WI、spike和讨论
@@ -36,10 +36,13 @@
 
 ## 已关闭 WI 索引
 
+按编号查找（仅已关闭项）见 [已关闭 WI 编号索引](2026-09-29-closed-wi-index.zh.md)。下表按归档文件罗列。
+
 下表的gates／待验收描述保留相应记录当时的范围；现行最终状态见WI-010收尾及ACTIVE，不把历史状态当当前阻塞。
 
 | 记录 | 内容 |
 |------|------|
+| [已关闭 WI 编号索引](2026-09-29-closed-wi-index.zh.md) | 2026-09-29 从 ACTIVE 移出的编号查找表；未关闭／暂停项仍在 ACTIVE |
 | [WI-022后台终端闪现收尾](2026-09-28-wi-022-closure.zh.md) | 维护者确认关闭默认CLI `--no-daemon`规避；不是上游Codex ADR／gate变更 |
 | [WI-010剩余边界／原Goal收尾](2026-09-28-wi-010-goal-closure.zh.md) | ADR0004及三gate接受、原队列映射、671测试与分层实际证据、文档／资源处置 |
 | [WI-008模型／就绪验收](2026-09-28-wi-008-model-acceptance.zh.md) | 委托接受、修复、分层宿主证据与范围限制 |
@@ -55,6 +58,7 @@
 | [WI-019正式chat收尾](2026-09-27-wi-019-formal-chat.zh.md) | Q16委托评估、共享正式展示、独立F5／安装；其他WI／ADR／gates不变 |
 | [WI-015 React／Vite验收](2026-09-27-wi-015-react-acceptance.zh.md) | 委托迁移／ADR0003接受、新安装生命周期证据；当时gates仍Open |
 | [WI-025 侧栏视觉工艺收尾](2026-09-29-wi-025-active-superseded.zh.md) | 维护者 2026-09-29 F5 视觉验收；批准范围、分层证据与安装／完整执行未验边界 |
+| [WI-026 编辑区设置收尾](2026-09-29-wi-026-active-superseded.zh.md) | 维护者 2026-09-29 F5 视觉验收；方案 A、实现交接与更早检查点 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |
 
 ## 被替代的交接
@@ -65,9 +69,10 @@
 | [Goal前端与附件检查点](2026-09-22-goal-frontend-attachment-handoffs.zh.md) | 后续Goal切片替代的WI-015／014可执行交接；当时维护者验收／gates仍待 |
 | [Goal修改审阅检查点](2026-09-22-goal-change-review-handoff.zh.md) | 会话连续性替代的WI-016代码／可执行交接；当时验收／gates仍待 |
 | [Goal会话连续性检查点](2026-09-23-goal-session-handoff.zh.md) | WI-017可执行交付与维护者请求暂停；当时下一实现未开始、验收／gates仍待 |
-| [WI-024暂停提案](2026-09-28-wi-024-paused-proposal.zh.md) | 为WI-025移出ACTIVE的供应商／模型配置范围、交付与被替代交接；WI-024暂停而非关闭，维护者F5仍在ACTIVE停车场待办 |
+| [WI-024暂停提案](2026-09-28-wi-024-paused-proposal.zh.md) | 供应商／模型配置范围与暂停时交接；WI-023 与 WI-024 的维护者 F5 关闭见同文件顶部 |
 | [ACTIVE候选与验证检查点历史](2026-09-27-active-checkpoint-history.zh.md) | 旧入口过程及原始中文；当时WI-019／021验收、F5阻塞及未决由ACTIVE持有 |
 | [WI-025 历史 Build 切片与交接](2026-09-29-wi-025-active-superseded.zh.md) | 第二～五轮完整 Build 记录、第六轮证据与已替代交接；同文件顶部记录关闭结论 |
+| [WI-026 已替代文案删除与研究交接](2026-09-29-wi-026-active-superseded.zh.md) | 方案 A 提案、实现交接与更早检查点；关闭结论在同文件顶部 |
 
 ## Agent 规则
 

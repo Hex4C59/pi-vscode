@@ -3,13 +3,19 @@
 English | [中文](2026-09-28-wi-024-paused-proposal.zh.md)
 
 - Type: Reference
-- Status: Archived (WI paused, **not closed**)
+- Status: Archived
 - Created: 2026-09-28
-- Authority: historical proposal and handoff only; the paused item, its pending F5 checks and its approval boundary are summarized in the [`ACTIVE.md`](../../ACTIVE.md) parking lot
+- Authority: historical proposal, pause-time handoff and the 2026-09-29 maintainer F5 closure; current work is [`ACTIVE.md`](../../ACTIVE.md)
+
+## Closure — 2026-09-29
+
+The maintainer confirmed F5 visual acceptance for the parked checks: WI-024 settings section, Add key and model-picker recovery, and the separate WI-023 check that the settings layout and model picker are visible. They tested the development host and were satisfied. This is personal maintainer inspection. It closes WI-023 and WI-024.
+
+The surface they accepted is the current development host. Its settings page is the WI-026 editor panel, so this confirmation does not re-accept the retired sidebar dialog. OAuth, custom endpoints, ambient cloud credentials, paid calls and installed VSIX stay outside this acceptance. No new ADR, gate, commit or push. The sections below keep the pause-time "F5 pending" wording as history.
 
 ## Why archived
 
-On 2026-09-28 the maintainer authorized a separate sidebar visual-craft WI (WI-025) and asked that WI-024's F5 stay in the parking lot rather than be merged into that slice. WIP=1 means WI-024 leaves the Current work section. It is paused, not accepted: maintainer F5 remains pending.
+On 2026-09-28 the maintainer authorized a separate sidebar visual-craft WI (WI-025) and asked that WI-024's F5 stay in the parking lot rather than be merged into that slice. WIP=1 meant WI-024 left the Current work section. At that date it was paused, not accepted. The closure above is 2026-09-29.
 
 ## Approved scope (unchanged)
 

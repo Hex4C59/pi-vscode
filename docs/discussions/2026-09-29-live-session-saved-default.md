@@ -23,7 +23,7 @@ This is not a product merge. Approved WI-025 copy already treats Saved default a
 
 1. **Freeze user-visible rules.** Pre-session Saved default changes do not start a session. When a Live session is ready, changing the Saved default still tries to apply it, including one restart if the child has no model. This slice only concentrates that order.
 2. **Glossary.** `CONTEXT.md` now defines **Saved default** and **Live session model**. No third glossary noun for the sequencing module.
-3. **Timing.** Design only while WI-026 is Build. Do not start a new WI or change application code until the maintainer opens that work.
+3. **Timing.** Recorded while WI-026 was Build: design only, no new WI and no application-code change. WI-026 closed on 2026-09-29. Opening the sequencing WI still requires an explicit maintainer request.
 4. **Composition.** A new module owns sequencing. ProviderConfig (credentials / Saved default persistence) and ModelSettings (Live session apply) stay separate collaborators, injected into that module.
 5. **Restart.** The sequencing module requests one restart through a narrow callback. The coordinator keeps `reconcileRuntime` and workspace eligibility. The sequencing module does not call `runtime.start` / `stop`.
 6. **Tests.** New tests hit the sequencing module’s interface. Existing ProviderConfig and ModelSettings tests stay. Coordinator tests only check that intents are forwarded.
@@ -47,7 +47,7 @@ This is not a product merge. Approved WI-025 copy already treats Saved default a
 
 ## Current leaning (not implementation approval)
 
-Design settled for a later technical WI after WI-026. Maintainer confirmed this recap on 2026-09-29. When that WI is opened: move `provider-model-sync` coverage onto the sequencing module’s interface; update the host capability table in the architecture doc. No ADR: in-process extract with frozen product rules, not a trust or runtime-hosting change.
+Design settled for a later technical WI. WI-026 closed on 2026-09-29; Build still waits for the maintainer to open that WI. Maintainer confirmed this recap on 2026-09-29. When that WI is opened: move `provider-model-sync` coverage onto the sequencing module’s interface; update the host capability table in the architecture doc. No ADR: in-process extract with frozen product rules, not a trust or runtime-hosting change.
 
 ## Open questions
 

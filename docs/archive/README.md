@@ -32,10 +32,13 @@ Do **not** implement from archive files. Agents treat archive as read-only backg
 
 ## Closed WI index
 
+Numbered lookup (closed WIs only) is in the [closed WI number index](2026-09-29-closed-wi-index.md). The table below catalogs archive files.
+
 Gate/pending wording below retains each record's historical scope; final current status belongs to the WI-010 closure and ACTIVE, not those historical blockers.
 
 | Record | Contents |
 |--------|----------|
+| [Closed WI number index](2026-09-29-closed-wi-index.md) | Compact WI-number lookup moved out of ACTIVE on 2026-09-29; open/paused items stay in ACTIVE |
 | [WI-022 background-console closure](2026-09-28-wi-022-closure.md) | Maintainer-confirmed close of default CLI `--no-daemon` workaround; not an upstream Codex ADR/gate change |
 | [WI-010 remaining boundaries / original Goal closure](2026-09-28-wi-010-goal-closure.md) | ADR0004/three gates, original queue mapping,671 tests/layered actual evidence, documentation/resources |
 | [WI-008 model/readiness acceptance](2026-09-28-wi-008-model-acceptance.md) | Delegated acceptance, repairs, layered host evidence and retained scope limits |
@@ -51,6 +54,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-019 formal chat closure](2026-09-27-wi-019-formal-chat.md) | Delegated Q16, shared production presentation, separate native F5/installed validation; other WIs/ADRs/gates unchanged |
 | [WI-015 React/Vite acceptance](2026-09-27-wi-015-react-acceptance.md) | Delegated migration/ADR 0003 acceptance, added installed lifecycle evidence; gates remain Open |
 | [WI-025 sidebar visual craft closure](2026-09-29-wi-025-active-superseded.md) | Maintainer F5 visual acceptance on 2026-09-29; approved scope, layered evidence and unverified installed/full-execution limits |
+| [WI-026 editor settings closure](2026-09-29-wi-026-active-superseded.md) | Maintainer F5 visual acceptance on 2026-09-29; scheme A, implementation handoff and earlier checkpoints |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
 ## Superseded handoffs
@@ -61,9 +65,10 @@ Gate/pending wording below retains each record's historical scope; final current
 | [Goal frontend and attachment checkpoints](2026-09-22-goal-frontend-attachment-handoffs.md) | Executable WI-015 / WI-014 handoffs replaced by the next Goal slice; maintainer acceptance and gates remain open |
 | [Goal change-review checkpoint](2026-09-22-goal-change-review-handoff.md) | WI-016 code/executable handoff replaced by session continuity; maintainer acceptance and gates remain open |
 | [Goal session-continuity checkpoint](2026-09-23-goal-session-handoff.md) | WI-017 executable delivery and maintainer-requested pause; next implementation not started, acceptance and gates remain open |
-| [WI-024 paused proposal](2026-09-28-wi-024-paused-proposal.md) | Provider/model configuration scope, delivery and superseded handoff moved out of ACTIVE for WI-025; WI-024 is paused, not closed, and its maintainer F5 remains pending in the ACTIVE parking lot |
+| [WI-024 paused proposal](2026-09-28-wi-024-paused-proposal.md) | Provider/model configuration scope and pause-time handoff; maintainer F5 closure for WI-023 and WI-024 is at the top of the same file |
 | [ACTIVE candidate and verification checkpoint history](2026-09-27-active-checkpoint-history.md) | Superseded entry narratives and preserved Chinese source; WI-019/021 acceptance, F5 blockers and pending decisions remain in ACTIVE |
 | [WI-025 historical Build rounds and handoffs](2026-09-29-wi-025-active-superseded.md) | Full Build rounds 2–5, round-6 evidence and superseded handoffs; closure recorded at the top of the same file |
+| [WI-026 superseded copy-deletion and research handoffs](2026-09-29-wi-026-active-superseded.md) | Scheme-A proposal, implementation handoff and earlier checkpoints; closure is at the top of the same file |
 
 ## Agent rule
 

@@ -10,7 +10,7 @@ English | [中文](2026-09-29-settings-redesign-research.zh.md)
 
 ## Maintainer decision — September 29, 2026
 
-The maintainer selected **A, editor-area settings**, superseding the agent's initial B recommendation below. WI-026 now authorizes a single settings panel, category/detail navigation, a composer execution entry and shared host-memory language. Existing credential/default/runtime semantics remain; no persistent language preference is added. This is the deliberate native-Settings exception described in the study. Production implementation and F5 acceptance remain separate from choosing the candidate.
+The maintainer selected **A, editor-area settings**, superseding the agent's initial B recommendation below. WI-026 authorized a single settings panel, category/detail navigation, a composer execution entry and shared host-memory language. Existing credential/default/runtime semantics remain; no persistent language preference is added. This is the deliberate native-Settings exception described in the study. Choosing the candidate did not itself accept the implementation. The maintainer later confirmed F5 visual acceptance on 2026-09-29; installed VSIX remains separate. This note remains research context.
 
 ## Question
 

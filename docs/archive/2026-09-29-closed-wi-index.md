@@ -1,0 +1,53 @@
+# Closed work-item number index
+
+English | [中文](2026-09-29-closed-wi-index.zh.md)
+
+- Type: Reference
+- Status: Archived
+- Created: 2026-09-29
+- Authority: historical lookup only; current work remains in [`ACTIVE.md`](../../ACTIVE.md)
+
+## Replacement reason
+
+On 2026-09-29 the maintainer asked to compact ACTIVE. The completed-WI table had grown into a session-entry catalog. Numbered lookup belongs here; ACTIVE keeps a short pointer and the most recent closed row. Compaction itself did not close WI-023/024/026, change gates or ADRs, or authorize commits. Later the same day the maintainer confirmed F5 visual acceptance for those three, and their rows are in the table below.
+
+Early rows that still say a gate is Open are snapshots at that WI's acceptance date, not current status. All six architecture gates are Accepted; see ADR 0001 and ADR 0004.
+
+## How to use this index
+
+Open the linked record for scope, evidence and limits. Do not implement from this table. File-oriented archive listings remain in the [archive README](README.md).
+
+## Closed WI lookup
+
+| WI | Result | Closed / accepted | History |
+|----|--------|-------------------|---------|
+| WI-001 | Extension shell, secondary sidebar and RPC probe; ADR 0001 | 2026-09-19 | [record](2026-09-21-closed-wi-history.md) |
+| WI-002 | Versioned ping/pong Webview bridge | 2026-09-19 | [record](2026-09-21-closed-wi-history.md) |
+| WI-003 | Project-trust technical spike; gate still Open in that snapshot | 2026-09-19 | [record](2026-09-21-closed-wi-history.md) |
+| WI-004 | REQ-004 minimal streaming chat; gate still Open in that snapshot | 2026-09-21 | [record](2026-09-21-closed-wi-history.md) |
+| WI-005 | Documentation-health phase one | 2026-09-19 | [record](2026-09-21-closed-wi-history.md) |
+| WI-006 | Workspace and project-resource selection UI | 2026-09-21 | [record](2026-09-21-closed-wi-history.md) |
+| WI-007 | Start pi RPC from the resource choice | 2026-09-21 | [record](2026-09-21-closed-wi-history.md) |
+| WI-008 | Model selection / ready, fault / approval / Stop, safe auth errors and required host fixes | 2026-09-28 Asia/Shanghai, agent under that delegation; WI-009 and broad gates not auto-closed | [record](2026-09-28-wi-008-model-acceptance.md) |
+| WI-009 | Thinking capability / next-turn intent, approval / Stop / exit recovery, keyboard focus and short-window error repair | 2026-09-28 Asia/Shanghai, agent under that delegation; full REQ and broad gates not auto-closed | [record](2026-09-28-wi-009-thinking-acceptance.md) |
+| WI-010 | Thinking / controlled tools / Stop; four F5 checks; limited slice closed, ADR pending / gate Open in that snapshot | 2026-09-21 | [record](2026-09-21-closed-wi-history.md) |
+| WI-010 remaining / original Goal | Remaining three gates, ADR 0004, Living contract, layered actual verification and global close | 2026-09-28 Asia/Shanghai, agent under that delegation | [record](2026-09-28-wi-010-goal-closure.md) |
+| WI-011 | Owner-local test move, recursive runner and scripts grouping; limited technical slice | 2026-09-22 | [record](2026-09-21-closed-wi-history.md) |
+| WI-012 | Minimal P1–P3 probe slice closed; P3 / full compatibility gaps retained, not product acceptance | 2026-09-22 | [record](2026-09-21-closed-wi-history.md) |
+| WI-013 | Trusted extension loading, standard interaction, tool approval and own-runtime recovery; ADR 0002 Accepted | 2026-09-28 Asia/Shanghai, agent under that delegation; broad gates stayed Open in that snapshot | [record](2026-09-28-wi-013-acceptance.md) |
+| WI-014 | Explicit file / selection mixed attachments, per-item confirm, full preview / history / capacity recovery and missing hints | 2026-09-28 Asia/Shanghai, agent under that delegation; review / session and broad gates not auto-closed | [record](2026-09-28-wi-014-attachment-acceptance.md) |
+| WI-015 | React / TypeScript / Vite migration acceptance; ADR 0003 Accepted | 2026-09-27 UTC, agent under that delegation; broad gates stayed Open in that snapshot | [record](2026-09-27-wi-015-react-acceptance.md) |
+| WI-016 | Controlled dirty protection / accurate readonly history diff, paging and loss recovery; short-window clip red-to-green | 2026-09-28 Asia/Shanghai, agent under that delegation; WI-017 and broad gates remain separate | [record](2026-09-28-wi-016-review-acceptance.md) |
+| WI-017 | Current project / CLI-origin sessions, ordered handoff, verbatim history and exception recovery; trusted default-reset red-to-green | 2026-09-28 Asia/Shanghai, agent under that delegation; broad gates remain separate | [record](2026-09-28-wi-017-session-acceptance.md) |
+| WI-019 | Q16 delegated evaluation, shared production chat, live overlay / resource fixes and separate F5 / install acceptance | 2026-09-27 UTC, agent under that delegation; ADR / gates not auto-closed | [record](2026-09-27-wi-019-formal-chat.md) |
+| WI-020 | Cross-module public entries and module type contracts; the only P2 was fixed, dual-axis review found none | 2026-09-26 maintainer technical acceptance; ADR / gate unchanged | [record](2026-09-26-wi-020-public-entries.md) |
+| WI-021 | REQ-004 retry / compaction / reliable terminal state and required focus-fallback repair; native F5 / install verified separately | 2026-09-27 UTC, agent under that delegation; gates unchanged | [record](2026-09-27-wi-021-execution-closure.md) |
+| WI-022 | Windows background console flash; default CLI `--no-daemon` workaround; maintainer confirmed closed | 2026-09-28 maintainer confirmed resolved | [record](2026-09-28-wi-022-closure.md) |
+| WI-023 | Settings layout and model picker visible; maintainer F5 visual acceptance. The only recorded remainder was this F5 check | 2026-09-29 maintainer confirmed; installed VSIX is outside this evidence | [record](2026-09-28-wi-024-paused-proposal.md) |
+| WI-024 | In-extension API key and default model; maintainer F5 visual acceptance of the settings section, Add key and model-picker recovery | 2026-09-29 maintainer confirmed; OAuth, custom endpoints, paid calls and installed VSIX stay outside | [record](2026-09-28-wi-024-paused-proposal.md) |
+| WI-025 | Sidebar visual craft, setup-phase corrections and pre-start thinking level; maintainer F5 visual acceptance | 2026-09-29 maintainer confirmed; VSIX / full real-model chain is outside this evidence | [record](2026-09-29-wi-025-active-superseded.md) |
+| WI-026 | Editor-area settings page, scheme A; maintainer F5 visual acceptance | 2026-09-29 maintainer confirmed; installed VSIX is outside this evidence | [record](2026-09-29-wi-026-active-superseded.md) |
+
+## Not in this index
+
+- **WI-018** was never registered and is not reused.
