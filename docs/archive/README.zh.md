@@ -62,6 +62,8 @@
 | [WI-027 收回 UiText 文案](2026-09-29-wi-027-ui-text.zh.md) | 维护者 2026-09-29 接受；附件预览失败句与交互界面文案；F5／VSIX 不在本切片内 |
 | [WI-028 RPC 与进程策略](2026-09-29-wi-028-runtime-process.zh.md) | 维护者 2026-09-29 技术接受；RuntimeProcess 接缝与自动化检查；Linux spike／F5／VSIX 不在本次证据内 |
 | [WI-029 RPC 运行时内部模块](2026-09-29-wi-029-rpc-runtime-modules.zh.md) | 维护者 2026-09-29 技术接受；三内部模块与自动化检查；真实 pi／F5／VSIX 不在本次证据内 |
+| [WI-030 OAuth 与自定义端点](2026-09-29-wi-030-oauth-endpoint.zh.md) | 维护者 2026-09-29 完成剩余设置页检查；真实登录、真实端点和新安装包不在本次关闭内；ADR 0005 仍为 Draft |
+| [WI-031 会话 worker 协议](2026-09-29-wi-031-session-worker-protocol.zh.md) | 维护者 2026-09-29 技术接受；共用报文校验、版本未改；F5／VSIX 不在本切片内 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |
 
 ## 被替代的交接

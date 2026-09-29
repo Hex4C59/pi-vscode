@@ -58,6 +58,8 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-027 UiText copy consolidation](2026-09-29-wi-027-ui-text.md) | Maintainer acceptance on 2026-09-29; attachment preview-failure and interaction chrome; F5 / VSIX outside |
 | [WI-028 RPC and process policy](2026-09-29-wi-028-runtime-process.md) | Maintainer technical acceptance on 2026-09-29; RuntimeProcess seam, automated checks; Linux spike / F5 / VSIX outside |
 | [WI-029 RPC runtime internal modules](2026-09-29-wi-029-rpc-runtime-modules.md) | Maintainer technical acceptance on 2026-09-29; three internal modules, automated checks; real pi / F5 / VSIX outside |
+| [WI-030 OAuth and custom endpoint](2026-09-29-wi-030-oauth-endpoint.md) | Maintainer completed the remaining settings check on 2026-09-29; live login, live endpoint and a new VSIX stay outside; ADR 0005 stays Draft |
+| [WI-031 session-worker protocol](2026-09-29-wi-031-session-worker-protocol.md) | Maintainer technical acceptance on 2026-09-29; shared message validation, unchanged version; F5 / VSIX outside |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
 ## Superseded handoffs

@@ -6,7 +6,7 @@ English | [中文](0005-custom-endpoint-file.zh.md)
 - Status: Draft
 - Created: 2026-09-29
 - Decision approval: 2026-09-29, maintainer confirmed the WI-030 implementation plan
-- Verification: pending. Compile, lint, tests and documentation checks are recorded in ACTIVE when run. Maintainer inspection of the settings controls, a live browser sign-in and a live endpoint call are not yet recorded.
+- Verification: maintainer confirmed the settings sign-in and add-endpoint controls on 2026-09-29. Compile, lint, tests and docs checks were recorded before that close and were not rerun. A live browser sign-in, a live endpoint call and a new installed VSIX are still not recorded, so this ADR stays Draft.
 - Gates: none. Existing `gate-webview-trust` still applies: secrets stay out of the Webview.
 - Work item: WI-030
 
@@ -35,4 +35,4 @@ The RPC child loads `models.json` itself. An in-memory `registerProvider` call w
 
 ## Consequences
 
-Rewriting a valid file changes JSON formatting and drops comments, because comments are not safe to round-trip with `JSON.parse`. Comment-only or invalid files are not rewritten. Confirmation of this plan is the decision approval. The ADR stays Draft until the WI-030 verification recorded in ACTIVE is complete; it does not accept a gate.
+Rewriting a valid file changes JSON formatting and drops comments, because comments are not safe to round-trip with `JSON.parse`. Comment-only or invalid files are not rewritten. The ADR stays Draft until a live browser sign-in and a live endpoint call are recorded. Maintainer confirmation of the settings controls closed WI-030; it did not accept a gate.

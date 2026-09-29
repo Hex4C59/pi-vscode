@@ -42,7 +42,7 @@
 |----|------|------|------|
 | 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 无 | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
 
-0005 在 WI-030 验证记入前保持 Draft。它不接受任何 gate。
+0005 保持 Draft。维护者在检查设置页控件后关闭了 WI-030。真实浏览器登录和真实端点调用仍未记录，因此本 ADR 不接受任何 gate。
 
 ## Agent 流程
 
