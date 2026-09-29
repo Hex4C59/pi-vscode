@@ -47,6 +47,9 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-024 | In-extension API key and default model; maintainer F5 visual acceptance of the settings section, Add key and model-picker recovery | 2026-09-29 maintainer confirmed; OAuth, custom endpoints, paid calls and installed VSIX stay outside | [record](2026-09-28-wi-024-paused-proposal.md) |
 | WI-025 | Sidebar visual craft, setup-phase corrections and pre-start thinking level; maintainer F5 visual acceptance | 2026-09-29 maintainer confirmed; VSIX / full real-model chain is outside this evidence | [record](2026-09-29-wi-025-active-superseded.md) |
 | WI-026 | Editor-area settings page, scheme A; maintainer F5 visual acceptance | 2026-09-29 maintainer confirmed; installed VSIX is outside this evidence | [record](2026-09-29-wi-026-active-superseded.md) |
+| WI-027 | Recollect attachment preview-failure and interaction copy into UiText; maintainer accepted the presentation slice | 2026-09-29 maintainer confirmed; F5 / installed VSIX outside this slice | [record](2026-09-29-wi-027-ui-text.md) |
+| WI-028 | Separate RPC runtime from process policy; maintainer technical acceptance | 2026-09-29 maintainer confirmed; Linux-isolated spike / F5 / installed VSIX outside this evidence | [record](2026-09-29-wi-028-runtime-process.md) |
+| WI-029 | RPC runtime split into request pairing, frame translation and task occupancy; maintainer technical acceptance | 2026-09-29 maintainer confirmed; real pi / F5 / installed VSIX outside this evidence | [record](2026-09-29-wi-029-rpc-runtime-modules.md) |
 
 ## Not in this index
 

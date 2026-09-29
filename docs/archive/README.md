@@ -55,6 +55,9 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-015 React/Vite acceptance](2026-09-27-wi-015-react-acceptance.md) | Delegated migration/ADR 0003 acceptance, added installed lifecycle evidence; gates remain Open |
 | [WI-025 sidebar visual craft closure](2026-09-29-wi-025-active-superseded.md) | Maintainer F5 visual acceptance on 2026-09-29; approved scope, layered evidence and unverified installed/full-execution limits |
 | [WI-026 editor settings closure](2026-09-29-wi-026-active-superseded.md) | Maintainer F5 visual acceptance on 2026-09-29; scheme A, implementation handoff and earlier checkpoints |
+| [WI-027 UiText copy consolidation](2026-09-29-wi-027-ui-text.md) | Maintainer acceptance on 2026-09-29; attachment preview-failure and interaction chrome; F5 / VSIX outside |
+| [WI-028 RPC and process policy](2026-09-29-wi-028-runtime-process.md) | Maintainer technical acceptance on 2026-09-29; RuntimeProcess seam, automated checks; Linux spike / F5 / VSIX outside |
+| [WI-029 RPC runtime internal modules](2026-09-29-wi-029-rpc-runtime-modules.md) | Maintainer technical acceptance on 2026-09-29; three internal modules, automated checks; real pi / F5 / VSIX outside |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
 ## Superseded handoffs

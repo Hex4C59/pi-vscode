@@ -59,6 +59,9 @@
 | [WI-015 React／Vite验收](2026-09-27-wi-015-react-acceptance.zh.md) | 委托迁移／ADR0003接受、新安装生命周期证据；当时gates仍Open |
 | [WI-025 侧栏视觉工艺收尾](2026-09-29-wi-025-active-superseded.zh.md) | 维护者 2026-09-29 F5 视觉验收；批准范围、分层证据与安装／完整执行未验边界 |
 | [WI-026 编辑区设置收尾](2026-09-29-wi-026-active-superseded.zh.md) | 维护者 2026-09-29 F5 视觉验收；方案 A、实现交接与更早检查点 |
+| [WI-027 收回 UiText 文案](2026-09-29-wi-027-ui-text.zh.md) | 维护者 2026-09-29 接受；附件预览失败句与交互界面文案；F5／VSIX 不在本切片内 |
+| [WI-028 RPC 与进程策略](2026-09-29-wi-028-runtime-process.zh.md) | 维护者 2026-09-29 技术接受；RuntimeProcess 接缝与自动化检查；Linux spike／F5／VSIX 不在本次证据内 |
+| [WI-029 RPC 运行时内部模块](2026-09-29-wi-029-rpc-runtime-modules.zh.md) | 维护者 2026-09-29 技术接受；三内部模块与自动化检查；真实 pi／F5／VSIX 不在本次证据内 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |
 
 ## 被替代的交接

@@ -3,7 +3,7 @@
 English | [中文](2026-09-29-runtime-owner-seam.zh.md)
 
 - Type: Discussion
-- Status: WI-028 implementation; earlier design below superseded by the explicitly approved process-strategy plan
+- Status: WI-028 closed; earlier design below superseded by the approved process-strategy plan
 - Created: 2026-09-29
 - Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the PRD, or ADRs 0001–0004
 - Related: [ADR 0002](../decisions/0002-interaction-contract-route.md) (owned-runtime recovery), [architecture](../architecture/vscode-extension-architecture.md)
@@ -55,9 +55,11 @@ Design settled for a later technical WI. When opened, update the adapter row of 
 
 ## Current WI-028 decision and evidence
 
+The maintainer accepted WI-028 on 2026-09-29. Closure, recorded checks and remaining unverified host/package limits are in the [archive](../archive/2026-09-29-wi-028-runtime-process.md). This section keeps the implementation-time decision; it is not current-work authority.
+
 The maintainer explicitly requested implementation of the complete process-strategy plan in this session. This supersedes items 1, 4–6 and 10–11 of the earlier design: `PiRpcRuntimeEnvironment.process` is mandatory; `RuntimeOwner` remains unchanged behind a managed strategy; an explicit direct strategy remains available for the Linux attachment spike. The production entry composes the managed strategy. All strategies use the production five-second RPC Stop observation budget, as separately confirmed by the maintainer. Strategy-owned failure text replaces owner branches in RPC. The shared memory process replaces the ordinary fake child fixtures; native process policy tests and managed/RPC composition tests remain separate.
 
-WI-027 was already implemented with automated evidence but awaited maintainer closure. Its proposal and pending confirmation are preserved in ACTIVE while WI-028 becomes the one current work item. Decision: none; no new product scope, protocol, persistence, dependency or architecture-gate acceptance.
+WI-027 was already implemented with automated evidence but awaited maintainer closure at that time. The maintainer later closed it on 2026-09-29; see the [archive](../archive/2026-09-29-wi-027-ui-text.md). Decision: none; no new product scope, protocol, persistence, dependency or architecture-gate acceptance.
 
 | Architecture dimensions | Assessment | Evidence / remaining limit |
 |---|---|---|
