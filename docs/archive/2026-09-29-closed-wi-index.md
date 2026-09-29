@@ -52,6 +52,9 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-029 | RPC runtime split into request pairing, frame translation and task occupancy; maintainer technical acceptance | 2026-09-29 maintainer confirmed; real pi / F5 / installed VSIX outside this evidence | [record](2026-09-29-wi-029-rpc-runtime-modules.md) |
 | WI-030 | OAuth sign-in and one OpenAI-compatible endpoint; maintainer completed the remaining settings check | 2026-09-29 maintainer confirmed; live browser login, live endpoint call and a new installed VSIX are outside this close | [record](2026-09-29-wi-030-oauth-endpoint.md) |
 | WI-031 | Shared session-worker message validation; protocol version and user-visible behavior unchanged; maintainer technical acceptance | 2026-09-29 maintainer confirmed; F5 / installed VSIX were outside this slice | [record](2026-09-29-wi-031-session-worker-protocol.md) |
+| WI-032 | Shared host credential rules across six entries; scoped technical acceptance | 2026-09-30 agent under final maintainer delegation; native sensitive interactions remain unverified | [record](2026-09-30-wi-032-macos-evaluation.md) |
+| WI-033 | Runtime-frame validation and captured-real-pi byte injection; non-JSON ignore rule retained | 2026-09-30 agent under final maintainer delegation; not live native malformed-frame injection | [record](2026-09-30-wi-033-macos-evaluation.md) |
+| WI-034 | Deterministic VSIX packaging, extracted RPC/gate and native macOS F5/isolated installed activation | 2026-09-30 agent under final maintainer delegation; not full REQ-009 or whole PRD acceptance | [record](2026-09-30-wi-034-macos-evaluation.md) |
 
 ## Not in this index
 

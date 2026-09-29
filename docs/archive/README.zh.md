@@ -64,12 +64,18 @@
 | [WI-029 RPC 运行时内部模块](2026-09-29-wi-029-rpc-runtime-modules.zh.md) | 维护者 2026-09-29 技术接受；三内部模块与自动化检查；真实 pi／F5／VSIX 不在本次证据内 |
 | [WI-030 OAuth 与自定义端点](2026-09-29-wi-030-oauth-endpoint.zh.md) | 维护者 2026-09-29 完成剩余设置页检查；真实登录、真实端点和新安装包不在本次关闭内；ADR 0005 仍为 Draft |
 | [WI-031 会话 worker 协议](2026-09-29-wi-031-session-worker-protocol.zh.md) | 维护者 2026-09-29 技术接受；共用报文校验、版本未改；F5／VSIX 不在本切片内 |
+| [WI-032 代理受托接受](2026-09-30-wi-032-macos-evaluation.zh.md) | 六入口规则、定向 139 项测试与 macOS smoke；最终委托后关闭，原生敏感交互未验证 |
+| [WI-033 代理受托接受](2026-09-30-wi-033-macos-evaluation.zh.md) | 真实 pi 捕获字节经生产 reader／runtime；最终委托后关闭，保留非 JSON 忽略与原生故障路径限制 |
+| [WI-034 代理受托接受](2026-09-30-wi-034-macos-evaluation.zh.md) | 组包、解包真实 RPC／gate、原生 F5 与隔离安装渲染；限定关闭，不是完整产品验收 |
+| [WI-034 批准提案](2026-09-30-wi-034-approved-proposal.md) | 关闭后原样保留的 ACTIVE 单语提案；不是新建造授权 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |
 
 ## 被替代的交接
 
 | 记录 | 内容 |
 |------|------|
+| [WI-033 已停止审查交接](2026-09-30-wi-033-audit-handoffs.md) | 维护者停止审查后原样保留的 ACTIVE 单语检查点；不是 WI 关闭或恢复审查授权 |
+| [WI-032 待接受](2026-09-29-wi-032-pending-acceptance.zh.md) | WI-033 优先后保留的范围与历史检查；待接受措辞仅为历史，已由[最终委托关闭](2026-09-30-wi-032-macos-evaluation.zh.md)替代 |
 | [工作区恢复替代的Goal前交接](2026-09-22-pre-goal-handoffs.zh.md) | 历史批准／证据，不是WI关闭或当前账本 |
 | [Goal前端与附件检查点](2026-09-22-goal-frontend-attachment-handoffs.zh.md) | 后续Goal切片替代的WI-015／014可执行交接；当时维护者验收／gates仍待 |
 | [Goal修改审阅检查点](2026-09-22-goal-change-review-handoff.zh.md) | 会话连续性替代的WI-016代码／可执行交接；当时验收／gates仍待 |

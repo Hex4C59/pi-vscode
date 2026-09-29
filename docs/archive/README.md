@@ -60,12 +60,18 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-029 RPC runtime internal modules](2026-09-29-wi-029-rpc-runtime-modules.md) | Maintainer technical acceptance on 2026-09-29; three internal modules, automated checks; real pi / F5 / VSIX outside |
 | [WI-030 OAuth and custom endpoint](2026-09-29-wi-030-oauth-endpoint.md) | Maintainer completed the remaining settings check on 2026-09-29; live login, live endpoint and a new VSIX stay outside; ADR 0005 stays Draft |
 | [WI-031 session-worker protocol](2026-09-29-wi-031-session-worker-protocol.md) | Maintainer technical acceptance on 2026-09-29; shared message validation, unchanged version; F5 / VSIX outside |
+| [WI-032 delegated acceptance](2026-09-30-wi-032-macos-evaluation.md) | Six-entry rules, 139 focused tests and macOS smoke; closed under final delegation, native sensitive interactions unverified |
+| [WI-033 delegated acceptance](2026-09-30-wi-033-macos-evaluation.md) | Captured real pi bytes through production reader/runtime; closed under final delegation, non-JSON ignore and native fault-path limits retained |
+| [WI-034 delegated acceptance](2026-09-30-wi-034-macos-evaluation.md) | Packaging, real extracted RPC/gate, native F5 and isolated installed rendering; scoped close, not full product acceptance |
+| [WI-034 approved proposal](2026-09-30-wi-034-approved-proposal.md) | Original single-language ACTIVE proposal retained after close; no new Build authorization |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
 ## Superseded handoffs
 
 | Record | Contents |
 |--------|----------|
+| [WI-033 stopped audit handoffs](2026-09-30-wi-033-audit-handoffs.md) | Original single-language ACTIVE checkpoints retained after the maintainer stopped the audit; not WI closure or renewed audit authorization |
+| [WI-032 acceptance pending](2026-09-29-wi-032-pending-acceptance.md) | Preserved scope and historical checks after WI-033 priority; pending wording is historical, superseded by the [final delegated close](2026-09-30-wi-032-macos-evaluation.md) |
 | [Pre-Goal handoffs superseded by workspace recovery](2026-09-22-pre-goal-handoffs.md) | Historical approvals/evidence; not a WI closure or current task ledger |
 | [Goal frontend and attachment checkpoints](2026-09-22-goal-frontend-attachment-handoffs.md) | Executable WI-015 / WI-014 handoffs replaced by the next Goal slice; maintainer acceptance and gates remain open |
 | [Goal change-review checkpoint](2026-09-22-goal-change-review-handoff.md) | WI-016 code/executable handoff replaced by session continuity; maintainer acceptance and gates remain open |
