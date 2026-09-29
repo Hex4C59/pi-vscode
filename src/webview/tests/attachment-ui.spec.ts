@@ -90,6 +90,7 @@ test("generation and runtime loss clear previews/history; a recreated view resto
     await next.click(historyTrigger);
     await next.receive(attachmentState({ draft: { revision: 6, text: "host draft", acceptedEditSequence: 1, attachments: [] }, result: { code: "runtime-lost" } }));
     assert.equal(next.root.querySelector(previewSection) === null, true);
+    assert.equal(next.root.querySelector(historyTrigger), null);
     assert.match(next.get(".candidate-context__status").textContent ?? "", /reattach|runtime|cleared/i);
     if (next.root.querySelector(historySection)) {
       assert.match(next.get(historySection).textContent ?? "", /No retained|Loading|0/i);

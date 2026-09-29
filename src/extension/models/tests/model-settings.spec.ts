@@ -32,9 +32,12 @@ test("model settings defer during execution and Stop, then apply the latest inte
   current.stopping = false;
   await settings.applyPending();
   assert.deepEqual(calls, ["B / two", "high"]);
+  assert.equal(settings.snapshot.chatModel, "B / two");
   assert.equal(settings.snapshot.thinkingLevel, "high");
   assert.equal(settings.snapshot.pendingModel, null);
+  assert.equal(settings.snapshot.pendingThinkingLevel, null);
   assert.equal(settings.snapshot.modelBusy, false);
+  assert.equal(settings.snapshot.modelError, null);
 });
 
 test("reset and replacement make a late model mutation unable to overwrite the new projection", async () => {

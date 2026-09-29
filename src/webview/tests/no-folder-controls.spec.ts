@@ -97,3 +97,18 @@ test("pre-session strength uses the shared picker and survives host refresh with
     assert.ok(!h.sent.some(m => ["setThinkingLevel", "chooseResources", "sendChat"].includes(m.type)));
   } finally { await h.close(); }
 });
+
+test("no-folder keep-editing retains the draft and does not open a folder", async () => {
+  const h = await uiHarness(false);
+  try {
+    await h.render({ status: "no-folder", folder: null, choice: null, runtime: "not-started", chatModel: null, availableModels: [] });
+    await h.input("Keep this draft", "textarea");
+    await h.click('button[aria-label="Send message"]');
+    assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /A folder is required to send a message or add context/);
+    assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /Cancel keeps this draft/);
+    await h.click('button[aria-label="Keep editing"]');
+    assert.equal(h.root.querySelector(".candidate-folder-prompt") === null, true);
+    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep this draft");
+    assert.ok(!h.sent.some(message => message.type === "openFolder" || message.type === "sendChat"));
+  } finally { await h.close(); }
+});

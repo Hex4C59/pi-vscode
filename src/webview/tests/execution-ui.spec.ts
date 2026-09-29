@@ -3,7 +3,8 @@ import test from "node:test";
 import { act } from "react";
 import type { ActivityItem } from "../../extension/contracts/runtimeLifecycle.js";
 import type { ApprovalCard } from "../../extension/editor-tools/toolApproval.js";
-import { uiHarness, readAppStyles } from "./react-harness.js";
+import { parseHostMessage } from "../parse-host-message.js";
+import { readyState, uiHarness } from "./react-harness.js";
 
 const thinking: ActivityItem = { id: "t1", kind: "thinking", messageId: "m1", text: "Actual upstream text", status: "thinking", truncated: false };
 const tool: ActivityItem = { id: "tool1", kind: "tool", messageId: "m1", tool: "write", input: '{"path":"a"}', text: "first", status: "preparing", truncated: false };
@@ -68,7 +69,7 @@ test("mounted React conversation keeps incremental nodes, expansion and slider i
 });
 
 test("mounted React approvals expose literal input and scope, lock one decision, and revoke grants", async () => {
-  for (const [index, decision] of ["once", "session", "deny"].entries()) {
+  for (const decision of ["once", "session", "deny"]) {
     const h = await uiHarness();
     try {
       await h.render({ approvals: [{ ...card, scope: "exact scope" }], grants: [{ id: "g1", scope: "full exact scope" }] });
@@ -89,16 +90,18 @@ test("mounted React approvals expose literal input and scope, lock one decision,
     } finally {
       await h.close();
     }
-    assert.equal(index, ["once", "session", "deny"].indexOf(decision));
   }
 
   const h = await uiHarness();
   try {
     await h.render({ approvals: [card] });
     const buttons = h.get<HTMLElement>("#approvals").querySelectorAll<HTMLButtonElement>("[data-decision]");
-    assert.equal(buttons[1]?.disabled, true);
+    assert.equal(buttons.length, 3);
+    assert.equal(buttons[1].disabled, true);
     await h.render({ approvals: [{ ...card, expiresAt: 0 }] });
-    assert.ok([...h.get<HTMLElement>("#approvals").querySelectorAll<HTMLButtonElement>("[data-decision]")].every(button => button.disabled));
+    const expired = h.get<HTMLElement>("#approvals").querySelectorAll<HTMLButtonElement>("[data-decision]");
+    assert.equal(expired.length, 3);
+    assert.ok([...expired].every(button => button.disabled));
   } finally {
     await h.close();
   }
@@ -114,7 +117,11 @@ test("mounted React approvals expire each card at its own deadline", async t => 
       { ...card, id: "approval-later", scope: "exact scope", expiresAt: startedAt + 2_000 },
     ] });
 
-    const buttonsFor = (id: string) => [...h.get<HTMLElement>(`[data-approval-id="${id}"]`).querySelectorAll<HTMLButtonElement>("[data-decision]")];
+    const buttonsFor = (id: string) => {
+      const buttons = [...h.get<HTMLElement>(`[data-approval-id="${id}"]`).querySelectorAll<HTMLButtonElement>("[data-decision]")];
+      assert.equal(buttons.length, 3);
+      return buttons;
+    };
     assert.ok(buttonsFor("approval-soon").every(button => !button.disabled));
     assert.ok(buttonsFor("approval-later").every(button => !button.disabled));
 
@@ -141,7 +148,9 @@ test("Stop stays visible while stopping, locks approvals, and preserves draft an
     await h.click(stop);
     assert.equal((h.sent.at(-1) as { type: string }).type, "stopChat");
     assert.equal(h.get<HTMLTextAreaElement>(message).value, "draft");
-    assert.ok([...h.get<HTMLElement>("#approvals").querySelectorAll<HTMLButtonElement>("[data-decision]")].every(button => button.disabled));
+    const buttons = h.get<HTMLElement>("#approvals").querySelectorAll<HTMLButtonElement>("[data-decision]");
+    assert.equal(buttons.length, 3);
+    assert.ok([...buttons].every(button => button.disabled));
 
     await h.render({ runtime: "stopping", execution: "stopping", busy: true, approvals: [card] });
     assert.equal(h.get<HTMLButtonElement>(stop).disabled, true);
@@ -168,8 +177,12 @@ test("generation changes clear old activity and approval nodes without reviving 
     assert.equal(h.root.querySelectorAll(".candidate__message").length, 0);
     assert.equal(h.root.querySelectorAll(thinkingDetails).length, 0);
     assert.equal(h.root.querySelector("#approvals") === null, true);
-    await h.receive({ ...({ version: 3, type: "workspaceState", viewId: "view", generation: 1 }), messages: [{ id: "late", role: "assistant", text: "late" }], activities: [], approvals: [], grants: [] });
+    const stale = { ...readyState, messages: [{ id: "late", role: "assistant" as const, text: "late" }], activities: [thinking], approvals: [card] };
+    assert.equal(parseHostMessage(stale)?.type, "workspaceState", "the stale frame must be valid before the generation guard rejects it");
+    await h.receive(stale);
     assert.equal(h.root.querySelectorAll(".candidate__message").length, 0);
+    assert.equal(h.root.querySelector(thinkingDetails) === null, true);
+    assert.equal(h.root.querySelector("#approvals") === null, true);
   } finally {
     await h.close();
   }
@@ -209,22 +222,7 @@ test("candidate displays validated retry, compaction and terminal states without
   } finally { await h.close(); }
 });
 
-test("open model settings are not clipped by the composer's footer boundary", async () => {
-  const h = await uiHarness();
-  try {
-    const style = h.dom.window.document.createElement("style");
-    style.textContent = readAppStyles();
-    h.dom.window.document.head.append(style);
-    await h.render({ chatBusy: true, execution: "replying", messages: [{ id: "stream", role: "assistant", text: "Streaming response" }] });
-    await h.click("#model-effort-trigger");
-    const dialog = h.get<HTMLElement>('[role="dialog"][aria-label="Model and thinking level"]');
-    assert.equal(dialog.hidden, false);
-    const footer = dialog.closest("footer"); assert.ok(footer);
-    assert.notEqual(h.dom.window.getComputedStyle(footer).overflowY, "hidden", "a settings menu above the composer must not be clipped by its footer");
-  } finally { await h.close(); }
-});
-
-test("runtime loss keeps the newer draft readable without admitting actions or exposing retained chat", async () => {
+test("runtime loss keeps the newer draft readable without admitting actions", async () => {
   const h = await uiHarness();
   try {
     await h.input("Newer unsent draft after runtime loss");

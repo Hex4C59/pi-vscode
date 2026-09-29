@@ -8,7 +8,7 @@ test("standard select uses opaque local options and writes the original value on
   const dialogs = createRpcDialogs(frame => { written.push(frame); });
   const incoming = dialogs.open({ type: "extension_ui_request", id: "remote-1", method: "select", title: "Choose", options: ["one", "two"] });
   assert.equal(incoming.kind, "dialog");
-  if (incoming.kind !== "dialog" || incoming.form.method !== "select") return;
+  if (incoming.kind !== "dialog" || incoming.form.method !== "select") assert.fail("expected select dialog");
   assert.deepEqual(incoming.form.options.map(option => option.label), ["one", "two"]);
   const optionId = incoming.form.options[1].id;
   incoming.reply({ kind: "answer", answer: { method: "select", optionId } });

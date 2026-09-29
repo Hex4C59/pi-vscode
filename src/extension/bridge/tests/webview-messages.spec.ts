@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { handleWebviewMessage, isPingMessage, parseWebviewMessage } from "../webviewMessages.js";
 
-test("v2 exact actions reject old pages, accessors, paths and invalid identities", () => {
+test("v3 exact actions reject old pages, accessors, paths and invalid identities", () => {
   const envelope = { version: 3, generation: 1, viewId: "view" };
   const actions = [
     { type: "openFolder" }, { type: "manageTrust" }, { type: "stopChat" }, { type: "getAttachmentHistory" },
@@ -29,7 +29,7 @@ test("v2 exact actions reject old pages, accessors, paths and invalid identities
   assert.equal(parseWebviewMessage({ version: 3, type: "ping", [Symbol("extra")]: 1 }), undefined);
 });
 
-test("accepts only v2 bootstrap ping and returns pong", () => {
+test("accepts only v3 bootstrap ping and returns pong", () => {
   assert.equal(isPingMessage({ version: 3, type: "ping" }), true);
   assert.deepEqual(handleWebviewMessage({ version: 3, type: "ping" }), { version: 3, type: "pong" });
   for (const message of [null, [], "ping", 1, {}, { version: 1, type: "ping" }, { version: 3, type: "prompt" }, { version: 3, type: "ping", command: "run" }]) assert.equal(handleWebviewMessage(message), undefined);

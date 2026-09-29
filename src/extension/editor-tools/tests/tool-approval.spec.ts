@@ -18,7 +18,7 @@ test('readonly realpath policy rejects escapes, junctions and ambiguous Windows 
     for(const p of ['C:relative','file:ads','NUL','foo.','\\\\?\\C:\\foo'])assert.equal(unambiguousPath(p),false);
   }finally{await rm(root,{recursive:true,force:true});}
 });
-test('credential-like approval input is denied and ordinary input can still be offered', async () => {
+test('credential-like approval input is denied and ordinary input can still be offered', { timeout: 5000 }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'approval-credential-'));
   let notify: () => void = () => {};
   const manager = new ToolApprovals(() => notify());
@@ -30,7 +30,7 @@ test('credential-like approval input is denied and ordinary input can still be o
     }
     const changed = new Promise<void>(resolve => { notify = resolve; });
     const pending = manager.request(call(root, 'ordinary'));
-    await changed;
+    assert.equal(await Promise.race([changed.then(() => 'offered'), pending.then(() => 'settled')]), 'offered');
     assert.equal(manager.cards().length, 1);
     manager.decide('ordinary', 'deny');
     assert.equal(await pending, false);
@@ -128,7 +128,7 @@ test('approval expiry during the final asynchronous safety check cannot authoriz
   } finally { release?.(); manager.cancel(true); await rm(root, { recursive: true, force: true }); }
 });
 
-test('a known custom tool never inherits file scope or accepts a session-grant intent', async () => {
+test('a known custom tool never inherits file scope or accepts a session-grant intent', { timeout: 5000 }, async () => {
   const custom: GateCall = { cwd: '/not-read-for-custom-policy', runtime: 'runtime', request: 'custom', toolCallId: 'custom-call', tool: 'review_summary', category: 'custom', input: { path: 'report.txt', query: 'safe' } };
   assert.deepEqual(await inspectScope(custom), { auto: false, scope: null });
   let offered: (() => void) | undefined;
@@ -136,7 +136,7 @@ test('a known custom tool never inherits file scope or accepts a session-grant i
   try {
     const ready = new Promise<void>(resolve => { offered = resolve; });
     const pending = manager.request(custom);
-    await ready;
+    assert.equal(await Promise.race([ready.then(() => 'offered'), pending.then(() => 'settled')]), 'offered');
     assert.equal(manager.cards()[0].scope, null);
     manager.decide('custom', 'session');
     assert.equal(await pending, false);

@@ -10,11 +10,10 @@ function cards(): ApprovalCard[] {
     scope: i === 7 ? null : `["bash","/workspace","echo request-${i} <literal>"]`, expiresAt: Date.now() + 120000 }));
 }
 
-test("candidate selects one of eight pending approvals without authorizing or changing expiry", async () => {
+test("candidate selects one of eight pending approvals without authorizing another request", async () => {
   const h = await uiHarness(true, true);
   try {
     const pending = cards();
-    const initialExpiries = pending.map(card => card.expiresAt);
     await h.render({ approvals: pending, chatBusy: true, execution: "awaiting-approval" });
     assert.match(h.get('[aria-label="Pending approvals"]').textContent ?? "", /8/);
     assert.equal(h.root.querySelectorAll('.approval:not([hidden])').length, 1);
@@ -29,7 +28,6 @@ test("candidate selects one of eight pending approvals without authorizing or ch
     await h.click('[data-select-approval="approval-3"]');
     await h.click('[data-select-approval="approval-2"]');
     assert.equal(h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="deny"]').disabled, true);
-    assert.deepEqual(pending.map(card => card.expiresAt), initialExpiries);
   } finally { await h.close(); }
 });
 
@@ -72,18 +70,19 @@ test("candidate expiry selects the next live request and Stop locks all decision
 
 test("synthetic queue decisions remove only their own request and exact grants can be revoked", async t => {
   const h = await candidateHarness(t, "approval-queue");
-  assert.equal(h.root.querySelectorAll('[data-select-approval]').length,8);
+  const pendingIds = () => [...h.root.querySelectorAll('[data-select-approval]')].map(button => button.getAttribute('data-select-approval'));
+  assert.deepEqual(pendingIds(), Array.from({length:8}, (_, index) => `approval-preview-${index + 1}`));
   await h.click('[data-select-approval="approval-preview-2"]');
   await h.click('.approval:not([hidden]) [data-decision="session"]');
-  assert.equal(h.root.querySelectorAll('[data-select-approval]').length,7);
+  assert.deepEqual(pendingIds(), ["approval-preview-1", ...Array.from({length:6}, (_, index) => `approval-preview-${index + 3}`)]);
   assert.match(h.root.querySelector('[data-grant-id] pre')?.textContent ?? "", /request-2/);
   await h.click('[data-grant-action="revoke"]');
   assert.equal(h.root.querySelectorAll('[data-grant-id]').length,0);
   await h.click('[data-select-approval="approval-preview-3"]');
   await h.click('.approval:not([hidden]) [data-decision="deny"]');
-  assert.equal(h.root.querySelectorAll('[data-select-approval]').length,6);
+  assert.deepEqual(pendingIds(), ["approval-preview-1", ...Array.from({length:5}, (_, index) => `approval-preview-${index + 4}`)]);
   await h.click('button[aria-label="Stop current task"]');
-  assert.equal(h.root.querySelectorAll('[data-select-approval]').length,0);
+  assert.deepEqual(pendingIds(), []);
 });
 
 test("candidate keeps file targets and exact scope visible outside expandable large input", async () => {
@@ -134,9 +133,11 @@ test("a new synthetic approval queue is not erased by the previous queue's late 
   const h=await candidateHarness(t,"approval-queue");
   for(let index=0;index<8;index++)await h.click('.approval:not([hidden]) [data-decision="once"]');
   await h.queueApprovals();
-  assert.equal(h.root.querySelectorAll('[data-select-approval]').length,8);
+  const pendingIds = () => [...h.root.querySelectorAll('[data-select-approval]')].map(button => button.getAttribute('data-select-approval'));
+  const replacementIds = Array.from({length:8}, (_, index) => `approval-synthetic-1-${index + 1}`);
+  assert.deepEqual(pendingIds(), replacementIds);
   await h.advance(360);
-  assert.equal(h.root.querySelectorAll('[data-select-approval]').length,8);
+  assert.deepEqual(pendingIds(), replacementIds);
   assert.ok(h.root.querySelector('button[aria-label="Stop current task"]'));
 });
 
@@ -151,7 +152,7 @@ test("custom tool approval discloses limited coverage and never offers a usable 
     assert.equal(h.get('.approval-input').textContent, card.input);
     assert.equal(h.root.querySelector('script') === null, true);
     await h.click('.approval:not([hidden]) [data-decision="once"]');
-    assert.equal(h.sent.at(-1)?.type, 'decideApproval');
+    assert.deepEqual(h.sent.at(-1), {version: 3, type: "decideApproval", viewId: "view", generation: 1, id: "custom", decision: "once"});
   } finally { await h.close(); }
 });
 

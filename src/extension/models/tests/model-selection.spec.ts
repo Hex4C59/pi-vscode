@@ -3,7 +3,7 @@ import { test } from "node:test";
 import type { PiRuntimeLifecycle } from "../../contracts/runtimeLifecycle.js";
 import { prepareTestPrompt, folder, harness, readySettings, tick } from "../../tests/harness.js";
 
-test("setThinkingLevel and setChatModel update projection and reject stale or busy operations", async () => {
+test("setThinkingLevel and setChatModel update projection and reject busy operations", async () => {
   const calls: string[] = [];
   const runtime: PiRuntimeLifecycle = {
     preparePrompt: prepareTestPrompt,

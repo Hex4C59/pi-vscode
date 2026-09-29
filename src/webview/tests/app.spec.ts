@@ -8,7 +8,7 @@ const send = 'button[aria-label="Send message"]';
 const stop = 'button[aria-label="Stop current task"]';
 const addContext = 'button[aria-label="Add context"]';
 
-test("loading, busy and runtime-error projections keep send gated and emit no actions (fixture chat hide retired)", async () => {
+test("loading, busy and runtime-error projections keep send gated and emit no actions", async () => {
   const h = await uiHarness(false);
   try {
     const bootstrap = [{ version: 3, type: "ping" }, { version: 3, type: "getWorkspaceState" }];
@@ -122,7 +122,7 @@ test("attachment draft and pending model survive Stop and view recreation withou
   }
 });
 
-test("React workspace setup boots through the real v2 bridge and releases its listener", async () => {
+test("project-resource consent uses the v3 bridge, escapes folder text and releases its listener", async () => {
   const h = await uiHarness(false);
   try {
     assert.deepEqual(h.sent, [{ version: 3, type: "ping" }, { version: 3, type: "getWorkspaceState" }]);
@@ -177,7 +177,7 @@ test("high-contrast user messages keep a visible hairline on the production surf
   } finally { await h.close(); }
 });
 
-test("composer context sibling layout fixture retired; production model popover stays unclipped", async () => {
+test("model picker opens with non-clipping overflow styles through its footer", async () => {
   const h = await uiHarness();
   try {
     const style = h.dom.window.document.createElement("style");
@@ -188,6 +188,14 @@ test("composer context sibling layout fixture retired; production model popover 
     const dialog = h.get<HTMLElement>('[role="dialog"][aria-label="Model and thinking level"]');
     assert.equal(dialog.hidden, false);
     const footer = dialog.closest("footer"); assert.ok(footer);
-    assert.notEqual(h.dom.window.getComputedStyle(footer).overflowY, "hidden", "a settings menu above the composer must not be clipped by its footer");
+    // jsdom leaves initial values empty and does not expand overflow shorthand.
+    // Check both forms on each ancestor; this is a style guard, not layout evidence.
+    for (let ancestor = dialog.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      const computed = h.dom.window.getComputedStyle(ancestor);
+      assert.match(computed.overflow, /^(?:visible(?: visible)?)?$/, `${ancestor.className}: overflow`);
+      assert.match(computed.overflowX, /^(?:visible)?$/, `${ancestor.className}: overflow-x`);
+      assert.match(computed.overflowY, /^(?:visible)?$/, `${ancestor.className}: overflow-y`);
+      if (ancestor === footer) break;
+    }
   } finally { await h.close(); }
 });

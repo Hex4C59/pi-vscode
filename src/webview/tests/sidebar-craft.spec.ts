@@ -63,16 +63,19 @@ test("settings page uses categories, icon refresh and separate provider details"
     });
 
     const settings = h.get(".settings-page");
+    assert.deepEqual([...settings.querySelectorAll(".settings-page__nav button")].map(button => button.textContent), ["General", "Default model", "Providers"]);
     const refresh = settings.querySelector<HTMLButtonElement>('.settings-page__header button[aria-label="Refresh providers"]');
     assert.ok(refresh, "refresh lives in the providers heading as an icon button");
     assert.equal(refresh.textContent, "");
     assert.equal(settings.querySelector(".candidate-settings__secondary, .candidate-settings__panel") === null, true);
     await h.click(".settings-page__nav button:last-child");
+    assert.equal(h.get(".settings-page__nav button[aria-current='page']").textContent, "Providers");
     await h.click(".settings-page__providers button");
+    assert.equal(h.get("#settings-page-heading").textContent, "OpenAI");
     assert.equal(settings.querySelector(".candidate-settings__status") === null, true);
     assert.equal(h.get(".settings-page__actions").querySelectorAll("button").length, 2);
     await h.click('.settings-page__header button[aria-label="Refresh providers"]');
-    assert.ok(h.sent.some(message => message.type === "refreshProviderConfig"));
+    assert.deepEqual(h.sent.at(-1), { version: 3, viewId: "view", generation: 1, type: "refreshProviderConfig" });
   } finally { await h.close(); }
 });
 
@@ -127,9 +130,9 @@ test("task status motion serves real state changes and yields to reduced motion"
   assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "no entrance or layout animation on status updates");
 });
 
-test("settings dialog motion is open-only and yields to reduced motion", () => {
+test("shared dialog motion is open-only and yields to reduced motion", () => {
   const css = readFileSync("src/webview/chat/chat-dialog.css", "utf8");
   assert.match(css, /@keyframes candidate-dialog-in/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate-dialog\[open\] \{ animation: none; \}\s*\}/s);
-  assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "settings content updates must not replay a second entrance");
+  assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "dialog content updates must not replay a second entrance");
 });

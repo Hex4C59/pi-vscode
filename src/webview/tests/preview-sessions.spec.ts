@@ -120,7 +120,7 @@ test("synthetic sessions fixture lists a labelled 16-entry catalogue and enforce
   }
 });
 
-test("synthetic New and Restore confirm before committing a generation and then clear the draft (fixture selectors retired)", async t => {
+test("synthetic New and Restore defer generation changes until commit and then clear the draft", async t => {
   const h = await previewHarness(t);
   try {
     await h.click(browse);
@@ -131,6 +131,7 @@ test("synthetic New and Restore confirm before committing a generation and then 
     await h.click('button[aria-label="New conversation"]');
     // Production has no sessions-phase banner; draft stays until the synthetic handoff commits.
     assert.equal(h.get<HTMLTextAreaElement>(draft).value, "draft retained only until the synthetic handoff commits");
+    assert.equal(h.latest("workspaceState").generation, beforeNew);
     const newSwitchStart = h.messages.length;
     await h.advance(120);
     const newSwitchingIndex = h.messages.findIndex((message, index) => index >= newSwitchStart && message.type === "sessionState" && message.phase === "switching");
@@ -140,6 +141,7 @@ test("synthetic New and Restore confirm before committing a generation and then 
     const newSwitching = h.messages[newSwitchingIndex];
     assert.ok(newSwitching.type === "sessionState");
     assert.equal(newSwitching.generation, beforeNew + 1);
+    assert.equal(h.messages[newAttachmentIndex].generation, beforeNew + 1);
     assert.equal(h.get<HTMLTextAreaElement>(draft).value, "");
     // Production shows an empty current title until the host names the live session.
     assert.equal((h.get(".candidate__current").textContent ?? "").trim(), "");
@@ -151,12 +153,15 @@ test("synthetic New and Restore confirm before committing a generation and then 
     const beforeRestore = h.latest("workspaceState").generation;
     await h.click('button[aria-label="Restore Synthetic saved session 33"]');
     assert.equal(h.get<HTMLTextAreaElement>(draft).value, "draft retained until restore commits");
+    assert.equal(h.latest("workspaceState").generation, beforeRestore);
     const restoreSwitchStart = h.messages.length;
     await h.advance(120);
     const restoreSwitchingIndex = h.messages.findIndex((message, index) => index >= restoreSwitchStart && message.type === "sessionState" && message.phase === "switching");
     const restoreAttachmentIndex = h.messages.findIndex((message, index) => index >= restoreSwitchStart && message.type === "attachmentState" && message.generation > beforeRestore);
     assert.ok(restoreSwitchingIndex >= 0);
     assert.ok(restoreAttachmentIndex > restoreSwitchingIndex, "restore must clear attachments only after generation switching");
+    assert.equal(h.messages[restoreSwitchingIndex].generation, beforeRestore + 1);
+    assert.equal(h.messages[restoreAttachmentIndex].generation, beforeRestore + 1);
     assert.equal(h.get<HTMLTextAreaElement>(draft).value, "");
     assert.match(h.get(".candidate__current").textContent ?? "", /Synthetic saved session 33/);
     assert.equal(h.root.querySelectorAll("[data-saved-history-row]").length, 32);

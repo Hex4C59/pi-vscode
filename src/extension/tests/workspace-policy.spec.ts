@@ -3,7 +3,7 @@ import { test } from "node:test";
 import type { WorkspaceStateMessage } from "../bridge/webviewMessages.js";
 import { folder, harness, tick } from "./harness.js";
 
-test("eligibility matrix blocks every action except native recovery for its state", async () => {
+test("eligibility matrix gates resource choice, folder picker and trust command", async () => {
   for (const [folders, trusted, remote, expected] of [
     [[], true, undefined, "no-folder"], [[folder(), folder("/other")], true, undefined, "multi-root"],
     [[folder()], true, "ssh-remote", "remote"], [[folder("/virtual", "memfs")], true, undefined, "non-file"],
@@ -127,8 +127,10 @@ test("accepted folder update stays serialized across view rebuild; restarted hos
 test("picker rejects non-file and non-single results without changing workspace", async () => {
   for (const selected of [[], [folder("/virtual", "memfs").uri], [folder().uri, folder("/other").uri]]) {
     const h = harness([]); const v = h.createView();
-    h.api.window.showOpenDialog = async () => selected;
+    let picks = 0;
+    h.api.window.showOpenDialog = async () => { picks++; return selected; };
     v.action("openFolder"); await tick();
+    assert.equal(picks, 1);
     assert.deepEqual(h.updates, []); assert.equal(v.state().status, "no-folder");
     assert.equal(v.state().busy, false); h.provider.dispose();
   }

@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { test } from "node:test";
+import { test, type TestContext } from "node:test";
 import { ProviderConfig, resolvePiAgentDir, type ProviderConfigDeps } from "../providerConfig.js";
 
-function deps(overrides: Partial<ProviderConfigDeps> = {}): ProviderConfigDeps {
-  const file = path.join(mkdtempSync(path.join(os.tmpdir(), "pi-models-")), "models.json");
+function deps(t: TestContext, overrides: Partial<ProviderConfigDeps> = {}): ProviderConfigDeps {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "pi-models-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const file = path.join(directory, "models.json");
   const providers = [{
     id: "anthropic",
     name: "Anthropic",
@@ -59,9 +61,9 @@ test("resolvePiAgentDir honors PI_CODING_AGENT_DIR", () => {
   assert.equal(resolvePiAgentDir({ PI_CODING_AGENT_DIR: "D:\\custom\\agent" }), "D:\\custom\\agent");
 });
 
-test("provider config projects API-key providers without secrets and stores defaults", async () => {
+test("provider config projects API-key providers without secrets and stores defaults", async t => {
   let interactionUsed = false;
-  const base = deps({
+  const base = deps(t, {
     createRuntime: async () => {
       const providers = [{
         id: "anthropic",
@@ -111,8 +113,10 @@ test("provider config projects API-key providers without secrets and stores defa
   assert.equal(config.snapshot.providers[0]?.configured, false);
 });
 
-test("cancelled API key prompt does not report a hard error", async () => {
-  const config = new ProviderConfig(deps({
+test("cancelled API key prompt does not report a hard error", async t => {
+  let loginCalls = 0;
+  let secretPrompts = 0;
+  const config = new ProviderConfig(deps(t, {
     createRuntime: async () => {
       const providers = [{
         id: "anthropic",
@@ -128,13 +132,14 @@ test("cancelled API key prompt does not report a hard error", async () => {
         getModels: () => [],
         getAvailable: async () => [],
         login: async (_providerId, _type, interaction) => {
+          loginCalls++;
           await interaction.prompt({ type: "secret", message: "API key" });
         },
         logout: async () => {},
       };
     },
     promptUi: {
-      showInputBox: async () => undefined,
+      showInputBox: async options => { assert.equal(options.password, true); secretPrompts++; return undefined; },
       showQuickPick: async () => undefined,
       showInformationMessage: async () => undefined,
       openExternal: async () => false,
@@ -142,12 +147,14 @@ test("cancelled API key prompt does not report a hard error", async () => {
   }), () => {});
   await config.refresh();
   await config.openApiKey("anthropic");
+  assert.equal(loginCalls, 1);
+  assert.equal(secretPrompts, 1);
   assert.equal(config.snapshot.error, null);
   assert.equal(config.snapshot.providers[0]?.configured, false);
 });
 
-test("pre-session strength persists per model across config recreation and rejects stale/unsupported choices", async () => {
-  const dependencies = deps();
+test("pre-session strength persists per model across config recreation and rejects stale/unsupported choices", async t => {
+  const dependencies = deps(t);
   const config = new ProviderConfig(dependencies, () => {});
   await config.refresh();
   await config.setDefaultModel("anthropic", "claude");
@@ -168,18 +175,32 @@ test("pre-session strength persists per model across config recreation and rejec
   assert.equal(reopened.snapshot.defaultThinkingLevel, "high");
 });
 
-test("pre-session strength save failure keeps applied projection and saving rejects overlap", async () => {
-  const dependencies = deps();
+test("pre-session strength save failure keeps applied projection and saving rejects overlap", async t => {
+  const dependencies = deps(t);
   const settings = await dependencies.createSettings();
   const config = new ProviderConfig(dependencies, () => {});
   await config.refresh();
   await config.setDefaultModel("anthropic", "claude");
+  const thinkingWrites: string[] = [];
+  const defaultWrites: string[] = [];
+  const originalSetThinking = settings.setModelThinkingLevel;
+  settings.setModelThinkingLevel = (provider, model, level) => {
+    thinkingWrites.push(level);
+    originalSetThinking(provider, model, level);
+  };
+  const originalSetDefault = settings.setDefaultModelAndProvider;
+  settings.setDefaultModelAndProvider = (provider, model) => {
+    defaultWrites.push(`${provider}/${model}`);
+    originalSetDefault(provider, model);
+  };
   let reject!: (reason: Error) => void;
   settings.flush = () => new Promise<void>((_resolve, fail) => { reject = fail; });
   const pending = config.setDefaultThinkingLevel("anthropic", "claude", "high");
   await new Promise(resolve => setImmediate(resolve));
   await config.setDefaultThinkingLevel("anthropic", "claude", "off");
   await config.setDefaultModel("anthropic", "other");
+  assert.deepEqual(thinkingWrites, ["high"]);
+  assert.deepEqual(defaultWrites, []);
   assert.equal(config.snapshot.busy, true);
   reject(new Error("private credentials must not be projected"));
   await pending;

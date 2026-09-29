@@ -58,8 +58,9 @@ test("capacity evicts oldest entries, bounds keyed retention and counts omission
   assert.equal(store.snapshot().feedback.filter(item => item.kind === "widget").length, 4);
   assert.equal(store.snapshot().omittedFeedback, 2);
   assert.equal(store.snapshot().feedback[0].text, "s1");
+  const beforeEvictedClear = store.snapshot();
   store.accept(frame("setStatus", { statusKey: "0" }));
-  assert.equal(store.snapshot().feedback.length, 12);
+  assert.deepEqual(store.snapshot(), beforeEvictedClear);
   store.reset();
   store.accept(frame("notify", { message: "é".repeat(16384) }));
   store.accept(frame("notify", { message: "x".repeat(32768) }));
@@ -156,9 +157,14 @@ test("long-lived key churn and replacement stay bounded; reset clears omissions 
   assert.equal(store.snapshot().feedback.length, 12);
   assert.equal(store.snapshot().omittedFeedback, 3988);
   const lastId = store.snapshot().feedback.at(-1)?.id;
+  const statusBefore = store.snapshot().feedback.filter(item => item.kind === "status").at(-1);
+  assert.ok(statusBefore);
   for (let index = 0; index < 100; index++) store.accept(frame("setStatus", { statusKey: "s1999", statusText: "updated" }));
   assert.equal(store.snapshot().feedback.length, 12);
   assert.equal(store.snapshot().omittedFeedback, 3988);
+  const updated = store.snapshot().feedback.filter(item => item.kind === "status" && item.text === "updated");
+  assert.equal(updated.length, 1);
+  assert.notEqual(updated[0].id, statusBefore.id);
   store.reset();
   store.accept(frame("notify", { message: "new lifecycle" }));
   assert.equal(store.snapshot().omittedFeedback, 0);

@@ -92,11 +92,13 @@ test("managed replacement waits for prior cleanup and does not overlap an owner 
 
 test("owner exceptions become fixed errors and retain launch admission barrier", async () => {
   const f = ownedFixture();
-  f.owner.launch = async () => { throw new Error("private synthetic credentials"); };
+  let launchAttempts = 0;
+  f.owner.launch = async () => { launchAttempts++; throw new Error("private synthetic credentials"); };
   const started = await f.strategy.launch(input);
   assert.equal(started.ok, false);
   assert.doesNotMatch(JSON.stringify(started), /private synthetic/);
   assert.equal((await f.strategy.launch(input)).ok, false);
+  assert.equal(launchAttempts, 1, "a failed owner launch retains the admission barrier");
   f.owner.inspect = async () => { throw new Error("unavailable"); };
   assert.equal(await f.strategy.inspect(), "blocked");
 });

@@ -319,9 +319,13 @@ export class PreviewBridge implements WebviewBridge {
         this.emitSettings();
         break;
       case "endOwnedRuntime":
-      case "recoverControlledRuntime":
-        this.executionProfile = { profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false };
+        if (!this.executionProfile.canEnd) break;
+        // This fixture simulates observed exit, not just a termination acknowledgement.
+        this.executionProfile = { ...this.executionProfile, canEnd: false, canRecover: true };
         this.emitProfile();
+        break;
+      case "recoverControlledRuntime":
+        if (this.executionProfile.canRecover) this.recover();
         break;
       case "addFileAttachment":
         this.addAttachment("file");
@@ -424,7 +428,7 @@ export class PreviewBridge implements WebviewBridge {
   /** Synthetic recovery banner: no real runtime is ended or recovered in the preview. */
   simulateRecoveryRequired(): void {
     if (this.disposed) return;
-    this.executionProfile = { ...this.executionProfile, phase: "recovery-required", errorCode: "stop-unconfirmed", canSwitch: false, canEnd: true, canRecover: true };
+    this.executionProfile = { ...this.executionProfile, phase: "recovery-required", errorCode: "stop-unconfirmed", canSwitch: false, canEnd: true, canRecover: false };
     this.emitProfile();
   }
 

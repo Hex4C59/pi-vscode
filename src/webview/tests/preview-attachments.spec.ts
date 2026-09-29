@@ -91,9 +91,11 @@ test("long-history preview exposes 128 immutable mixed metadata records and boun
     const history = f.messages.at(-1); assert.ok(history?.type === "attachmentHistory");
     assert.equal(history.entries.length, 128); assert.equal(history.entries[0].submissionId, history.entries[19].submissionId);
     assert.notEqual(history.entries[19].submissionId, history.entries[20].submissionId);
-    assert.ok(history.entries.some(e => e.kind === "selection"));
+    assert.deepEqual(history.entries.slice(0, 2).map(entry => entry.kind), ["file", "selection"]);
+    const originalEntries = structuredClone(history.entries);
     const snapshotId = history.entries[0].snapshotId; let offset = 0; let text = ""; let chunks = 0;
     for (;;) {
+      assert.ok(chunks < 3, "synthetic preview must reach its final chunk");
       f.send({ type: "getAttachmentPreview", requestId: "history-preview", snapshotId, offset }); t.mock.timers.tick(80);
       const message = f.messages.at(-1); assert.ok(message?.type === "attachmentPreview" && "text" in message);
       assert.ok(message.text.length <= 16384); text += message.text; chunks++; offset = message.nextOffset;
@@ -104,6 +106,9 @@ test("long-history preview exposes 128 immutable mixed metadata records and boun
     f.send({ type: "addFileAttachment", draftRevision: draft.revision }); t.mock.timers.tick(420);
     const attached = f.state().draft; f.send({ type: "sendChat", draftRevision: attached.revision });
     assert.equal(f.state().result?.code, "history-full"); assert.deepEqual(f.state().draft, attached); assert.equal(f.state().historyCount, 128);
+    f.send({ type: "getAttachmentHistory" });
+    const retained = f.messages.at(-1); assert.ok(retained?.type === "attachmentHistory");
+    assert.deepEqual(retained.entries, originalEntries);
   } finally { f.bridge.dispose(); }
 });
 

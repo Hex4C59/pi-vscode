@@ -1126,7 +1126,7 @@ test("candidate exposes preparation failure without silently losing context or b
   assert.equal(h.root.querySelectorAll('.candidate__message--user').length, 0);
 });
 
-test("candidate exposes capacity rejection and discoverable unchanged budgets", async t => {
+test("candidate exposes capacity rejection without losing the draft", async t => {
   const h = await candidateHarness(t, "attachment-capacity");
   await h.input("Capacity draft");
   await h.click('button[aria-label="Add context"]'); await h.click('[role="menuitem"][aria-label="Add file"]'); await h.advance(420);

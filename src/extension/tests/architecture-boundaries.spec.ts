@@ -3,7 +3,10 @@ import { test } from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
-test("host and browser modules preserve the runtime and capability boundaries", () => {
+test("selected host and browser entry files avoid forbidden capability references", () => {
+  const forbidden = /(?:\bfrom\s*|\b(?:import|require)\s*\(\s*)["'][^"']*(?:adapter|pi-coding-agent|child_process|node:fs)|SecretStorage|globalState|workspaceState\.update|trust\.json/;
+  assert.match('await import("../../adapter/runtime/index.js")', forbidden);
+  assert.match('require("node:fs")', forbidden);
   for (const path of [
     "src/extension/piChatViewProvider.ts",
     "src/extension/bridge/webviewHtml.ts",
@@ -12,7 +15,7 @@ test("host and browser modules preserve the runtime and capability boundaries", 
     "src/webview/bridge.ts",
     "src/webview/webview-client.ts",
   ]) {
-    assert.doesNotMatch(readFileSync(path, "utf8"), /from\s+["'][^"']*(?:adapter|pi-coding-agent|child_process|node:fs)|SecretStorage|globalState|workspaceState\.update|trust\.json/);
+    assert.doesNotMatch(readFileSync(path, "utf8"), forbidden);
   }
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));
   assert.equal(pkg.capabilities.untrustedWorkspaces.supported, "limited");
@@ -28,7 +31,7 @@ const modules = new Set([
 // Report the same public-entry violations for source fixtures and the application scan.
 function moduleEntryViolations(file: string, source: string): string[] {
   const violations: string[] = [];
-  for (const match of source.matchAll(/\bfrom\s*["'](\.{1,2}\/[^"']+\.js)["']/g)) {
+  for (const match of source.matchAll(/\b(?:from\s*|(?:import|require)\s*\(\s*)["'](\.{1,2}\/[^"']+\.js)["']/g)) {
     const target = path.resolve(path.dirname(file), match[1]);
     const targetModule = path.dirname(target);
     if (!modules.has(targetModule) || path.dirname(file) === targetModule) continue;
@@ -44,12 +47,20 @@ test("public-entry checks allow legal imports and reject presentation imports by
     import type { SessionsProps } from "./types.js";
     import type { SessionStateMessage } from "../../extension/contracts/index.js";
     import { useState } from "react";
+    const shared = await import("../index.js");
+    void shared;
   `), []);
   assert.deepEqual(moduleEntryViolations(file, `
     import type { SavedHistoryPreview } from "../types.js";
     import { SESSION_PAGE_SIZE } from "../client-state.js";
     import { SAVED_HISTORY_PAGE_SIZE } from "../saved-history-client.js";
   `), ["../types.js", "../client-state.js", "../saved-history-client.js"]);
+  assert.deepEqual(moduleEntryViolations(file, `
+    const client = await import("../client-state.js");
+    const history = require("../saved-history-client.js");
+    void client;
+    void history;
+  `), ["../client-state.js", "../saved-history-client.js"]);
 });
 
 // Cross-directory consumers use a deliberately small directory entry; internal files may remain direct.
@@ -85,7 +96,7 @@ test("module type contracts are type-only and reachable through their public ent
   }
 });
 
-test("activation and distribution own the isolated persistent runtime supervisor", () => {
+test("activation and packaging reference the persistent runtime supervisor", () => {
   const activation = readFileSync("src/extension.ts", "utf8");
   assert.match(activation, /createRuntimeOwner/);
   assert.match(activation, /context\.globalStorageUri\.fsPath/);

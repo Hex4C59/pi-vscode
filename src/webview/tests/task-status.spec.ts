@@ -58,9 +58,13 @@ test("status updates in place so streaming transitions never replay entrance mot
   try {
     await h.render({ chatBusy: true, execution: "thinking" });
     const before = h.get(".candidate__progress");
+    assert.match(before.textContent ?? "", /Working…/);
     await h.render({ chatBusy: true, execution: "replying" });
+    assert.equal(h.get(".candidate__progress"), before);
+    assert.match(before.textContent ?? "", /Replying…/);
     await h.render({ chatBusy: true, execution: "executing" });
-    assert.equal(h.get(".candidate__progress") === before, true, "the same node updates; no re-mount restarts the pulse");
+    assert.equal(h.get(".candidate__progress"), before, "the same node updates; no re-mount restarts the pulse");
+    assert.match(before.textContent ?? "", /Working…/);
     assert.equal(h.root.querySelectorAll(".candidate__progress").length, 1);
   } finally { await h.close(); }
 });

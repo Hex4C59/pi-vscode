@@ -173,6 +173,10 @@ export async function readySettings() {
   const r = settingsRuntime();
   const h = harness([folder()], true, undefined, r.runtime);
   const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
+  if (v.state().runtime !== "ready") {
+    h.provider.dispose();
+    throw new Error("Settings fixture did not reach a ready runtime.");
+  }
   r.calls.length = 0;
   return { r, h, v };
 }

@@ -321,7 +321,9 @@ test("recovery actions are separate host intents and pending profile operations 
       onEnd: () => ended.push("pending-end"),
       onRecover: () => recovered.push("pending-recover"),
     }), "zh-CN"));
-    for (const button of view.root.querySelectorAll<HTMLButtonElement>("button")) assert.equal(button.disabled, true);
+    const pendingButtons = view.root.querySelectorAll<HTMLButtonElement>("button");
+    assert.equal(pendingButtons.length, 4);
+    for (const button of pendingButtons) assert.equal(button.disabled, true);
     assert.match(view.get('[role="status"]').textContent ?? "", /正在切换/);
     assert.equal(browserConfirmCalls, 0);
   } finally { await view.close(); }

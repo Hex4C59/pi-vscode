@@ -70,3 +70,17 @@ test("project preparation selects a default model without granting resource cons
     assert.ok(!h.sent.some(m => m.type === "chooseResources" || m.type === "setChatModel"));
   } finally { await h.close(); }
 });
+
+test("project-resource cancel keeps the draft and never grants consent", async () => {
+  const h = await uiHarness();
+  try {
+    await h.render({ choice: null, runtime: "not-started" });
+    await h.input("Keep on cancel", "textarea");
+    await h.click('button[aria-label="Send message"]');
+    assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /does not grant consent or start a runtime/);
+    await h.click('.candidate-dialog__action.is-quiet');
+    assert.equal(h.root.querySelector("dialog") === null, true);
+    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep on cancel");
+    assert.ok(!h.sent.some(message => message.type === "chooseResources"));
+  } finally { await h.close(); }
+});

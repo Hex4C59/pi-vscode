@@ -343,6 +343,7 @@ test("the supervisor relays child pipes and records the exact observed child exi
   const { worker, directory, runId, childId, statePath } = fixture;
   worker.process.stdin?.write("echo-probe\n");
   await worker.waitForStdout("synthetic-echo\n");
+  const exitRequestedAt = Date.now();
   worker.process.stdin?.write("exit-probe\n");
   const exit = await worker.waitForExit();
   assert.deepEqual(exit, { code: 0, signal: null }, "supervisor exits independently of a possible close event");
@@ -351,6 +352,7 @@ test("the supervisor relays child pipes and records the exact observed child exi
   assert.equal(observed.kind, "terminal");
   if (observed.kind !== "terminal") return;
   assert.deepEqual(observed.receipt, { version: 1, runId, childId, outcome: "child-exited", code: 17, signal: null, observedAt: observed.receipt.observedAt });
+  assert.ok(observed.receipt.observedAt >= exitRequestedAt && observed.receipt.observedAt <= Date.now(), "receipt timestamp must be recorded when the child exits");
   const state = JSON.parse(await readFile(statePath, "utf8")) as SyntheticState;
   assert.equal(state.lastInput, "exit-probe\n");
   assert.equal(state.home, fixture.home, "runtime inherited the isolated HOME without serializing env in initialize");
@@ -389,10 +391,8 @@ test("an explicit control end is acknowledged and records actual child exit", as
   assert.equal(terminal.receipt.outcome, "child-exited");
   assert.ok(terminal.receipt.code === null || Number.isSafeInteger(terminal.receipt.code));
   assert.ok(terminal.receipt.signal === null || terminal.receipt.signal === "SIGTERM" || terminal.receipt.signal === "SIGKILL");
-  const exit = await Promise.race([
-    worker.waitForExit(),
-    new Promise<never>((_resolve, reject) => setTimeout(() => reject(new Error("supervisor did not exit after child exit and durable receipt")), 2500)),
-  ]);
+  assert.equal(await waitForWorkerExit(worker, 2500), true, "supervisor did not exit after child exit and durable receipt");
+  const exit = await worker.waitForExit();
   assert.deepEqual(exit, { code: 0, signal: null });
 });
 
@@ -441,6 +441,7 @@ test("a child spawn error records never-spawned and never reports spawned", asyn
   workerRef.current = activeWorker;
 
   await activeWorker.waitForSpawn();
+  const launchRequestedAt = Date.now();
   await activeWorker.sendInit({ version: 1, type: "initialize", runId: reservation.fence.runId, cliPath: childPath, args: [path.join(directory, "synthetic-state.json")], cwd: path.join(directory, "missing-cwd") });
   const exit = await activeWorker.waitForExit();
   assert.deepEqual(exit, { code: 0, signal: null });
@@ -449,6 +450,7 @@ test("a child spawn error records never-spawned and never reports spawned", asyn
   assert.equal(observed.kind, "terminal");
   if (observed.kind !== "terminal") return;
   assert.deepEqual(observed.receipt, { version: 1, runId: reservation.fence.runId, childId: reservation.fence.childId, outcome: "never-spawned", code: null, signal: null, observedAt: observed.receipt.observedAt });
+  assert.ok(observed.receipt.observedAt >= launchRequestedAt && observed.receipt.observedAt <= Date.now(), "receipt timestamp must be recorded after the failed launch");
 });
 
 test("IPC disconnect before initialize seals startup and records never-spawned", async t => {

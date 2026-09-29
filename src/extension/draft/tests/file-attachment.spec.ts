@@ -25,11 +25,24 @@ async function fixture(text = "unsaved code") {
   h.api.workspace.textDocuments = [doc as unknown as vscode.TextDocument];
   h.api.window.showOpenDialog = async () => [uri];
   const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
-  const waitIdle = () => new Promise<void>(resolve => {
+  if (v.state().runtime !== "ready") {
+    h.provider.dispose();
+    await rm(root, { recursive: true, force: true });
+    throw new Error("Attachment fixture did not reach a ready runtime.");
+  }
+  const waitIdle = () => new Promise<void>((resolve, reject) => {
     const original = v.view.webview.postMessage;
+    const timer = setTimeout(() => {
+      v.view.webview.postMessage = original;
+      reject(new Error("Attachment state did not become idle"));
+    }, 5000);
     v.view.webview.postMessage = message => {
       const result = original(message);
-      if ((message as { type: string; preparation: string }).type === "attachmentState" && (message as { preparation: string }).preparation === "idle") { v.view.webview.postMessage = original; resolve(); }
+      if ((message as { type: string; preparation: string }).type === "attachmentState" && (message as { preparation: string }).preparation === "idle") {
+        clearTimeout(timer);
+        v.view.webview.postMessage = original;
+        resolve();
+      }
       return result;
     };
   });
@@ -723,7 +736,9 @@ test("mixed retention charges body once and shares delivery and settlement acros
     assert.ok(entries.every(e => e.delivery === "rpc-accepted" && e.outcome === "pending"));
     const firstCharge = f.v.attachments().retainedBytes;
     f.r.settled(); await tick(); f.v.action("getAttachmentHistory");
-    assert.ok((f.v.sent.at(-1) as { entries: { outcome: string }[] }).entries.every(e => e.outcome === "settled"));
+    const settledEntries = (f.v.sent.at(-1) as { entries: { outcome: string }[] }).entries;
+    assert.equal(settledEntries.length, 2);
+    assert.ok(settledEntries.every(e => e.outcome === "settled"));
     assert.equal(f.v.attachments().retainedBytes, firstCharge);
     await f.add(); await f.addSelection(); await f.send("body" + "x".repeat(100));
     assert.equal(f.v.attachments().retainedBytes - firstCharge, firstCharge + 100, "body growth charged once, not per attachment");
@@ -778,9 +793,13 @@ test("unrelated editor events emit no attachment projection while all matching m
     let before = projections();
     f.h.documentChange.fire({ document: unrelated }); f.h.documentClose.fire(unrelated);
     assert.equal(projections(), before, "empty draft ignores unrelated editor events");
-    await f.add(); await f.addSelection(); before = projections();
-    f.h.documentChange.fire({ document: unrelated }); f.h.documentClose.fire(unrelated);
-    assert.equal(projections(), before, "mixed draft ignores unrelated editor events");
+    await f.add(); await f.addSelection();
+    assert.equal(f.v.attachments().draft.attachments.length, 2);
+    before = projections();
+    f.h.documentChange.fire({ document: unrelated });
+    assert.equal(projections(), before, "mixed draft ignores unrelated editor changes");
+    f.h.documentClose.fire(unrelated);
+    assert.equal(projections(), before, "mixed draft ignores unrelated editor closes");
     f.change("different source"); assert.equal(projections(), before + 1);
     assert.ok(f.v.attachments().draft.attachments.every(a => a.state === "changed"));
     before = projections(); f.h.documentClose.fire(f.doc as unknown as vscode.TextDocument); assert.equal(projections(), before + 1);
@@ -810,11 +829,12 @@ test("long live history survives the chat window and source deletion, restores a
     assert.equal(JSON.stringify(history).includes("immutable original"), false);
     f.h.api.workspace.openTextDocument = async () => { throw new Error("history must not reopen a source"); };
     for (const entry of history.entries) {
-      let offset = 0; let text = "";
+      let offset = 0; let text = ""; let chunks = 0;
       for (;;) {
+        assert.ok(chunks < 4, "retained attachment preview must reach its final chunk");
         recreated.action("getAttachmentPreview", { requestId: "restored-" + entry.kind, snapshotId: entry.snapshotId, offset });
         const chunk = recreated.sent.at(-1) as { text: string; nextOffset: number; done: boolean };
-        assert.ok(chunk.text.length <= 16384); text += chunk.text; offset = chunk.nextOffset; await tick();
+        assert.ok(chunk.text.length <= 16384); text += chunk.text; chunks++; offset = chunk.nextOffset; await tick();
         if (chunk.done) break;
       }
       assert.equal(text, entry.kind === "file" ? original : "// im");

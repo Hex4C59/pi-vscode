@@ -42,11 +42,13 @@ test("focus uses the registered view on hosts without Secondary Side Bar contain
 
 test("focus reports fallback focus failure", async () => {
   const failure = new Error("focus unavailable");
+  const calls: string[] = [];
   const api = { commands: {
     getCommands: async () => [] as string[],
-    executeCommand: async () => { throw failure; },
+    executeCommand: async (command: string) => { calls.push(command); throw failure; },
   } };
   await assert.rejects(focusPiChat(api as unknown as Parameters<typeof focusPiChat>[0]), failure);
+  assert.deepEqual(calls, ["pi-vscode.chat.focus"]);
 });
 
 test("focus reports discovery failure without executing a fallback", async () => {

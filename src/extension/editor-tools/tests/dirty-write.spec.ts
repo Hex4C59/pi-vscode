@@ -89,7 +89,10 @@ test("write/edit protection follows canonical junction aliases and does not bloc
 
 async function finishOffered(f: Awaited<ReturnType<typeof fixture>>, id: string, pending: Promise<boolean>): Promise<boolean> {
   if ((await approvalOrSettlement(f, id, pending)).kind === "offered") f.v.action("decideApproval", { id, decision: "once" });
-  return pending;
+  const allowed = await pending;
+  assert.equal(allowed, false, `${id} must not execute a dirty write`);
+  assert.match(f.v.state().chatError ?? "", /unsaved editor changes/i, `${id} must fail for the dirty target`);
+  return allowed;
 }
 
 test("write targets use the declared pi path spellings, including @, home, file URL and Unicode spaces", { timeout: 5000 }, async () => {

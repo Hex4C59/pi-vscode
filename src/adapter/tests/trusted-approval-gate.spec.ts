@@ -309,25 +309,28 @@ test("trusted custom calls are denied on a negative answer and unregistered name
 });
 
 test("trusted approval displays the captured full JSON and denies a late-mutated input", async () => {
-  await withProfile("trusted", async () => {
-    let resolveApproval: ((allowed: boolean) => void) | undefined;
-    const pendingApproval = new Promise<boolean>((resolve) => { resolveApproval = resolve; });
-    const fixture = new GateFixture({ confirmation: async () => pendingApproval });
-    approvalGate(fixture);
-    await fixture.start();
+  for (const mutation of ["text", "nested"] as const) {
+    await withProfile("trusted", async () => {
+      let resolveApproval: ((allowed: boolean) => void) | undefined;
+      const pendingApproval = new Promise<boolean>((resolve) => { resolveApproval = resolve; });
+      const fixture = new GateFixture({ confirmation: async () => pendingApproval });
+      approvalGate(fixture);
+      await fixture.start();
 
-    const input = { text: "before", nested: { value: 7 } };
-    const pendingCall = fixture.call({ toolName: "fixture_tool", toolCallId: "mutating-call", input });
-    assert.equal(fixture.confirmations.length, 1);
-    const displayed = parseGateEnvelope(parseMessage(fixture.confirmations[0].message));
-    assert.ok(displayed?.kind === "call" && displayed.category === "custom");
-    assert.deepEqual(displayed.input, { text: "before", nested: { value: 7 } });
-    input.text = "after";
-    assert.ok(resolveApproval);
-    resolveApproval(true);
+      const input = { text: "before", nested: { value: 7 } };
+      const pendingCall = fixture.call({ toolName: "fixture_tool", toolCallId: "mutating-call", input });
+      assert.equal(fixture.confirmations.length, 1);
+      const displayed = parseGateEnvelope(parseMessage(fixture.confirmations[0].message));
+      assert.ok(displayed?.kind === "call" && displayed.category === "custom");
+      assert.deepEqual(displayed.input, { text: "before", nested: { value: 7 } });
+      if (mutation === "text") input.text = "after";
+      else input.nested.value = 8;
+      assert.ok(resolveApproval);
+      resolveApproval(true);
 
-    assert.deepEqual(await pendingCall, { block: true, reason: "Tool was not approved." });
-  });
+      assert.deepEqual(await pendingCall, { block: true, reason: "Tool was not approved." }, mutation);
+    });
+  }
 });
 
 test("trusted approval rechecks cancellation after the user answers", async () => {

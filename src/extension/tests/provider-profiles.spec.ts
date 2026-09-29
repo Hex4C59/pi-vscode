@@ -15,6 +15,7 @@ test("explicit native trusted selection preserves draft and live conversation, n
   const h = harness([folder()], true, undefined, r.runtime);
   try {
     const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
+    assert.equal(v.state().runtime, "ready");
     const state = v.state(); const draft = v.attachments().draft;
     v.send("updateDraft", { generation: state.generation, viewId: state.viewId, draftRevision: draft.revision, editSequence: 1, text: "unsent" });
     h.api.window.showOpenDialog = async () => [folder(entry).uri];
@@ -80,6 +81,7 @@ test("fresh empty profile switch does not resume an unpersisted session path", a
   const h = harness([folder()], true, undefined, r.runtime);
   try {
     const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
+    assert.equal(v.state().runtime, "ready");
     h.api.window.showOpenDialog = async () => [folder(entry).uri];
     h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
     v.action("chooseExecutionProfile", { profile: "trusted" });
@@ -105,6 +107,7 @@ for (const checkpoint of ["unavailable", "throws", "missing"] as const) test(`pr
   const h = harness([folder()], true, undefined, r.runtime);
   try {
     const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
+    assert.equal(v.state().runtime, "ready");
     const state = v.state(); const draft = v.attachments().draft;
     v.send("updateDraft", { generation: state.generation, viewId: state.viewId, draftRevision: draft.revision, editSequence: 1, text: "retain this draft" });
     const previousStops = stops;
@@ -118,6 +121,7 @@ for (const checkpoint of ["unavailable", "throws", "missing"] as const) test(`pr
     }
     const profile = [...v.sent].reverse().find(value => (value as { type: string }).type === "executionProfileState") as ExecutionProfileProjection;
     assert.equal(profile.phase, "idle");
+    assert.equal(profile.errorCode, "state-changed");
     assert.equal(starts, 1); assert.equal(stops, previousStops);
     assert.equal(v.state().runtime, "ready"); assert.equal(v.state().controlledExecution, true);
     assert.equal(v.attachments().draft.text, "retain this draft");

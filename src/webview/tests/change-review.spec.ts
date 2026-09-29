@@ -160,7 +160,7 @@ test("mounted change review panel is expandable, paged, explanatory, and stable 
     await h.close();
   }
 });
-test("runtime-disconnected review reset lives on the panel; fixture banner retired", async () => {
+test("runtime-disconnected review reset is shown on the review panel", async () => {
   const h = await uiHarness(false);
   try {
     await h.receive(attachmentState());

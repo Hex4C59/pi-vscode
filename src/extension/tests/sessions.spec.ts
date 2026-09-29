@@ -83,6 +83,10 @@ async function sessionFixture() {
  h.api.window.showWarningMessage = async (_message, _options, ...buttons) => buttons[0];
  v.action("chooseResources", { choice: "decline" }); await tick();
  v.action("getSavedSessions", { page: 0 }); await tick();
+ if (v.state().runtime !== "ready") {
+  h.provider.dispose();
+  throw new Error("Session fixture did not reach a ready runtime.");
+ }
  return { r, h, v, store, starts, selected: sessionState(v).entries[0].id };
 }
 

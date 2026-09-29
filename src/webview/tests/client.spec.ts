@@ -3,6 +3,7 @@ import test from "node:test";
 import { WebviewClient } from "../webview-client.js";
 import { parseHostMessage } from "../parse-host-message.js";
 import { createWebviewBridge } from "../bridge.js";
+import { availability } from "../client-state.js";
 import { readySettings } from "../../extension/tests/harness.js";
 import type { HostMessage, WebviewMessage } from "../../extension/bridge/webviewMessages.js";
 
@@ -175,7 +176,11 @@ test("host busy state defers draft synchronization without retry loops and resum
     ui.client.edit("typed during restart");
     assert.equal(ui.sent.length, before, "host rejects all actions while busy");
     ui.receive(state);
-    assert.equal(ui.sent.at(-1)?.type, "updateDraft");
+    assert.deepEqual(ui.sent.at(-1), {
+      version: 3, generation: state.generation, viewId: state.viewId,
+      type: "updateDraft", draftRevision: ui.client.getSnapshot().attachments?.draft.revision,
+      editSequence: 1, text: "typed during restart",
+    });
     ui.client.dispose(); assert.equal(ui.subscribed(), false);
     const snapshot = ui.client.getSnapshot(); ui.receive(state); assert.equal(ui.client.getSnapshot(), snapshot);
   } finally { ui.client.dispose(); h.provider.dispose(); }
@@ -188,8 +193,18 @@ test("missing models and unconfirmed or unavailable snapshots block submission w
     try {
       for (const message of v.sent) ui.receive(message);
       ui.client.edit("keep this draft");
-      v.receive.fire(ui.sent.at(-1));
-      for (const message of v.sent.slice(-1)) ui.receive(message);
+      const update = ui.sent.at(-1);
+      assert.equal(update?.type, "updateDraft");
+      if (update?.type !== "updateDraft") throw new Error("Expected a draft update");
+      assert.equal(update.text, "keep this draft");
+      const beforeAck = v.sent.length;
+      v.receive.fire(update);
+      const acknowledgements = v.sent.slice(beforeAck);
+      assert.ok(acknowledgements.some(message => (message as { type?: string }).type === "attachmentState"));
+      for (const message of acknowledgements) ui.receive(message);
+      assert.equal(ui.client.getSnapshot().attachments?.draft.text, "keep this draft");
+      assert.equal(ui.client.getSnapshot().synchronizing, false);
+      assert.equal(availability(ui.client.getSnapshot()).sendDisabled, false, "the baseline draft must be sendable");
       if (blocked === "model") ui.receive({ ...v.state(), chatModel: null, availableModels: [], thinkingLevels: [] });
       else ui.receive({ ...ui.client.getSnapshot().attachments, draft: { ...ui.client.getSnapshot().attachments!.draft,
         attachments: [{ attachmentId: "a", snapshotId: "s", relativePath: "sample.ts", kind: "file", utf8Bytes: 4, unsaved: false, state: blocked }] } });

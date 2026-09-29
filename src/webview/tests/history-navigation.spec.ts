@@ -78,7 +78,7 @@ test("changing pages or closing history discards its pending preview, but does n
   }
 });
 
-test("history page and focus survive stream and metadata updates; reopening chooses latest and loss resets honestly (fixture scroll sibling retired)", async () => {
+test("history page and focus survive stream and metadata updates; reopening chooses latest and runtime loss resets history", async () => {
   const h = await uiHarness(false);
   try {
     await h.receive(attachmentState({ historyCount: 33, draft: { revision: 1, text: "retained draft", acceptedEditSequence: 0, attachments: [] } })); await h.render();
@@ -86,6 +86,7 @@ test("history page and focus survive stream and metadata updates; reopening choo
     await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) }); await h.click(firstPage);
     const input = h.get<HTMLTextAreaElement>(message); input.focus();
     const firstPath = h.get(historySection).querySelector("li summary span")?.textContent;
+    assert.equal(firstPath, "src/context-0.ts");
     await h.render({ chatBusy: true, execution: "replying", messages: [{ role: "assistant", text: "stream delta" }] });
     await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(34).map(e => ({ ...e, outcome: "pending" })) });
     assert.match(h.get(historySection).textContent ?? "", /Snapshots 1–16 of 34/);
@@ -106,7 +107,7 @@ test("history page and focus survive stream and metadata updates; reopening choo
   } finally { await h.close(); }
 });
 
-test("history exhaustion names capacity without resetting the draft (fixture Developer Reload copy retired)", async () => {
+test("history exhaustion names capacity without resetting the draft", async () => {
   const h = await uiHarness(false);
   try {
     await h.receive(attachmentState({ historyCount: 128, result: { code: "history-full" }, draft: { revision: 1, text: "unsent request", acceptedEditSequence: 0, attachments: [] } })); await h.render();
@@ -114,15 +115,5 @@ test("history exhaustion names capacity without resetting the draft (fixture Dev
     assert.match(status, /full|128/i);
     assert.equal(h.get<HTMLTextAreaElement>(message).value, "unsent request");
     assert.equal(h.sent.filter(m => !["ping", "getWorkspaceState"].includes(m.type)).length, 0);
-  } finally { await h.close(); }
-});
-
-test("attachment history list fixture flex-shrink assertion retired", async () => {
-  const h = await uiHarness();
-  try {
-    await h.receive(attachmentState({ historyCount: 128 }));
-    await h.click(historyTrigger); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(128) });
-    assert.ok(h.get(historySection).querySelectorAll("li").length > 0);
-    assert.match(h.get(historySection).textContent ?? "", /Snapshots/);
   } finally { await h.close(); }
 });

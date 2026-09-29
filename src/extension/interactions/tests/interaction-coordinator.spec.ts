@@ -19,11 +19,13 @@ function manualTime(start = 0) {
     pendingCount() { return scheduled.size; },
     advance(milliseconds: number) {
       const target = current + milliseconds;
+      let fired = 0;
       for (;;) {
         const due = [...scheduled.entries()]
           .filter(([, item]) => item.at <= target)
           .sort((left, right) => left[1].at - right[1].at || left[0] - right[0])[0];
         if (!due) break;
+        assert.ok(fired++ < 10_000, 'manual clock must not loop on repeated immediate timers');
         scheduled.delete(due[0]);
         current = due[1].at;
         due[1].callback();

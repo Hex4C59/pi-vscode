@@ -5,13 +5,14 @@ import { prepareTestPrompt, folder, harness, readySettings, settingsRuntime, tic
 
 test("resource choice starts runtime with approve or no-approve and stops on workspace change", async () => {
   const starts: { cwd: string; projectTrust: string }[] = [];
+  let stops = 0;
   const runtime: PiRuntimeLifecycle = {
     preparePrompt: prepareTestPrompt,
     async start(options) {
       starts.push(options);
       return { ok: true, modelLabel: "Test / model" };
     },
-    async stop() { /* noop */ },
+    async stop() { stops++; },
     getSession() { return 1; },
     subscribe() { return () => undefined; },
     async prompt() { return { ok: true }; },
@@ -30,9 +31,11 @@ test("resource choice starts runtime with approve or no-approve and stops on wor
   v.action("chooseResources", { choice: "decline" });
   await tick(); await tick();
   assert.deepEqual(starts.at(-1), { cwd: "/project", projectTrust: "no-approve" });
+  const beforeChange = stops;
   h.api.workspace.workspaceFolders = [folder("/other")]; h.change.fire();
   await tick(); await tick();
   assert.equal(v.state().runtime, "not-started");
+  assert.equal(stops, beforeChange + 1);
   h.provider.dispose();
 });
 
@@ -83,12 +86,12 @@ test("sendChat streams assistant text and rejects stale runtime events", async (
 });
 
 test('Stop holds deferred settings until cancellation completes and runtime loss fails closed', async()=>{
-  const r=settingsRuntime();let finish:()=>void=()=>{};
-  r.runtime.abortTask=async()=>{r.settled();await new Promise<void>(resolve=>finish=resolve);return {ok:true};};
+  const r=settingsRuntime();let finish!:()=>void;let abortCalls=0;
+  r.runtime.abortTask=async()=>{abortCalls++;r.settled();await new Promise<void>(resolve=>finish=resolve);return {ok:true};};
   const h=harness([folder()],true,undefined,r.runtime);const v=h.createView();v.action('chooseResources',{choice:'allow'});await tick();r.calls.length=0;
   v.action('sendChat',{text:'work'});v.action('setThinkingLevel',{level:'high'});v.action('stopChat');await tick();
-  assert.equal(v.state().execution,'stopping');assert.deepEqual(r.calls,['prompt']);
-  v.action('sendChat',{text:'blocked'});assert.deepEqual(r.calls,['prompt']);finish();await tick();assert.ok(r.calls.includes('level:high'));
+  assert.equal(v.state().execution,'stopping');assert.equal(abortCalls,1);assert.equal(typeof finish,'function');assert.deepEqual(r.calls,['prompt']);
+  v.action('sendChat',{text:'blocked'});assert.deepEqual(r.calls,['prompt']);finish();await tick();assert.equal(r.calls.filter(call=>call==='level:high').length,1);
   r.events.fire({kind:'runtime_error',session:r.runtime.getSession(),detail:'Disconnected'});assert.equal(v.state().runtime,'error');assert.equal(v.state().execution,'stopped');assert.equal(v.state().pendingThinkingLevel,null);const calls=[...r.calls];v.action('sendChat',{text:'blocked after runtime loss'});assert.deepEqual(r.calls,calls);h.provider.dispose();
 });
 

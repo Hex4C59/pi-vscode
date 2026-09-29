@@ -37,9 +37,12 @@ test("webview shell points at packaged local assets with a strict CSP", () => {
 });
 
 test("provider limits local resources to the packaged webview directory", () => {
-  const view = harness().createView();
-  const options = view.view.webview.options as { localResourceRoots?: Array<{ path?: string }> };
-  assert.deepEqual(options.localResourceRoots?.map((root) => root.path), ["/extension/dist/webview"]);
-  assert.match(view.view.webview.html, /webview-resource:\/\/\/extension\/dist\/webview\/webview\.js/);
-  assert.match(view.view.webview.html, /webview-resource:\/\/\/extension\/dist\/webview\/webview\.css/);
+  const host = harness();
+  try {
+    const view = host.createView();
+    const options = view.view.webview.options as { localResourceRoots?: Array<{ path?: string }> };
+    assert.deepEqual(options.localResourceRoots?.map((root) => root.path), ["/extension/dist/webview"]);
+    assert.match(view.view.webview.html, /webview-resource:\/\/\/extension\/dist\/webview\/webview\.js/);
+    assert.match(view.view.webview.html, /webview-resource:\/\/\/extension\/dist\/webview\/webview\.css/);
+  } finally { host.provider.dispose(); }
 });

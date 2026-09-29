@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { harness, readySettings, tick } from "./harness.js";
 import { parseHostMessage } from "../../webview/parse-host-message.js";
+import { parseWebviewMessage } from "../bridge/webviewMessages.js";
 
 test("settings reuses one editor panel, projects no chat, and closing retains runtime and draft", async () => {
   const { h, v, r } = await readySettings();
@@ -32,25 +33,36 @@ test("settings reuses one editor panel, projects no chat, and closing retains ru
 });
 
 test("settings identity and capability allowlist block chat, execution and foreign mutations", async () => {
-  const h = harness(); const v = h.createView();
+  const { h, v, r } = await readySettings();
   try {
+    const draft = v.attachments().draft;
+    v.action("updateDraft", { draftRevision: draft.revision, editSequence: draft.acceptedEditSequence + 1, text: "Keep this draft" });
     v.action("openSettings"); const panel = h.panels[0];
     panel.receive.fire({ version: 3, type: "getWorkspaceState" });
     const state = parseHostMessage(panel.sent[0]); assert.ok(state);
     const envelope = { version: 3, viewId: state.viewId, generation: state.generation };
+    const currentDraft = v.attachments().draft;
     for (const intent of [
-      { type: "chooseResources", choice: "allow" }, { type: "chooseExecutionProfile", profile: "trusted" },
-      { type: "sendChat", draftRevision: 0 }, { type: "updateDraft", draftRevision: 0, editSequence: 1, text: "bad" },
+      { type: "chooseResources", choice: "decline" }, { type: "chooseExecutionProfile", profile: "trusted" },
+      { type: "sendChat", draftRevision: currentDraft.revision },
+      { type: "updateDraft", draftRevision: currentDraft.revision, editSequence: currentDraft.acceptedEditSequence + 1, text: "bad" },
+      { type: "setChatModel", provider: "B", modelId: "two" },
       { type: "openFolder" }, { type: "openSettings" }, { type: "newConversation" },
       { type: "decideApproval", id: "a", decision: "session" },
-    ]) panel.receive.fire({ ...envelope, ...intent });
+    ]) {
+      const message = { ...envelope, ...intent };
+      assert.ok(parseWebviewMessage(message), `${intent.type} must be a valid protocol message`);
+      panel.receive.fire(message);
+    }
     panel.receive.fire({ ...envelope, type: "setUiLanguage", locale: "fr" });
     panel.receive.fire({ ...envelope, type: "setUiLanguage", locale: "zh-CN", viewId: v.state().viewId });
     panel.receive.fire({ ...envelope, type: "setUiLanguage", locale: "zh-CN", generation: state.generation + 1 });
     await tick();
-    assert.equal(v.state().choice, null);
-    assert.equal(v.state().runtime, "not-started");
-    assert.equal(v.attachments().draft.text, "");
+    assert.equal(v.state().choice, "allow");
+    assert.equal(v.state().runtime, "ready");
+    assert.equal(v.state().chatModel, "A / one");
+    assert.equal(v.attachments().draft.text, "Keep this draft");
+    assert.deepEqual(r.calls, []);
     assert.equal(h.panels.length, 1);
     assert.equal(panel.title, "Pi · Settings");
     assert.deepEqual(h.commands, []);

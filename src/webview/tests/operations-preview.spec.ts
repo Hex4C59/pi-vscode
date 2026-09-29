@@ -30,19 +30,22 @@ test("simulated extension request renders, settles into the queued form, then cl
   assert.ok(h.root.querySelectorAll(".extension-interactions__feedback-entry").length >= 2, "feedback survives the settled forms");
 });
 
-test("simulated recovery banner offers both controls and clears after either settles", async t => {
+test("preview recovery waits for simulated exit and a separate recovery action", async t => {
   const h = await candidateHarness(t, "ready");
   await h.simulateRecoveryRequired();
   const banner = h.get(".candidate__runtime-recovery");
   assert.equal(banner.getAttribute("role"), "alert");
-  assert.equal(h.get<HTMLButtonElement>('[data-action="recover-controlled-runtime"]').disabled, false);
+  assert.equal(h.get<HTMLButtonElement>('[data-action="recover-controlled-runtime"]').disabled, true);
   assert.equal(h.get<HTMLButtonElement>('[data-action="end-owned-runtime"]').disabled, false);
   await h.click('[data-action="recover-controlled-runtime"]');
-  assert.equal(h.root.querySelector(".candidate__runtime-recovery") === null, true, "recovery settles the banner");
+  assert.ok(h.root.querySelector(".candidate__runtime-recovery"), "recovery is unavailable before exit");
 
-  await h.simulateRecoveryRequired();
   await h.click('[data-action="end-owned-runtime"]');
-  assert.equal(h.root.querySelector(".candidate__runtime-recovery") === null, true, "ending the runtime also settles the banner");
+  assert.ok(h.root.querySelector(".candidate__runtime-recovery"), "simulated exit alone does not recover");
+  assert.equal(h.get<HTMLButtonElement>('[data-action="end-owned-runtime"]').disabled, true);
+  assert.equal(h.get<HTMLButtonElement>('[data-action="recover-controlled-runtime"]').disabled, false);
+  await h.click('[data-action="recover-controlled-runtime"]');
+  assert.equal(h.root.querySelector(".candidate__runtime-recovery"), null);
 });
 
 test("preview recovery resets a pending extension request together with the runtime state", async t => {
@@ -51,7 +54,9 @@ test("preview recovery resets a pending extension request together with the runt
   await h.simulateRecoveryRequired();
   assert.ok(h.root.querySelector(".extension-interactions__form"));
   assert.ok(h.root.querySelector(".candidate__runtime-recovery"));
-  await h.recover();
+  await h.click('[data-action="end-owned-runtime"]');
+  assert.ok(h.root.querySelector(".extension-interactions__form"), "exit alone does not reset interactions");
+  await h.click('[data-action="recover-controlled-runtime"]');
   assert.equal(h.root.querySelector(".extension-interactions") === null, true);
   assert.equal(h.root.querySelector(".candidate__runtime-recovery") === null, true);
 });

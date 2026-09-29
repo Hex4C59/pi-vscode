@@ -203,9 +203,9 @@ test("mounted history handles empty/loading/errors and preserves reading focus a
     assert.match(h.get("#saved-history").textContent ?? "", /Loading retained history/);
     assert.equal(h.get<HTMLButtonElement>("#saved-history-refresh").disabled, true);
     assert.equal(h.get<HTMLButtonElement>("[data-saved-history-preview]").disabled, true);
-    for (const code of ["unavailable", "stale", "cancelled"] as const) {
+    for (const [code, expected] of [["unavailable", /Retained history is unavailable/], ["stale", /no longer current/], ["cancelled", /was cancelled/]] as const) {
       await h.receive(historyState({ phase: "error", error: code }));
-      assert.match(h.get("#saved-history [role=alert]").textContent ?? "", /unavailable|no longer current|cancelled/);
+      assert.match(h.get("#saved-history [role=alert]").textContent ?? "", expected);
       assert.equal(h.get<HTMLButtonElement>("[data-saved-history-preview]").disabled, true);
       await h.click("#saved-history-refresh");
       assert.deepEqual(h.sent.at(-1), { ...envelope, type: "getSavedHistory", page: 0 });

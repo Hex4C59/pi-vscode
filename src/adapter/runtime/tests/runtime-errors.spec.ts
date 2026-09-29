@@ -8,7 +8,9 @@ test("normalizes provider availability errors without exposing raw JSON", () => 
   assert.equal(formatRuntimeError("429 rate limit exceeded"),
     "Model rate limit reached. Wait a moment or switch models, then try again.");
   assert.equal(formatRuntimeError("  generic failure  "), "Model request failed. Check the selected model and provider configuration, then try again.");
-  assert.ok(boundUserFacingDetail("x".repeat(1000)).length <= 300);
+  assert.equal(boundUserFacingDetail(" x "), "x");
+  assert.equal(boundUserFacingDetail("x".repeat(300)), "x".repeat(300));
+  assert.equal(boundUserFacingDetail("x".repeat(1000)), `${"x".repeat(297)}...`);
 });
 
 test("provider errors expose recovery guidance rather than untrusted response bodies", () => {

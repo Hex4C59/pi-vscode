@@ -21,6 +21,7 @@ test("production model selection restores focus after the host busy transition d
     await h.click('#model-effort-trigger');
     await h.click('#model-current');
     await h.click('#model-list button:nth-child(2)');
+    assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: 'view', type: 'setChatModel', provider: 'B', modelId: 'two' });
     const trigger = h.get<HTMLButtonElement>('#model-effort-trigger');
     assert.equal(h.dom.window.document.activeElement === trigger, true);
     await h.render({ modelBusy: true });
@@ -40,6 +41,7 @@ test("model application does not steal focus from a newer draft edit", async () 
     await h.click('#model-effort-trigger');
     await h.click('#model-current');
     await h.click('#model-list button:nth-child(2)');
+    assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: 'view', type: 'setChatModel', provider: 'B', modelId: 'two' });
     await h.render({ modelBusy: true });
     const input = h.get<HTMLTextAreaElement>('.candidate__composer textarea');
     input.focus();
@@ -69,7 +71,7 @@ test("thinking keyboard focus survives its own host application so another level
     const slider=h.get<HTMLInputElement>('#thinking-slider');slider.focus();
     const {act}=await import('react');
     await act(async()=>slider.dispatchEvent(new h.dom.window.KeyboardEvent('keydown',{key:'End',bubbles:true})));
-    assert.equal(h.sent.at(-1)?.type,'setThinkingLevel');
+    assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: 'view', type: 'setThinkingLevel', level: 'high' });
     await h.render({modelBusy:true});
     h.dom.window.document.body.tabIndex=-1;h.dom.window.document.body.focus();
     await h.render({thinkingLevel:'high',modelBusy:false});
@@ -83,6 +85,7 @@ for (const destination of ['draft','escape'] as const) test(`thinking applicatio
     await h.click('#model-effort-trigger');const slider=h.get<HTMLInputElement>('#thinking-slider');slider.focus();
     const {act}=await import('react');
     await act(async()=>slider.dispatchEvent(new h.dom.window.KeyboardEvent('keydown',{key:'End',bubbles:true})));
+    assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: 'view', type: 'setThinkingLevel', level: 'high' });
     await h.render({modelBusy:true});h.dom.window.document.body.tabIndex=-1;h.dom.window.document.body.focus();
     const target=destination==='draft'?h.get<HTMLTextAreaElement>('.candidate__composer textarea'):h.get<HTMLButtonElement>('#model-effort-trigger');
     if(destination==='draft')target.focus();

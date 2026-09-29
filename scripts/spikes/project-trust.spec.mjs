@@ -85,6 +85,9 @@ test('pre-cancelled operation never creates a child', async () => {
 
 test('registered resource probe verifies the current pinned release without model requests', { timeout: 360000 }, async () => {
   const metadata = JSON.parse(await readFile(new URL('../../node_modules/@earendil-works/pi-coding-agent/package.json', import.meta.url), 'utf8'));
+  const manifest = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
+  assert.equal(metadata.version, manifest.dependencies['@earendil-works/pi-coding-agent']);
+  assert.equal(manifest.dependencies['@earendil-works/pi-ai'], metadata.version);
   const env = { PATH: path.dirname(process.execPath), LANG: 'C.UTF-8', TERM: 'dumb' };
   for (const key of ['SystemRoot', 'WINDIR', 'COMSPEC']) if (process.env[key]) env[key] = process.env[key];
   const result = spawnSync(process.execPath, [fileURLToPath(new URL('./spike-project-trust.mjs', import.meta.url))], {
@@ -101,6 +104,7 @@ test('registered resource probe verifies the current pinned release without mode
   assert.equal(decline.startup.includes('fixture-a'), false);
   assert.equal(allow.afterSwitch.includes('fixture-a'), false);
   assert.ok(allow.afterSwitch.includes('fixture-b'));
+  assert.ok(decline.observations.length >= 2);
   assert.ok(decline.observations.every(value => value.contextA || value.contextB));
   for (const scenario of report.scenarios) {
     const approved = scenario.choice === '--approve' || (scenario.choice === 'global-default-baseline' && scenario.defaultProjectTrust === 'always');

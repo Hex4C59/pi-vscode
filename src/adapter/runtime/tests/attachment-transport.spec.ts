@@ -69,39 +69,43 @@ test("local write and total ACK deadlines clean pending transport without real w
   context.mock.timers.enable({ apis: ["setTimeout"] });
   for (const phase of ["write", "ack"] as const) {
     const h = await transportFixture();
-    const waiting = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession()).send(() => undefined);
-    if (phase === "ack") { context.mock.timers.tick(4000); h.callback(); h.stdin.emit("drain"); context.mock.timers.tick(25999); }
-    else context.mock.timers.tick(4999);
-    let finished = false; void waiting.then(() => { finished = true; }); await Promise.resolve(); assert.equal(finished, false);
-    context.mock.timers.tick(1);
-    const result = await waiting;
-    assert.equal(result.delivery, "unknown"); assert.equal(result.code, phase === "write" ? "write-failed" : "ack-timeout");
-    assert.equal(h.stdin.listenerCount("drain"), 0); assert.equal(h.writes, 1);
-    await h.runtime.stop();
+    try {
+      const waiting = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession()).send(() => undefined);
+      if (phase === "ack") { context.mock.timers.tick(4000); h.callback(); h.stdin.emit("drain"); context.mock.timers.tick(25999); }
+      else context.mock.timers.tick(4999);
+      let finished = false; void waiting.then(() => { finished = true; }); await Promise.resolve(); assert.equal(finished, false);
+      context.mock.timers.tick(1);
+      const result = await waiting;
+      assert.equal(result.delivery, "unknown"); assert.equal(result.code, phase === "write" ? "write-failed" : "ack-timeout");
+      assert.equal(h.stdin.listenerCount("drain"), 0); assert.equal(h.writes, 1);
+    } finally { await h.runtime.stop(); }
   }
 });
 
 test("write throws and callback errors are uncertain, never replayed", async () => {
   for (const phase of ["throw", "callback"] as const) {
     const h = await transportFixture(phase === "throw" ? "throw" : undefined);
-    const prepared = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession());
-    const waiting = prepared.send(() => undefined);
-    if (phase === "callback") h.callback(new Error("synthetic callback error"));
-    assert.equal((await waiting).delivery, "unknown");
-    assert.equal((await prepared.send(() => undefined)).delivery, "not-sent");
-    assert.equal(h.writes, 1); assert.equal(h.stdin.listenerCount("drain"), 0);
-    await h.runtime.stop();
+    try {
+      const prepared = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession());
+      const waiting = prepared.send(() => undefined);
+      if (phase === "callback") h.callback(new Error("synthetic callback error"));
+      assert.equal((await waiting).delivery, "unknown");
+      assert.equal((await prepared.send(() => undefined)).delivery, "not-sent");
+      assert.equal(h.writes, 1); assert.equal(h.stdin.listenerCount("drain"), 0);
+    } finally { await h.runtime.stop(); }
   }
 });
 
 test("Stop control bypasses pending prompt drain and stopped prepared frames cannot write", async () => {
   const h = await transportFixture();
-  const unused = h.runtime.preparePrompt({ kind: "plain", body: "unsent" }, h.runtime.getSession());
-  const waiting = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession()).send(() => undefined);
-  assert.equal((await h.runtime.abortTask?.())?.ok, true);
-  h.callback(); h.stdin.emit("drain"); h.ack(); assert.equal((await waiting).delivery, "rpc-accepted");
-  await h.runtime.stop();
-  assert.equal((await unused.send(() => undefined)).delivery, "not-sent"); assert.equal(h.writes, 1);
+  try {
+    const unused = h.runtime.preparePrompt({ kind: "plain", body: "unsent" }, h.runtime.getSession());
+    const waiting = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession()).send(() => undefined);
+    assert.equal((await h.runtime.abortTask?.())?.ok, true);
+    h.callback(); h.stdin.emit("drain"); h.ack(); assert.equal((await waiting).delivery, "rpc-accepted");
+    await h.runtime.stop();
+    assert.equal((await unused.send(() => undefined)).delivery, "not-sent"); assert.equal(h.writes, 1);
+  } finally { await h.runtime.stop(); }
 });
 
 test("enriched prompt preserves literal context and independently bounds raw body and UTF-8 text", () => {

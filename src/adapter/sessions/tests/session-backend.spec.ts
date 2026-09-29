@@ -49,10 +49,22 @@ process.stdin.on("end", () => {
 function holdWorker(markerPath: string): string {
   return `
 import { writeFileSync } from "node:fs";
-writeFileSync(${JSON.stringify(markerPath)}, String(process.pid), "utf8");
 process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(`${markerPath}.closed`)}, "closed", "utf8"); process.exit(0); });
+writeFileSync(${JSON.stringify(markerPath)}, String(process.pid), "utf8");
 setInterval(() => {}, 1000);
 `;
+}
+
+async function waitForMarker(marker: string): Promise<void> {
+  const deadline = Date.now() + 2_000;
+  while (Date.now() < deadline) {
+    try { await readFile(marker, "utf8"); return; }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  throw new Error(`Worker did not become ready: ${marker}`);
 }
 
 function listResponse(entries: unknown[], page = 1, total = 18): unknown {
@@ -141,15 +153,18 @@ test("saved-session backend cancels and deadlines external workers only after ow
 
   const controller = new AbortController();
   const cancellation = createPiSessionBackend(workerPath, { timeoutMs: 2_000, terminationGraceMs: 250 }).list(projectRoot, 0, controller.signal);
-  await new Promise((resolve) => setTimeout(resolve, 25));
+  await waitForMarker(marker);
   controller.abort();
   assert.deepEqual(await cancellation, { ok: false, code: "cancelled" });
-  await assert.rejects(readFile(`${marker}.closed`, "utf8"), { code: "ENOENT" });
+  assert.equal(await readFile(`${marker}.closed`, "utf8"), "closed");
 
   const deadlineMarker = path.join(directory, "deadline.pid");
   const deadlineWorker = await workerFixture(t, holdWorker(deadlineMarker));
-  const deadline = createPiSessionBackend(deadlineWorker, { timeoutMs: 25, terminationGraceMs: 250 });
-  assert.deepEqual(await deadline.list(projectRoot, 0, signal), { ok: false, code: "unavailable" });
+  const deadline = createPiSessionBackend(deadlineWorker, { timeoutMs: 1_000, terminationGraceMs: 250 });
+  const timedOut = deadline.list(projectRoot, 0, signal);
+  await waitForMarker(deadlineMarker);
+  assert.deepEqual(await timedOut, { ok: false, code: "unavailable" });
+  assert.equal(await readFile(`${deadlineMarker}.closed`, "utf8"), "closed");
 });
 
 test("saved-session backend blocks retries while an unclosed helper remains owned", async () => {
@@ -248,6 +263,7 @@ test("session worker validates the current project and sorts bounded metadata be
   }, signal);
 
   assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.action, "list");
   if (result.ok && result.action === "list") {
     assert.equal(result.total, 17);
     assert.equal(result.entries.length, 16);
@@ -257,6 +273,7 @@ test("session worker validates the current project and sorts bounded metadata be
       fileSystem: fileSystem(),
     }, signal);
     assert.equal(nextPage.ok, true);
+    if (nextPage.ok) assert.equal(nextPage.action, "list");
     if (nextPage.ok && nextPage.action === "list") {
       assert.equal(nextPage.entries.length, 1);
       assert.equal(nextPage.entries[0].id, "session-00");

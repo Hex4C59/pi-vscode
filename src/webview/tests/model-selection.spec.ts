@@ -42,7 +42,9 @@ test("mounted React model controls keep applied and pending settings distinct du
     await h.render({ chatBusy: false, modelBusy: true, pendingThinkingLevel: "off", pendingModel: { provider: "B", modelId: "two", label: "Two" } });
     assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, true);
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").disabled, true);
-    assert.ok([...h.root.querySelectorAll<HTMLButtonElement>("#model-list button")].every(button => button.disabled));
+    const modelButtons = [...h.root.querySelectorAll<HTMLButtonElement>("#model-list button")];
+    assert.equal(modelButtons.length, 2);
+    assert.ok(modelButtons.every(button => button.disabled));
     assert.match(h.get("#pending-settings").textContent ?? "", /Applying next turn/);
 
     await h.input("keep draft");

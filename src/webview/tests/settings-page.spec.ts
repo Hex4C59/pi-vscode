@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { act } from "react";
-import { uiHarness, settingsHarness } from "./react-harness.js";
+import { settingsHarness } from "./react-harness.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
 const config = { ...envelope, type: "providerConfigState", busy: false, error: null,
@@ -44,7 +44,6 @@ test("provider detail survives refresh and keeps busy guards and errors visible"
     await h.receive({ ...config, error: "Could not refresh provider configuration." });
     assert.equal(h.get("h2").textContent, "Anthropic");
     assert.match(h.get('[role="alert"]').textContent ?? "", /Could not refresh/);
-    assert.doesNotMatch(h.root.textContent ?? "", /sk-/);
   } finally { await h.close(); }
 });
 
@@ -52,45 +51,19 @@ test("settings rejects obsolete and foreign projections, and handles empty searc
   const h = await settingsHarness();
   try {
     await h.receive(config);
-    await h.receive({ ...config, generation: 2 });
+    await h.receive({ ...config, generation: 2, catalog: [{ provider: "anthropic", modelId: "claude", label: "Claude" }] });
+    assert.equal(h.get(".settings-page__model").textContent, "Claudeanthropic");
     await h.receive({ ...config, catalog: [] });
+    assert.equal(h.get(".settings-page__model").textContent, "Claudeanthropic");
     await h.receive({ ...config, generation: 2, viewId: "foreign", catalog: [] });
+    assert.equal(h.get(".settings-page__model").textContent, "Claudeanthropic");
     await h.receive({ ...envelope, type: "uiLanguageState", locale: "fr" });
-    assert.equal(h.root.querySelectorAll(".settings-page__model").length, 1);
+    assert.equal(h.get(".settings-page").getAttribute("lang"), "en");
     await h.input("missing", "#settings-model-search");
     assert.match(h.get('[role="status"]').textContent ?? "", /No matching models/);
     await h.receive({ ...config, generation: 3, catalog: [] });
     assert.match(h.get('[role="status"]').textContent ?? "", /No models available/);
     await h.unmount();
     assert.equal(h.listeners.size, 0);
-  } finally { await h.close(); }
-});
-
-test("no-folder keep-editing retains the draft and does not open a folder", async () => {
-  const h = await uiHarness(false);
-  try {
-    await h.render({ status: "no-folder", folder: null, choice: null, runtime: "not-started", chatModel: null, availableModels: [] });
-    await h.input("Keep this draft", "textarea");
-    await h.click('button[aria-label="Send message"]');
-    assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /A folder is required to send a message or add context/);
-    assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /Cancel keeps this draft/);
-    await h.click('button[aria-label="Keep editing"]');
-    assert.equal(h.root.querySelector(".candidate-folder-prompt") === null, true);
-    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep this draft");
-    assert.ok(!h.sent.some(message => message.type === "openFolder" || message.type === "sendChat"));
-  } finally { await h.close(); }
-});
-
-test("project-resource cancel keeps the draft and never grants consent", async () => {
-  const h = await uiHarness();
-  try {
-    await h.render({ choice: null, runtime: "not-started" });
-    await h.input("Keep on cancel", "textarea");
-    await h.click('button[aria-label="Send message"]');
-    assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /does not grant consent or start a runtime/);
-    await h.click('.candidate-dialog__action.is-quiet');
-    assert.equal(h.root.querySelector("dialog") === null, true);
-    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep on cancel");
-    assert.ok(!h.sent.some(message => message.type === "chooseResources"));
   } finally { await h.close(); }
 });

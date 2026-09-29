@@ -30,7 +30,7 @@ test("host retains extension interaction on view recreation, rejects stale answe
   } finally { h.provider.dispose(); }
 });
 
-test("Stop cancels local forms before abort and only reopens admission after observed task settlement", async () => {
+test("Stop cancels local forms before abort and blocks late forms without settlement", async () => {
   const r = settingsRuntime();
   let handler!: Parameters<NonNullable<PiRuntimeLifecycle["setInteractionHandler"]>>[0];
   r.runtime.setInteractionHandler = value => { handler = value; };
@@ -54,7 +54,7 @@ test("Stop cancels local forms before abort and only reopens admission after obs
     finish(); await tick();
     handler({ method: "input", title: "Fresh task" }, value => { replies.push(value); });
     assert.equal(replies.length, 2);
-  } finally { h.provider.dispose(); }
+  } finally { finish?.(); h.provider.dispose(); }
 });
 
 test("an interaction overflow barrier invalidates transport once and exposes owned recovery", async () => {

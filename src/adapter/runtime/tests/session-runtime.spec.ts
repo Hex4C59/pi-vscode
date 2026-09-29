@@ -62,10 +62,10 @@ test("equivalent Windows drive spelling restores and keeps approved tool scope i
  const owned=process.platform==="win32"?"d:\\Project":"/project";const reported=process.platform==="win32"?"D:\\Project":"/project";
  const f=fixture(identity,reported);const calls:unknown[]=[];f.runtime.setApprovalHandler?.(async call=>{calls.push(call);return true;});
  try{assert.equal((await f.runtime.start({cwd:owned,projectTrust:"no-approve",resume:{id:identity.sessionId,path:identity.sessionFile}})).ok,true);
- f.gateCall(reported);await new Promise<void>(resolve=>setImmediate(resolve));assert.equal((calls[0] as {cwd:string}).cwd,owned);assert.equal(f.replies.at(-1)?.confirmed,true);
- f.gateCall(process.platform==="win32"?"D:\\AnotherProject":"/another-project");await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls.length,1);assert.equal(f.replies.at(-1)?.confirmed,false);
- f.gateCall(path.relative(process.cwd(), owned));await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls.length,1,"relative gate paths are not identity aliases");assert.equal(f.replies.at(-1)?.confirmed,false);
- if(process.platform==="win32"){f.gateCall("\\Project");await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls.length,1,"drive-relative roots cannot inherit the host drive");assert.equal(f.replies.at(-1)?.confirmed,false);}
+ f.gateCall(reported);await new Promise<void>(resolve=>setImmediate(resolve));assert.equal((calls[0] as {cwd:string}).cwd,owned);assert.equal(f.replies.length,1);assert.equal(f.replies.at(-1)?.confirmed,true);
+ f.gateCall(process.platform==="win32"?"D:\\AnotherProject":"/another-project");await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls.length,1);assert.equal(f.replies.length,2);assert.equal(f.replies.at(-1)?.confirmed,false);
+ f.gateCall(path.relative(process.cwd(), owned));await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls.length,1,"relative gate paths are not identity aliases");assert.equal(f.replies.length,3);assert.equal(f.replies.at(-1)?.confirmed,false);
+ if(process.platform==="win32"){f.gateCall("\\Project");await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(calls.length,1,"drive-relative roots cannot inherit the host drive");assert.equal(f.replies.length,4);assert.equal(f.replies.at(-1)?.confirmed,false);}
  }finally{await f.runtime.stop();}
 });
 

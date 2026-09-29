@@ -334,7 +334,7 @@ test("restart checkpoint identifies an empty fresh conversation without treating
 for (const messages of [[{ role: "user", content: "not persisted" }], [{ role: "custom", content: "extension state" }]]) test(`restart checkpoint retains nonempty unpersisted ${messages[0]?.role} messages`, async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.setMessages(messages);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
     assert.notEqual(f.runtime.getSession(), 0);
@@ -344,7 +344,7 @@ for (const messages of [[{ role: "user", content: "not persisted" }], [{ role: "
 test("restart checkpoint resumes assistant-backed conversation and keeps exact saved identity checks", async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.setMessages([{ role: "user", content: "hello" }, { role: "assistant", content: [] }]);
     const conversation = { id: "test", path: "/owned/session.jsonl" };
     assert.deepEqual(await f.runtime.checkpointRestart?.(conversation), { kind: "resume", conversation });
@@ -365,7 +365,7 @@ test("an empty saved conversation is never relabeled as a new fresh conversation
 for (const state of [{ isStreaming: true }, { isCompacting: true }, { pendingMessageCount: 1 }, { messageCount: 1 }, { isStreaming: null }, { messageCount: -1 }]) test(`restart checkpoint fails closed for ${JSON.stringify(state)}`, async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.setState(state);
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true); f.setState(state);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
     assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
@@ -376,7 +376,7 @@ test("restart checkpoint times out without stopping the old ready runtime", asyn
   context.mock.timers.enable({ apis: ["setTimeout"] });
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.holdStats();
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true); f.holdStats();
     const checkpoint = f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" });
     await new Promise(resolve => setImmediate(resolve));
     context.mock.timers.tick(5000);
@@ -388,7 +388,7 @@ test("restart checkpoint times out without stopping the old ready runtime", asyn
 for (const response of [{ success: false }, { command: "get_state" }, { data: null }]) test("restart checkpoint rejects unavailable or malformed statistics: " + JSON.stringify(response), async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.setStatsResponse(response);
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true); f.setStatsResponse(response);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
 
   } finally { await f.runtime.stop(); }
@@ -397,7 +397,7 @@ for (const response of [{ success: false }, { command: "get_state" }, { data: nu
 test("restart checkpoint rejects state that changes while reading statistics", async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.afterStats(() => f.setState({ messageCount: 1 }));
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
 
@@ -407,7 +407,7 @@ test("restart checkpoint rejects state that changes while reading statistics", a
 test("observed conversation activity cannot later be discarded as an untouched fresh conversation", async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.frame({ type: "message_start", message: { role: "user", content: "earlier content" } });
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
 
@@ -418,7 +418,7 @@ test("observed conversation activity cannot later be discarded as an untouched f
 test("restart checkpoint never requests huge message content that would overflow the transport", async () => {
   const f = fixture(); const conversation = { id: "test", path: "/owned/session.jsonl" };
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.setMessages([{ role: "assistant", content: "x".repeat(9 * 1024 * 1024) }]);
     const checkpoint = await f.runtime.checkpointRestart?.(conversation);
     assert.equal(f.frames.some(frame => frame.type === "get_messages"), false);
@@ -430,7 +430,7 @@ test("restart checkpoint never requests huge message content that would overflow
 for (const messageCount of [0, 1, 4]) test(`checkpoint resumes compacted history with ${messageCount} active messages and distinct all-entry statistics`, async () => {
   const f = fixture(); const conversation = { id: "test", path: "/owned/session.jsonl" };
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.setState({ messageCount }); f.setStats({ assistantMessages: 12, totalMessages: 30 });
     assert.deepEqual(await f.runtime.checkpointRestart?.(conversation), { kind: "resume", conversation });
     assert.equal(f.frames.some(frame => frame.type === "get_messages"), false);
@@ -441,7 +441,7 @@ for (const messageCount of [0, 1, 4]) test(`checkpoint resumes compacted history
 test("zero active context cannot discard nonempty custom entries without an assistant", async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.setState({ messageCount: 0 }); f.setStats({ assistantMessages: 0, totalMessages: 1 });
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
     assert.notEqual(f.runtime.getSession(), 0);
@@ -458,7 +458,7 @@ for (const stats of [
 ]) test("checkpoint rejects invalid statistics without replacing the runtime: " + JSON.stringify(stats), async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.setStats(stats);
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true); f.setStats(stats);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
     assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
@@ -467,7 +467,7 @@ for (const stats of [
 for (const state of [{ sessionId: "different" }, { sessionFile: "/different/session.jsonl" }]) test("checkpoint rejects identity changes after statistics: " + JSON.stringify(state), async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     f.afterStats(() => f.setState(state));
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
 
@@ -496,7 +496,7 @@ test("dialog identity exhaustion revokes adapter capabilities and retains the ow
   const f = fixture();
   f.runtime.setInteractionHandler?.(() => undefined);
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
     const session = f.runtime.getSession();
     for (let i = 0; i <= 65_536; i++) f.frame({ type: "extension_ui_request", id: "budget-" + i, method: "input", title: "Input" });
     assert.equal(f.runtime.getSession(), 0);
@@ -510,7 +510,7 @@ test("dialog identity exhaustion revokes adapter capabilities and retains the ow
 test("standard dialogs without a host handler cancel only once per remote identity", async () => {
   const f = fixture();
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
     const request = { type: "extension_ui_request", id: "unhandled", method: "input", title: "Input" };
     f.frame(request); f.frame(request); await new Promise(resolve => setImmediate(resolve));
     assert.equal(f.frames.filter(frame => frame.type === "extension_ui_response" && frame.id === "unhandled").length, 1);
@@ -524,7 +524,7 @@ for (const mode of ["no-handler", "aborting", "controlled"] as const) test(`unav
   let offered = 0;
   if (mode === "aborting") f.runtime.setInteractionHandler?.(() => { offered++; });
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", ...(mode !== "controlled" ? { profile: { kind: "trusted" as const, entryPath: "/reviewed/extension.mjs" } } : {}) });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", ...(mode !== "controlled" ? { profile: { kind: "trusted" as const, entryPath: "/reviewed/extension.mjs" } } : {}) })).ok, true);
     f.stallReplies();
     const stopping = mode === "aborting" ? f.runtime.abortTask?.() : undefined;
     const request = { type: "extension_ui_request", id: "stalled", method: "input", title: "Input" };
@@ -545,7 +545,7 @@ test("Stop cancellation chain can drain a late dialog without reoffering or reti
   let reply!: import("../../../extension/interactions/index.js").InteractionReplyCallback;
   f.runtime.setInteractionHandler?.((_form, answer) => { offered++; reply = answer; });
   try {
-    await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
     f.frame({ type: "extension_ui_request", id: "first", method: "input", title: "Input" });
     await reply({ kind: "cancel", reason: "stop" });
     const stopping = f.runtime.abortTask?.();
@@ -561,7 +561,7 @@ test("Stop cancellation chain can drain a late dialog without reoffering or reti
 for (const title of ["Input", null]) test(`disposal during automatic cancellation of ${title === null ? "malformed" : "valid"} dialog preserves owned uncertainty`, async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
   const f = fixture();
-  await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
+  assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
   f.stallReplies();
   f.frame({ type: "extension_ui_request", id: "disposing", method: "input", title });
   await f.runtime.stop();

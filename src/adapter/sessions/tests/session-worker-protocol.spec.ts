@@ -125,18 +125,20 @@ test("session worker protocol rejects malformed frames", () => {
   }, historyRequest);
   assert.deepEqual(oversizedBytes, { ok: false, code: "unavailable" });
 
+  const acceptedText = emoji.repeat(SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH / 2);
   const acceptedPreview = parseSessionWorkerResponse({
     version: SESSION_WORKER_PROTOCOL_VERSION,
     ok: true,
     action: "preview",
-    preview: { text: emoji.repeat(SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH / 2), offset: 0, nextOffset: 0, done: true, totalChars: 0 },
+    preview: { text: acceptedText, offset: 0, nextOffset: acceptedText.length, done: true, totalChars: acceptedText.length },
   }, preview);
   assert.equal(acceptedPreview.ok, true);
+  const oversizedText = emoji.repeat(SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH / 2 + 1);
   const longPreview = parseSessionWorkerResponse({
     version: SESSION_WORKER_PROTOCOL_VERSION,
     ok: true,
     action: "preview",
-    preview: { text: emoji.repeat(SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH / 2 + 1), offset: 0, nextOffset: 0, done: true, totalChars: 0 },
+    preview: { text: oversizedText, offset: 0, nextOffset: oversizedText.length, done: true, totalChars: oversizedText.length },
   }, preview);
   assert.deepEqual(longPreview, { ok: false, code: "unavailable" });
   const badOffset = parseSessionWorkerResponse({
@@ -180,6 +182,7 @@ test("session worker CLI stream output is accepted by the shared response parser
   await pending;
   const parsed = parseSessionWorkerResponse(JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown, request);
   assert.equal(parsed.ok, true);
+  if (parsed.ok) assert.equal(parsed.kind, "list");
   if (parsed.ok && parsed.kind === "list") {
     assert.equal(parsed.total, 1);
     assert.equal(parsed.entries[0]?.id, "session-1");

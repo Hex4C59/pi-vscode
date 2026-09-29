@@ -10,6 +10,7 @@ test("welcome falls base, blue, coral and gold, then clears the base and settles
   assert.deepEqual(colors(16), ["#83CCD2", "#4D9ABF"]);
   assert.deepEqual(colors(24), ["#83CCD2", "#4D9ABF", "#F09082"]);
   assert.equal(piIntroCells(32).length, 16);
+  assert.deepEqual(colors(32), ["#83CCD2", "#4D9ABF", "#F09082", "#F1BE58"]);
   assert.equal(piIntroCells(38).length, 10);
   assert.deepEqual(piIntroCells(PI_INTRO_FRAMES), finalPiCells);
   assert.equal(new Set(finalPiCells.map(cell => `${cell.x}:${cell.y}`)).size, 10);

@@ -32,10 +32,27 @@ test("manual end waits for exact exit evidence rather than treating a control AC
   const { createServer } = await import("node:net");
   const address = runtimeControlPath(directory, reservation.fence.runId);
   let requested = false;
+  let noteRequest!: () => void;
+  let rejectRequest!: (error: Error) => void;
+  const requestReceived = new Promise<void>((resolve, reject) => { noteRequest = resolve; rejectRequest = reject; });
+  let noteAckClosed!: () => void;
+  const ackClosed = new Promise<void>(resolve => { noteAckClosed = resolve; });
   const server = createServer(socket => {
-    socket.once("data", chunk => {
-      assert.deepEqual(JSON.parse(chunk.toString()), { version: 1, runId: reservation.fence.runId, action: "end" });
+    let request = "";
+    socket.on("data", chunk => {
+      request += chunk.toString();
+      const newline = request.indexOf("\n");
+      if (newline < 0 || requested) return;
+      try {
+        assert.deepEqual(JSON.parse(request.slice(0, newline)), { version: 1, runId: reservation.fence.runId, action: "end" });
+      } catch (error) {
+        rejectRequest(error as Error);
+        socket.destroy();
+        return;
+      }
       requested = true;
+      noteRequest();
+      socket.once("close", noteAckClosed);
       socket.end(JSON.stringify({ version: 1, runId: reservation.fence.runId, state: "owner-lost", endRequested: true }) + "\n");
     });
   });
@@ -48,7 +65,13 @@ test("manual end waits for exact exit evidence rather than treating a control AC
   const owner = createRuntimeOwner({ directory, workerPath: path.join(directory, "unused-worker.mjs") });
   let resolved = false;
   const ending = owner.end().then(result => { resolved = true; return result; });
-  await new Promise(resolve => setTimeout(resolve, 50));
+  let timeout: NodeJS.Timeout | undefined;
+  await Promise.race([requestReceived, new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => reject(new Error("Control request was not received")), 2000);
+  })]).finally(() => clearTimeout(timeout));
+  await Promise.race([ackClosed, new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => reject(new Error("Control ACK connection did not close")), 2000);
+  })]).finally(() => clearTimeout(timeout));
   assert.equal(requested, true);
   assert.equal(resolved, false);
   assert.equal((await owner.inspect()).kind, "pending");
@@ -107,8 +130,20 @@ test("launch durably reserves first and validates the supervisor identity before
   assert.equal(state.kind, "pending");
   if (state.kind === "pending") assert.equal(state.fence.runId, launched.runId);
   const text = await new Promise<string>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("No synthetic RPC stream output; exit=" + launched.process.exitCode + ", signal=" + launched.process.signalCode)), 2000);
-    launched.process.stdout!.once("data", chunk => { clearTimeout(timer); resolve(String(chunk)); });
+    const stdout = launched.process.stdout!;
+    let received = "";
+    const onData = (chunk: Buffer | string) => {
+      received += String(chunk);
+      if (!received.includes("\n")) return;
+      clearTimeout(timer);
+      stdout.off("data", onData);
+      resolve(received);
+    };
+    const timer = setTimeout(() => {
+      stdout.off("data", onData);
+      reject(new Error("No synthetic RPC stream output; exit=" + launched.process.exitCode + ", signal=" + launched.process.signalCode));
+    }, 2000);
+    stdout.on("data", onData);
   });
   assert.equal(text, "reserved-before-launch\n");
   assert.deepEqual(await owner.launch({ cwd: directory, cliPath: path.join(directory, "not-executed.js"), args: [], env }), { ok: false, code: "occupied" });

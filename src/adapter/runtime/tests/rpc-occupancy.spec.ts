@@ -95,10 +95,13 @@ test("stale connection or session completions do not mutate current occupancy", 
   assert.equal(occupancy.allowsSend(), false);
   assert.equal(occupancy.sending(), true);
   assert.equal(occupancy.dialogs(), 1);
+  occupancy.noteAgentSettled();
+  assert.equal(occupancy.sending(), true, "foreign completion cannot finish the live command");
   occupancy.finishCommand(live);
+  assert.equal(occupancy.sending(), false);
+  assert.equal(occupancy.allowsSend(), false, "wrong-session ACK cannot release send admission");
   occupancy.clearAck(2);
   occupancy.closeDialog(live);
-  occupancy.noteAgentSettled();
   assert.equal(occupancy.allowsSend(), true);
   assert.equal(occupancy.dialogs(), 0);
 });

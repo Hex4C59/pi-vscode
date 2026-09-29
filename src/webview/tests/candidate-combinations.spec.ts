@@ -39,6 +39,8 @@ test("candidate composes streaming, catalogue, incoming expiry, captured review 
   await h.advance(400);
   await h.input("Newer draft survives navigation and permission expiry");
   await h.click('button[aria-label="Browse saved conversations"]');await h.advance(80);
+  assert.equal(h.root.querySelectorAll('.candidate__session').length, 16);
+  assert.match(h.get('.candidate__catalogue').textContent ?? "", /Synthetic saved session 33/);
   await h.completeReview();
   assert.match(h.get('#change-review-toggle').textContent ?? "", /33/);
   await h.queueApprovals();
@@ -46,6 +48,7 @@ test("candidate composes streaming, catalogue, incoming expiry, captured review 
   const decision=h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="once"]');decision.focus();
   await h.advance(20001);
   assert.equal(h.root.querySelectorAll('[data-select-approval]').length,7);
+  assert.equal(h.root.querySelector('[data-select-approval="approval-synthetic-1-1"]'), null);
   assert.equal(h.dom.window.document.activeElement === h.get('[data-select-approval="approval-synthetic-1-2"]'), true);
   await h.click('button[aria-label="Back to conversation"]');
   assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value,"Newer draft survives navigation and permission expiry");
@@ -77,7 +80,12 @@ test("expiry of every synthetic approval settles the admitted attachment history
   await h.input("A synthetic task with explicit context");
   await h.click('button[aria-label="Add context"]');await h.click('[role="menuitem"][aria-label="Add file"]');await h.advance(420);
   await h.click('button[aria-label="Send message"]');await h.advance(400);
-  await h.queueApprovals();await h.advance(120001);
+  await h.click('button[aria-label="Attachment history"]');
+  assert.match(h.get('[aria-label="Retained attachment history"]').textContent ?? "", /Accepted by runtime.*Task pending/);
+  await h.click('button[aria-label="Attachment history"]');
+  await h.queueApprovals();
+  assert.equal(h.root.querySelectorAll('[data-select-approval]').length, 8);
+  await h.advance(120001);
   assert.equal(h.root.querySelectorAll('[data-select-approval]').length,0);
   await h.click('button[aria-label="Attachment history"]');
   const history=h.get('[aria-label="Retained attachment history"]');
