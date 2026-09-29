@@ -43,5 +43,5 @@ test("click replays the settled logo once; active playback ignores repeated clic
   await h.click(".candidate__mark");
   await h.dispose();
   await h.advance(3000);
-  assert.equal(h.root.querySelector(".candidate__mark"), null);
+  assert.equal(h.root.querySelector(".candidate__mark") === null, true);
 });

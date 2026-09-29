@@ -56,11 +56,6 @@ export interface ChangeReviewProps {
   onSource: (id: string) => void;
 }
 
-export interface ConversationProps {
-  messages: WorkspaceStateMessage["messages"];
-  activities: WorkspaceStateMessage["activities"];
-}
-
 export interface ModelPickerViewProps {
   state: Pick<WorkspaceStateMessage, "thinkingLevel" | "pendingThinkingLevel" | "thinkingLevels" | "modelBusy" | "chatBusy" | "chatModel" | "pendingModel" | "availableModels" | "modelError">;
   onSettings?: () => void;

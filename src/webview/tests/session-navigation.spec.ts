@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { act } from "react";
 import type { SessionStateMessage } from "../../extension/contracts/index.js";
-import { productionHarness } from "./react-harness.js";
+import { uiHarness } from "./react-harness.js";
 
 test("production history keeps complete titles, independent current identity and focus through refresh and return", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     const title = "优化会话导航 — a very long conversation title ".repeat(3);
     const sessions: SessionStateMessage = {
@@ -21,7 +21,7 @@ test("production history keeps complete titles, independent current identity and
     const browse = 'button[aria-label="Browse saved conversations"]';
     await h.click(browse);
     assert.equal(h.get(browse).getAttribute("aria-expanded"), "true");
-    assert.equal(h.dom.window.document.activeElement, h.get('button[aria-label="Back to conversation"]'));
+    assert.equal(h.dom.window.document.activeElement === h.get('button[aria-label="Back to conversation"]'), true);
     const rows = h.root.querySelectorAll<HTMLButtonElement>(".candidate__session");
     assert.equal(rows[0].getAttribute("aria-label"), `Restore ${title}`);
     assert.ok(rows[0].title.startsWith(title));
@@ -35,7 +35,7 @@ test("production history keeps complete titles, independent current identity and
     assert.equal(h.get<HTMLButtonElement>('button[aria-label="Back to conversation"]').disabled, false);
     await act(async () => h.get('button[aria-label="Back to conversation"]').dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
     assert.equal(h.get(".candidate__history").hidden, true);
-    assert.equal(h.dom.window.document.activeElement, h.get(browse));
+    assert.equal(h.dom.window.document.activeElement === h.get(browse), true);
     await h.receive({ ...sessions, current: { id: "other", name: title } });
     await h.click(browse);
     assert.equal(h.root.querySelectorAll('[aria-current="true"]').length, 1);

@@ -3,14 +3,11 @@
 @import "./styles/base.css";
 @import "./styles/layout.css";
 @import "./styles/controls.css";
-@import "./components/conversation.css";
 @import "./styles/activity.css";
-@import "./components/attachment-panel.css";
 @import "./styles/composer.css";
 @import "./components/model-picker.css";
 @import "./styles/responsive.css";
 @import "./components/change-review.css";
-@import "./components/sessions.css";
 @import "./components/saved-history.css";
 
 @import "./chat/candidate.css";

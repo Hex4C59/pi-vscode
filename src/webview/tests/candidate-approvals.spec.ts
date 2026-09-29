@@ -40,13 +40,13 @@ test("candidate replacement moves focus off a lost decision but does not steal f
     await h.render({ approvals: pending, chatBusy: true, execution: "awaiting-approval" });
     h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="once"]').focus();
     await h.render({ approvals: pending.slice(1), chatBusy: true, execution: "awaiting-approval" });
-    assert.equal(h.dom.window.document.activeElement, h.get('[data-select-approval="approval-1"]'));
+    assert.equal(h.dom.window.document.activeElement === h.get('[data-select-approval="approval-1"]'), true);
     assert.equal(h.sent.filter(m => m.type === "decideApproval").length, 0);
     h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="once"]').focus();
     const input = h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]');
     input.focus();
     await h.render({ approvals: pending.slice(2), chatBusy: true, execution: "awaiting-approval" });
-    assert.equal(h.dom.window.document.activeElement, input);
+    assert.equal(h.dom.window.document.activeElement === input, true);
   } finally { await h.close(); }
 });
 
@@ -60,7 +60,7 @@ test("candidate expiry selects the next live request and Stop locks all decision
     const { act } = await import("react");
     await act(async () => t.mock.timers.tick(101));
     assert.equal(h.get('.approval:not([hidden])').getAttribute("data-approval-id"), "approval-1");
-    assert.equal(h.dom.window.document.activeElement, h.get('[data-select-approval="approval-1"]'));
+    assert.equal(h.dom.window.document.activeElement === h.get('[data-select-approval="approval-1"]'), true);
     assert.equal(h.sent.filter(m => m.type === "decideApproval").length, 0);
     await h.render({ approvals: pending, grants: [{id: "grant", scope: "exact complete command"}], chatBusy: true, execution: "stopping" });
     assert.equal(h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="once"]').disabled, true);
@@ -99,7 +99,7 @@ test("candidate keeps file targets and exact scope visible outside expandable la
     await h.click('.approval details > summary');
     assert.equal(details.open,true);
     assert.equal(h.get('.approval-input').textContent,card.input);
-    assert.equal(h.get('.approval-input').querySelector('script'),null);
+    assert.equal(h.get('.approval-input').querySelector('script') === null, true);
   } finally {await h.close();}
 });
 
@@ -149,7 +149,7 @@ test("custom tool approval discloses limited coverage and never offers a usable 
     assert.match(h.get('.approval:not([hidden])').textContent ?? "", /outside this approval/);
     assert.equal(h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="session"]').disabled, true);
     assert.equal(h.get('.approval-input').textContent, card.input);
-    assert.equal(h.root.querySelector('script'), null);
+    assert.equal(h.root.querySelector('script') === null, true);
     await h.click('.approval:not([hidden]) [data-decision="once"]');
     assert.equal(h.sent.at(-1)?.type, 'decideApproval');
   } finally { await h.close(); }
@@ -161,7 +161,7 @@ test("compact custom coverage warning shares scrollable details rather than shri
     await h.render({ approvals: [{ id: "custom-layout", toolCallId: "custom-call", tool: "owned_counter", category: "custom", input: '{"text":"fixed synthetic payload"}', scope: null, expiresAt: Date.now() + 120000 }], chatBusy: true, execution: "awaiting-approval" });
     const warning = h.get(".approval:not([hidden]) .approval-details > .muted");
     assert.match(warning.textContent ?? "", /Custom extension tool/);
-    assert.equal(h.root.querySelector(".approval:not([hidden]) > .muted"), null);
+    assert.equal(h.root.querySelector(".approval:not([hidden]) > .muted") === null, true);
     assert.equal(h.get<HTMLButtonElement>('[data-decision="session"]').disabled, true);
   } finally { await h.close(); }
 });
@@ -170,7 +170,7 @@ test("a single pending request renders without the multi-request selector", asyn
   const h = await uiHarness(true, true);
   try {
     await h.render({ approvals: [cards()[0]], chatBusy: true, execution: "awaiting-approval" });
-    assert.equal(h.root.querySelector(".approval-selector"), null, "one request needs no selector row");
+    assert.equal(h.root.querySelector(".approval-selector") === null, true, "one request needs no selector row");
     assert.equal(h.root.querySelectorAll('.approval:not([hidden])').length, 1);
     await h.render({ approvals: cards().slice(0, 2), chatBusy: true, execution: "awaiting-approval" });
     assert.ok(h.get('[aria-label="Pending approvals"]'), "two requests restore the selector");

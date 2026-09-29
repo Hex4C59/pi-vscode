@@ -6,7 +6,7 @@ import { uiHarness } from "./react-harness.js";
 test("task status maps execution states to glance categories with distinct markers", async () => {
   const h = await uiHarness(true, true);
   try {
-    assert.equal(h.root.querySelector(".candidate__progress"), null, "idle renders no status line");
+    assert.equal(h.root.querySelector(".candidate__progress") === null, true, "idle renders no status line");
 
     await h.render({ chatBusy: true, execution: "replying" });
     let status = h.get(".candidate__progress");
@@ -14,13 +14,13 @@ test("task status maps execution states to glance categories with distinct marke
     assert.equal(status.getAttribute("data-state"), "active");
     assert.match(status.textContent ?? "", /Replying…/);
     assert.ok(status.querySelector(".candidate__pulse"), "in-progress keeps the pulse dot");
-    assert.equal(status.querySelector(".candidate__status-icon"), null);
+    assert.equal(status.querySelector(".candidate__status-icon") === null, true);
 
     await h.render({ chatBusy: true, execution: "awaiting-approval" });
     status = h.get(".candidate__progress");
     assert.equal(status.getAttribute("data-state"), "waiting");
     assert.match(status.textContent ?? "", /Waiting for approval…/);
-    assert.equal(status.querySelector(".candidate__pulse"), null, "waiting is not pulsing work");
+    assert.equal(status.querySelector(".candidate__pulse") === null, true, "waiting is not pulsing work");
     assert.ok(status.querySelector(".candidate__status-icon"), "waiting carries its own marker");
 
     await h.render({ chatBusy: false, execution: "completed" });
@@ -49,7 +49,7 @@ test("stopping wins over the underlying execution state and idle stays silent", 
     assert.match(status.textContent ?? "", /Stopping…/);
 
     await h.render({ chatBusy: false, execution: "idle" });
-    assert.equal(h.root.querySelector(".candidate__progress"), null);
+    assert.equal(h.root.querySelector(".candidate__progress") === null, true);
   } finally { await h.close(); }
 });
 
@@ -60,7 +60,7 @@ test("status updates in place so streaming transitions never replay entrance mot
     const before = h.get(".candidate__progress");
     await h.render({ chatBusy: true, execution: "replying" });
     await h.render({ chatBusy: true, execution: "executing" });
-    assert.equal(h.get(".candidate__progress"), before, "the same node updates; no re-mount restarts the pulse");
+    assert.equal(h.get(".candidate__progress") === before, true, "the same node updates; no re-mount restarts the pulse");
     assert.equal(h.root.querySelectorAll(".candidate__progress").length, 1);
   } finally { await h.close(); }
 });

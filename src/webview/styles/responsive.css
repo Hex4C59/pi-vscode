@@ -20,9 +20,3 @@
   #attachment-preview-text,
   .attachment-preview-text { max-height: 94px; }
 }
-
-@media (max-width: 320px) {
-  .msg-user,
-  .message--user,
-  .message.user { max-width: 94%; }
-}

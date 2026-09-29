@@ -107,59 +107,66 @@ test("session intents use only the current catalogue IDs and reset stale IDs wit
   }
 });
 
-test("mounted Sessions panel pages, recovers from errors, keeps draft text, and gates only switching mutations", async () => {
+test("mounted session history pages, recovers from errors, keeps draft text, and gates only switching mutations", async () => {
   const h = await uiHarness(false);
+  const browse = 'button[aria-label="Browse saved conversations"]';
+  const draft = 'textarea[aria-label="Message"]';
+  const send = 'button[aria-label="Send message"]';
+  const stop = 'button[aria-label="Stop current task"]';
   try {
     await h.receive(attachmentState({ draft: { revision: 3, text: "unsent draft", acceptedEditSequence: 2, attachments: [] } }));
     await h.render();
     await h.receive(sessionState({ current: { id: "current-1", name: null } }));
-    assert.equal(h.root.querySelector("[data-session-id]"), null, "the unopened panel must not invent sample rows");
+    assert.equal(h.get(".candidate__history").hidden, true, "the unopened history must not invent sample rows");
+    assert.equal(h.root.querySelectorAll(".candidate__session").length, 0);
 
-    await h.click("#sessions-toggle");
+    await h.click(browse);
     assert.equal(h.sent.at(-1)?.type, "getSavedSessions");
     assert.equal((h.sent.at(-1) as { page: number }).page, 0);
-    assert.equal(h.get<HTMLInputElement>("#chat-input").value, "unsent draft");
-    assert.match(h.get("#sessions-current").textContent ?? "", /New conversation/);
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "unsent draft");
+    assert.match(h.get(".candidate__current").textContent ?? "", /New conversation|^$/);
 
     await h.receive(sessionState({ current: { id: "current-1", name: "Current task" }, loaded: true, entries: Array.from({ length: 16 }, (_, index) => sessionEntry(index)), total: 33 }));
-    assert.match(h.get("#sessions-current").textContent ?? "", /Current task/);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "unsent draft");
-    assert.equal(h.get<HTMLButtonElement>("#sessions-previous").disabled, true);
-    assert.equal(h.get<HTMLButtonElement>("#sessions-next").disabled, false);
-    await h.click("#sessions-next");
+    assert.match(h.get(".candidate__current").textContent ?? "", /Current task/);
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "unsent draft");
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Previous conversations"]').disabled, true);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Next conversations"]').disabled, false);
+    await h.click('button[aria-label="Next conversations"]');
     assert.equal(h.sent.at(-1)?.type, "getSavedSessions");
     assert.equal((h.sent.at(-1) as { page: number }).page, 1);
 
     await h.receive(sessionState({ loaded: true, page: 1, entries: [sessionEntry(16)], total: 33 }));
-    await h.click('[data-session-action="restore"][data-session-id="saved-16"]');
+    await h.click('button[aria-label="Restore Saved task 16"]');
     assert.equal(h.sent.at(-1)?.type, "resumeConversation");
     assert.equal((h.sent.at(-1) as { id: string }).id, "saved-16");
 
     await h.receive(sessionState({ phase: "error", loaded: true, entries: [], total: 0, error: "unavailable" }));
-    assert.match(h.get("#sessions-error").textContent ?? "", /unavailable/i);
-    assert.equal(h.get<HTMLButtonElement>("#sessions-refresh").disabled, false);
-    await h.click("#sessions-refresh");
+    assert.match(h.root.textContent ?? "", /unavailable/i);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Refresh saved conversations"]').disabled, false);
+    await h.click('button[aria-label="Refresh saved conversations"]');
     assert.equal(h.sent.at(-1)?.type, "getSavedSessions");
 
     await h.receive(sessionState({ phase: "idle", loaded: true, entries: [], total: 0, error: null }));
-    assert.match(h.get("#sessions-notice").textContent ?? "", /No saved conversations/);
+    assert.match(h.get(".candidate__catalogue").textContent ?? "", /No saved conversations/);
 
     await h.receive(sessionState({ phase: "confirming", loaded: true, entries: [sessionEntry(1)], total: 1 }));
-    assert.equal(h.get<HTMLButtonElement>("#sessions-new").disabled, true);
-    assert.equal(h.get<HTMLButtonElement>("#sessions-refresh").disabled, true);
-    assert.equal(h.get<HTMLButtonElement>('[data-session-action="restore"]').disabled, true);
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="New conversation"]').disabled, true);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Refresh saved conversations"]').disabled, true);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Restore Saved task 1"]').disabled, true);
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
     assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, true);
-    assert.equal(h.get<HTMLButtonElement>("#add-file").disabled, true);
+    // Session confirming disables Add context; the menu stays closed instead of opening disabled items.
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Add context"]').disabled, true);
+    assert.equal(h.root.querySelector('button[aria-label="Add file"]') === null, true);
 
     await h.receive({ ...readyState, chatBusy: true, execution: "replying" });
     await h.receive(sessionState({ phase: "idle", loaded: true, entries: [sessionEntry(1)], total: 1 }));
-    assert.equal(h.get<HTMLButtonElement>("#sessions-new").disabled, false, "new conversation remains available for the host Stop flow");
-    assert.equal(h.get<HTMLButtonElement>("#stop-chat").disabled, false);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="New conversation"]').disabled, false, "new conversation remains available for the host Stop flow");
+    assert.equal(h.get<HTMLButtonElement>(stop).disabled, false);
 
     await h.receive({ ...readyState, chatBusy: false, execution: "idle" });
     await h.receive(sessionState({ phase: "listing", loaded: true, entries: [], total: 0 }));
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, false, "listing does not block ordinary chat");
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, false, "listing does not block ordinary chat");
   } finally {
     await h.close();
   }

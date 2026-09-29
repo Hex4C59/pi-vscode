@@ -41,13 +41,13 @@ function reviewState(patch: Partial<ChangeReviewStateMessage> = {}): ChangeRevie
 test("candidate reveals a compact change-review entry only when review data exists", async () => {
   const h = await uiHarness(true, true);
   try {
-    assert.equal(h.root.querySelector("[data-candidate-review]"), null);
+    assert.equal(h.root.querySelector("[data-candidate-review]") === null, true);
 
     await h.receive(reviewState());
 
     const review = h.get("[data-candidate-review]");
     assert.match(review.textContent ?? "", /Review changes/);
-    assert.equal(review.querySelector(".candidate-review__summary"), null, "collapsed review stays a single compact entry");
+    assert.equal(review.querySelector(".candidate-review__summary") === null, true, "collapsed review stays a single compact entry");
 
     await h.click("#change-review-toggle");
     const summary = h.get(".candidate-review__summary");
@@ -57,7 +57,7 @@ test("candidate reveals a compact change-review entry only when review data exis
     assert.match(summary.textContent ?? "", /2 unavailable/);
 
     await h.receive(reviewState({ entries: [] }));
-    assert.equal(h.root.querySelector("[data-candidate-review]"), null);
+    assert.equal(h.root.querySelector("[data-candidate-review]") === null, true);
   } finally {
     await h.close();
   }

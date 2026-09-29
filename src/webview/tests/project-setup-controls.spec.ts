@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { productionHarness } from "./react-harness.js";
+import { uiHarness } from "./react-harness.js";
 
 for (const target of ['button[aria-label="Add context"]', '#model-effort-trigger', 'textarea']) {
   test(`new folder keeps ${target} usable before resource consent`, async () => {
-    const h = await productionHarness();
+    const h = await uiHarness();
     try {
       await h.render({ choice: null, runtime: "not-started", chatModel: null, availableModels: [] });
       assert.equal(h.get<HTMLButtonElement>(target).disabled, false);
-      assert.equal(h.root.querySelector("#setup-resources"), null);
+      assert.equal(h.root.querySelector("#setup-resources") === null, true);
       assert.ok(h.root.querySelector(".candidate__empty"));
       assert.ok(!h.sent.some(m => m.type === "chooseResources"));
     } finally { await h.close(); }
@@ -17,7 +17,7 @@ for (const target of ['button[aria-label="Add context"]', '#model-effort-trigger
 
 for (const choice of ["allow", "decline"] as const) {
   test(`project setup ${choice} is explicit and never replays send or attachment`, async () => {
-    const h = await productionHarness();
+    const h = await uiHarness();
     try {
       await h.render({ choice: null, runtime: "not-started" });
       await h.input("Keep my draft", "textarea");
@@ -36,7 +36,7 @@ for (const choice of ["allow", "decline"] as const) {
 }
 
 test("project attachment setup cancels without consent and clears on workspace replacement", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.render({ choice: null, runtime: "not-started" });
     await h.input("Keep on cancel", "textarea");
@@ -46,18 +46,18 @@ test("project attachment setup cancels without consent and clears on workspace r
     const cancel = buttons.find(b => b.getAttribute("aria-label") === "Cancel");
     assert.ok(cancel);
     await h.click('dialog button[aria-label="Cancel"]');
-    assert.equal(h.root.querySelector("dialog"), null);
+    assert.equal(h.root.querySelector("dialog") === null, true);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep on cancel");
     assert.ok(!h.sent.some(m => m.type === "chooseResources"));
     await h.click('button[aria-label="Send message"]');
     await h.render({ generation: 2, choice: null, runtime: "not-started", folder: { name: "Other", path: "/other" } });
-    assert.equal(h.root.querySelector("dialog"), null);
+    assert.equal(h.root.querySelector("dialog") === null, true);
     assert.ok(!h.sent.some(m => m.type === "chooseResources"));
   } finally { await h.close(); }
 });
 
 test("project preparation selects a default model without granting resource consent", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.render({ choice: null, runtime: "not-started" });
     await h.receive({ version: 3, type: "providerConfigState", viewId: "view", generation: 1,

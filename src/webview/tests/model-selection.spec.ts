@@ -13,7 +13,8 @@ test("mounted React model controls keep applied and pending settings distinct du
     });
     assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, false);
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").disabled, false);
-    assert.equal(h.root.querySelector("#send-chat"), null);
+    assert.equal(h.root.querySelector('button[aria-label="Send message"]') === null, true);
+    assert.ok(h.root.querySelector('button[aria-label="Stop current task"]'));
     assert.equal(h.get("#model-effort-trigger").textContent, "A / one · medium");
     assert.match(h.get("#pending-settings").textContent ?? "", /Next turn \(pending\): B \/ Two · thinking: high/);
     assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium.*pending.*high/);
@@ -26,7 +27,8 @@ test("mounted React model controls keep applied and pending settings distinct du
     assert.ok(modelItem);
     await act(async () => modelItem.click());
     assert.equal((h.sent.at(-1) as { type: string }).type, "setChatModel");
-    assert.equal(modelList.hidden, true);
+    // Production keeps modelListOpen while animatePopover closes the popover itself.
+    assert.equal(h.get("#model-popover").hidden, true);
 
     await h.click("#model-effort-trigger");
     const slider = h.get<HTMLInputElement>("#thinking-slider");
@@ -55,7 +57,7 @@ test("mounted React model controls keep applied and pending settings distinct du
     assert.equal(h.get("#model-status-error").hidden, true);
     assert.equal(h.get("#model-popover").hidden, false);
     assert.match(h.get("#model-error").textContent ?? "", /not supported/);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "keep draft");
+    assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value, "keep draft");
 
     await h.click("#model-effort-trigger");
     await act(async () => h.dom.window.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
@@ -74,12 +76,12 @@ test("mounted React model controls expose a disabled single-level slider and pre
   try {
     await h.render({ thinkingLevel: "off", thinkingLevels: ["off"], chatBusy: false });
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").disabled, true);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "");
+    assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value, "");
     await h.input("draft");
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "draft");
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
+    assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value, "draft");
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Send message"]').disabled, true);
     await h.receive(attachmentState({ draft: { revision: 1, text: "draft", acceptedEditSequence: 1, attachments: [] } }));
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, false);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Send message"]').disabled, false);
   } finally {
     await h.close();
   }

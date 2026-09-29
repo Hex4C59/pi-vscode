@@ -18,7 +18,7 @@ test("idle empty session shows the π mark and exactly one greeting line", async
   const empty = h.get(".candidate__empty");
   assert.deepEqual([...empty.children].map(child => child.className || child.tagName), ["candidate__mark", "H1"]);
   assert.equal(empty.querySelectorAll("h1").length, 1);
-  assert.equal(empty.querySelector("p"), null);
+  assert.equal(empty.querySelector("p") === null, true);
   assert.equal(h.get(".candidate__mark").getAttribute("aria-label"), "Replay Pi logo animation");
   assert.equal(h.get(".candidate__mark svg").getAttribute("aria-hidden"), "true");
   assert.equal(empty.textContent, "What should we work on?");
@@ -66,10 +66,10 @@ test("settings page uses categories, icon refresh and separate provider details"
     const refresh = settings.querySelector<HTMLButtonElement>('.settings-page__header button[aria-label="Refresh providers"]');
     assert.ok(refresh, "refresh lives in the providers heading as an icon button");
     assert.equal(refresh.textContent, "");
-    assert.equal(settings.querySelector(".candidate-settings__secondary, .candidate-settings__panel"), null);
+    assert.equal(settings.querySelector(".candidate-settings__secondary, .candidate-settings__panel") === null, true);
     await h.click(".settings-page__nav button:last-child");
     await h.click(".settings-page__providers button");
-    assert.equal(settings.querySelector(".candidate-settings__status"), null);
+    assert.equal(settings.querySelector(".candidate-settings__status") === null, true);
     assert.equal(h.get(".settings-page__actions").querySelectorAll("button").length, 2);
     await h.click('.settings-page__header button[aria-label="Refresh providers"]');
     assert.ok(h.sent.some(message => message.type === "refreshProviderConfig"));

@@ -11,19 +11,22 @@ const card: ApprovalCard = {
   id: "approval1", tool: "write", toolCallId: "tool1", input: '{"path":"a","content":"<script>literal</script>"}', scope: null,
   expiresAt: Date.now() + 120_000,
 };
+const message = 'textarea[aria-label="Message"]';
+const send = 'button[aria-label="Send message"]';
+const stop = 'button[aria-label="Stop current task"]';
+const thinkingDetails = 'details[aria-label="Thinking details"]';
+const toolDetails = 'details[aria-label="Tool details"]';
 
 test("mounted React conversation keeps incremental nodes, expansion and slider interaction stable", async () => {
   const h = await uiHarness();
   try {
     await h.render({ messages: [{ id: "m1", role: "assistant", text: "Hello" }], activities: [thinking, tool] });
-    const row = h.get("#messages").children[0] as HTMLElement;
-    const steps = row.children[0] as HTMLElement;
-    const thinkingView = steps.querySelector<HTMLElement>('[data-activity-id="t1"]');
-    const toolView = steps.querySelector<HTMLElement>('[data-activity-id="tool1"]');
-    assert.ok(thinkingView); assert.ok(toolView);
-    await h.click('[data-activity-id="t1"] > summary');
+    const row = h.get(".candidate__message");
+    const thinkingView = h.get<HTMLDetailsElement>(thinkingDetails);
+    const toolView = h.get<HTMLDetailsElement>(toolDetails);
+    await h.click(`${thinkingDetails} > summary`);
     await act(async () => thinkingView.dispatchEvent(new h.dom.window.Event("toggle")));
-    assert.equal((thinkingView as HTMLDetailsElement).open, true);
+    assert.equal(thinkingView.open, true);
 
     await h.click("#model-effort-trigger");
     const slider = h.get<HTMLInputElement>("#thinking-slider");
@@ -34,7 +37,7 @@ test("mounted React conversation keeps incremental nodes, expansion and slider i
     await h.click("#model-current");
     const modelItem = h.get<HTMLButtonElement>("#model-list button");
     modelItem.focus();
-    const main = h.get("#main");
+    const main = h.get(".candidate__messages");
     Object.defineProperties(main, { scrollHeight: { configurable: true, value: 1000 }, clientHeight: { configurable: true, value: 300 } });
     main.scrollTop = 120;
     await act(async () => main.dispatchEvent(new h.dom.window.Event("scroll")));
@@ -42,22 +45,22 @@ test("mounted React conversation keeps incremental nodes, expansion and slider i
       messages: [{ id: "m1", role: "assistant", text: "Hello world" }],
       activities: [{ ...thinking, text: "Updated thinking" }, { ...tool, status: "executing", text: "first second", truncated: true }],
     });
-    assert.equal(h.get("#messages").children[0], row);
-    assert.equal((row.children[1] as HTMLElement).textContent, "Hello world");
-    assert.equal(steps.querySelector('[data-activity-id="t1"]'), thinkingView);
-    assert.equal((thinkingView as HTMLDetailsElement).open, true);
-    assert.equal(toolView?.querySelectorAll("pre")[1]?.textContent, "first second");
-    assert.match(h.get('[data-activity-id="tool1"] .truncation').textContent ?? "", /Truncated/);
+    assert.equal(h.get(".candidate__message") === row, true);
+    assert.match(row.textContent ?? "", /Hello world/);
+    assert.equal(h.get(thinkingDetails) === thinkingView, true);
+    assert.equal(thinkingView.open, true);
+    assert.match(toolView.querySelectorAll("pre")[1]?.textContent ?? "", /first second/);
+    assert.match(h.get(toolDetails).textContent ?? "", /Truncated/);
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").value, "2");
     assert.equal(h.get("#model-list").hidden, false);
-    assert.equal(h.get("#model-list button"), modelItem);
-    assert.equal(h.dom.window.document.activeElement, modelItem);
+    assert.equal(h.get("#model-list button") === modelItem, true);
+    assert.equal(h.dom.window.document.activeElement === modelItem, true);
     assert.equal(main.scrollTop, 120);
     main.scrollTop = 700;
     await act(async () => main.dispatchEvent(new h.dom.window.Event("scroll")));
 
     await h.render({ messages: [{ id: "m1", role: "assistant", text: "Hello world" }], activities: [] });
-    assert.equal(steps.children.length, 0);
+    assert.equal(h.root.querySelector(thinkingDetails) === null, true);
     assert.equal(main.scrollTop, 1000);
   } finally {
     await h.close();
@@ -69,7 +72,7 @@ test("mounted React approvals expose literal input and scope, lock one decision,
     const h = await uiHarness();
     try {
       await h.render({ approvals: [{ ...card, scope: "exact scope" }], grants: [{ id: "g1", scope: "full exact scope" }] });
-      const approval = h.get<HTMLElement>("#approvals").children[0] as HTMLElement;
+      const approval = h.get<HTMLElement>('[data-approval-id="approval1"]');
       assert.equal(approval.querySelector(".approval-input")?.textContent, card.input);
       assert.match(approval.querySelector(".grant-scope")?.textContent ?? "", /exact scope/);
       const buttons = approval.querySelectorAll<HTMLButtonElement>("[data-decision]");
@@ -77,11 +80,12 @@ test("mounted React approvals expose literal input and scope, lock one decision,
       await h.click(`[data-decision="${decision}"]`);
       assert.deepEqual(h.sent.at(-1), { version: 3, type: "decideApproval", generation: 1, viewId: "view", id: "approval1", decision });
       assert.ok([...buttons].every(button => button.disabled));
+      await h.click(".candidate-permissions > summary");
       await h.click('[data-grant-action="revoke"]');
       assert.equal((h.sent.at(-1) as { type: string }).type, "revokeGrant");
       await h.render({ approvals: [], grants: [] });
-      assert.equal(h.get("#approvals").children.length, 0);
-      assert.equal(h.get("#grants").children.length, 0);
+      assert.equal(h.root.querySelector("#approvals") === null, true);
+      assert.equal(h.root.querySelectorAll("[data-grant-action]").length, 0);
     } finally {
       await h.close();
     }
@@ -124,29 +128,30 @@ test("mounted React approvals expire each card at its own deadline", async t => 
     await h.close();
   }
 });
+
 test("Stop stays visible while stopping, locks approvals, and preserves draft and next-turn controls", async () => {
   const h = await uiHarness();
   try {
     await h.render({ chatBusy: true, approvals: [card], execution: "thinking", pendingThinkingLevel: "high" });
-    assert.match(h.get("#execution-status").textContent ?? "", /Thinking/);
-    assert.equal(h.get<HTMLButtonElement>("#stop-chat").hidden, false);
-    assert.equal(h.get<HTMLButtonElement>("#stop-chat").disabled, false);
+    assert.match(h.get(".candidate__progress").textContent ?? "", /Working/);
+    assert.equal(h.get<HTMLButtonElement>(stop).disabled, false);
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").disabled, false);
     assert.match(h.get("#pending-settings").textContent ?? "", /Next turn/);
     await h.input("draft");
-    await h.click("#stop-chat");
+    await h.click(stop);
     assert.equal((h.sent.at(-1) as { type: string }).type, "stopChat");
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "draft");
+    assert.equal(h.get<HTMLTextAreaElement>(message).value, "draft");
     assert.ok([...h.get<HTMLElement>("#approvals").querySelectorAll<HTMLButtonElement>("[data-decision]")].every(button => button.disabled));
 
-    await h.render({ runtime: "stopping", execution: "stopping", busy: true });
-    assert.equal(h.get<HTMLButtonElement>("#stop-chat").disabled, true);
+    await h.render({ runtime: "stopping", execution: "stopping", busy: true, approvals: [card] });
+    assert.equal(h.get<HTMLButtonElement>(stop).disabled, true);
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").disabled, true);
-    assert.match(h.get("#execution-status").textContent ?? "", /not rolled back/);
-    await h.render({ chatBusy: false, execution: "idle", runtime: "ready", busy: false });
-    assert.equal(h.root.querySelector("#stop-chat"), null);
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
-    assert.match(h.get("#controlled-disclosure").textContent ?? "", /not in a sandbox/);
+    assert.match(h.get(".candidate__progress").textContent ?? "", /Stopping|settle/);
+    await h.render({ chatBusy: false, execution: "idle", runtime: "ready", busy: false, approvals: [] });
+    assert.equal(h.root.querySelector(stop) === null, true);
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
+    await h.click("details.candidate-permissions > summary");
+    assert.match(h.get(".candidate-permissions").textContent ?? "", /not a sandbox/);
   } finally {
     await h.close();
   }
@@ -156,15 +161,15 @@ test("generation changes clear old activity and approval nodes without reviving 
   const h = await uiHarness();
   try {
     await h.render({ activities: [thinking], approvals: [card] });
-    assert.equal(h.get("#messages").children.length, 1);
-    assert.equal(h.root.querySelectorAll("[data-activity-id]").length, 1);
-    assert.equal(h.get("#approvals").children.length, 1);
+    assert.equal(h.root.querySelectorAll(".candidate__message").length, 1);
+    assert.equal(h.root.querySelectorAll(thinkingDetails).length, 1);
+    assert.ok(h.root.querySelector("#approvals"));
     await h.render({ generation: 2, messages: [], activities: [], approvals: [] });
-    assert.equal(h.get("#messages").children.length, 0);
-    assert.equal(h.root.querySelectorAll("[data-activity-id]").length, 0);
-    assert.equal(h.get("#approvals").children.length, 0);
+    assert.equal(h.root.querySelectorAll(".candidate__message").length, 0);
+    assert.equal(h.root.querySelectorAll(thinkingDetails).length, 0);
+    assert.equal(h.root.querySelector("#approvals") === null, true);
     await h.receive({ ...({ version: 3, type: "workspaceState", viewId: "view", generation: 1 }), messages: [{ id: "late", role: "assistant", text: "late" }], activities: [], approvals: [], grants: [] });
-    assert.equal(h.get("#messages").textContent, "");
+    assert.equal(h.root.querySelectorAll(".candidate__message").length, 0);
   } finally {
     await h.close();
   }
@@ -174,17 +179,18 @@ test("thinking node keeps focus and expansion when the first assistant text arri
   const h = await uiHarness();
   try {
     await h.render({ chatBusy: true, activities: [thinking] });
-    const details = h.get<HTMLDetailsElement>('[data-activity-id="t1"]');
-    const summary = h.get<HTMLElement>('[data-activity-id="t1"] summary');
+    const details = h.get<HTMLDetailsElement>(thinkingDetails);
+    const summary = h.get<HTMLElement>(`${thinkingDetails} summary`);
     details.open = true;
     await act(async () => details.dispatchEvent(new h.dom.window.Event("toggle")));
     summary.focus();
     await h.render({ chatBusy: true, activities: [thinking], messages: [{ id: "m1", role: "assistant", text: "First reply" }] });
-    assert.equal(h.get('[data-activity-id="t1"]'), details);
-    assert.equal(h.dom.window.document.activeElement, summary);
+    assert.equal(h.get(thinkingDetails) === details, true);
+    assert.equal(h.dom.window.document.activeElement === summary, true);
     assert.equal(details.open, true);
   } finally { await h.close(); }
 });
+
 test("candidate displays validated retry, compaction and terminal states without hiding Stop or clearing drafts", async () => {
   const h = await uiHarness(true, true);
   try {
@@ -223,16 +229,15 @@ test("runtime loss keeps the newer draft readable without admitting actions or e
   try {
     await h.input("Newer unsent draft after runtime loss");
     await h.render({ runtime: "error", runtimeDetail: "Runtime disconnected", chatBusy: false, execution: "failed" });
-    const input = h.get<HTMLTextAreaElement>("#chat-input");
+    const input = h.get<HTMLTextAreaElement>(message);
     assert.equal(input.value, "Newer unsent draft after runtime loss");
     assert.equal(input.readOnly, true);
     assert.equal(input.disabled, false, "the retained draft must remain focusable for copying");
-    assert.match(h.get("#execution-status").textContent ?? "", /failed/);
-    assert.equal(h.root.querySelector("#chat"), null);
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
+    assert.match(h.get(".candidate__progress").textContent ?? "", /failed/i);
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
     const before = h.sent.length;
-    await h.click("#send-chat");
+    await h.click(send);
     assert.equal(h.sent.length, before);
-    input.focus(); assert.equal(h.dom.window.document.activeElement, input);
+    input.focus(); assert.equal(h.dom.window.document.activeElement === input, true);
   } finally { await h.close(); }
 });

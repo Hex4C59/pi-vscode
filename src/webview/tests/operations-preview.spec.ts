@@ -22,11 +22,11 @@ test("simulated extension request renders, settles into the queued form, then cl
   });
   await h.click('.extension-interactions__form [data-action="answer"]');
   assert.match(h.get(".extension-interactions__form").textContent ?? "", /Queued synthetic follow-up/, "the queued request is promoted");
-  assert.equal(h.root.querySelector(".extension-interactions__queue"), null, "nothing remains queued");
+  assert.equal(h.root.querySelector(".extension-interactions__queue") === null, true, "nothing remains queued");
 
   await act(async () => { h.get<HTMLInputElement>('.extension-interactions__form input[type="radio"][value="false"]').click(); });
   await h.click('.extension-interactions__form [data-action="answer"]');
-  assert.equal(h.root.querySelector(".extension-interactions__form"), null, "settling the last request clears the form");
+  assert.equal(h.root.querySelector(".extension-interactions__form") === null, true, "settling the last request clears the form");
   assert.ok(h.root.querySelectorAll(".extension-interactions__feedback-entry").length >= 2, "feedback survives the settled forms");
 });
 
@@ -38,11 +38,11 @@ test("simulated recovery banner offers both controls and clears after either set
   assert.equal(h.get<HTMLButtonElement>('[data-action="recover-controlled-runtime"]').disabled, false);
   assert.equal(h.get<HTMLButtonElement>('[data-action="end-owned-runtime"]').disabled, false);
   await h.click('[data-action="recover-controlled-runtime"]');
-  assert.equal(h.root.querySelector(".candidate__runtime-recovery"), null, "recovery settles the banner");
+  assert.equal(h.root.querySelector(".candidate__runtime-recovery") === null, true, "recovery settles the banner");
 
   await h.simulateRecoveryRequired();
   await h.click('[data-action="end-owned-runtime"]');
-  assert.equal(h.root.querySelector(".candidate__runtime-recovery"), null, "ending the runtime also settles the banner");
+  assert.equal(h.root.querySelector(".candidate__runtime-recovery") === null, true, "ending the runtime also settles the banner");
 });
 
 test("preview recovery resets a pending extension request together with the runtime state", async t => {
@@ -52,6 +52,6 @@ test("preview recovery resets a pending extension request together with the runt
   assert.ok(h.root.querySelector(".extension-interactions__form"));
   assert.ok(h.root.querySelector(".candidate__runtime-recovery"));
   await h.recover();
-  assert.equal(h.root.querySelector(".extension-interactions"), null);
-  assert.equal(h.root.querySelector(".candidate__runtime-recovery"), null);
+  assert.equal(h.root.querySelector(".extension-interactions") === null, true);
+  assert.equal(h.root.querySelector(".candidate__runtime-recovery") === null, true);
 });

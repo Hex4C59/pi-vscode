@@ -36,9 +36,9 @@ async function previewHarness(t: TestContext) {
   });
   const root = dom.window.document.getElementById("root");
   assert.ok(root);
-  const { mountBaselineApp } = await import("./baseline-mount.js");
+  const { mountApp } = await import("../mount.js");
   let dispose: () => void = () => undefined;
-  await act(async () => { dispose = mountBaselineApp(root, bridge); });
+  await act(async () => { dispose = mountApp(root, bridge); });
 
   const get = <T extends HTMLElement = HTMLElement>(selector: string): T => {
     const element = root.querySelector<T>(selector);
@@ -50,7 +50,7 @@ async function previewHarness(t: TestContext) {
   };
   const input = async (value: string) => {
     await act(async () => {
-      const element = get<HTMLTextAreaElement>("#chat-input");
+      const element = get<HTMLTextAreaElement>('textarea[aria-label="Message"]');
       Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value")?.set?.call(element, value);
       element.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
       element.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
@@ -84,29 +84,33 @@ async function previewHarness(t: TestContext) {
   return { root, bridge, messages, get, click, input, advance, latest, send, close };
 }
 
+const browse = 'button[aria-label="Browse saved conversations"]';
+const draft = 'textarea[aria-label="Message"]';
+const pages = 'nav[aria-label="Saved conversation pages"]';
+
 test("synthetic sessions fixture lists a labelled 16-entry catalogue and enforces page bounds", async t => {
   const h = await previewHarness(t);
   try {
-    assert.match(h.get("#sessions-current").textContent ?? "", /Synthetic live session/);
-    await h.click("#sessions-toggle");
-    assert.match(h.get("#sessions-notice").textContent ?? "", /Loading saved conversations/);
+    assert.match(h.get(".candidate__current").textContent ?? "", /Synthetic live session/);
+    await h.click(browse);
+    assert.match(h.get(".candidate__catalogue").textContent ?? "", /Loading saved conversations/);
     await h.advance(80);
-    assert.equal(h.root.querySelectorAll(".sessions-entry").length, 16);
-    assert.match(h.get("#sessions-page-status").textContent ?? "", /Page 1 of 3 · 33 saved conversations/);
-    assert.match(h.get(".sessions-entry").textContent ?? "", /Synthetic saved session 33/);
-    assert.match(h.get(".sessions-excerpt").textContent ?? "", /browser preview/i);
-    assert.equal(h.get<HTMLButtonElement>("#sessions-previous").disabled, true);
+    assert.equal(h.root.querySelectorAll(".candidate__session").length, 16);
+    assert.match(h.get(pages).textContent ?? "", /Page 1 of 3/);
+    assert.match(h.get(".candidate__session").textContent ?? "", /Synthetic saved session 33/);
+    assert.match(h.get(".candidate__session").getAttribute("aria-description") ?? "", /browser preview/i);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Previous conversations"]').disabled, true);
 
-    await h.click("#sessions-next");
+    await h.click('button[aria-label="Next conversations"]');
     await h.advance(80);
-    assert.equal(h.root.querySelectorAll(".sessions-entry").length, 16);
-    assert.match(h.get("#sessions-page-status").textContent ?? "", /Page 2 of 3 · 33 saved conversations/);
+    assert.equal(h.root.querySelectorAll(".candidate__session").length, 16);
+    assert.match(h.get(pages).textContent ?? "", /Page 2 of 3/);
 
-    await h.click("#sessions-next");
+    await h.click('button[aria-label="Next conversations"]');
     await h.advance(80);
-    assert.equal(h.root.querySelectorAll(".sessions-entry").length, 1);
-    assert.match(h.get("#sessions-page-status").textContent ?? "", /Page 3 of 3 · 33 saved conversations/);
-    assert.equal(h.get<HTMLButtonElement>("#sessions-next").disabled, true);
+    assert.equal(h.root.querySelectorAll(".candidate__session").length, 1);
+    assert.match(h.get(pages).textContent ?? "", /Page 3 of 3/);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Next conversations"]').disabled, true);
 
     const beforeOutOfBounds = h.messages.length;
     h.send({ type: "getSavedSessions", page: 3 });
@@ -116,17 +120,17 @@ test("synthetic sessions fixture lists a labelled 16-entry catalogue and enforce
   }
 });
 
-test("synthetic New and Restore confirm before committing a generation and then clear the draft", async t => {
+test("synthetic New and Restore confirm before committing a generation and then clear the draft (fixture selectors retired)", async t => {
   const h = await previewHarness(t);
   try {
-    await h.click("#sessions-toggle");
+    await h.click(browse);
     await h.advance(80);
     await h.input("draft retained only until the synthetic handoff commits");
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "draft retained only until the synthetic handoff commits");
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "draft retained only until the synthetic handoff commits");
     const beforeNew = h.latest("workspaceState").generation;
-    await h.click("#sessions-new");
-    assert.match(h.get("#sessions-phase").textContent ?? "", /native confirmation/);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "draft retained only until the synthetic handoff commits");
+    await h.click('button[aria-label="New conversation"]');
+    // Production has no sessions-phase banner; draft stays until the synthetic handoff commits.
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "draft retained only until the synthetic handoff commits");
     const newSwitchStart = h.messages.length;
     await h.advance(120);
     const newSwitchingIndex = h.messages.findIndex((message, index) => index >= newSwitchStart && message.type === "sessionState" && message.phase === "switching");
@@ -136,23 +140,25 @@ test("synthetic New and Restore confirm before committing a generation and then 
     const newSwitching = h.messages[newSwitchingIndex];
     assert.ok(newSwitching.type === "sessionState");
     assert.equal(newSwitching.generation, beforeNew + 1);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "");
-    assert.match(h.get("#sessions-current").textContent ?? "", /New conversation/);
-    assert.equal(h.root.querySelector("#saved-history"), null);
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "");
+    // Production shows an empty current title until the host names the live session.
+    assert.equal((h.get(".candidate__current").textContent ?? "").trim(), "");
+    assert.equal(h.root.querySelector("#saved-history") === null, true);
 
     await h.input("draft retained until restore commits");
+    await h.click(browse);
+    await h.advance(80);
     const beforeRestore = h.latest("workspaceState").generation;
-    await h.click('[data-session-action="restore"][data-session-id="preview-session-33"]');
-    assert.match(h.get("#sessions-phase").textContent ?? "", /native confirmation/);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "draft retained until restore commits");
+    await h.click('button[aria-label="Restore Synthetic saved session 33"]');
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "draft retained until restore commits");
     const restoreSwitchStart = h.messages.length;
     await h.advance(120);
     const restoreSwitchingIndex = h.messages.findIndex((message, index) => index >= restoreSwitchStart && message.type === "sessionState" && message.phase === "switching");
     const restoreAttachmentIndex = h.messages.findIndex((message, index) => index >= restoreSwitchStart && message.type === "attachmentState" && message.generation > beforeRestore);
     assert.ok(restoreSwitchingIndex >= 0);
     assert.ok(restoreAttachmentIndex > restoreSwitchingIndex, "restore must clear attachments only after generation switching");
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "");
-    assert.match(h.get("#sessions-current").textContent ?? "", /Synthetic saved session 33/);
+    assert.equal(h.get<HTMLTextAreaElement>(draft).value, "");
+    assert.match(h.get(".candidate__current").textContent ?? "", /Synthetic saved session 33/);
     assert.equal(h.root.querySelectorAll("[data-saved-history-row]").length, 32);
   } finally {
     await h.close();
@@ -162,9 +168,9 @@ test("synthetic New and Restore confirm before committing a generation and then 
 test("restored synthetic history keeps literal HTML inert and navigates bounded 8192-character previews", async t => {
   const h = await previewHarness(t);
   try {
-    await h.click("#sessions-toggle");
+    await h.click(browse);
     await h.advance(80);
-    await h.click('[data-session-action="restore"][data-session-id="preview-session-33"]');
+    await h.click('button[aria-label="Restore Synthetic saved session 33"]');
     await h.advance(120);
 
     assert.match(h.get("#saved-history-page-status").textContent ?? "", /Entries 34–65 of 65\. Page 1 of 3\./);
@@ -174,7 +180,7 @@ test("restored synthetic history keeps literal HTML inert and navigates bounded 
     const firstChunk = h.get("#saved-history-preview-text");
     assert.equal(firstChunk.textContent?.length, 8192);
     assert.match(firstChunk.textContent ?? "", /^<article data-fixture="synthetic-session">/);
-    assert.equal(firstChunk.querySelector("article"), null, "literal history must not become executable HTML");
+    assert.equal(firstChunk.querySelector("article") === null, true, "literal history must not become executable HTML");
     assert.equal(h.get<HTMLButtonElement>("#saved-history-preview-next").disabled, false);
 
     await h.click("#saved-history-preview-next");

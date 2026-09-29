@@ -26,8 +26,8 @@ test("editor settings selects a provider and opens API-key intent without secret
       ],
     });
 
-    assert.equal(h.root.querySelector('input[type="password"]'), null);
-    assert.equal(h.root.querySelector(".settings-page__actions"), null);
+    assert.equal(h.root.querySelector('input[type="password"]') === null, true);
+    assert.equal(h.root.querySelector(".settings-page__actions") === null, true);
     await h.click(".settings-page__nav button:last-child");
     await h.click(".settings-page__providers button:last-child");
     assert.match(h.get(".settings-page__actions").textContent ?? "", /Update API key/);

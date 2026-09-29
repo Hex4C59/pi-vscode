@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { act } from "react";
 import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
-import { productionHarness } from "./react-harness.js";
+import { uiHarness } from "./react-harness.js";
 
 const noFolder: Partial<WorkspaceStateMessage> = { status: "no-folder", folder: null, choice: null, runtime: "not-started", chatModel: null, availableModels: [], thinkingLevel: null, thinkingLevels: [] };
 
 test("no-folder context menu opens and offers folder recovery without attaching or sending", async () => {
-  const h = await productionHarness(false);
+  const h = await uiHarness(false);
   try {
     await h.render(noFolder);
     await h.input("Keep this draft", "textarea");
@@ -21,7 +21,7 @@ test("no-folder context menu opens and offers folder recovery without attaching 
 });
 
 test("no-folder model picker selects the global default without a running session", async () => {
-  const h = await productionHarness(false);
+  const h = await uiHarness(false);
   try {
     await h.render(noFolder);
     await h.receive({ version: 3, type: "providerConfigState", viewId: "view", generation: 1,
@@ -36,7 +36,7 @@ test("no-folder model picker selects the global default without a running sessio
 });
 
 test("no-folder model loading, errors and empty catalogue keep settings reachable", async () => {
-  const h = await productionHarness(false);
+  const h = await uiHarness(false);
   try {
     await h.render(noFolder);
     await h.click("#model-effort-trigger");
@@ -46,23 +46,23 @@ test("no-folder model loading, errors and empty catalogue keep settings reachabl
     assert.match(h.get("#model-popover").textContent ?? "", /Could not load provider configuration/);
     await h.click("[data-provider-settings]");
     assert.equal(h.sent.at(-1)?.type, "openSettings");
-    assert.equal(h.root.querySelector("dialog"), null);
+    assert.equal(h.root.querySelector("dialog") === null, true);
     await h.click("#model-effort-trigger");
     await act(async () => { h.get("#model-effort-trigger").dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
     assert.equal(h.get("#model-popover").getAttribute("aria-hidden"), "true");
-    assert.equal(h.dom.window.document.activeElement, h.get("#model-effort-trigger"));
+    assert.equal(h.dom.window.document.activeElement === h.get("#model-effort-trigger"), true);
   } finally { await h.close(); }
 });
 
 test("no-folder context cancellation retains draft and other blocked workspaces stay guarded", async () => {
-  const h = await productionHarness(false);
+  const h = await uiHarness(false);
   try {
     await h.render(noFolder);
     await h.input("Retain on cancel", "textarea");
     await h.click('button[aria-label="Add context"]');
     await h.click('button[aria-label="Add selection"]');
     await h.click('button[aria-label="Keep editing"]');
-    assert.equal(h.root.querySelector(".candidate-folder-prompt"), null);
+    assert.equal(h.root.querySelector(".candidate-folder-prompt") === null, true);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Retain on cancel");
     for (const status of ["untrusted", "multi-root", "remote"] as const) {
       await h.render({ ...noFolder, status });
@@ -73,7 +73,7 @@ test("no-folder context cancellation retains draft and other blocked workspaces 
 });
 
 test("pre-session strength uses the shared picker and survives host refresh without starting a task", async () => {
-  const h = await productionHarness(false);
+  const h = await uiHarness(false);
   try {
     await h.render(noFolder);
     const config = { version: 3 as const, type: "providerConfigState" as const, viewId: "view", generation: 1,

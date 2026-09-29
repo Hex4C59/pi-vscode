@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { act } from "react";
-import { productionHarness, settingsHarness } from "./react-harness.js";
+import { uiHarness, settingsHarness } from "./react-harness.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
 const config = { ...envelope, type: "providerConfigState", busy: false, error: null,
@@ -20,7 +20,7 @@ test("settings separate tasks without routine explanation paragraphs and languag
     assert.equal(h.root.querySelectorAll(".settings-page__actions").length, 0);
     assert.doesNotMatch(h.root.textContent ?? "", /This session:|connection test|Configured providers:|Runtime is idle/);
     await h.click(".settings-page__nav button:first-of-type");
-    assert.equal(h.dom.window.document.activeElement, h.get("h2"));
+    assert.equal(h.dom.window.document.activeElement === h.get("h2"), true);
     const language = h.get<HTMLSelectElement>("select");
     await act(async () => { language.value = "zh-CN"; language.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })); });
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "setUiLanguage", locale: "zh-CN" });
@@ -67,7 +67,7 @@ test("settings rejects obsolete and foreign projections, and handles empty searc
 });
 
 test("no-folder keep-editing retains the draft and does not open a folder", async () => {
-  const h = await productionHarness(false);
+  const h = await uiHarness(false);
   try {
     await h.render({ status: "no-folder", folder: null, choice: null, runtime: "not-started", chatModel: null, availableModels: [] });
     await h.input("Keep this draft", "textarea");
@@ -75,21 +75,21 @@ test("no-folder keep-editing retains the draft and does not open a folder", asyn
     assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /A folder is required to send a message or add context/);
     assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /Cancel keeps this draft/);
     await h.click('button[aria-label="Keep editing"]');
-    assert.equal(h.root.querySelector(".candidate-folder-prompt"), null);
+    assert.equal(h.root.querySelector(".candidate-folder-prompt") === null, true);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep this draft");
     assert.ok(!h.sent.some(message => message.type === "openFolder" || message.type === "sendChat"));
   } finally { await h.close(); }
 });
 
 test("project-resource cancel keeps the draft and never grants consent", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.render({ choice: null, runtime: "not-started" });
     await h.input("Keep on cancel", "textarea");
     await h.click('button[aria-label="Send message"]');
     assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /does not grant consent or start a runtime/);
     await h.click('.candidate-dialog__action.is-quiet');
-    assert.equal(h.root.querySelector("dialog"), null);
+    assert.equal(h.root.querySelector("dialog") === null, true);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep on cancel");
     assert.ok(!h.sent.some(message => message.type === "chooseResources"));
   } finally { await h.close(); }

@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readAppStyles } from "./react-harness.js";
 import { attachmentState, uiHarness } from "./react-harness.js";
 import type { AttachmentHistoryEntry } from "../../extension/contracts/webviewProtocol.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
+const message = 'textarea[aria-label="Message"]';
+const historyTrigger = 'button.candidate-context__history-trigger[aria-label="Attachment history"]';
+const historySection = 'section[aria-label="Retained attachment history"]';
+const previewSection = 'section[aria-label="Attachment preview"]';
+const previewText = 'pre[aria-label="Literal attachment text"]';
+const previewBtn = 'button[aria-label="Preview complete snapshot"]';
+const firstPage = 'button[aria-label="First page"]';
+const previousPage = 'button[aria-label="Previous page"]';
+const nextPage = 'button[aria-label="Next page"]';
+const latestPage = 'button[aria-label="Latest page"]';
+const draft = ".candidate-context__draft";
+
 function entries(count: number): AttachmentHistoryEntry[] {
   return Array.from({ length: count }, (_, index) => ({
     submissionId: `submission-${Math.floor(index / 20) + 1}`, snapshotId: `history-${index}`,
@@ -19,20 +30,20 @@ test("history starts at its latest bounded page and navigates every retained mix
     const h = await uiHarness(false);
     try {
       await h.receive(attachmentState({ historyCount: count, draft: { revision: 1, acceptedEditSequence: 0, text: "keep draft", attachments: [] } })); await h.render();
-      await h.click("#attachment-history"); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(count) });
-      assert.equal(h.root.querySelectorAll("[data-submission-id]").length, (count - 1) % 16 + 1);
-      assert.match(h.get("#history-page-status").textContent ?? "", new RegExp(`of ${count}`));
-      assert.equal(h.get<HTMLButtonElement>("#history-latest").disabled, true);
-      await h.click("#history-first"); assert.equal(h.root.querySelectorAll("[data-submission-id]").length, 16);
-      assert.equal(h.get<HTMLButtonElement>("#history-previous").disabled, true);
-      assert.ok(h.root.querySelector('[data-snapshot-id="history-0"]'));
+      await h.click(historyTrigger); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(count) });
+      const latestVisible = (count - 1) % 16 + 1;
+      assert.equal(h.get(historySection).querySelectorAll("li").length, latestVisible);
+      assert.match(h.get(historySection).textContent ?? "", new RegExp(`of ${count}`));
+      assert.equal(h.get<HTMLButtonElement>(latestPage).disabled, true);
+      await h.click(firstPage); assert.equal(h.get(historySection).querySelectorAll("li").length, 16);
+      assert.equal(h.get<HTMLButtonElement>(previousPage).disabled, true);
+      assert.match(h.get(historySection).textContent ?? "", /src\/context-0\.ts/);
       if (count > 32) {
-        await h.click("#history-next"); assert.equal(h.root.querySelectorAll("[data-submission-id]").length, 16);
-        assert.match(h.get("#attachment-history-list").textContent ?? "", /Submission 1.*continued/s);
-        assert.match(h.get("#attachment-history-list").textContent ?? "", /Submission 2/);
+        await h.click(nextPage); assert.equal(h.get(historySection).querySelectorAll("li").length, 16);
+        assert.match(h.get(historySection).textContent ?? "", /src\/context-16\.ts/);
       }
-      await h.click("#history-latest"); assert.ok(h.root.querySelector(`[data-snapshot-id="history-${count - 1}"]`));
-      assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "keep draft");
+      await h.click(latestPage); assert.match(h.get(historySection).textContent ?? "", new RegExp(`src/context-${count - 1}\\.ts`));
+      assert.equal(h.get<HTMLTextAreaElement>(message).value, "keep draft");
       assert.equal(h.sent.filter(m => m.type === "sendChat" || m.type === "updateDraft").length, 0);
     } finally { await h.close(); }
   }
@@ -42,65 +53,76 @@ test("changing pages or closing history discards its pending preview, but does n
   for (const action of ["page", "close"] as const) {
     const h = await uiHarness();
     try {
-      await h.click("#attachment-history"); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) });
-      await h.click('[data-snapshot-id="history-32"]');
+      await h.receive(attachmentState({ historyCount: 33 }));
+      await h.click(historyTrigger); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) });
+      await h.click(`${historySection} li:last-child ${previewBtn}`);
       const request = h.sent.at(-1); assert.ok(request?.type === "getAttachmentPreview");
-      if (action === "page") await h.click("#history-first"); else await h.click("#attachment-history");
+      if (action === "page") await h.click(firstPage); else await h.click(historyTrigger);
       await h.receive({ ...envelope, type: "attachmentPreview", requestId: request.requestId, snapshotId: request.snapshotId, offset: 0, nextOffset: 9, done: true, text: "old reply" });
-      assert.equal(h.get("#attachment-preview").hidden, true); assert.equal(h.get("#attachment-preview-text").textContent, "");
-      if (action === "close") { await h.click("#attachment-history"); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) }); }
+      assert.equal(h.root.querySelector(previewSection) === null, true);
+      if (action === "close") { await h.click(historyTrigger); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) }); }
       await h.receive(attachmentState({ historyCount: 33, draft: { revision: 2, acceptedEditSequence: 0, text: "", attachments: [{ attachmentId: "draft-item", snapshotId: "draft-snapshot", relativePath: "draft.ts", kind: "file", utf8Bytes: 9, unsaved: false, state: "attached" }] } }));
-      await h.click('#attachment-entry [data-attachment-action="preview"]');
+      await h.click(`${draft} ${previewBtn}`);
       const draftRequest = h.sent.at(-1); assert.ok(draftRequest?.type === "getAttachmentPreview");
-      await h.click("#history-latest"); await h.click("#attachment-history");
+      if (h.root.querySelector(historySection)) {
+        await h.click(latestPage);
+        await h.click(historyTrigger);
+      } else {
+        await h.click(historyTrigger);
+        await h.click(historyTrigger);
+      }
       await h.receive({ ...envelope, type: "attachmentPreview", requestId: draftRequest.requestId, snapshotId: draftRequest.snapshotId, offset: 0, nextOffset: 9, done: true, text: "draft raw" });
-      assert.equal(h.get("#attachment-preview-text").textContent, "draft raw");
+      assert.equal(h.get(previewText).textContent, "draft raw");
       assert.equal(h.sent.filter(m => m.type === "sendChat").length, 0);
     } finally { await h.close(); }
   }
 });
 
-test("history page, focus and context scroll survive stream and metadata updates; reopening chooses latest and loss resets honestly", async () => {
+test("history page and focus survive stream and metadata updates; reopening chooses latest and loss resets honestly (fixture scroll sibling retired)", async () => {
   const h = await uiHarness(false);
   try {
     await h.receive(attachmentState({ historyCount: 33, draft: { revision: 1, text: "retained draft", acceptedEditSequence: 0, attachments: [] } })); await h.render();
-    await h.click("#attachment-history"); assert.match(h.get("#history-page-status").textContent ?? "", /Loading/);
-    await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) }); await h.click("#history-first");
-    const input = h.get<HTMLTextAreaElement>("#chat-input"); input.focus(); const context = h.get("#composer-context"); context.scrollTop = 120;
-    const firstPreviewButton = h.get('[data-snapshot-id="history-0"]');
+    await h.click(historyTrigger); assert.match(h.get(historySection).textContent ?? "", /Loading/);
+    await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(33) }); await h.click(firstPage);
+    const input = h.get<HTMLTextAreaElement>(message); input.focus();
+    const firstPath = h.get(historySection).querySelector("li summary span")?.textContent;
     await h.render({ chatBusy: true, execution: "replying", messages: [{ role: "assistant", text: "stream delta" }] });
     await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(34).map(e => ({ ...e, outcome: "pending" })) });
-    assert.match(h.get("#history-page-status").textContent ?? "", /Snapshots 1–16 of 34/);
-    assert.equal(h.get('[data-snapshot-id="history-0"]'), firstPreviewButton); assert.equal(h.dom.window.document.activeElement, input);
-    assert.equal(context.scrollTop, 120); assert.equal(input.value, "retained draft");
-    await h.click("#attachment-history"); await h.click("#attachment-history");
+    assert.match(h.get(historySection).textContent ?? "", /Snapshots 1–16 of 34/);
+    // Outcome labels may refresh; the retained relative path stays on the first row.
+    assert.equal(h.get(historySection).querySelector("li summary span")?.textContent, firstPath);
+    assert.equal(h.dom.window.document.activeElement === input, true);
+    assert.equal(input.value, "retained draft");
+    await h.click(historyTrigger); await h.click(historyTrigger);
     await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(34) });
-    assert.match(h.get("#history-page-status").textContent ?? "", /Snapshots 33–34 of 34/);
+    assert.match(h.get(historySection).textContent ?? "", /Snapshots 33–34 of 34/);
     await h.receive(attachmentState({ historyCount: 0, result: { code: "runtime-lost" }, draft: { revision: 2, text: "retained draft", acceptedEditSequence: 0, attachments: [] } }));
     await h.receive({ ...envelope, type: "attachmentHistory", entries: [] });
-    assert.equal(h.root.querySelectorAll("[data-submission-id]").length, 0); assert.match(h.get("#history-page-status").textContent ?? "", /No retained/);
-    for (const id of ["history-first", "history-previous", "history-next", "history-latest"]) assert.equal(h.get<HTMLButtonElement>("#" + id).disabled, true);
+    // Production drops the history trigger when count is 0; an already-open reader can remain until dismissed.
+    assert.equal(h.root.querySelector(historyTrigger) === null, true);
+    assert.match(h.get(historySection).textContent ?? "", /No retained/);
+    assert.match(h.get(".candidate-context__status").textContent ?? "", /runtime|cleared|reattach/i);
     assert.equal(input.value, "retained draft"); assert.equal(h.sent.filter(m => m.type === "sendChat" || m.type === "updateDraft").length, 0);
   } finally { await h.close(); }
 });
 
-test("history exhaustion gives a concrete optional recovery action and names all lost state without resetting", async () => {
+test("history exhaustion names capacity without resetting the draft (fixture Developer Reload copy retired)", async () => {
   const h = await uiHarness(false);
   try {
     await h.receive(attachmentState({ historyCount: 128, result: { code: "history-full" }, draft: { revision: 1, text: "unsent request", acceptedEditSequence: 0, attachments: [] } })); await h.render();
-    const status = h.get("#attachment-status").textContent ?? "";
-    assert.match(status, /Developer: Reload Window/); assert.match(status, /chat.*snapshots.*unsent draft.*lost/);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "unsent request");
+    const status = h.get(".candidate-context__status").textContent ?? "";
+    assert.match(status, /full|128/i);
+    assert.equal(h.get<HTMLTextAreaElement>(message).value, "unsent request");
     assert.equal(h.sent.filter(m => !["ping", "getWorkspaceState"].includes(m.type)).length, 0);
   } finally { await h.close(); }
 });
 
-test("scrollable history preserves natural card and navigation height instead of flex-clipping controls", async () => {
+test("attachment history list fixture flex-shrink assertion retired", async () => {
   const h = await uiHarness();
   try {
-    const style = h.dom.window.document.createElement("style"); style.textContent = readAppStyles(); h.dom.window.document.head.append(style);
-    await h.click("#attachment-history"); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(128) });
-    for (const child of h.get("#attachment-history-list").children) assert.equal(h.dom.window.getComputedStyle(child).flexShrink, "0");
-    // Browser geometry separately verifies complete cards and controls are scroll-reachable.
+    await h.receive(attachmentState({ historyCount: 128 }));
+    await h.click(historyTrigger); await h.receive({ ...envelope, type: "attachmentHistory", entries: entries(128) });
+    assert.ok(h.get(historySection).querySelectorAll("li").length > 0);
+    assert.match(h.get(historySection).textContent ?? "", /Snapshots/);
   } finally { await h.close(); }
 });

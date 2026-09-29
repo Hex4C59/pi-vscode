@@ -14,10 +14,10 @@ test("attachment preview and history restore their own callers in nested Escape 
     h.dom.window.document.activeElement?.dispatchEvent(new h.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
   });
   await escape();
-  assert.equal(h.root.querySelector('[aria-label="Attachment preview"]'), null);
+  assert.equal(h.root.querySelector('[aria-label="Attachment preview"]') === null, true);
   assert.ok(h.dom.window.document.activeElement === previewTrigger);
   await escape();
-  assert.equal(h.root.querySelector('[aria-label="Retained attachment history"]'), null);
+  assert.equal(h.root.querySelector('[aria-label="Retained attachment history"]') === null, true);
   assert.equal(h.dom.window.document.activeElement === historyTrigger, true, 'closing history returns to its original trigger, not the removed preview row');
 });
 

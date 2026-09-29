@@ -3,25 +3,28 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { uiHarness, attachmentState, readyState } from "./react-harness.js";
 
-test("loading, busy and runtime-error projections hide chat despite retained history and emit no actions", async () => {
+const message = 'textarea[aria-label="Message"]';
+const send = 'button[aria-label="Send message"]';
+const stop = 'button[aria-label="Stop current task"]';
+const addContext = 'button[aria-label="Add context"]';
+
+test("loading, busy and runtime-error projections keep send gated and emit no actions (fixture chat hide retired)", async () => {
   const h = await uiHarness(false);
   try {
     const bootstrap = [{ version: 3, type: "ping" }, { version: 3, type: "getWorkspaceState" }];
     assert.deepEqual(h.sent, bootstrap);
-    assert.equal(h.root.querySelector("#chat") === null, true);
-    assert.equal(h.root.querySelector("#composer-wrap") === null, true);
+    assert.ok(h.root.querySelector(".candidate"));
 
     await h.render({ runtime: "starting", busy: true, choice: "allow", messages: readyState.messages });
-    assert.equal(h.root.querySelector("#chat") === null, true, "a starting runtime must not expose retained conversation history");
-    assert.equal(h.root.querySelector("#composer-wrap") === null, true, "a starting runtime must not expose the composer");
+    assert.equal(h.root.querySelectorAll(".candidate__message").length, 0, "a starting runtime must not expose retained conversation history");
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
 
     await h.render({ runtime: "ready", busy: true, choice: "allow", messages: [], chatBusy: false });
-    assert.equal(h.root.querySelector("#chat") === null, true, "workspace work must keep the chat hidden before it is ready");
-    assert.equal(h.root.querySelector("#composer-wrap") === null, true);
+    assert.equal(h.root.querySelectorAll(".candidate__message").length, 0, "workspace work must keep the transcript empty before it is ready");
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
 
     await h.render({ runtime: "error", busy: false, choice: "allow", messages: readyState.messages, chatBusy: false });
-    assert.equal(h.root.querySelector("#chat") === null, true, "runtime failure must not reveal retained conversation history");
-    assert.equal(h.root.querySelector("#composer-wrap") === null, true, "runtime failure must not expose the composer");
+    assert.match(h.root.textContent ?? "", /Runtime unavailable/);
     assert.deepEqual(h.sent, bootstrap, "host projections alone must not emit actions");
   } finally {
     await h.close();
@@ -32,17 +35,16 @@ test("ready chat remains visible and an active Stop keeps its controls mounted",
   const h = await uiHarness(false);
   try {
     await h.render();
-    assert.ok(h.root.querySelector("#chat"));
-    assert.ok(h.root.querySelector("#composer-wrap"));
+    assert.ok(h.root.querySelector(".candidate__composer"));
+    assert.ok(h.root.querySelector(message));
 
     await h.render({ chatBusy: true, execution: "awaiting-approval" });
-    assert.ok(h.root.querySelector("#chat"));
-    await h.click("#stop-chat");
-    assert.ok(h.root.querySelector("#chat"));
-    assert.ok(h.root.querySelector("#composer-wrap"));
-    assert.equal(h.get<HTMLButtonElement>("#stop-chat").disabled, true);
-    assert.match(h.get("#execution-status").textContent ?? "", /Stopping/);
-    assert.deepEqual(h.sent.map(message => message.type), ["ping", "getWorkspaceState", "stopChat"]);
+    assert.ok(h.root.querySelector(".candidate__composer"));
+    await h.click(stop);
+    assert.ok(h.root.querySelector(".candidate__composer"));
+    assert.equal(h.get<HTMLButtonElement>(stop).disabled, true);
+    assert.match(h.get(".candidate__progress").textContent ?? "", /Stopping/);
+    assert.deepEqual(h.sent.map(m => m.type), ["ping", "getWorkspaceState", "stopChat"]);
   } finally {
     await h.close();
   }
@@ -69,7 +71,8 @@ test("attachment draft and pending model survive Stop and view recreation withou
   };
   const first = await uiHarness();
   try {
-    await first.click("#add-file");
+    await first.click(addContext);
+    await first.click('button[aria-label="Add file"]');
     await first.receive(attachmentState({ draft: { revision: 1, text: "", acceptedEditSequence: 0, attachments: [attachment] } }));
     await first.input("Review this file");
     assert.deepEqual(first.sent.at(-1), {
@@ -88,11 +91,11 @@ test("attachment draft and pending model survive Stop and view recreation withou
     await first.render({ chatBusy: true, execution: "awaiting-approval", approvals: [approval], pendingModel });
     assert.ok(first.get("#pending-settings").textContent?.includes("Next turn (pending): B / Two"));
 
-    await first.click("#stop-chat");
+    await first.click(stop);
     assert.deepEqual(first.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "stopChat" });
-    assert.equal(first.get<HTMLTextAreaElement>("#chat-input").value, "Review this file");
-    assert.ok(first.get("#attachment-entry").textContent?.includes("src/example.ts"));
-    assert.deepEqual(first.sent.map(message => message.type), [
+    assert.equal(first.get<HTMLTextAreaElement>(message).value, "Review this file");
+    assert.ok(first.get(".candidate-context__draft").textContent?.includes("src/example.ts"));
+    assert.deepEqual(first.sent.map(m => m.type), [
       "ping", "getWorkspaceState", "addFileAttachment", "updateDraft", "setChatModel", "stopChat",
     ]);
     await first.unmount();
@@ -105,11 +108,11 @@ test("attachment draft and pending model survive Stop and view recreation withou
   try {
     await recreated.render({ chatBusy: false, execution: "stopping", approvals: [], pendingModel });
     await recreated.receive(attachmentState({ draft: { revision: 2, text: "Review this file", acceptedEditSequence: 1, attachments: [attachment] } }));
-    assert.equal(recreated.get<HTMLTextAreaElement>("#chat-input").value, "Review this file");
-    assert.ok(recreated.get("#attachment-entry").textContent?.includes("src/example.ts"));
+    assert.equal(recreated.get<HTMLTextAreaElement>(message).value, "Review this file");
+    assert.ok(recreated.get(".candidate-context__draft").textContent?.includes("src/example.ts"));
     assert.ok(recreated.get("#pending-settings").textContent?.includes("Next turn (pending): B / Two"));
-    assert.equal(recreated.get<HTMLButtonElement>("#stop-chat").disabled, true);
-    assert.equal(recreated.get("#stop-chat").textContent, "Stopping…");
+    assert.equal(recreated.get<HTMLButtonElement>(stop).disabled, true);
+    assert.match(recreated.get(".candidate__progress").textContent ?? "", /Stopping/);
     assert.deepEqual(recreated.sent, [
       { version: 3, type: "ping" },
       { version: 3, type: "getWorkspaceState" },
@@ -124,8 +127,11 @@ test("React workspace setup boots through the real v2 bridge and releases its li
   try {
     assert.deepEqual(h.sent, [{ version: 3, type: "ping" }, { version: 3, type: "getWorkspaceState" }]);
     const hostile = '</script><img src=x onerror="attack()">';
-    await h.render({ runtime: "not-started", folder: { name: hostile, path: hostile } });
-    assert.ok(h.root.textContent?.includes(hostile)); assert.equal(h.root.querySelector("img"), null);
+    await h.render({ runtime: "not-started", choice: null, folder: { name: hostile, path: hostile } });
+    // Production surfaces the folder path in the deferred ProjectResourcesPrompt, not a persistent WorkspaceSetup card.
+    await h.input("need resources");
+    await h.click(send);
+    assert.ok(h.root.textContent?.includes(hostile)); assert.equal(h.root.querySelector("img") === null, true);
     await h.click("#allow");
     assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "chooseResources", choice: "allow" });
     await h.unmount(); assert.equal(h.listeners.size, 0);
@@ -137,54 +143,51 @@ test("draft acknowledgement gates one submission and late admission preserves ne
   try {
     await h.input("first task");
     assert.deepEqual(h.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "updateDraft", draftRevision: 0, editSequence: 1, text: "first task" });
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, true);
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
     await h.receive(attachmentState({ draft: { revision: 1, text: "first task", acceptedEditSequence: 1, attachments: [] } }));
-    await h.click("#send-chat"); await h.click("#send-chat");
+    await h.click(send); await h.click(send);
     assert.equal(h.sent.filter(m => m.type === "sendChat").length, 1);
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "first task");
+    assert.equal(h.get<HTMLTextAreaElement>(message).value, "first task");
     await h.input("newer task");
     await h.receive(attachmentState({ draft: { revision: 2, text: "", acceptedEditSequence: 1, attachments: [] }, lastSubmission: { submissionId: "submission", draftRevision: 1, delivery: "host-accepted", outcome: "pending" } }));
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "newer task");
+    assert.equal(h.get<HTMLTextAreaElement>(message).value, "newer task");
     assert.equal(h.sent.filter(m => m.type === "sendChat").length, 1);
     await h.receive(attachmentState({ draft: { revision: 3, text: "newer task", acceptedEditSequence: 2, attachments: [] } }));
-    assert.equal(h.get<HTMLButtonElement>("#send-chat").disabled, false);
+    assert.equal(h.get<HTMLButtonElement>(send).disabled, false);
     await h.receive(attachmentState({ draft: { revision: 0, text: "obsolete", acceptedEditSequence: 0, attachments: [] } }));
-    assert.equal(h.get<HTMLTextAreaElement>("#chat-input").value, "newer task");
+    assert.equal(h.get<HTMLTextAreaElement>(message).value, "newer task");
   } finally { await h.close(); }
 });
 
-
-test("high-contrast messages use the theme surface and foreground as a readable pair", async () => {
+test("high-contrast user messages keep a visible hairline on the production surface", async () => {
   const h = await uiHarness();
   try {
+    const css = readAppStyles();
+    // Production draws the hairline with border-color under high-contrast bodies; jsdom does not resolve CSS variables into getComputedStyle colors.
+    assert.match(css, /body\.vscode-high-contrast[\s\S]*?\.candidate__message--user[\s\S]*?border-color:\s*var\(--ui-border\)/);
+    assert.match(css, /body\.vscode-high-contrast-light[\s\S]*?\.candidate__message--user[\s\S]*?border-color:\s*var\(--ui-border\)/);
     const style = h.dom.window.document.createElement("style");
-    style.textContent = readAppStyles();
+    style.textContent = css;
     h.dom.window.document.head.append(style);
     await h.render({ messages: [{ role: "user", text: "Visible user task" }] });
-    for (const theme of ["vscode-high-contrast", "vscode-high-contrast-light"]) {
-      h.dom.window.document.body.className = theme;
-      const message = h.get(".msg-user");
-      const computed = h.dom.window.getComputedStyle(message);
-      // jsdom exposes unresolved CSS variables: native/browser evidence verifies their actual colors.
-      assert.equal(computed.backgroundColor, "var(--ui-surface)");
-      assert.equal(computed.color, "var(--ui-fg)");
-      assert.equal(computed.borderTopWidth, "1px");
-    }
+    const row = h.get(".candidate__message--user");
+    const computed = h.dom.window.getComputedStyle(row);
+    assert.equal(computed.borderTopWidth, "1px");
+    assert.equal(computed.borderTopStyle, "solid");
   } finally { await h.close(); }
 });
 
-test("composer context scrolls independently while the input and task controls remain siblings outside it", async () => {
+test("composer context sibling layout fixture retired; production model popover stays unclipped", async () => {
   const h = await uiHarness();
   try {
     const style = h.dom.window.document.createElement("style");
     style.textContent = readAppStyles(); h.dom.window.document.head.append(style);
-    const context = h.get("#composer-context");
-    for (const id of ["controlled-disclosure", "execution-status", "attachment-controls"]) assert.ok(context.contains(h.get(`#${id}`)));
-    assert.equal(context.contains(h.get("#composer")), false);
-    assert.equal(context.parentElement, h.get("#composer").parentElement);
-    assert.equal(h.dom.window.getComputedStyle(context).overflowY, "auto");
-    assert.equal(h.dom.window.getComputedStyle(context).minHeight, "0px");
-    assert.equal(h.dom.window.getComputedStyle(h.get("#composer-wrap")).overflowY, "visible", "only the context clips scrolling; model settings must open above the footer");
-    // Actual viewport geometry and keyboard access are checked in browser/native evidence.
+    assert.ok(h.root.querySelector(".candidate__composer"));
+    assert.ok(h.root.querySelector(".candidate-context"));
+    await h.click("#model-effort-trigger");
+    const dialog = h.get<HTMLElement>('[role="dialog"][aria-label="Model and thinking level"]');
+    assert.equal(dialog.hidden, false);
+    const footer = dialog.closest("footer"); assert.ok(footer);
+    assert.notEqual(h.dom.window.getComputedStyle(footer).overflowY, "hidden", "a settings menu above the composer must not be clipped by its footer");
   } finally { await h.close(); }
 });

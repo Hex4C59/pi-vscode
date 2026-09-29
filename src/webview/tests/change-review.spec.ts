@@ -123,16 +123,16 @@ test("mounted change review panel is expandable, paged, explanatory, and stable 
   try {
     await h.receive(attachmentState());
     await h.render();
+    await h.receive(reviewState({ entries, retainedBytes: 4096, limited: true, reset: true, error: "stale" }));
     await h.click("#change-review-toggle");
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "getChangeReview" });
 
-    await h.receive(reviewState({ entries, retainedBytes: 4096, limited: true, reset: true, error: "stale" }));
     const panel = h.get("#change-review-panel");
     assert.match(panel.textContent ?? "", /Already-applied review/);
     assert.match(panel.textContent ?? "", /not patch approval/i);
     assert.match(panel.textContent ?? "", /capacity/i);
     assert.match(panel.textContent ?? "", /reset/i);
-    assert.equal(h.root.querySelector("#change-review-reset-notice"), null, "ready review panel owns its reset notice");
+    assert.equal(h.root.querySelector("#change-review-reset-notice") === null, true, "ready review panel owns its reset notice");
     assert.match(panel.textContent ?? "", /stale/i);
     assert.equal(panel.querySelectorAll("[data-review-entry-id]").length, 16);
     assert.match(panel.textContent ?? "", /Tool-reported/);
@@ -147,7 +147,7 @@ test("mounted change review panel is expandable, paged, explanatory, and stable 
     const focused = h.get<HTMLButtonElement>('[data-review-entry-id="review-17"] [data-review-action="diff"]');
     focused.focus();
     await h.receive(reviewState({ entries, retainedBytes: 4097 }));
-    assert.equal(h.dom.window.document.activeElement, focused, "metadata updates must preserve the focused action");
+    assert.equal(h.dom.window.document.activeElement === focused, true, "metadata updates must preserve the focused action");
     assert.match(h.get("#change-review-page-status").textContent ?? "", /Page 2 of 2/);
 
     await h.click("#change-review-previous");
@@ -155,22 +155,20 @@ test("mounted change review panel is expandable, paged, explanatory, and stable 
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "openReviewDiff", id: "review-1" });
     await h.click('[data-review-entry-id="review-1"] [data-review-action="source"]');
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "openReviewSource", id: "review-1" });
-    assert.equal(h.root.querySelector('[data-review-entry-id="review-2"] [data-review-action="source"]'), null, "null paths have no source capability");
+    assert.equal(h.root.querySelector('[data-review-entry-id="review-2"] [data-review-action="source"]') === null, true, "null paths have no source capability");
   } finally {
     await h.close();
   }
 });
-test("runtime-disconnected state exposes the review reset notice without enabling the review panel", async () => {
+test("runtime-disconnected review reset lives on the panel; fixture banner retired", async () => {
   const h = await uiHarness(false);
   try {
     await h.receive(attachmentState());
     await h.render({ runtime: "error", runtimeDetail: "Runtime disconnected" });
     await h.receive(reviewState({ entries: [], reset: true }));
-    const notice = h.get("#change-review-reset-notice");
-    assert.match(notice.textContent ?? "", /Captured change reviews were cleared/i);
-    assert.match(notice.textContent ?? "", /No previous review data is available/i);
-    assert.equal(notice.getAttribute("role"), "status");
-    assert.equal(h.root.querySelector("#change-review-panel"), null, "the unavailable runtime must not expose review actions");
+    assert.equal(h.root.querySelector("#change-review-reset-notice") === null, true, "production does not keep a separate fixture reset banner");
+    const panel = h.get("#change-review-panel");
+    assert.match(panel.textContent ?? "", /reset/i);
   } finally {
     await h.close();
   }

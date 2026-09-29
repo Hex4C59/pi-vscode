@@ -76,7 +76,7 @@ test("select interaction submits the opaque option ID and renders labels as lite
   }));
   try {
     assert.equal(view.get(".extension-interactions__title").textContent, "Choose <script>not markup</script>");
-    assert.equal(view.root.querySelector("script, b"), null);
+    assert.equal(view.root.querySelector("script, b") === null, true);
     assert.match(view.get('[role="status"]').textContent ?? "", /2.*queued/i);
     const select = view.get<HTMLSelectElement>('select[aria-label="Select an option"]');
     assert.equal(select.options[1].value, "opaque-option-1");
@@ -145,7 +145,7 @@ test("input interaction preserves and submits an empty string with Enter", async
     const input = view.get<HTMLInputElement>('input[aria-label="Your response"]');
     assert.equal(input.value, "");
     assert.equal(input.getAttribute("placeholder"), "");
-    assert.equal(view.root.querySelector("img"), null);
+    assert.equal(view.root.querySelector("img") === null, true);
     await act(async () => input.dispatchEvent(new view.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
     assert.deepEqual(answers, [{ id: "interaction-input-empty", answer: { method: "input", text: "" } }]);
     assert.equal(view.get<HTMLButtonElement>('[data-action="answer"]').disabled, true);
@@ -204,7 +204,7 @@ test("bounded feedback stays literal, queue and local cutoff stay labeled, and b
     assert.equal(view.get(".extension-interactions__origin").textContent, "Origin: trusted runtime extension; not authenticated.");
     assert.match(view.get('[role="status"]').textContent ?? "", /3.*queued/i);
     assert.equal(view.get(".extension-interactions__feedback-text").textContent, longLiteral);
-    assert.equal(view.root.querySelector("img, strong"), null);
+    assert.equal(view.root.querySelector("img, strong") === null, true);
     assert.match(view.get(".extension-interactions__omitted").textContent ?? "", /2/);
     assert.match(view.get(".extension-interactions__limitations").textContent ?? "", /custom.*terminal/i);
 
@@ -241,7 +241,7 @@ test("execution profile shows trusted identity and only dispatches host-approved
   Object.defineProperty(view.dom.window, "confirm", { configurable: true, value: () => { browserConfirmCalls++; return true; } });
   try {
     assert.equal(view.get('[data-profile-badge="trusted"]').textContent, "Trusted execution · chosen <script>entry</script>");
-    assert.equal(view.root.querySelector("script"), null);
+    assert.equal(view.root.querySelector("script") === null, true);
     assert.match(view.get(".execution-profile-controls__coverage").textContent ?? "", /not a security sandbox.*outside covered approval/i);
     assert.match(view.get(".execution-profile-controls__domain").textContent ?? "", /one runtime.*recovery domain/i);
     await act(async () => view.get<HTMLButtonElement>('[data-profile-choice="controlled"]').click());
@@ -426,7 +426,7 @@ for (const language of ["en", "zh-CN"] as const) test(`oversized editor answers 
     assert.equal(editor.disabled, false);
     const valid = "界".repeat(10922) + "ab";
     await setText(valid);
-    assert.equal(view.root.querySelector('[role="alert"]'), null);
+    assert.equal(view.root.querySelector('[role="alert"]') === null, true);
     await act(async () => view.get<HTMLButtonElement>('[data-action="answer"]').click());
     assert.deepEqual(answers, [{ method: "editor", text: valid }]);
 

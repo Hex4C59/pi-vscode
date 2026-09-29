@@ -15,7 +15,7 @@ test("candidate sends one confirmed draft, streams literal text, and Stop preser
   await h.input('<img src=x onerror="throw 1"> inspect this');
   await act(async () => { const button = h.get(send); button.click(); button.click(); });
   assert.equal(h.root.querySelectorAll(".candidate__message--user").length, 1);
-  assert.equal(h.root.querySelector("img"), null);
+  assert.equal(h.root.querySelector("img") === null, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "");
   await h.input("Keep this newer draft");
   await h.advance(360);
@@ -24,7 +24,7 @@ test("candidate sends one confirmed draft, streams literal text, and Stop preser
   assert.equal(h.get<HTMLButtonElement>(stop).disabled, true);
   assert.match(h.root.textContent ?? "", /Stopping/);
   await h.advance(420);
-  assert.equal(h.root.querySelector(stop), null);
+  assert.equal(h.root.querySelector(stop) === null, true);
   assert.match(h.root.textContent ?? "", /Task stopped/);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep this newer draft");
   assert.equal(h.get<HTMLButtonElement>(send).disabled, false);
@@ -46,7 +46,7 @@ test("candidate distinguishes applied and pending settings until stream settleme
   });
   assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium.*pending.*high/);
   await act(async () => h.dom.window.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
-  assert.equal(h.dom.window.document.activeElement, h.get("#model-effort-trigger"));
+  assert.equal(h.dom.window.document.activeElement === h.get("#model-effort-trigger"), true);
   await h.input("Draft for later"); h.get("textarea").focus();
   await h.advance(360);
   for (let chunk = 0; chunk < 4; chunk++) await h.advance(420);
@@ -56,7 +56,7 @@ test("candidate distinguishes applied and pending settings until stream settleme
   assert.match(h.get("#model-effort-trigger").textContent ?? "", /GPT-5.*high/);
   assert.equal(h.get("#pending-settings").hidden, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Draft for later");
-  assert.equal(h.dom.window.document.activeElement, h.get("textarea"));
+  assert.equal(h.dom.window.document.activeElement === h.get("textarea"), true);
 });
 
 for (const [scenario, copy] of [
@@ -213,7 +213,7 @@ test("candidate message rows read from layout: no repeated speaker labels or emp
   assert.equal(user.getAttribute("aria-label"), "You");
   assert.equal(assistant.getAttribute("aria-label"), "pi");
   assert.equal(h.root.querySelectorAll(".candidate__speaker").length, 0);
-  assert.equal(assistant.querySelector(".candidate__activity"), null, "no activity means no placeholder row");
+  assert.equal(assistant.querySelector(".candidate__activity") === null, true, "no activity means no placeholder row");
   assert.equal(h.root.textContent?.includes("No activity reported"), false);
   assert.equal(chineseUi["You"], "你");
 });
@@ -405,7 +405,7 @@ test("candidate browses saved conversations without switching or losing the curr
   assert.match(h.get('[aria-label="Conversation history"]').textContent ?? "", /Loading saved conversations/);
   await h.advance(1000);
   assert.match(h.get('[aria-label="Conversation history"]').textContent ?? "", /Synthetic saved session 33/);
-  assert.equal(h.root.querySelector("dialog[open]"), null);
+  assert.equal(h.root.querySelector("dialog[open]") === null, true);
   await h.click('button[aria-label="Back to conversation"]');
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep this draft while browsing");
   assert.equal(h.root.querySelectorAll(".candidate__message").length, messages);
@@ -465,7 +465,7 @@ test("candidate catalogue failure is visible and refresh recovers without cleari
   assert.doesNotMatch(h.get('[aria-label="Conversation history"]').textContent ?? "", /Loading saved/);
   await h.click('button[aria-label="Refresh saved conversations"]'); await h.advance(1000);
   assert.match(h.get('[aria-label="Conversation history"]').textContent ?? "", /Synthetic saved session 33/);
-  assert.equal(h.root.querySelector('[aria-label="Conversation history"] [role="alert"]'), null);
+  assert.equal(h.root.querySelector('[aria-label="Conversation history"] [role="alert"]') === null, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep after list failure");
 });
 
@@ -504,7 +504,7 @@ test("candidate Stop during catalogue loading preserves navigation and the newer
   await h.click(stop);
   assert.equal(h.get<HTMLButtonElement>(stop).disabled, true);
   await h.advance(420);
-  assert.equal(h.root.querySelector(stop), null);
+  assert.equal(h.root.querySelector(stop) === null, true);
   assert.match(h.root.textContent ?? "", /Task stopped/);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Newer draft during history");
   assert.doesNotMatch(h.get('[aria-label="Conversation history"]').textContent ?? "", /Loading saved conversations/);
@@ -520,7 +520,7 @@ test("candidate cancels a simulated handoff without stopping the live task or lo
   await h.click('button[aria-label="New conversation"]');
   assert.match(h.get('dialog[aria-label="Simulated session handoff"]').textContent ?? "", /not an ownership lock/);
   await h.click('dialog button[aria-label="Cancel simulated handoff"]');
-  assert.equal(h.root.querySelector("dialog[open]"), null);
+  assert.equal(h.root.querySelector("dialog[open]") === null, true);
   await h.advance(360);
   assert.ok(h.root.querySelector(stop));
   assert.match(h.root.textContent ?? "", /I checked the workspace context/);
@@ -541,7 +541,7 @@ test("candidate failed restoration preserves the current conversation and permit
   assert.match(h.get(".candidate__messages").textContent ?? "", /The workspace is ready/);
   await h.click('button[aria-label="Restore Synthetic saved session 33"]');
   await h.click('button[aria-label="Cancel simulated handoff"]');
-  assert.equal(h.root.querySelector("dialog[open]"), null);
+  assert.equal(h.root.querySelector("dialog[open]") === null, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep this draft after failed restoration");
 });
 
@@ -557,7 +557,7 @@ test("candidate confirmed New waits for Stop settlement before clearing work and
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Discard only after committed handoff");
   await h.advance(1);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "");
-  assert.equal(h.root.querySelector(stop), null);
+  assert.equal(h.root.querySelector(stop) === null, true);
   assert.match(h.root.textContent ?? "", /What should we work on/);
   assert.equal(h.dom.window.document.activeElement?.getAttribute("aria-label"), "Message");
   await h.advance(5000);
@@ -580,7 +580,7 @@ test("candidate restores from explicitly opened history into bounded literal his
   assert.equal(h.root.querySelectorAll(".candidate__message").length, 0);
   await h.click('[data-saved-history-preview="synthetic-history-65"]'); await h.advance(80);
   assert.match(h.get("#saved-history-preview-text").textContent ?? "", /<article data-fixture="synthetic-session">/);
-  assert.equal(h.root.querySelector('[data-fixture="synthetic-session"]'), null);
+  assert.equal(h.root.querySelector('[data-fixture="synthetic-session"]') === null, true);
   assert.equal(h.get<HTMLButtonElement>("#saved-history-preview-next").disabled, false);
   await h.click("#saved-history-preview-next"); await h.advance(80);
   assert.match(h.get("#saved-history-preview").textContent ?? "", /Characters 8193/);
@@ -756,7 +756,7 @@ test("candidate recovery invalidates an uncommitted handoff without stranding na
   await h.click('button[aria-label="New conversation"]');
   assert.ok(h.root.querySelector('dialog[open]'));
   await h.recover(); await h.advance(5000);
-  assert.equal(h.root.querySelector('dialog'), null);
+  assert.equal(h.root.querySelector('dialog') === null, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep work across simulated recovery");
   await h.click('button[aria-label="New conversation"]'); await h.click('button[aria-label="Confirm simulated handoff"]');
   await h.recover(); await h.advance(5000);
@@ -810,12 +810,12 @@ test("candidate language settings switch UI immediately without replacing a draf
   await h.selectLanguage("zh-CN");
   assert.match(h.root.textContent ?? "", /今天想做些什么/);
   assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="消息"]').value, "Keep 原文 exactly");
-  assert.equal(h.get("textarea"), composer);
+  assert.equal(h.get("textarea") === composer, true);
   assert.ok(h.root.querySelector('button[aria-label="发送消息"]'));
   assert.ok(h.root.querySelector('button[aria-label="界面设置"]'));
   await h.selectLanguage("en");
   assert.match(h.root.textContent ?? "", /What should we work on/);
-  assert.equal(h.get("textarea"), composer);
+  assert.equal(h.get("textarea") === composer, true);
   assert.equal(composer.value, "Keep 原文 exactly");
 });
 
@@ -848,7 +848,7 @@ test("candidate language switch preserves expanded activity and literal tool inp
   await act(async () => { activity.open = true; tool.open = true; });
   const raw = h.get('pre[aria-label="Tool input"]').textContent;
   await h.selectLanguage("zh-CN");
-  assert.equal(h.get('details[aria-label="消息活动"]'), activity);
+  assert.equal(h.get('details[aria-label="消息活动"]') === activity, true);
   assert.equal(activity.open, true); assert.equal(tool.open, true);
   assert.equal(h.get('pre[aria-label="工具输入"]').textContent, raw);
   assert.match(h.root.textContent ?? "", /已截断/);
@@ -890,7 +890,7 @@ test("candidate language settings translate the deferred folder prompt and recov
   assert.equal(h.get("#open-folder").textContent?.trim(), "打开文件夹");
   assert.match(h.get("dialog").textContent ?? "", /无法发送消息/);
   await h.click("#open-folder");
-  assert.equal(h.root.querySelector("#setup-resources"), null);
+  assert.equal(h.root.querySelector("#setup-resources") === null, true);
   await h.click('button[aria-label="发送消息"]');
   assert.equal(h.get("#allow").textContent?.trim(), "允许项目资源");
   assert.match(h.root.textContent ?? "", /不是沙箱或工具授权/);
@@ -931,7 +931,7 @@ test("candidate settings opens outside chat without replacing the draft", async 
   const h = await candidateHarness(t);
   await h.input("Preserve while settings opens");
   await h.click('button[aria-label="Interface settings"]');
-  assert.equal(h.root.querySelector("dialog"), null);
+  assert.equal(h.root.querySelector("dialog") === null, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Preserve while settings opens");
 });
 
@@ -955,7 +955,7 @@ test("candidate no-folder welcome accepts a draft and defers the folder explanat
   await h.click('button[aria-label="Keep editing"]');
   assert.equal(h.root.querySelectorAll("dialog").length, 0);
   assert.equal(composer.value, "Hello without a folder 原文");
-  assert.equal(h.dom.window.document.activeElement, composer);
+  assert.equal(h.dom.window.document.activeElement === composer, true);
 });
 
 test("candidate no-folder Enter respects whitespace, Shift and IME and never emits a task intent", async t => {
@@ -1227,7 +1227,7 @@ test("candidate ignores a confirmation that finishes after another simulated sou
 test("candidate plus menu omits privacy explanation and ends on selection", async t => {
   const h = await candidateHarness(t);
   await h.click('button[aria-label="Add context"]');
-  assert.equal(h.root.querySelector('[aria-label="Context limits and privacy"]'), null);
+  assert.equal(h.root.querySelector('[aria-label="Context limits and privacy"]') === null, true);
   assert.deepEqual(Array.from(h.get('[role="menu"]').querySelectorAll('[role="menuitem"]'), n => n.getAttribute('aria-label')), ["Add file", "Add selection"]);
   await act(async () => { h.get('[role="menu"]').dispatchEvent(new h.dom.window.KeyboardEvent('keydown', {key:'End',bubbles:true})); });
   assert.equal(h.dom.window.document.activeElement?.getAttribute('aria-label'), 'Add selection');
@@ -1360,7 +1360,7 @@ test("deterministic candidate normal settlement displays the reliable completed 
   await h.input("Complete this synthetic task"); await h.click(send);
   for (let step = 0; step < 30; step++) await h.advance(420);
   assert.match(h.root.textContent ?? "", /Task completed/);
-  assert.equal(h.root.querySelector(stop), null);
+  assert.equal(h.root.querySelector(stop) === null, true);
 });
 
 test("deterministic candidate Stop displays stopped rather than a failed task", async t => {
@@ -1384,7 +1384,7 @@ test("candidate runtime loss keeps dialogue and newer draft keyboard-readable wi
     assert.equal(input.disabled, false);
     assert.equal(input.readOnly, true);
     input.focus(); input.select();
-    assert.equal(h.dom.window.document.activeElement, input);
+    assert.equal(h.dom.window.document.activeElement === input, true);
     assert.equal(input.selectionEnd, input.value.length);
     assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
     const submissions = h.sent.filter(message => message.type === "sendChat").length;

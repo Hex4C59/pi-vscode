@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { productionHarness } from "./react-harness.js";
+import { uiHarness } from "./react-harness.js";
 
 test("production mounts the accepted chat design with host recovery and no synthetic instructions", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     assert.ok(h.root.querySelector(".candidate"));
     await h.render({ runtime: "error", runtimeDetail: "Owned runtime disconnected", execution: "failed" });
@@ -16,7 +16,7 @@ test("production mounts the accepted chat design with host recovery and no synth
 });
 
 test("production model selection restores focus after the host busy transition disables its trigger", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.click('#model-effort-trigger');
     await h.click('#model-current');
@@ -28,14 +28,14 @@ test("production model selection restores focus after the host busy transition d
     // Chromium blurs a focused native button when disabled; jsdom does not.
     h.dom.window.document.body.tabIndex = -1;
     h.dom.window.document.body.focus();
-    assert.equal(h.dom.window.document.activeElement, h.dom.window.document.body);
+    assert.equal(h.dom.window.document.activeElement === h.dom.window.document.body, true);
     await h.render({ chatModel: 'B / two', modelBusy: false });
     assert.equal(h.dom.window.document.activeElement === trigger, true);
   } finally { await h.close(); }
 });
 
 test("model application does not steal focus from a newer draft edit", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.click('#model-effort-trigger');
     await h.click('#model-current');
@@ -50,7 +50,7 @@ test("model application does not steal focus from a newer draft edit", async () 
 
 test("the applied model indicator is a visible checkmark rather than a literal escape", async () => {
   const { readAppStyles } = await import('./react-harness.js');
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     const style = h.dom.window.document.createElement('style');
     style.textContent = readAppStyles();
@@ -63,7 +63,7 @@ test("the applied model indicator is a visible checkmark rather than a literal e
 });
 
 test("thinking keyboard focus survives its own host application so another level remains operable", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.click('#model-effort-trigger');
     const slider=h.get<HTMLInputElement>('#thinking-slider');slider.focus();
@@ -78,7 +78,7 @@ test("thinking keyboard focus survives its own host application so another level
 });
 
 for (const destination of ['draft','escape'] as const) test(`thinking application respects newer ${destination} focus ownership`, async () => {
-  const h=await productionHarness();
+  const h=await uiHarness();
   try {
     await h.click('#model-effort-trigger');const slider=h.get<HTMLInputElement>('#thinking-slider');slider.focus();
     const {act}=await import('react');
@@ -94,7 +94,7 @@ for (const destination of ['draft','escape'] as const) test(`thinking applicatio
 });
 
 test("model error has one visible presentation while the popover is open", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     await h.render({ modelError: "Requested thinking level is not supported by the selected model. It was not applied." });
     assert.equal(h.get('#model-status-error').hidden, false);
@@ -107,7 +107,7 @@ test("model error has one visible presentation while the popover is open", async
 });
 
 test("long applied model labels retain complete accessible text and separate thinking summary", async () => {
-  const h = await productionHarness();
+  const h = await uiHarness();
   try {
     const label = "Long model " + "x".repeat(189);
     await h.render({ chatModel: label, thinkingLevel: "medium" });

@@ -122,29 +122,29 @@ test("saved history replaces one page, correlates one literal preview chunk and 
 test("mounted restored history shows one recent window, pages earlier/newer and previews retained text without touching live chat or drafts", async () => {
   const h = await uiHarness(false);
   try {
-    assert.equal(h.root.querySelector("#saved-history"), null);
+    assert.equal(h.root.querySelector("#saved-history") === null, true);
     await h.receive(attachmentState({ draft: { revision: 1, text: "Unsent new task", acceptedEditSequence: 0, attachments: [] } }));
     await h.render({ messages: [{ role: "assistant", text: "Live response" }] });
     const rows = Array.from({ length: 32 }, (_, i) => ({ id: "saved-row-" + i, role: "user" as const, text: i === 0 ? "<img src=x onerror=alert(1)> historical attachment" : "Retained entry " + i }));
     await h.receive(historyState({ messages: rows, total: 65 }));
     assert.equal(h.root.querySelectorAll("#saved-history [data-saved-history-row]").length, 32);
-    assert.equal(h.root.querySelectorAll("#chat .msg-user").length, 0, "restored history never becomes live conversation rows");
+    assert.equal(h.root.querySelectorAll(".candidate__message--user").length, 0, "restored history never becomes live conversation rows");
     assert.match(h.get("#saved-history-page-status").textContent ?? "", /34–65 of 65.*Page 1 of 3/);
     assert.match(h.get("#saved-history-disclosure").textContent ?? "", /model context.*pi/i);
     assert.match(h.get("#saved-history-disclosure").textContent ?? "", /Historical tool names.*loaded.*available/);
     assert.match(h.get("#saved-history-disclosure").textContent ?? "", /earlier.*not shown/i);
-    assert.equal(h.root.querySelector("#saved-history img"), null);
+    assert.equal(h.root.querySelector("#saved-history img") === null, true);
     assert.equal(h.get<HTMLButtonElement>("#saved-history-newer").disabled, true);
-    const input = h.get<HTMLTextAreaElement>("#chat-input"); input.focus();
+    const input = h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]'); input.focus();
     await h.receive(historyState({ messages: rows, total: 65 }));
-    assert.equal(h.dom.window.document.activeElement, input, "history metadata does not steal composer focus");
+    assert.equal(h.dom.window.document.activeElement === input, true, "history metadata does not steal composer focus");
     assert.equal(input.value, "Unsent new task");
     await h.click('[data-saved-history-preview="saved-row-0"]');
     const request = h.sent.at(-1); assert.ok(request?.type === "getSavedHistoryPreview");
     await h.receive({ ...envelope, type: "savedHistoryPreview", requestId: request.requestId, id: request.id,
       offset: 0, nextOffset: 12, totalChars: 24, text: "<b>old</b>  ", done: false });
     assert.equal(h.get("#saved-history-preview-text").textContent, "<b>old</b>  ");
-    assert.equal(h.root.querySelector("#saved-history-preview b"), null);
+    assert.equal(h.root.querySelector("#saved-history-preview b") === null, true);
     assert.match(h.get("#saved-history-preview-disclosure").textContent ?? "", /retained.*snapshot.*not.*current file/i);
     await h.click("#saved-history-preview-next");
     const next = h.sent.at(-1); assert.ok(next?.type === "getSavedHistoryPreview"); assert.equal(next.offset, 12);
@@ -160,11 +160,11 @@ test("mounted restored history shows one recent window, pages earlier/newer and 
     assert.equal(h.get<HTMLButtonElement>("#saved-history-earlier").disabled, true, "one page request at a time");
     await h.receive(historyState({ page: 1, messages: [{ id: "older", role: "assistant", text: "[Unsupported historical content]" }], total: 65 }));
     assert.equal(h.root.querySelectorAll("#saved-history [data-saved-history-row]").length, 1);
-    assert.equal(h.root.querySelector('[data-saved-history-row="saved-row-0"]'), null);
+    assert.equal(h.root.querySelector('[data-saved-history-row="saved-row-0"]') === null, true);
     await h.click("#saved-history-newer");
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "getSavedHistory", page: 0 });
     assert.equal(input.value, "Unsent new task");
-    assert.match(h.get("#chat").textContent ?? "", /Live response/);
+    assert.match(h.get(".candidate__messages").textContent ?? "", /Live response/);
     assert.equal(h.sent.some(message => ["sendChat", "updateDraft", "openReviewSource"].includes(message.type)), false);
   } finally { await h.close(); }
 });
@@ -211,13 +211,13 @@ test("mounted history handles empty/loading/errors and preserves reading focus a
       assert.deepEqual(h.sent.at(-1), { ...envelope, type: "getSavedHistory", page: 0 });
     }
     await h.receive(historyState({ messages: [{ role: "assistant", text: "[Unsupported historical content]" }] }));
-    assert.equal(h.root.querySelector("[data-saved-history-preview]"), null, "no opaque ID means no preview action");
+    assert.equal(h.root.querySelector("[data-saved-history-preview]") === null, true, "no opaque ID means no preview action");
     await h.receive(historyState({ total: 64 }));
     await h.click("[data-saved-history-preview]");
     const request = h.sent.at(-1); assert.ok(request?.type === "getSavedHistoryPreview");
     await h.receive({ ...envelope, type: "savedHistoryPreview", requestId: request.requestId, id: request.id, text: "old", offset: 0, nextOffset: 3, totalChars: 6, done: false });
 
-    const main = h.get("#main"), entries = h.get("#saved-history-entries"), previewText = h.get("#saved-history-preview-text");
+    const main = h.get(".candidate__messages"), entries = h.get("#saved-history-entries"), previewText = h.get("#saved-history-preview-text");
     Object.defineProperty(main, "scrollHeight", { configurable: true, value: 1000 });
     Object.defineProperty(main, "clientHeight", { configurable: true, value: 100 });
     main.scrollTop = 900;
@@ -225,7 +225,7 @@ test("mounted history handles empty/loading/errors and preserves reading focus a
     entries.scrollTop = 21; previewText.scrollTop = 11; previewText.focus();
     Object.defineProperty(main, "scrollHeight", { configurable: true, value: 2000 });
     await h.render({ messages: [{ role: "assistant", text: "Streaming response" }], chatBusy: true, execution: "replying" });
-    assert.equal(h.dom.window.document.activeElement, previewText);
+    assert.equal(h.dom.window.document.activeElement === previewText, true);
     assert.equal(main.scrollTop, 900, "reading historical content disables live auto-follow");
     assert.equal(entries.scrollTop, 21);
     assert.equal(previewText.scrollTop, 11, "streaming does not reset retained-text scroll");
@@ -233,17 +233,17 @@ test("mounted history handles empty/loading/errors and preserves reading focus a
       await h.receive(sessionPhase(phase));
       for (const selector of ["#saved-history-refresh", "#saved-history-earlier", "[data-saved-history-preview]", "#saved-history-preview-next"])
         assert.equal(h.get<HTMLButtonElement>(selector).disabled, true, selector + " during " + phase);
-      assert.equal(h.get<HTMLButtonElement>("#stop-chat").disabled, false);
-      assert.equal(h.get<HTMLButtonElement>("#add-file").disabled, true);
+      assert.equal(h.get<HTMLButtonElement>('button[aria-label="Stop current task"]').disabled, false);
+      assert.equal(h.get<HTMLButtonElement>('button[aria-label="Add context"]').disabled, true);
       assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, true);
     }
-    await h.click("#stop-chat");
+    await h.click('button[aria-label="Stop current task"]');
     assert.equal(h.sent.at(-1)?.type, "stopChat");
     await h.receive(historyState({ available: false, messages: [], total: 0 }));
-    assert.equal(h.root.querySelector("#saved-history"), null);
+    assert.equal(h.root.querySelector("#saved-history") === null, true);
     await h.receive({ ...readyState, generation: 2 });
     await h.receive(historyState());
-    assert.equal(h.root.querySelector("#saved-history"), null, "stale generation cannot restore historical IDs");
+    assert.equal(h.root.querySelector("#saved-history") === null, true, "stale generation cannot restore historical IDs");
   } finally { await h.close(); }
 });
 
@@ -331,11 +331,11 @@ test("mounted preview reports retryable errors and closes explicitly without let
     assert.notEqual(retry.requestId, request.requestId);
     await h.click("#saved-history-preview-close");
     const trigger = h.get("[data-saved-history-preview]");
-    assert.equal(h.dom.window.document.activeElement, trigger, "explicit Close returns focus to the row action");
+    assert.equal(h.dom.window.document.activeElement === trigger, true, "explicit Close returns focus to the row action");
     assert.equal(h.get("#saved-history-preview").hidden, true);
     await h.receive({ ...envelope, type: "savedHistoryPreview", id: retry.id, requestId: retry.requestId, code: "stale" });
     assert.equal(h.get("#saved-history-preview").hidden, true);
-    assert.equal(h.dom.window.document.activeElement, trigger);
+    assert.equal(h.dom.window.document.activeElement === trigger, true);
   } finally { await h.close(); }
 });
 

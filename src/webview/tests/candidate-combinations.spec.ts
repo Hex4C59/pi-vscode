@@ -25,10 +25,10 @@ test("candidate reports lost reviews without claiming a diff and ignores obsolet
     await h.receive(review);
     await h.receive({...review,entries:[],retainedBytes:0,error:"unavailable"});
     assert.match(h.get('.candidate-review__warning').textContent ?? "", /unavailable/);
-    assert.equal(h.root.querySelector('[data-review-action="diff"]'),null);
+    assert.equal(h.root.querySelector('[data-review-action="diff"]') === null, true);
     await h.render({generation:2});
     await h.receive(review);
-    assert.equal(h.root.querySelector('[data-candidate-review]'),null);
+    assert.equal(h.root.querySelector('[data-candidate-review]') === null, true);
   } finally {await h.close();}
 });
 
@@ -46,7 +46,7 @@ test("candidate composes streaming, catalogue, incoming expiry, captured review 
   const decision=h.get<HTMLButtonElement>('.approval:not([hidden]) [data-decision="once"]');decision.focus();
   await h.advance(20001);
   assert.equal(h.root.querySelectorAll('[data-select-approval]').length,7);
-  assert.equal(h.dom.window.document.activeElement,h.get('[data-select-approval="approval-synthetic-1-2"]'));
+  assert.equal(h.dom.window.document.activeElement === h.get('[data-select-approval="approval-synthetic-1-2"]'), true);
   await h.click('button[aria-label="Back to conversation"]');
   assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value,"Newer draft survives navigation and permission expiry");
   await h.click('button[aria-label="Stop current task"]');await h.advance(420);
@@ -98,6 +98,6 @@ test("automatic review collapse recovers a hidden review focus but leaves compos
     await h.render();await h.click('#change-review-toggle');
     const input=h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]');input.focus();
     await h.render({chatBusy:true,execution:"awaiting-approval",approvals});
-    assert.equal(h.dom.window.document.activeElement,input);
+    assert.equal(h.dom.window.document.activeElement === input, true);
   } finally {await h.close();}
 });

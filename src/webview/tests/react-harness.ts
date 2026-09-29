@@ -18,7 +18,8 @@ export function attachmentState(patch: Partial<AttachmentStateMessage> = {}): At
   return { version: 3, type: "attachmentState", viewId: "view", generation: 1, draft: { revision: 0, text: "", acceptedEditSequence: 0, attachments: [] },
     preparation: "idle", result: null, historyCount: 0, retainedBytes: 0, lastSubmission: null, ...patch };
 }
-export async function uiHarness(initial = true, candidate = false, production = false, settings = false) {
+/** Mounts production chat by default; candidate and settings keep their own entries. */
+export async function uiHarness(initial = true, candidate = false, settings = false) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });
   const previous = new Map<string, PropertyDescriptor | undefined>();
   const globals: Record<string, unknown> = { window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
@@ -32,7 +33,6 @@ export async function uiHarness(initial = true, candidate = false, production = 
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; } };
   const root = dom.window.document.getElementById("root"); assert.ok(root);
   const { mountApp } = await import("../mount.js");
-  const { mountBaselineApp } = await import("./baseline-mount.js");
   let dispose: () => void = () => undefined;
   await act(async () => {
     if (settings) {
@@ -42,13 +42,13 @@ export async function uiHarness(initial = true, candidate = false, production = 
       const { mountCandidate } = await import("../preview/candidate.js");
       const { createPreviewLanguage } = await import("../preview/ui-language.js");
       dispose = mountCandidate(root, bridge, createPreviewLanguage());
-    } else dispose = production ? mountApp(root, bridge) : mountBaselineApp(root, bridge);
+    } else dispose = mountApp(root, bridge);
   });
   const receive = async (value: unknown) => { await act(async () => { for (const listener of [...listeners]) listener(value); }); };
   const render = (patch: Partial<WorkspaceStateMessage> = {}) => receive({ ...readyState, ...patch });
   const get = <T extends HTMLElement = HTMLElement>(selector: string): T => { const el = root.querySelector<T>(selector); assert.ok(el, `Missing ${selector}`); return el; };
   const click = async (selector: string) => { await act(async () => { get(selector).click(); }); };
-  const input = async (value: string, selector = "#chat-input") => { await act(async () => {
+  const input = async (value: string, selector = 'textarea[aria-label="Message"]') => { await act(async () => {
     const el = get<HTMLTextAreaElement>(selector);
     // Bypass React's value tracker just as a native user edit would.
     Object.getOwnPropertyDescriptor(el.tagName === "INPUT" ? dom.window.HTMLInputElement.prototype : dom.window.HTMLTextAreaElement.prototype, "value")?.set?.call(el, value);
@@ -68,11 +68,6 @@ export function readAppStyles(file = "src/webview/styles.css"): string {
     readAppStyles(path.resolve(path.dirname(file), relative)));
 }
 
-/** Exercises the shipped mounting entry, rather than a historical composition fixture. */
-export async function productionHarness(initial = true) {
-  return uiHarness(initial, false, true);
-}
-
 export async function settingsHarness() {
-  return uiHarness(false, false, false, true);
+  return uiHarness(false, false, true);
 }
