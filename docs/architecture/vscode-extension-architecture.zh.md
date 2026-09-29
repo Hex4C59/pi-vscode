@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[vscode-extension-architecture.md](vscode-extension-architecture.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-28
+- 最近同步：2026-09-29
 
 - 类型：Architecture
 - 状态：Accepted
@@ -56,7 +56,7 @@ flowchart TD
 | `src/extension/draft/` | 草稿提交与编辑器附件捕获 |
 | `src/extension/editor-tools/` | 审批策略、未保存文件保护与修改审阅 |
 | `src/extension/sessions/` | 宿主侧保存历史阅读与预览协调 |
-| `src/adapter/runtime/` | 实时 pi RPC 进程、分帧、模型解析及活动／错误投影 |
+| `src/adapter/runtime/` | 实时 pi RPC 进程、请求应答配对、帧翻译、任务忙闲、模型解析及活动／错误投影 |
 | `src/adapter/sessions/` | 公开 pi 会话 API helper 与历史投影 |
 
 目录 `index.ts` 对跨模块目录的调用者暴露所需操作与纯类型契约。模块自有类型放在本目录 `types.ts`，跨层 Webview DTO、运行时生命周期和会话接口仍以 `src/extension/contracts/` 为单一宿主权威。模块内部仍可直接导入实现文件。`src/extension.ts` 装配宿主与适配层入口。浏览器代码仅以类型方式导入宿主拥有的契约；单独打包的 session-worker 和 approval-gate 入口保持明确的实现文件路径。
@@ -103,7 +103,13 @@ Unix 控制端点在路径不超过 103 字节时继续使用恢复目录内的 
 
 ### RPC 进程策略（WI-028）
 
-`createPiRpcRuntime` 必须接收 `runtime/process/types.ts` 定义的 `RuntimeProcess`。RPC 拥有分帧、应答配对、就绪、会话身份及共享五秒 Stop 观察预算。其 `RuntimeLink` 只暴露 stdin、stdout 与连接丢失订阅，没有原生终止能力。进程策略拥有启动取消、释放串行化、清理及策略专属恢复文案。RPC 清空状态前区分空闲与不确定释放，包括返回的连接尚未接入的间隙。
+`createPiRpcRuntime` 必须接收 `runtime/process/types.ts` 定义的 `RuntimeProcess`。它仍是生命周期与用例编排者：启动、发送、模型操作、重启检查及 Stop。三个内部模块分别拥有 RPC 工作，不是宿主 API：
+
+- **请求应答配对**（`rpc-replies.ts`）拥有请求编号、待应答、分发、超时、连接失效清理及可暂停的启动剩余时间预算。写入回调、背压和单次发送凭证仍由发送编排负责，避免把 RPC 应答当成写入完成。
+- **帧翻译**（`rpc-frames.ts`）拥有 JSONL 解析、分类、`ActivityProjection` 及有序 `RuntimeEvent` 映射。它不访问子进程、不写入流、不执行审批回调；编排者把已分类的 hello、反馈、对话框和审批结果交给现有组件。
+- **任务忙闲**（`rpc-occupancy.ts`）拥有发送、ACK、扩展命令、agent、Stop、对话框及审批占用的命名转换。发送准入、重启检查、释放分类和停止完成共用此状态，但不合并成一个空闲标志。任务结束与 ACK 到达相互独立；扩展命令结束不等于 agent 结束。
+
+RPC 仍拥有就绪、会话身份及共享五秒 Stop 观察预算。连接失效先撤销适配能力再清理；旧连接结果保持隔离。其 `RuntimeLink` 只暴露 stdin、stdout 与连接丢失订阅，没有原生终止能力。进程策略拥有启动取消、释放串行化、清理及策略专属恢复文案。RPC 清空状态前区分空闲与不确定释放，包括返回的连接尚未接入的间隙。
 
 生产装配选择 `createManagedProcess(createRuntimeOwner(...))`。干净释放结束并退休已观察的工作；不确定时断开并排空输出，不关闭输入或自动结束托管子进程。启动未完成或缺失退出证据时禁止恢复／替换。现有 owner 仍按 ADR0002 拥有持久栅栏与精确子进程回执。直接 spawn 策略仅由 attachment spike 显式选择，保留有界 SIGTERM／SIGKILL 清理；依赖图测试确保它和测试辅助文件不进入生产。运行时测试共用内存进程／字节连接，另有原生策略及生产组合回归。宿主生命周期、Webview 契约、pi 版本与恢复存储不变。当前验证与未验证的宿主／安装包证据归 ACTIVE。
 

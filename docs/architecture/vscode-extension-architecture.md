@@ -51,7 +51,7 @@ Directories group existing responsibilities within each layer; they are not sepa
 | `src/extension/draft/` | Draft submission and editor attachment capture |
 | `src/extension/editor-tools/` | Approval policy, dirty-editor protection and change review |
 | `src/extension/sessions/` | Host-side saved-history reading and preview coordination |
-| `src/adapter/runtime/` | Live pi RPC process, framing, model parsing and activity/error projection |
+| `src/adapter/runtime/` | Live pi RPC process, request pairing, frame translation, task occupancy, model parsing and activity/error projection |
 | `src/adapter/sessions/` | Public pi session API helper and history projection |
 
 Directory `index.ts` files expose operations and type-only contracts consumed across module directories. Module-owned types live in local `types.ts` files, while cross-layer Webview DTOs, runtime lifecycle and session interfaces retain their single host-owned source in `src/extension/contracts/`. Imports within a module can still target its implementation files. `src/extension.ts` assembles host and adapter entries. Browser code imports host-owned contracts only as types; standalone session-worker and approval-gate build entries remain explicit implementation files.
@@ -97,7 +97,13 @@ Unix control endpoints retain their recovery-directory path when it fits the 103
 
 ### RPC process strategy (WI-028)
 
-`createPiRpcRuntime` requires a `RuntimeProcess` from `runtime/process/types.ts`. RPC owns framing, correlation, readiness, session identity and the shared five-second Stop observation budget. Its `RuntimeLink` exposes only stdin, stdout and loss subscription; it has no native termination capability. Process strategies own launch cancellation, release serialization, cleanup and policy-specific recovery messages. Release classifies idle versus uncertain work before RPC state is cleared, including the gap before an arriving link is attached.
+`createPiRpcRuntime` requires a `RuntimeProcess` from `runtime/process/types.ts`. It remains the lifecycle and use-case orchestrator: start, send, model operations, restart checks and Stop. Three internal modules own distinct RPC work and are not a host API:
+
+- **Request pairing** (`rpc-replies.ts`) owns request identities, pending replies, dispatch, timeouts, cleanup on connection loss and the pauseable remaining startup budget. Write callback, backpressure and the one-attempt send token stay with send orchestration so an RPC reply is not treated as write completion.
+- **Frame translation** (`rpc-frames.ts`) owns JSONL parse, classification, `ActivityProjection` and ordered `RuntimeEvent` mapping. It does not access the subprocess, write streams or run approval callbacks; the orchestrator routes classified hello, feedback, dialog and approval results to the existing components.
+- **Task occupancy** (`rpc-occupancy.ts`) owns named transitions for send, ACK, extension-command, agent, Stop, dialog and approval occupancy. Send admission, restart checks, release classification and Stop completion share this state without collapsing into one idle flag. Task end and ACK arrival stay independent; ending an extension command is not agent settlement.
+
+RPC still owns readiness, session identity and the shared five-second Stop observation budget. Connection loss revokes adapter capabilities before cleanup; stale results from a prior connection stay isolated. Its `RuntimeLink` exposes only stdin, stdout and loss subscription; it has no native termination capability. Process strategies own launch cancellation, release serialization, cleanup and policy-specific recovery messages. Release classifies idle versus uncertain work before RPC state is cleared, including the gap before an arriving link is attached.
 
 Production composition selects `createManagedProcess(createRuntimeOwner(...))`. Clean release ends and retires observed work; uncertainty detaches and drains output without closing input or automatically ending the owned child. Pending launch and missing exit evidence block recovery/replacement. The existing owner remains the authority for persistent fences and exact-child receipts under ADR0002. The direct spawn strategy is explicitly selected only by the attachment spike and retains bounded SIGTERM/SIGKILL cleanup; a dependency-graph test excludes it and test helpers from production. Runtime tests use a shared in-memory process/byte transport, with separate native-strategy and production-composition regressions. The host lifecycle and Webview contracts, pi version and recovery storage are unchanged. Current verification and unverified host/package evidence belong to ACTIVE.
 

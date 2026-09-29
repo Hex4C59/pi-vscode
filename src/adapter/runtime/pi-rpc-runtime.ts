@@ -2,14 +2,16 @@ import { createExtensionFeedback } from "./extension-feedback.js";
 import { extensionCommandNames, dispatchedExtensionCommand } from "./command-classification.js";
 import { createInteractionWriter } from "./interaction-writer.js";
 import { createRpcDialogs } from "./rpc-dialogs.js";
+import { createRpcFrames, sameGateCwd } from "./rpc-frames.js";
+import { createRpcOccupancy } from "./rpc-occupancy.js";
+import { createRpcReplies, type RpcResponse } from "./rpc-replies.js";
 import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
 import type { RuntimeLink } from "./process/types.js";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { access } from "node:fs/promises";
 import type { PiRpcRuntimeEnvironment } from "./types.js";
-import { parseGateEnvelope, type GateCall } from "../../extension/contracts/index.js";
-import { ActivityProjection, displayText } from "./activityProjection.js";
+import type { GateCall } from "../../extension/contracts/index.js";
 import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../index.js";
 import type { Readable } from "node:stream";
 
@@ -25,7 +27,7 @@ import type {
   RuntimeEvent,
   RuntimeStartResult,
 } from "../../extension/contracts/index.js";
-import { boundUserFacingDetail, formatRuntimeError, isAuthenticationError } from "./runtime-errors.js";
+import { boundUserFacingDetail, isAuthenticationError } from "./runtime-errors.js";
 import {
   formatModelLabel,
   parseModelCatalog,
@@ -38,25 +40,6 @@ const PROMPT_TIMEOUT_MS = 30_000;
 const MODEL_RPC_TIMEOUT_MS = 15_000;
 const STOP_TIMEOUT_MS = 5_000;
 
-/** VS Code URI drives are lowercase; saved pi cwd may retain an uppercase drive.
- * Normalize separators/dot segments and the drive only, not potentially case-sensitive directory names. */
-function sameGateCwd(candidate: string, owned: string): boolean {
-  if (candidate === owned) return true;
-  if (process.platform !== "win32") return false;
-  return sameNativePath(candidate, owned);
-}
-
-
-type RpcResponse = {
-  id?: string;
-  type?: string;
-  command?: string;
-  success?: boolean;
-  data?: unknown;
-  finalError?: string;
-  error?: unknown;
-};
-
 export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRuntimeLifecycle {
   let child: RuntimeLink | null = null;
   let detachLost: (() => void) | undefined;
@@ -65,184 +48,128 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let activeSession = 0;
   let resumedConversation = false;
   let untouchedConversation = false;
-  let promptInFlight = false;
-  let commandInFlight = false;
-  let agentRunning = false;
   let commandNames: ReadonlySet<string> = new Set();
-  let promptAckPending = false;
-  let requestCounter = 0;
   let gateId = '';
   let cwd = '';
   let gateReady = false;
   let verifiedCustomTools: ReadonlySet<string> = new Set();
   let initializationFailed = false;
   let executionProfile: ExtensionExecutionProfile = { kind: "controlled" };
-  let aborting = false;
   let interactionHandler: ((form: InteractionFormInput, reply: InteractionReplyCallback) => void) | undefined;
   let dialogs: ReturnType<typeof createRpcDialogs> | undefined;
-  let outstandingDialogs = 0;
-  let startupDeadline: { pause(): void; resume(): void } | undefined;
   let approvalHandler: ((call: GateCall) => Promise<boolean>) | undefined;
   const feedback = createExtensionFeedback();
   let feedbackHandler: Parameters<NonNullable<PiRuntimeLifecycle["setFeedbackHandler"]>>[0] | undefined;
-  const approvals = new Set<string>();
-  const activity = new ActivityProjection();
+  const frames = createRpcFrames();
+  const occupancy = createRpcOccupancy();
+  const replies = createRpcReplies();
   const listeners = new Set<(event: RuntimeEvent) => void>();
-  const pending = new Map<string, (value: RpcResponse) => void>();
 
   const emit = (event: RuntimeEvent): void => {
     for (const listener of listeners) listener(event);
   };
 
+  const applyRuntime = (result: Extract<ReturnType<ReturnType<typeof createRpcFrames>["project"]>, { kind: "runtime" }>): void => {
+    if (result.conversationTouched) untouchedConversation = false;
+    if (result.agentSettled) occupancy.noteAgentSettled();
+    for (const event of result.events) emit(event);
+    if (result.agentStarted) occupancy.noteAgentStarted();
+  };
+
   const handleLine = (line: string): void => {
-    if (!line.trim()) return;
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(line) as Record<string, unknown>;
-    } catch {
+    const interpreted = frames.interpret(line, {
+      session: activeSession,
+      aborting: occupancy.isStopping(),
+      gateId,
+      cwd,
+      executionProfile,
+    });
+    if (interpreted.kind === "rpc") {
+      if (replies.receive(interpreted.parsed)) return;
+      const projected = frames.project(interpreted.parsed, {
+        session: activeSession,
+        aborting: occupancy.isStopping(),
+        gateId,
+        cwd,
+        executionProfile,
+      });
+      if (projected.kind === "runtime") applyRuntime(projected);
       return;
     }
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
-    const id = typeof parsed.id === "string" ? parsed.id : undefined;
-    if (parsed.type === 'extension_error') {
+    if (interpreted.kind === "ignored") return;
+    if (interpreted.kind === "extension_error") {
       if (!activeSession) { initializationFailed = true; void faultStop(); }
       else emit({ kind: 'stream_error', session: activeSession, detail: 'A runtime extension reported an error. Its operation may have failed; no automatic retry was made.' });
       return;
     }
-    if (parsed.type === 'extension_ui_request') {
-      let envelope; try { envelope = parseGateEnvelope(JSON.parse(typeof parsed.message === 'string' ? parsed.message : 'null')); } catch { /* Invalid request is denied below. */ }
-      if (envelope?.runtime === gateId && sameGateCwd(envelope.cwd, cwd) && envelope.kind === 'hello' && parsed.method === 'notify') {
-        const hello = envelope;
-        gateReady = executionProfile.kind === 'controlled' ? hello.profile !== 'trusted' : hello.profile === 'trusted' && Array.isArray(hello.customTools);
-        verifiedCustomTools = gateReady && hello.profile === 'trusted' ? new Set(hello.customTools) : new Set();
-        return;
-      }
-      if (executionProfile.kind === 'trusted' && ['notify', 'setStatus', 'setWidget', 'setTitle', 'set_editor_text'].includes(String(parsed.method))) {
-        feedback.accept(parsed); feedbackHandler?.(feedback.snapshot()); return;
-      }
-      if (id && ['select', 'confirm', 'input', 'editor'].includes(String(parsed.method)) && envelope?.kind !== 'call') {
-        if (!dialogs) return; // A retired transport must not answer or retry.
+    if (interpreted.kind === "hello") {
+      const hello = interpreted.envelope;
+      gateReady = executionProfile.kind === 'controlled' ? hello.profile !== 'trusted' : hello.profile === 'trusted' && Array.isArray(hello.customTools);
+      verifiedCustomTools = gateReady && hello.profile === 'trusted' ? new Set(hello.customTools) : new Set();
+      return;
+    }
+    if (interpreted.kind === "feedback") {
+      feedback.accept(interpreted.parsed); feedbackHandler?.(feedback.snapshot()); return;
+    }
+    if (interpreted.kind === "interaction") {
+      if (!dialogs) return; // A retired transport must not answer or retry.
 
-        try {
-          const interactionProcess = child;
-          const interactionSession = activeSession;
-          const opened = dialogs.open(parsed);
-          if (opened.kind === 'dialog') {
-            outstandingDialogs++;
-            let consumed = false;
-            const answer: InteractionReplyCallback = async reply => {
-              if (consumed) return;
-              consumed = true;
-              try { await opened.reply(reply); }
-              finally {
-                if (child === interactionProcess) {
-                  outstandingDialogs = Math.max(0, outstandingDialogs - 1);
-                  if (outstandingDialogs === 0) startupDeadline?.resume();
-                }
-              }
-            };
-            if (executionProfile.kind !== 'trusted' || !interactionHandler || aborting) {
-              // Same replay registry, in-flight lease and bounded writer as a human reply.
-              void Promise.resolve(answer({ kind: 'cancel', reason: aborting ? 'stop' : 'unavailable' })).catch(() => undefined);
-            } else {
-              startupDeadline?.pause();
-              interactionHandler(opened.form, answer);
+      try {
+        const interactionProcess = child;
+        const interactionSession = activeSession;
+        const opened = dialogs.open(interpreted.parsed);
+        if (opened.kind === 'dialog') {
+          occupancy.openDialog();
+          let consumed = false;
+          const answer: InteractionReplyCallback = async reply => {
+            if (consumed) return;
+            consumed = true;
+            try { await opened.reply(reply); }
+            finally {
+              occupancy.closeDialog(interactionProcess);
+              replies.resumeRemaining(occupancy.dialogs());
             }
+          };
+          if (executionProfile.kind !== 'trusted' || !interactionHandler || occupancy.isStopping()) {
+            // Same replay registry, in-flight lease and bounded writer as a human reply.
+            void Promise.resolve(answer({ kind: 'cancel', reason: occupancy.isStopping() ? 'stop' : 'unavailable' })).catch(() => undefined);
+          } else {
+            replies.pauseRemaining();
+            interactionHandler(opened.form, answer);
           }
-          else if (opened.kind === 'rejected') {
-            if (opened.code === 'identity-budget') {
-              void faultStop();
-              emit({ kind: 'runtime_error', session: interactionSession, detail: 'Extension interaction identity budget exhausted. Explicit safe recovery is required.' });
-              return;
-            }
-            if (opened.cancellation) {
-              outstandingDialogs++;
-              void opened.cancellation.catch(() => undefined).finally(() => {
-                if (child === interactionProcess) {
-                  outstandingDialogs = Math.max(0, outstandingDialogs - 1);
-                  if (outstandingDialogs === 0) startupDeadline?.resume();
-                }
-              });
-            }
-            emit({ kind: 'stream_error', session: activeSession, detail: 'An unsupported or unsafe extension interaction was rejected.' });
-          }
-        } catch {
-          const session = activeSession;
-          void faultStop();
-          emit({ kind: 'runtime_error', session, detail: 'Extension interaction transport failed. Work status is uncertain; no reply was retried.' });
         }
-        return;
-      }
-      if (id && parsed.method === 'confirm') {
-        const session = activeSession; const process = child;
-        const reply = (allow: boolean): void => { approvals.delete(id); if (process === child) process?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,confirmed:allow && session===activeSession && !aborting})); };
-        if (!gateReady || !session || aborting || envelope?.kind !== 'call' || envelope.runtime !== gateId || !sameGateCwd(envelope.cwd, cwd) || (envelope.category === 'custom' && (executionProfile.kind !== 'trusted' || !verifiedCustomTools.has(envelope.tool))) || !approvalHandler) { reply(false); return; }
-        approvals.add(id);
-        void approvalHandler({ ...envelope, cwd }).then(reply,()=>reply(false));
-      }
-      return;
-    }
-    if (parsed.type === "response" && id && pending.has(id)) {
-      pending.get(id)!(parsed as RpcResponse);
-      pending.delete(id);
-      return;
-    }
-    const session = activeSession;
-    if (!session) return;
-    if (parsed.type === "agent_start" || parsed.type === "message_start" || parsed.type === "message_end") untouchedConversation = false;
-    if (parsed.type === "tool_execution_end" && typeof parsed.toolCallId === "string" && parsed.toolCallId.length > 0 && parsed.toolCallId.length <= 200 && typeof parsed.isError === "boolean") {
-      emit({ kind: "tool_finished", session, toolCallId: parsed.toolCallId, failed: parsed.isError });
-    }
-    for (const item of activity.parse(parsed)) emit({kind:'activity',session,item});
-    const finalMessage = parsed.message as Record<string,unknown> | undefined;
-    if(parsed.type==='message_end' && finalMessage?.role==='assistant' && Array.isArray(finalMessage.content)) {
-      const text=finalMessage.content.filter((p:Record<string,unknown>)=>p.type==='text'&&typeof p.text==='string').map((p:Record<string,unknown>)=>p.text).join('');
-      emit({kind:'message_final',session,messageId:activity.currentMessageId(),text:displayText(text).slice(0,65536)});
-    }
-    if (parsed.type === "message_end" && finalMessage?.role === "assistant" && finalMessage.stopReason === "error") {
-      emit({ kind: "stream_error", session, detail: formatRuntimeError(typeof finalMessage.errorMessage === "string" && finalMessage.errorMessage.trim() ? finalMessage.errorMessage : "Assistant request failed.") });
-    }
-    if (parsed.type === "message_update") {
-      const assistantMessageEvent = parsed.assistantMessageEvent as Record<string, unknown> | undefined;
-      if (assistantMessageEvent?.type === "text_delta" && typeof assistantMessageEvent.delta === "string") {
-        emit({ kind: "text_delta", delta: displayText(assistantMessageEvent.delta).slice(0,65536), session, messageId:activity.currentMessageId() });
+        else if (opened.kind === 'rejected') {
+          if (opened.code === 'identity-budget') {
+            void faultStop();
+            emit({ kind: 'runtime_error', session: interactionSession, detail: 'Extension interaction identity budget exhausted. Explicit safe recovery is required.' });
+            return;
+          }
+          if (opened.cancellation) {
+            occupancy.openDialog();
+            void opened.cancellation.catch(() => undefined).finally(() => {
+              occupancy.closeDialog(interactionProcess);
+              replies.resumeRemaining(occupancy.dialogs());
+            });
+          }
+          emit({ kind: 'stream_error', session: activeSession, detail: 'An unsupported or unsafe extension interaction was rejected.' });
+        }
+      } catch {
+        const session = activeSession;
+        void faultStop();
+        emit({ kind: 'runtime_error', session, detail: 'Extension interaction transport failed. Work status is uncertain; no reply was retried.' });
       }
       return;
     }
-    const compactionReason = parsed.reason === "manual" || parsed.reason === "threshold" || parsed.reason === "overflow";
-    if (parsed.type === "compaction_start" && compactionReason) {
-      emit({ kind: "workflow", session, phase: "compacting" });
+    if (interpreted.kind === "approval") {
+      const { id, envelope } = interpreted;
+      const session = activeSession; const process = child;
+      const reply = (allow: boolean): void => { occupancy.removeApproval(id); if (process === child) process?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,confirmed:allow && session===activeSession && !occupancy.isStopping()})); };
+      if (!gateReady || !session || occupancy.isStopping() || envelope?.kind !== 'call' || envelope.runtime !== gateId || !sameGateCwd(envelope.cwd, cwd) || (envelope.category === 'custom' && (executionProfile.kind !== 'trusted' || !verifiedCustomTools.has(envelope.tool))) || !approvalHandler) { reply(false); return; }
+      occupancy.addApproval(id);
+      void approvalHandler({ ...envelope, cwd }).then(reply,()=>reply(false));
       return;
     }
-    if (parsed.type === "compaction_end" && compactionReason && typeof parsed.aborted === "boolean" && typeof parsed.willRetry === "boolean") {
-      if (typeof parsed.errorMessage === "string" && parsed.errorMessage.trim() && !parsed.willRetry && !parsed.aborted) {
-        emit({ kind: "stream_error", session, detail: formatRuntimeError(parsed.errorMessage) });
-      } else emit({ kind: "workflow", session, phase: "waiting" });
-      return;
-    }
-    if (parsed.type === "auto_retry_start" && Number.isSafeInteger(parsed.attempt) && (parsed.attempt as number) >= 1 && Number.isSafeInteger(parsed.maxAttempts) && (parsed.maxAttempts as number) >= (parsed.attempt as number) && typeof parsed.delayMs === "number" && Number.isFinite(parsed.delayMs) && parsed.delayMs >= 0) {
-      emit({ kind: "workflow", session, phase: "retrying" });
-      return;
-    }
-    if (parsed.type === "auto_retry_end" && parsed.success === true) {
-      emit({ kind: "workflow", session, phase: "waiting" });
-      return;
-    }
-    if (parsed.type === "auto_retry_end" && parsed.success === false) {
-      if (aborting && parsed.finalError === "Retry cancelled") return;
-      const detail = typeof parsed.finalError === "string" && parsed.finalError.trim()
-        ? parsed.finalError
-        : "Assistant request failed.";
-      emit({ kind: "stream_error", session, detail: formatRuntimeError(detail) });
-      return;
-    }
-    if (parsed.type === "agent_start") agentRunning = true;
-    if (parsed.type === "agent_settled") {
-      agentRunning = false;
-      promptInFlight = commandInFlight;
-      aborting = false;
-      emit({ kind: "agent_settled", session });
-    }
+    if (interpreted.kind === "runtime") applyRuntime(interpreted);
   };
 
   const attachReader = (stdout: Readable): void => {
@@ -254,39 +181,21 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     });
   };
 
-  const waitForResponse = (requestId: string, timeoutMs: number, allowHumanWait = false): Promise<RpcResponse> =>
-    new Promise((resolve, reject) => {
-      let remaining = timeoutMs; let armedAt = performance.now();
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const clear = () => { if (timer) clearTimeout(timer); timer = undefined; if (startupDeadline === deadline) startupDeadline = undefined; };
-      const expire = () => { clear(); pending.delete(requestId); reject(new Error("Timed out waiting for RPC response")); };
-      const deadline = {
-        pause() { if (timer) { remaining = Math.max(0, remaining - (performance.now() - armedAt)); clearTimeout(timer); timer = undefined; if (remaining === 0) expire(); } },
-        resume() { if (!timer && pending.has(requestId)) { armedAt = performance.now(); timer = setTimeout(expire, remaining); } },
-      };
-      pending.set(requestId, response => { clear(); resolve(response); });
-      if (allowHumanWait) startupDeadline = deadline;
-      if (!allowHumanWait || outstandingDialogs === 0) deadline.resume();
-    });
-
   const release = async (uncertain = false): Promise<void> => {
     const owned = child;
-    const reason = uncertain || !activeSession || promptInFlight || promptAckPending || commandInFlight || agentRunning || approvals.size > 0 || outstandingDialogs > 0 ? "uncertain" : "idle";
-    dialogs?.invalidate(); dialogs = undefined; outstandingDialogs = 0;
+    const reason = occupancy.classifyRelease({ forcedUncertain: uncertain, sessionActive: activeSession !== 0 });
+    const cancelling = [...occupancy.approvalIds()];
+    dialogs?.invalidate(); dialogs = undefined;
+    occupancy.reset();
     feedback.reset(); feedbackHandler?.(feedback.snapshot());
     child = null; // Detach synchronously: late loss/close cannot affect a replacement.
     if (startToken < Number.MAX_SAFE_INTEGER) startToken += 1;
     activeSession = 0;
-    promptAckPending = false;
-    promptInFlight = false;
-    commandInFlight = false; agentRunning = false; commandNames = new Set();
+    commandNames = new Set();
     gateReady = false; verifiedCustomTools = new Set();
-    aborting = false;
-    activity.reset();
-    for (const id of approvals) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
-    approvals.clear();
-    for (const resolve of pending.values()) resolve({success:false});
-    pending.clear();
+    frames.reset();
+    for (const id of cancelling) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
+    replies.failAll();
     if (detachReader) {
       detachReader();
       detachReader = null;
@@ -334,6 +243,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
       child = launched.link;
       const owned = child;
+      occupancy.bind({ connection: owned, session: 0 });
       if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
       const writeInteraction = createInteractionWriter(owned.stdin, () => child === owned);
       dialogs = createRpcDialogs(async frame => {
@@ -349,8 +259,8 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       });
       const lost = (): void => {
         if (owned !== child) return;
-        const session = activeSession; activeSession = 0; gateReady = false; promptInFlight = false;
-        for (const resolve of pending.values()) resolve({success:false}); pending.clear();
+        const session = activeSession; activeSession = 0; gateReady = false; occupancy.disconnectSend();
+        replies.failAll();
         if (session) emit({kind:'runtime_error',session,detail:'Runtime disconnected. Work may be interrupted; no task was retried.'});
         if (child === owned) {
           void faultStop();
@@ -360,8 +270,8 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
 
       attachReader(child.stdout);
 
-      const requestId = `pi-vscode-get-state-${token}`;
-      const waiting = waitForResponse(requestId, START_TIMEOUT_MS, executionProfile.kind === "trusted");
+      const requestId = replies.startupId(token);
+      const waiting = replies.wait(requestId, START_TIMEOUT_MS, { pauseable: executionProfile.kind === "trusted", outstanding: () => occupancy.dialogs() });
       child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
       const response = await waiting;
 
@@ -382,6 +292,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
       }
       activeSession = token;
+      occupancy.setSession(token);
       resumedConversation = options.resume !== undefined;
       untouchedConversation = !resumedConversation;
       if (executionProfile.kind === 'trusted') {
@@ -409,9 +320,8 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       throw new Error("Runtime not ready.");
     }
     const session = activeSession;
-    if (requestCounter >= Number.MAX_SAFE_INTEGER) throw new Error("Runtime request identities exhausted.");
-    const requestId = `pi-vscode-rpc-${session}-${++requestCounter}`;
-    const waiting = waitForResponse(requestId, timeoutMs);
+    const requestId = replies.rpcId(session);
+    const waiting = replies.wait(requestId, timeoutMs);
     child.stdin?.write(serializeJsonLine({ id: requestId, ...body }));
     const response = await waiting;
     if (session !== activeSession) {
@@ -422,8 +332,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
 
   const checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
     const session = activeSession;
-    const idle = () => session !== 0 && session === activeSession && gateReady && !aborting
-      && !promptInFlight && !promptAckPending && !agentRunning && !commandInFlight && outstandingDialogs === 0 && approvals.size === 0;
+    const idle = () => session !== 0 && session === activeSession && gateReady && occupancy.allowsRestart();
     const stateMatches = (response: RpcResponse, count?: number): boolean => {
       if (response.success !== true || response.command !== "get_state" || !response.data || typeof response.data !== "object") return false;
       const state = response.data as Record<string, unknown>;
@@ -492,7 +401,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
 
   const setThinkingLevel = async (level: string): Promise<ModelMutationResult> => {
     const session = activeSession;
-    if (promptInFlight) return { ok: false, detail: "Wait until the agent has settled." };
+    if (!occupancy.allowsModelMutation()) return { ok: false, detail: "Wait until the agent has settled." };
     try {
       const response = await invokeRpc({ type: "set_thinking_level", level }, MODEL_RPC_TIMEOUT_MS);
       if (!response.success) {
@@ -506,7 +415,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
 
   const setModel = async (provider: string, modelId: string): Promise<ModelMutationResult> => {
     const session = activeSession;
-    if (promptInFlight) return { ok: false, detail: "Wait until the agent has settled." };
+    if (!occupancy.allowsModelMutation()) return { ok: false, detail: "Wait until the agent has settled." };
     try {
       const response = await invokeRpc({ type: "set_model", provider, modelId }, MODEL_RPC_TIMEOUT_MS);
       if (!response.success) {
@@ -519,25 +428,25 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   };
 
   const prompt = async (text: string): Promise<{ ok: true } | { ok: false; detail: string }> => {
-    if (!child || !activeSession || !gateReady || aborting) {
+    if (!child || !activeSession || !gateReady || occupancy.isStopping()) {
       return { ok: false, detail: "Runtime not ready." };
     }
-    if (promptInFlight || promptAckPending || requestCounter >= Number.MAX_SAFE_INTEGER) {
+    if (!occupancy.allowsSend() || replies.exhausted()) {
       return { ok: false, detail: "A message is already in progress or request identities are exhausted." };
     }
     const session = activeSession;
-    const requestId = `pi-vscode-prompt-${session}-${++requestCounter}`;
-    promptInFlight = true; untouchedConversation = false;
+    const requestId = replies.promptId(session);
+    occupancy.beginPrompt(); untouchedConversation = false;
     try {
-      const waiting = waitForResponse(requestId, PROMPT_TIMEOUT_MS);
+      const waiting = replies.wait(requestId, PROMPT_TIMEOUT_MS);
       child.stdin?.write(serializePromptFrame(requestId, { kind: "plain", body: text }));
       const response = await waiting;
       if (session !== activeSession) {
-        promptInFlight = false;
+        occupancy.rejectSend(child);
         return { ok: false, detail: "Runtime restarted during send." };
       }
       if (!response.success) {
-        promptInFlight = false;
+        occupancy.rejectSend(child);
         return { ok: false, detail: "Prompt was rejected." };
       }
       return { ok: true };
@@ -551,33 +460,33 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   };
 
   const preparePrompt: PiRuntimeLifecycle["preparePrompt"] = (input, expectedSession) => {
-    if (requestCounter >= Number.MAX_SAFE_INTEGER) throw new Error("Runtime request identifiers exhausted. Restart required.");
-    const requestId = `pi-vscode-prompt-${expectedSession}-${++requestCounter}`;
+    if (replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
+    const requestId = replies.promptId(expectedSession);
     let frame = serializePromptFrame(requestId, input);
     const command = dispatchedExtensionCommand(input, commandNames);
     let consumed = false;
     return { send(onAttempt) {
       const owned = child;
       const stream = owned?.stdin;
-      if (consumed || expectedSession !== activeSession || !activeSession || !gateReady || aborting || promptInFlight || promptAckPending || !stream || stream.destroyed || stream.writableEnded) {
+      if (consumed || expectedSession !== activeSession || !activeSession || !gateReady || !occupancy.allowsSend() || !stream || stream.destroyed || stream.writableEnded) {
         frame = "";
         return Promise.resolve({ delivery: "not-sent", code: "runtime-lost" });
       }
-      consumed = true; promptInFlight = true; promptAckPending = true; commandInFlight = command !== undefined;
+      consumed = true; occupancy.beginSend({ command: command !== undefined });
       return new Promise(resolve => {
         let attempted = false; let finished = false; let callback = false; let drained = false; let returned = false;
         let response: RpcResponse | undefined;
         const finish = (delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown", code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost") => {
           if (finished) return; finished = true;
-          if (activeSession === expectedSession) promptAckPending = false;
-          clearTimeout(writeTimer); clearTimeout(ackTimer); pending.delete(requestId);
+          occupancy.clearAck(expectedSession);
+          clearTimeout(writeTimer); clearTimeout(ackTimer); replies.drop(requestId);
           stream.off("error", lost); stream.off("close", lost); stream.off("drain", drain); frame = "";
-          if (delivery !== "rpc-accepted" && child === owned) promptInFlight = false;
-          if (command && child === owned) { commandInFlight = false; promptInFlight = agentRunning; }
+          if (delivery !== "rpc-accepted" && child === owned) occupancy.rejectSend(owned);
+          if (command && child === owned) occupancy.finishCommand(owned);
           const rejection = delivery === "rpc-rejected" && typeof response?.error === "string" && isAuthenticationError(response.error)
             ? "authentication" as const : undefined;
           resolve({ delivery, ...(code ? { code } : {}), ...(rejection ? { rejection } : {}) });
-          if (command && delivery === "rpc-accepted" && child === owned) emit({ kind: "command_handled", session: expectedSession, agentRunning });
+          if (command && delivery === "rpc-accepted" && child === owned) emit({ kind: "command_handled", session: expectedSession, agentRunning: occupancy.agentRunning() });
           if (delivery === "unknown" && child === owned) {
             emit({ kind: "runtime_error", session: expectedSession, detail: environment.process.describeFailure("prompt-delivery") });
             void faultStop();
@@ -595,7 +504,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         const drain = () => { drained = true; check(); };
         const writeTimer = setTimeout(lost, 5000);
         const ackTimer = command ? undefined : setTimeout(() => finish("unknown", "ack-timeout"), 30000);
-        pending.set(requestId, value => { response = value; check(); });
+        replies.watch(requestId, value => { response = value; check(); });
         stream.on("error", lost); stream.on("close", lost); stream.on("drain", drain);
         try {
           attempted = true; untouchedConversation = false; onAttempt();
@@ -634,30 +543,30 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         if (budget <= 0) throw new Error("Stop observation deadline expired.");
         return budget;
       };
-      aborting = true;
-      for (const id of approvals) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
-      approvals.clear();
+      occupancy.beginStopping();
+      for (const id of occupancy.approvalIds()) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
+      occupancy.clearApprovals();
       try {
         const clear = await invokeRpc({type:'clear_queue'}, remaining());
         if (!clear.success) throw new Error();
         const abort = await invokeRpc({type:'abort'}, remaining());
         if (!abort.success) throw new Error();
-        if (promptInFlight) {
+        if (occupancy.sending()) {
           await new Promise<void>(resolve => {
             const timer = setTimeout(() => { unsubscribe(); resolve(); }, remaining());
             const unsubscribe = (() => {
-              const listener = (event: RuntimeEvent): void => { if ((event.kind === 'agent_settled' || event.kind === 'command_handled') && !promptInFlight) { clearTimeout(timer); listeners.delete(listener); resolve(); } };
+              const listener = (event: RuntimeEvent): void => { if ((event.kind === 'agent_settled' || event.kind === 'command_handled') && !occupancy.sending()) { clearTimeout(timer); listeners.delete(listener); resolve(); } };
               listeners.add(listener);
               return () => listeners.delete(listener);
             })();
           });
         }
-        if (promptInFlight) {
+        if (occupancy.sending()) {
           await faultStop();
           return {ok:false,detail:environment.process.describeFailure("stop-unconfirmed")};
         }
         remaining(); // A late response/event is not timely observation, even if its timer has not run.
-        aborting = false;
+        occupancy.clearStopping();
         return {ok:true};
       } catch {
         await faultStop();
