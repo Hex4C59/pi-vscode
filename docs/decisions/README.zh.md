@@ -41,8 +41,11 @@
 | ID | 标题 | Gate | 文件 |
 |----|------|------|------|
 | 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 无 | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
+| 0006 | 进入下一次对话前结束遗留的自有运行时 | 不关闭 gate | [0006-owned-runtime-handoff.zh.md](0006-owned-runtime-handoff.zh.md) |
 
 0005 保持 Draft。维护者在检查设置页控件后关闭了 WI-030。真实浏览器登录和真实端点调用仍未记录，因此本 ADR 不接受任何 gate。
+
+0006 保持 Draft。维护者于 2026-09-29 确认遗留运行时规则。尚无实现或宿主验证，因此它不取代 ADR 0002，也不接受任何 gate。
 
 ## Agent 流程
 

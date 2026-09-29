@@ -36,8 +36,11 @@ Initial proposals and unexplained spike failures retain their pending state and 
 | ID | Title | Gate | File |
 |----|-------|------|------|
 | 0005 | Custom OpenAI-compatible endpoints in models.json (WI-030) | none | [0005-custom-endpoint-file.md](0005-custom-endpoint-file.md) |
+| 0006 | End a leftover owned runtime before the next conversation | none closed | [0006-owned-runtime-handoff.md](0006-owned-runtime-handoff.md) |
 
 0005 stays Draft. The maintainer closed WI-030 after checking the settings controls. A live browser sign-in and a live endpoint call are still unrecorded, so this ADR does not accept a gate.
+
+0006 stays Draft. The maintainer confirmed the leftover-runtime rule on 2026-09-29. It has no implementation or host verification, so it does not supersede ADR 0002 and does not accept a gate.
 
 ## Agent workflow
 
