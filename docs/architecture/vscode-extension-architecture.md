@@ -95,6 +95,12 @@ Unix control endpoints retain their recovery-directory path when it fits the 103
 
 **Accepted WI-013 boundary (2026-09-28 Asia/Shanghai):** [Accepted ADR0002](../decisions/0002-interaction-contract-route.md) defines explicit trusted loading, host-owned standard interactions, public adapter seams, passive supervision and a persistent recovery fence; exact v3 DTOs belong to the [message contract](../reference/webview-messages.md). [Delegated acceptance](../archive/2026-09-28-wi-013-acceptance.md) separates real-target, native F5, installed, multiwindow evidence and limits; it does not establish ecosystem-wide compatibility or close the three broad gates.
 
+### RPC process strategy (WI-028)
+
+`createPiRpcRuntime` requires a `RuntimeProcess` from `runtime/process/types.ts`. RPC owns framing, correlation, readiness, session identity and the shared five-second Stop observation budget. Its `RuntimeLink` exposes only stdin, stdout and loss subscription; it has no native termination capability. Process strategies own launch cancellation, release serialization, cleanup and policy-specific recovery messages. Release classifies idle versus uncertain work before RPC state is cleared, including the gap before an arriving link is attached.
+
+Production composition selects `createManagedProcess(createRuntimeOwner(...))`. Clean release ends and retires observed work; uncertainty detaches and drains output without closing input or automatically ending the owned child. Pending launch and missing exit evidence block recovery/replacement. The existing owner remains the authority for persistent fences and exact-child receipts under ADR0002. The direct spawn strategy is explicitly selected only by the attachment spike and retains bounded SIGTERM/SIGKILL cleanup; a dependency-graph test excludes it and test helpers from production. Runtime tests use a shared in-memory process/byte transport, with separate native-strategy and production-composition regressions. The host lifecycle and Webview contracts, pi version and recovery storage are unchanged. Current verification and unverified host/package evidence belong to ACTIVE.
+
 ### Internal host capability modules
 
 The host remains one bundled extension. `PiChatViewProvider` owns workspace/view identity, runtime readiness, the live execution projection, Stop and sequential session handoff. It composes concrete internal modules; there is no dynamic loader, third-party host API or general command bus.

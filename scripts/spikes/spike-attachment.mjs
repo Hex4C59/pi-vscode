@@ -38,12 +38,12 @@ async function worker(root) {
   await writeFile(path.join(prompts, 'literal.md'), 'TEMPLATE_EXPANDED_SENTINEL');
   await writeFile(path.join(root, 'agent/settings.json'), JSON.stringify({ defaultProvider: 'attachment-fixture', defaultModel: 'fixed', compaction: { enabled: false }, retry: { enabled: false } }));
   const require = createRequire(import.meta.url);
-  const { createPiRpcRuntime } = require(path.join(repo, 'dist/attachment-verification.cjs'));
+  const { createPiRpcRuntime, createDirectProcess } = require(path.join(repo, 'dist/attachment-verification.cjs'));
   let child; let exit; const frames = [];
   const runtime = createPiRpcRuntime({
     startupModel: () => 'attachment-fixture/fixed',
     cliPath: () => path.join(repo, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js'),
-    spawn(command, args, options) {
+    process: createDirectProcess((command, args, options) => {
       // Only narrow process setup is substituted; encoder, prepared token, write/ACK and reader are production.
       child = spawn(command, [...args, '--no-skills', '--no-themes', '-e', extension], { ...options, windowsHide: true });
       exit = new Promise(resolve => child.once('close', (code, signal) => resolve({ code, signal })));
@@ -54,7 +54,7 @@ async function worker(root) {
         return write(frame, ...rest);
       };
       return child;
-    },
+    }),
   });
   let settled; let failure;
   const unsubscribe = runtime.subscribe(event => {
@@ -114,7 +114,7 @@ async function worker(root) {
 try {
   if (process.argv[2] === '--build') {
     const { build } = await import('esbuild');
-    await build({ entryPoints: [path.join(repo, 'src/adapter/runtime/pi-rpc-runtime.ts')], bundle: true, platform: 'node', format: 'cjs', target: 'node22', outfile: path.join(repo, 'dist/attachment-verification.cjs') });
+    await build({ stdin: { contents: 'export { createPiRpcRuntime } from "./src/adapter/runtime/pi-rpc-runtime.ts"; export { createDirectProcess } from "./src/adapter/runtime/process/direct-process.ts";', resolveDir: repo, loader: 'ts' }, bundle: true, platform: 'node', format: 'cjs', target: 'node22', outfile: path.join(repo, 'dist/attachment-verification.cjs') });
     record('production-adapter-bundle', { status: 'built' });
   } else {
     await guard();

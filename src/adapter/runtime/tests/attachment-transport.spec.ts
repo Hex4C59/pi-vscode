@@ -3,19 +3,15 @@ import test from "node:test";
 import type { PromptInput } from "../../../extension/contracts/runtimeLifecycle.js";
 import { serializePromptFrame } from "../jsonl.js";
 import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
-import { EventEmitter } from "node:events";
-import { PassThrough } from "node:stream";
-import type { ChildProcess, spawn } from "node:child_process";
+import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "./memory-process.js";
 
 async function transportFixture(writeFault?: "throw") {
-  const stdout = new PassThrough(); const stdin = new EventEmitter();
-  const child = new EventEmitter() as EventEmitter & { exitCode: number | null; signalCode: string | null; kill: () => boolean };
-  child.exitCode = null; child.signalCode = null;
-  child.kill = () => { child.exitCode = 0; queueMicrotask(() => child.emit("close")); return true; };
+  let connection!: MemoryConnection;
   let callback: ((error?: Error) => void) | undefined;
   let promptId = ""; let writes = 0; let lastPrompt = "";
-  const fakeSpawn = ((_command: string, _args: string[], options: { cwd: string; env: Record<string, string> }) => {
-    Object.assign(stdin, { destroyed: false, writableEnded: false, write(frame: string, done?: (error?: Error) => void) {
+  const memory = createMemoryProcess(options => {
+    connection = createMemoryConnection((frame, done) => {
+      const stdout = connection.stdout;
       const message = JSON.parse(frame);
       if (message.type === "get_state") queueMicrotask(() => {
         stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
@@ -24,12 +20,12 @@ async function transportFixture(writeFault?: "throw") {
       if (message.type === "prompt") { lastPrompt = frame; writes++; callback = done; promptId = message.id; if (writeFault === "throw") throw new Error("synthetic write fault"); return false; }
       if (message.type === "clear_queue" || message.type === "abort") queueMicrotask(() => { if (message.type === "abort") stdout.write('{"type":"agent_settled"}\n'); stdout.write(JSON.stringify({ type: "response", id: message.id, command: message.type, success: true }) + "\n"); });
       done?.(); return true;
-    } });
-    return Object.assign(child, { stdin, stdout, stderr: new PassThrough() }) as unknown as ChildProcess;
-  }) as unknown as typeof spawn;
-  const runtime = createPiRpcRuntime({ spawn: fakeSpawn, startupModel: () => undefined, cliPath: () => "unused", gateAccess: async () => undefined });
+    });
+    return connection;
+  });
+  const runtime = createPiRpcRuntime({ process: memory.process, startupModel: () => undefined, cliPath: () => "unused", gateAccess: async () => undefined });
   assert.equal((await runtime.start({ cwd: "/synthetic", projectTrust: "no-approve" })).ok, true);
-  return { runtime, stdin, stdout, child, callback: (error?: Error) => callback?.(error), get writes() { return writes; }, get lastPrompt() { return lastPrompt; }, ack: (success = true, error?: string) => stdout.write(JSON.stringify({ type: "response", id: promptId, command: "prompt", success, error }) + "\n") };
+  return { runtime, stdin: connection.stdin, stdout: connection.stdout, memory, callback: (error?: Error) => callback?.(error), get writes() { return writes; }, get lastPrompt() { return lastPrompt; }, ack: (success = true, error?: string) => connection.stdout.write(JSON.stringify({ type: "response", id: promptId, command: "prompt", success, error }) + "\n") };
 }
 
 test("prompt ACK before callback/drain does not release admission; one-attempt token cannot replay", async () => {
@@ -47,14 +43,15 @@ test("prompt ACK before callback/drain does not release admission; one-attempt t
   } finally { await h.runtime.stop(); }
 });
 
-test("stdin error terminates the owned live child after permanent loss invalidates session", async () => {
+test("stdin error releases an uncertain connection after permanent loss invalidates session", async () => {
   const h = await transportFixture();
-  let closes = 0; h.child.on("close", () => closes++);
   try {
     const waiting = h.runtime.preparePrompt({ kind: "plain", body: "task" }, h.runtime.getSession()).send(() => undefined);
     h.stdin.emit("error", new Error("synthetic broken pipe"));
     assert.equal((await waiting).delivery, "unknown"); await Promise.resolve();
-    assert.equal(h.child.exitCode, 0); assert.equal(closes, 1);
+    assert.deepEqual(h.memory.releases, ["uncertain"]);
+    assert.equal(h.runtime.getSession(), 0);
+    assert.equal((await h.runtime.start({ cwd: "/replacement", projectTrust: "no-approve" })).ok, false);
     assert.equal(h.writes, 1); assert.equal(h.stdin.listenerCount("drain"), 0);
   } finally { await h.runtime.stop(); }
 });
@@ -66,18 +63,6 @@ test("close without drain marks uncertain delivery and never retries", async () 
     h.callback(); h.stdin.emit("close");
     assert.equal((await waiting).delivery, "unknown"); assert.equal(h.writes, 1); assert.equal(h.stdin.listenerCount("drain"), 0);
   } finally { await h.runtime.stop(); }
-});
-
-test("shutdown without observed close is bounded and blocks a replacement runtime", async context => {
-  context.mock.timers.enable({ apis: ["setTimeout"] });
-  const h = await transportFixture(); let kills = 0;
-  h.child.kill = () => { kills++; return true; };
-  const stopping = h.runtime.stop(); context.mock.timers.tick(10000); await stopping;
-  assert.equal(kills, 2);
-  const result = await h.runtime.start({ cwd: "/replacement", projectTrust: "no-approve" });
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.match(result.detail, /shutdown was not confirmed/);
-  assert.equal(h.runtime.getSession(), 0);
 });
 
 test("local write and total ACK deadlines clean pending transport without real waits", async context => {

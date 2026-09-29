@@ -3,7 +3,7 @@ import { extensionCommandNames, dispatchedExtensionCommand } from "./command-cla
 import { createInteractionWriter } from "./interaction-writer.js";
 import { createRpcDialogs } from "./rpc-dialogs.js";
 import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
-import { spawn, type ChildProcess } from "node:child_process";
+import type { RuntimeLink } from "./process/types.js";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { access } from "node:fs/promises";
@@ -57,8 +57,9 @@ type RpcResponse = {
   error?: unknown;
 };
 
-export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): PiRuntimeLifecycle {
-  let child: ChildProcess | null = null;
+export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRuntimeLifecycle {
+  let child: RuntimeLink | null = null;
+  let detachLost: (() => void) | undefined;
   let detachReader: (() => void) | null = null;
   let startToken = 0;
   let activeSession = 0;
@@ -268,13 +269,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       if (!allowHumanWait || outstandingDialogs === 0) deadline.resume();
     });
 
-  let shutdown: Promise<void> = Promise.resolve();
-  let shutdownUnconfirmed = false;
-  let ownedLaunchPending = false;
-  const stop = async (): Promise<void> => {
+  const release = async (uncertain = false): Promise<void> => {
     const owned = child;
-    if (ownedLaunchPending) shutdownUnconfirmed = true;
-    if (owned && environment.owner && (!activeSession || promptInFlight || promptAckPending || commandInFlight || agentRunning || approvals.size > 0 || outstandingDialogs > 0)) shutdownUnconfirmed = true;
+    const reason = uncertain || !activeSession || promptInFlight || promptAckPending || commandInFlight || agentRunning || approvals.size > 0 || outstandingDialogs > 0 ? "uncertain" : "idle";
     dialogs?.invalidate(); dialogs = undefined; outstandingDialogs = 0;
     feedback.reset(); feedbackHandler?.(feedback.snapshot());
     child = null; // Detach synchronously: late loss/close cannot affect a replacement.
@@ -286,7 +283,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     gateReady = false; verifiedCustomTools = new Set();
     aborting = false;
     activity.reset();
-    for (const id of approvals) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Terminate even if cancellation cannot be written. */ } }
+    for (const id of approvals) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
     approvals.clear();
     for (const resolve of pending.values()) resolve({success:false});
     pending.clear();
@@ -294,25 +291,11 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       detachReader();
       detachReader = null;
     }
-    if (owned && environment.owner && shutdownUnconfirmed) {
-      if (owned.connected) { try { owned.disconnect(); } catch { /* Missing owner observation remains blocked. */ } }
-      owned.stdout?.resume();
-    } else if (owned && environment.owner) {
-      const owner = environment.owner;
-      shutdown = (async () => {
-        const ended = await owner.end();
-        if (!ended.ok) { shutdownUnconfirmed = true; return; }
-        const recovered = await owner.recover();
-        if (!recovered.ok) shutdownUnconfirmed = true;
-      })().catch(() => { shutdownUnconfirmed = true; });
-    } else if (owned) shutdown = stopChildProcess(owned, STOP_TIMEOUT_MS).then(closed => { if (!closed) shutdownUnconfirmed = true; });
-    await shutdown;
+    detachLost?.(); detachLost = undefined;
+    await environment.process.release(reason);
   };
-
-  const faultStop = (): Promise<void> => {
-    if (environment.owner) shutdownUnconfirmed = true;
-    return stop();
-  };
+  const stop = (): Promise<void> => release();
+  const faultStop = (): Promise<void> => release(true);
 
   const start = async (options: {
     cwd: string;
@@ -321,7 +304,6 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     resume?: { id: string; path: string };
   }): Promise<RuntimeStartResult> => {
     await stop();
-    if (shutdownUnconfirmed) return { ok: false, detail: "Runtime shutdown was not confirmed. Manually end the old process and reload the extension host." };
     if (startToken >= Number.MAX_SAFE_INTEGER) return { ok: false, detail: "Runtime identity exhausted. Reload the extension host." };
     const token = ++startToken;
     const cliPath = (environment.cliPath ?? resolvePiCliPath)();
@@ -347,30 +329,10 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     // Raw stderr may contain provider credentials; never project or accumulate it.
     try {
       const runtimeEnv = { ...controlledEnvironment(process.env, gateId), PI_VSCODE_EXTENSION_PROFILE: executionProfile.kind };
-      if (environment.owner) {
-        ownedLaunchPending = true;
-        let launched;
-        try { launched = await environment.owner.launch({ cwd: options.cwd, cliPath, args, env: runtimeEnv }); }
-        finally { ownedLaunchPending = false; }
-        if (!launched.ok) return { ok: false, detail: launched.code === 'occupied' ? 'The runtime recovery domain is occupied. End the prior owned runtime and recover deliberately; no replacement was launched.' : 'Runtime ownership startup failed. Recovery evidence must be checked before another launch.' };
-        if (token !== startToken) {
-          shutdownUnconfirmed = true;
-          // Cancellation is not permission to terminate uncertain owned work.
-          // Never attach its RPC reader or let this late transport replace current state.
-          if (launched.process.connected) { try { launched.process.disconnect(); } catch { /* Recovery evidence remains required. */ } }
-          launched.process.stdout?.resume();
-          launched.process.stderr?.resume();
-          return { ok: false, detail: "Runtime start superseded. Explicit owned-runtime recovery is required." };
-        }
-        child = launched.process;
-      } else {
-        child = (environment.spawn ?? spawn)(process.execPath, [cliPath, ...args], {
-          windowsHide: true,
-          cwd: options.cwd, stdio: ["pipe", "pipe", "pipe"], env: runtimeEnv,
-        });
-      }
-
-      child.stderr?.resume();
+      const launched = await environment.process.launch({ cwd: options.cwd, cliPath, args, env: runtimeEnv });
+      if (!launched.ok) return launched;
+      if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
+      child = launched.link;
       const owned = child;
       if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
       const writeInteraction = createInteractionWriter(owned.stdin, () => child === owned);
@@ -380,7 +342,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
           if (child === owned) {
             const session = activeSession;
             void faultStop();
-            emit({ kind: 'runtime_error', session, detail: 'Extension reply delivery is unconfirmed. Explicit owned-runtime recovery is required; no reply was retried.' });
+            emit({ kind: 'runtime_error', session, detail: environment.process.describeFailure("reply-delivery") });
           }
           throw new Error('Extension reply delivery is unconfirmed.');
         }
@@ -391,13 +353,12 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
         for (const resolve of pending.values()) resolve({success:false}); pending.clear();
         if (session) emit({kind:'runtime_error',session,detail:'Runtime disconnected. Work may be interrupted; no task was retried.'});
         if (child === owned) {
-          if (environment.owner) shutdownUnconfirmed = true;
-          void stop();
+          void faultStop();
         }
       };
-      child.on('error',lost); child.on('close',lost); child.stdin?.on('error',lost);
+      detachLost = child.onLost(lost);
 
-      attachReader(child.stdout!);
+      attachReader(child.stdout);
 
       const requestId = `pi-vscode-get-state-${token}`;
       const waiting = waitForResponse(requestId, START_TIMEOUT_MS, executionProfile.kind === "trusted");
@@ -582,7 +543,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
       return { ok: true };
     } catch {
       if (session === activeSession) {
-        emit({kind:'runtime_error',session,detail:environment.owner ? 'Prompt acknowledgement was lost. Explicit owned-runtime recovery is required; no task was retried.' : 'Prompt acknowledgement was lost. Runtime shut down; task was not retried.'});
+        emit({kind:'runtime_error',session,detail:environment.process.describeFailure("prompt-ack")});
         await faultStop();
       }
       return { ok: false, detail: 'Prompt acknowledgement was lost; restart runtime before retrying.' };
@@ -618,7 +579,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
           resolve({ delivery, ...(code ? { code } : {}), ...(rejection ? { rejection } : {}) });
           if (command && delivery === "rpc-accepted" && child === owned) emit({ kind: "command_handled", session: expectedSession, agentRunning });
           if (delivery === "unknown" && child === owned) {
-            emit({ kind: "runtime_error", session: expectedSession, detail: environment.owner ? "Prompt delivery is uncertain. Explicit owned-runtime recovery is required; no retry was made." : "Prompt delivery is uncertain. Runtime stopped; no retry was made." });
+            emit({ kind: "runtime_error", session: expectedSession, detail: environment.process.describeFailure("prompt-delivery") });
             void faultStop();
           }
         };
@@ -649,35 +610,19 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     start,
     checkpointRestart,
     stop,
-    async getOwnershipState() {
-      if (!environment.owner) return 'none';
-      try { const state = await environment.owner.inspect(); return state.kind === 'empty' ? 'none' : state.kind; }
-      catch { return 'blocked'; }
-    },
-    async endOwnedRuntime() {
-      if (!environment.owner) return { ok: false, detail: 'Owned runtime recovery is unavailable.' };
-      try {
-        const result = await environment.owner.end();
-        return result.ok ? { ok: true } : { ok: false, detail: 'Owned runtime exit is not confirmed. Recovery remains blocked.' };
-      } catch { return { ok: false, detail: 'Owned runtime observer is unavailable. Recovery remains blocked.' }; }
-    },
+    getOwnershipState: () => environment.process.inspect(),
+    endOwnedRuntime: () => environment.process.end(),
     async recoverOwnedRuntime() {
-      if (ownedLaunchPending) return { ok: false, detail: "Runtime ownership startup is still pending. Recovery cannot retire an in-flight launch." };
-      if (!environment.owner) return { ok: false, detail: 'Owned runtime recovery is unavailable.' };
-      try {
-        const result = await environment.owner.recover();
-        if (!result.ok) return { ok: false, detail: 'Matching owned-runtime exit evidence is required before recovery.' };
-        shutdownUnconfirmed = false;
-        executionProfile = { kind: 'controlled' };
-        return { ok: true };
-      } catch { return { ok: false, detail: 'Runtime recovery could not be recorded. No replacement was started.' }; }
+      const result = await environment.process.recover();
+      if (result.ok) executionProfile = { kind: "controlled" };
+      return result;
     },
     preparePrompt,
     invalidateInteractions() {
       if (!child) return;
       const session = activeSession;
       void faultStop();
-      emit({ kind: "runtime_error", session, detail: "Extension interaction state is unconfirmed. Explicit owned-runtime recovery is required." });
+      emit({ kind: "runtime_error", session, detail: environment.process.describeFailure("interaction") });
     },
     setFeedbackHandler(handler) { feedbackHandler = handler; handler(feedback.snapshot()); },
     setInteractionHandler(handler) { interactionHandler = handler; },
@@ -697,7 +642,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
         if (!clear.success) throw new Error();
         const abort = await invokeRpc({type:'abort'}, remaining());
         if (!abort.success) throw new Error();
-        if (promptInFlight && environment.owner) {
+        if (promptInFlight) {
           await new Promise<void>(resolve => {
             const timer = setTimeout(() => { unsubscribe(); resolve(); }, remaining());
             const unsubscribe = (() => {
@@ -708,17 +653,15 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
           });
         }
         if (promptInFlight) {
-          if (environment.owner) shutdownUnconfirmed = true;
-          await stop();
-          return {ok:false,detail:environment.owner ? 'Stop is not confirmed. End the owned runtime explicitly and recover only after observed exit; no automatic termination occurred.' : 'Stop did not settle; runtime was shut down. Side effects are not rolled back.'};
+          await faultStop();
+          return {ok:false,detail:environment.process.describeFailure("stop-unconfirmed")};
         }
         remaining(); // A late response/event is not timely observation, even if its timer has not run.
         aborting = false;
         return {ok:true};
       } catch {
-        if (environment.owner) shutdownUnconfirmed = true;
-        await stop();
-        return {ok:false,detail:environment.owner ? 'Stop failed and runtime work is uncertain. Explicit owned-runtime termination and recovery are required.' : 'Stop failed; runtime was shut down. Side effects are not rolled back.'};
+        await faultStop();
+        return {ok:false,detail:environment.process.describeFailure("stop-failed")};
       }
     },
     getSession: () => activeSession,
@@ -731,20 +674,4 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment = {}): P
     setThinkingLevel,
     setModel,
   };
-}
-
-async function stopChildProcess(child: ChildProcess, timeoutMs: number): Promise<boolean> {
-  if (child.exitCode !== null || child.signalCode !== null) return true;
-  return new Promise<boolean>((resolve) => {
-    let finished = false;
-    const finish = (confirmed: boolean) => {
-      if (finished) return; finished = true;
-      clearTimeout(escalate); clearTimeout(deadline); child.off("close", closed); resolve(confirmed);
-    };
-    const closed = () => finish(true);
-    const escalate = setTimeout(() => { try { child.kill("SIGKILL"); } catch { /* Final deadline reports unconfirmed shutdown. */ } }, timeoutMs);
-    const deadline = setTimeout(() => finish(false), timeoutMs * 2);
-    child.once("close", closed);
-    try { child.kill("SIGTERM"); } catch { /* Still observe closure or deadline. */ }
-  });
 }

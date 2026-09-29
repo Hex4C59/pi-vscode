@@ -1,13 +1,11 @@
-import type { RuntimeOwner } from "../ownership/index.js";
-import type { spawn } from "node:child_process";
+import type { RuntimeProcess } from "./process/types.js";
 import type { access } from "node:fs/promises";
 import type { resolvePiCliPath } from "./pi-rpc-probe.js";
 import type { readPiStartupModelArg } from "./piStartupModel.js";
 
-/** Host-injected process and startup probes; omission selects the production defaults. */
+/** Explicit process strategy; omitted startup probes use production defaults. */
 export type PiRpcRuntimeEnvironment = {
-  owner?: RuntimeOwner;
-  spawn?: typeof spawn;
+  process: RuntimeProcess;
   startupModel?: typeof readPiStartupModelArg;
   cliPath?: typeof resolvePiCliPath;
   gateAccess?: typeof access;

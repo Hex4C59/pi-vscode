@@ -101,6 +101,12 @@ Unix 控制端点在路径不超过 103 字节时继续使用恢复目录内的 
 
 **WI-013已接受边界（2026-09-28 Asia/Shanghai）：** [Accepted ADR0002](../decisions/0002-interaction-contract-route.zh.md)规定显式受信加载、host-owned标准交互、公开adapter seam、被动supervisor与持久恢复fence；精确v3 DTO归[消息契约](../reference/webview-messages.zh.md)。[委托验收](../archive/2026-09-28-wi-013-acceptance.zh.md)分别记录真实扩展、原生F5、安装、多窗口及限制，不表示全生态兼容或三项广泛gates关闭。
 
+### RPC 进程策略（WI-028）
+
+`createPiRpcRuntime` 必须接收 `runtime/process/types.ts` 定义的 `RuntimeProcess`。RPC 拥有分帧、应答配对、就绪、会话身份及共享五秒 Stop 观察预算。其 `RuntimeLink` 只暴露 stdin、stdout 与连接丢失订阅，没有原生终止能力。进程策略拥有启动取消、释放串行化、清理及策略专属恢复文案。RPC 清空状态前区分空闲与不确定释放，包括返回的连接尚未接入的间隙。
+
+生产装配选择 `createManagedProcess(createRuntimeOwner(...))`。干净释放结束并退休已观察的工作；不确定时断开并排空输出，不关闭输入或自动结束托管子进程。启动未完成或缺失退出证据时禁止恢复／替换。现有 owner 仍按 ADR0002 拥有持久栅栏与精确子进程回执。直接 spawn 策略仅由 attachment spike 显式选择，保留有界 SIGTERM／SIGKILL 清理；依赖图测试确保它和测试辅助文件不进入生产。运行时测试共用内存进程／字节连接，另有原生策略及生产组合回归。宿主生命周期、Webview 契约、pi 版本与恢复存储不变。当前验证与未验证的宿主／安装包证据归 ACTIVE。
+
 ### 宿主内部能力模块
 
 宿主仍作为一个扩展统一打包。`PiChatViewProvider` 拥有工作区／视图身份、运行时就绪状态、实时执行投影、Stop 与顺序会话交接，组合具体内部模块；不引入动态加载、第三方宿主 API 或通用命令总线。

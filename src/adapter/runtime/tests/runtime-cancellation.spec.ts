@@ -4,6 +4,7 @@ import { PassThrough } from "node:stream";
 import type { ChildProcess } from "node:child_process";
 import { test } from "node:test";
 import type { RuntimeOwner } from "../../ownership/index.js";
+import { createManagedProcess } from "../process/managed-process.js";
 import { createPiRpcRuntime } from "../index.js";
 
 function deferredOwnedLaunch() {
@@ -27,12 +28,12 @@ function deferredOwnedLaunch() {
   });
   const runtime = createPiRpcRuntime({
     cliPath: () => "/fixture/cli.js", startupModel: () => undefined, gateAccess: async () => undefined,
-    owner: {
+    process: createManagedProcess({
       async launch() { launches++; return launch; },
       async inspect() { return { kind: "blocked", code: "invalid-record" }; },
       async end() { ends++; return { ok: true }; },
       async recover() { recoveries++; return { ok: true }; },
-    },
+    }),
   });
   return {
     runtime, writes, stdout, stderr,

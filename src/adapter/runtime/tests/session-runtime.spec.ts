@@ -1,19 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { EventEmitter } from "node:events";
-import { PassThrough } from "node:stream";
+import type { PassThrough } from "node:stream";
 import path from "node:path";
-import type { ChildProcess, spawn } from "node:child_process";
+import { createMemoryConnection, createMemoryProcess } from "./memory-process.js";
 import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
 const identity = { sessionId: "saved-id", sessionFile: "/private-store/saved.jsonl", sessionName: "Saved conversation" };
 function fixture(state: unknown = identity, reportedCwd?: string) {
  let output: PassThrough; let gate: { runtime: string; cwd: string }; const replies: Record<string,unknown>[]=[];
- const commands: string[] = []; const launches: string[][] = []; let kills = 0;
- const fakeSpawn = ((_command: string, args: string[], options: { cwd: string; env: Record<string, string>; windowsHide?: boolean }) => {
-  assert.equal(options.windowsHide, true, "background RPC launch must not allocate a console");
-  launches.push(args); const stdout = new PassThrough(); output=stdout; gate={runtime:options.env.PI_VSCODE_GATE_ID,cwd:reportedCwd??options.cwd};
-  const child: EventEmitter & { exitCode: number | null; signalCode: null; kill(): boolean } = Object.assign(new EventEmitter(), { exitCode: null, signalCode: null, kill: () => { kills++; child.exitCode = 0; queueMicrotask(() => child.emit("close")); return true; } });
-  const stdin = Object.assign(new EventEmitter(), { destroyed: false, writableEnded: false, write(frame: string) {
+ const commands: string[] = []; const launches: string[][] = [];
+ const memory = createMemoryProcess(options => {
+  launches.push([options.cliPath, ...options.args]); gate={runtime:options.env.PI_VSCODE_GATE_ID!,cwd:reportedCwd??options.cwd};
+  const connection = createMemoryConnection((frame, done) => {
+   const stdout = connection.stdout;
    const command = JSON.parse(frame); commands.push(command.type); if(command.type==="extension_ui_response")replies.push(command);
    if (command.type === "get_state") queueMicrotask(() => {
     stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: reportedCwd ?? options.cwd }) }) + "\n");
@@ -28,12 +26,13 @@ function fixture(state: unknown = identity, reportedCwd?: string) {
      stdout.write(JSON.stringify({type:"agent_settled"})+"\n");
     }
     stdout.write(JSON.stringify({type:"response",id:command.id,success:true})+"\n");
-   }); return true;
-  } });
-  return Object.assign(child, { stdout, stdin, stderr: new PassThrough() }) as unknown as ChildProcess;
- }) as unknown as typeof spawn;
- const runtime = createPiRpcRuntime({ spawn: fakeSpawn, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined });
- return { runtime, commands, launches, replies, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); }, gateCall(cwd: string) { output.write(JSON.stringify({type:"extension_ui_request",method:"confirm",id:"gate-call",message:JSON.stringify({protocol:"pi-vscode-approval",version:1,kind:"call",...gate,cwd,request:"request",toolCallId:"tool",tool:"read",input:{path:"sample.ts"}})})+"\n"); }, get kills() { return kills; } };
+   }); done(); return true;
+  });
+  output = connection.stdout;
+  return connection;
+ });
+ const runtime = createPiRpcRuntime({ process: memory.process, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined });
+ return { runtime, commands, launches, replies, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); }, gateCall(cwd: string) { output.write(JSON.stringify({type:"extension_ui_request",method:"confirm",id:"gate-call",message:JSON.stringify({protocol:"pi-vscode-approval",version:1,kind:"call",...gate,cwd,request:"request",toolCallId:"tool",tool:"read",input:{path:"sample.ts"}})})+"\n"); }, get releases() { return memory.releases; } };
 }
 test("new runtime uses pi persistence and exposes only validated conversation identity", async () => {
  const f = fixture(); try {
@@ -50,11 +49,11 @@ test("resume passes a host-selected opaque path and verifies identity without un
   assert.deepEqual(f.commands, ["get_state"]);
  } finally { await f.runtime.stop(); }
 });
-test("malformed or mismatched restored identity stops the owned process before readiness", async () => {
+test("malformed or mismatched restored identity releases an uncertain connection before readiness", async () => {
  for (const state of [undefined, { ...identity, sessionId: "different" }, { ...identity, sessionFile: "/other/session.jsonl" }, { ...identity, sessionFile: 42 }]) {
   const f = fixture(state === undefined ? null : state); try {
    const result = await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", resume: { id: identity.sessionId, path: identity.sessionFile } });
-   assert.equal(result.ok, false); assert.equal(f.runtime.getSession(), 0); assert.equal(f.kills, 1);
+   assert.equal(result.ok, false); assert.equal(f.runtime.getSession(), 0); assert.deepEqual(f.releases, ["uncertain"]);
   } finally { await f.runtime.stop(); }
  }
 });
@@ -79,7 +78,7 @@ test("restoration rejects a different session-file component case but permits Wi
   try {
    const result = await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", resume: { id: identity.sessionId, path: selected } });
    assert.equal(result.ok, sessionFile === same, `selected session file ${sessionFile}`);
-   if (sessionFile === foreign) { assert.equal(f.runtime.getSession(), 0); assert.equal(f.kills, 1); }
+   if (sessionFile === foreign) { assert.equal(f.runtime.getSession(), 0); assert.deepEqual(f.releases, ["uncertain"]); }
   } finally { await f.runtime.stop(); }
  }
 });

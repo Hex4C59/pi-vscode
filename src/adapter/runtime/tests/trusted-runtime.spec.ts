@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { EventEmitter } from "node:events";
-import { PassThrough } from "node:stream";
-import type { ChildProcess, spawn } from "node:child_process";
+import type { PassThrough } from "node:stream";
+import { createMemoryConnection, createMemoryProcess } from "./memory-process.js";
+import { createManagedProcess } from "../process/managed-process.js";
 import { test } from "node:test";
 import { createPiRpcRuntime } from "../index.js";
 
-function fixture(initializationError = false, owned = false, startupDialog = false) {
+function fixture(initializationError = false, startupDialog = false) {
   let messages: unknown[] = [];
   let holdStats = false;
   let stallReplies = false;
@@ -14,17 +14,14 @@ function fixture(initializationError = false, owned = false, startupDialog = fal
   let statsResponse: Record<string, unknown> = {};
   let afterStats: (() => void) | undefined;
   let stateOverrides: Record<string, unknown> = {};
-  let directKills = 0; let endCalls = 0; let recoveryCalls = 0;
   let faultTransport: () => void = () => undefined;
   const frames: Record<string, unknown>[] = [];
   let output: PassThrough;
   let args: string[] = [];
   let environment: NodeJS.ProcessEnv = {};
-  const fakeSpawn = ((_command: string, parameters: string[], options: { cwd: string; env: NodeJS.ProcessEnv }) => {
-    args = parameters; environment = options.env;
-    output = new PassThrough();
-    const child = Object.assign(new EventEmitter(), { exitCode: null as number | null, signalCode: null, kill() { directKills += 1; child.exitCode = 0; queueMicrotask(() => child.emit("close")); return true; } });
-    const stdin = Object.assign(new EventEmitter(), { write(frame: string, done?: (error?: Error) => void) {
+  const memory = createMemoryProcess(options => {
+    args = [options.cliPath, ...options.args]; environment = options.env;
+    const connection = createMemoryConnection((frame, done) => {
       const request = JSON.parse(frame) as Record<string, unknown>;
       frames.push(request);
       if (request.type === "extension_ui_response" && stallReplies) return false;
@@ -47,17 +44,13 @@ function fixture(initializationError = false, owned = false, startupDialog = fal
         else queueMicrotask(respond);
       }
       done?.(); return true;
-    } });
-    faultTransport = () => { stdin.emit("error", new Error("synthetic transport loss")); };
-    return Object.assign(child, { stdin, stdout: output, stderr: new PassThrough() }) as unknown as ChildProcess;
-  }) as unknown as typeof spawn;
-  const runtime = createPiRpcRuntime({ spawn: fakeSpawn, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined, ...(owned ? { owner: {
-    async launch(input: { cwd: string; cliPath: string; args: string[]; env: NodeJS.ProcessEnv }) { return { ok: true as const, process: fakeSpawn(process.execPath, [input.cliPath, ...input.args], { cwd: input.cwd, env: input.env }), runId: "synthetic" }; },
-    async inspect() { return { kind: "blocked" as const, code: "invalid-record" as const }; },
-    async end() { endCalls += 1; return { ok: true as const }; },
-    async recover() { recoveryCalls += 1; return { ok: true as const }; },
-  } } : {}) });
-  return { runtime, frames, delayStopRpc(ms: number) { stopRpcDelay = ms; }, stallReplies() { stallReplies = true; }, setStats(value: Record<string, unknown>) { statsOverrides = value; }, holdStats() { holdStats = true; }, setStatsResponse(value: Record<string, unknown>) { statsResponse = value; }, afterStats(action: () => void) { afterStats = action; }, setMessages(value: unknown[]) { messages = value; }, setState(value: Record<string, unknown>) { stateOverrides = value; }, failTransport() { faultTransport(); }, get directKills() { return directKills; }, get endCalls() { return endCalls; }, get recoveryCalls() { return recoveryCalls; }, get args() { return args; }, get environment() { return environment; }, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); } };
+    });
+    output = connection.stdout;
+    faultTransport = connection.lose;
+    return connection;
+  });
+  const runtime = createPiRpcRuntime({ process: memory.process, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined });
+  return { runtime, frames, releases: memory.releases, delayStopRpc(ms: number) { stopRpcDelay = ms; }, stallReplies() { stallReplies = true; }, setStats(value: Record<string, unknown>) { statsOverrides = value; }, holdStats() { holdStats = true; }, setStatsResponse(value: Record<string, unknown>) { statsResponse = value; }, afterStats(action: () => void) { afterStats = action; }, setMessages(value: unknown[]) { messages = value; }, setState(value: Record<string, unknown>) { stateOverrides = value; }, failTransport() { faultTransport(); }, get endCalls() { return memory.endCalls; }, get recoveryCalls() { return memory.recoveryCalls; }, get args() { return args; }, get environment() { return environment; }, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); } };
 }
 
 test("trusted loading passes only an explicit entry and requires the trusted gate profile", async () => {
@@ -73,9 +66,8 @@ test("trusted loading passes only an explicit entry and requires the trusted gat
 });
 
 
-for (const owned of [false, true]) {
-  test(`trusted launch exposes registered custom tools while controlled retains its exact CLI allowlist (owned=${owned})`, async () => {
-    const f = fixture(false, owned);
+  test("trusted launch exposes registered custom tools while controlled retains its exact CLI allowlist", async () => {
+    const f = fixture();
     try {
       assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
       assert.equal(f.args.filter(arg => arg === "--tools").length, 1);
@@ -91,7 +83,6 @@ for (const owned of [false, true]) {
       assert.equal(f.environment.PI_VSCODE_EXTENSION_PROFILE, "trusted");
     } finally { await f.runtime.stop(); }
   });
-}
 
 test("extension initialization error blocks readiness despite a successful state response", async () => {
   const f = fixture(true);
@@ -121,12 +112,12 @@ test("an occupied durable recovery domain does not launch a replacement runtime"
   let launches = 0;
   const runtime = createPiRpcRuntime({
     cliPath: () => "/public/cli.js", startupModel: () => undefined, gateAccess: async () => undefined,
-    owner: {
+    process: createManagedProcess({
       async launch() { launches += 1; return { ok: false, code: "occupied" }; },
       async inspect() { return { kind: "blocked", code: "invalid-record" }; },
       async end() { assert.fail("startup must not terminate an unrelated/unknown old runtime"); },
       async recover() { assert.fail("startup must not silently clear a recovery fence"); },
-    },
+    }),
   });
   const result = await runtime.start({ cwd: "/project", projectTrust: "no-approve" });
   assert.equal(result.ok, false);
@@ -136,22 +127,21 @@ test("an occupied durable recovery domain does not launch a replacement runtime"
 });
 
 
-test("deliberate normal replacement ends the owned child through its owner, not by killing the supervisor", async () => {
-  const f = fixture(false, true);
+test("deliberate normal replacement requests idle process release", async () => {
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
   await f.runtime.stop();
-  assert.equal(f.directKills, 0);
-  assert.equal(f.endCalls, 1);
-  assert.equal(f.recoveryCalls, 1);
+
+  assert.deepEqual(f.releases, ["idle"]);
 });
 
 
 test("managed transport loss preserves the durable barrier without terminating or silently recovering", async () => {
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
   f.failTransport();
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(f.directKills, 0);
+
   assert.equal(f.endCalls, 0);
   assert.equal(f.recoveryCalls, 0);
   const replacement = await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
@@ -161,7 +151,7 @@ test("managed transport loss preserves the durable barrier without terminating o
 });
 
 test("explicit owned-runtime termination and recovery are separate from loss and re-enable only deliberate startup", async () => {
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
   f.failTransport();
   await new Promise(resolve => setImmediate(resolve));
@@ -179,7 +169,7 @@ test("explicit owned-runtime termination and recovery are separate from loss and
 
 test("unconfirmed managed Stop blocks without automatically terminating the owned child", async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
   const sending = f.runtime.preparePrompt({ kind: "plain", body: "task" }, f.runtime.getSession()).send(() => undefined);
   const prompt = f.frames.find(frame => frame.type === "prompt");
@@ -192,7 +182,7 @@ test("unconfirmed managed Stop blocks without automatically terminating the owne
   assert.equal((await stopping).ok, false);
   assert.equal(f.endCalls, 0);
   assert.equal(f.recoveryCalls, 0);
-  assert.equal(f.directKills, 0);
+
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
 });
 
@@ -237,27 +227,27 @@ test("trusted custom approval cannot name a tool absent from the verified startu
 });
 
 test("managed startup incompatibility preserves the exact child until explicit termination", async () => {
-  const f = fixture(true, true);
+  const f = fixture(true);
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
-  assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0); assert.equal(f.directKills, 0);
+  assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0);
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
   await f.runtime.stop(); assert.equal(f.endCalls, 0);
 });
 
 test("managed uncertain prompt delivery cannot implicitly end or retire the runtime", async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
   const sending = f.runtime.preparePrompt({ kind: "plain", body: "task" }, f.runtime.getSession()).send(() => undefined);
   context.mock.timers.tick(30000);
   assert.equal((await sending).delivery, "unknown");
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0); assert.equal(f.directKills, 0);
+  assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0);
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
 });
 
 test("managed disposal during a command lease is ownership loss, not an implicit End", async () => {
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
   const sending = f.runtime.preparePrompt({ kind: "plain", body: "/sysprompt" }, f.runtime.getSession()).send(() => undefined);
   await f.runtime.stop(); await sending;
@@ -267,7 +257,7 @@ test("managed disposal during a command lease is ownership loss, not an implicit
 
 test("startup readiness budget excludes an explicit indefinite human dialog wait", async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
-  const f = fixture(false, true, true);
+  const f = fixture(false, true);
   let reply!: import("../../../extension/interactions/index.js").InteractionReplyCallback;
   f.runtime.setInteractionHandler?.((_form, answer) => { reply = answer; });
   const starting = f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
@@ -280,12 +270,12 @@ test("startup readiness budget excludes an explicit indefinite human dialog wait
   const state = f.frames.find(frame => frame.type === "get_state");
   f.frame({ type: "response", id: state?.id, command: "get_state", success: true, data: { sessionId: "test", sessionFile: "/owned/session.jsonl" } });
   assert.equal((await starting).ok, true);
-  await f.runtime.stop(); assert.equal(f.endCalls, 1);
+  await f.runtime.stop(); assert.deepEqual(f.releases, ["idle"]);
 });
 
 test("startup transport deadline resumes after a dialog reply and does not terminate unconfirmed work", async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
-  const f = fixture(false, true, true);
+  const f = fixture(false, true);
   let reply!: import("../../../extension/interactions/index.js").InteractionReplyCallback;
   f.runtime.setInteractionHandler?.((_form, answer) => { reply = answer; });
   const starting = f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
@@ -297,7 +287,7 @@ test("startup transport deadline resumes after a dialog reply and does not termi
 });
 
 test("disposal while a startup dialog waits retains owned-runtime uncertainty", async () => {
-  const f = fixture(false, true, true);
+  const f = fixture(false, true);
   f.runtime.setInteractionHandler?.(() => undefined);
   const starting = f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
   await new Promise(resolve => setImmediate(resolve));
@@ -322,7 +312,7 @@ test("trusted standard feedback is bounded and never becomes a command or prompt
 });
 
 test("explicit interaction invalidation preserves an idle owned child for deliberate recovery", async () => {
-  const f = fixture(false, true); const errors: string[] = [];
+  const f = fixture(); const errors: string[] = [];
   f.runtime.subscribe(event => { if (event.kind === "runtime_error") errors.push(event.detail); });
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
   f.runtime.invalidateInteractions?.(); await new Promise(resolve => setImmediate(resolve));
@@ -337,7 +327,7 @@ test("restart checkpoint identifies an empty fresh conversation without treating
   try {
     assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "empty" });
-    assert.equal(f.directKills, 0);
+
   } finally { await f.runtime.stop(); }
 });
 
@@ -347,7 +337,7 @@ for (const messages of [[{ role: "user", content: "not persisted" }], [{ role: "
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
     f.setMessages(messages);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.notEqual(f.runtime.getSession(), 0); assert.equal(f.directKills, 0);
+    assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
 });
 
@@ -377,7 +367,7 @@ for (const state of [{ isStreaming: true }, { isCompacting: true }, { pendingMes
   try {
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.setState(state);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0); assert.notEqual(f.runtime.getSession(), 0);
+    assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
 });
 
@@ -391,7 +381,7 @@ test("restart checkpoint times out without stopping the old ready runtime", asyn
     await new Promise(resolve => setImmediate(resolve));
     context.mock.timers.tick(5000);
     assert.deepEqual(await checkpoint, { kind: "unavailable" });
-    assert.equal(f.directKills, 0); assert.notEqual(f.runtime.getSession(), 0);
+    assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
 });
 
@@ -400,7 +390,7 @@ for (const response of [{ success: false }, { command: "get_state" }, { data: nu
   try {
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.setStatsResponse(response);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0);
+
   } finally { await f.runtime.stop(); }
 });
 
@@ -410,7 +400,7 @@ test("restart checkpoint rejects state that changes while reading statistics", a
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
     f.afterStats(() => f.setState({ messageCount: 1 }));
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0);
+
   } finally { await f.runtime.stop(); }
 });
 
@@ -420,7 +410,7 @@ test("observed conversation activity cannot later be discarded as an untouched f
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
     f.frame({ type: "message_start", message: { role: "user", content: "earlier content" } });
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0);
+
   } finally { await f.runtime.stop(); }
 });
 
@@ -433,7 +423,7 @@ test("restart checkpoint never requests huge message content that would overflow
     const checkpoint = await f.runtime.checkpointRestart?.(conversation);
     assert.equal(f.frames.some(frame => frame.type === "get_messages"), false);
     assert.deepEqual(checkpoint, { kind: "resume", conversation });
-    assert.equal(f.directKills, 0); assert.notEqual(f.runtime.getSession(), 0);
+    assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
 });
 
@@ -444,7 +434,7 @@ for (const messageCount of [0, 1, 4]) test(`checkpoint resumes compacted history
     f.setState({ messageCount }); f.setStats({ assistantMessages: 12, totalMessages: 30 });
     assert.deepEqual(await f.runtime.checkpointRestart?.(conversation), { kind: "resume", conversation });
     assert.equal(f.frames.some(frame => frame.type === "get_messages"), false);
-    assert.equal(f.directKills, 0);
+
   } finally { await f.runtime.stop(); }
 });
 
@@ -454,7 +444,7 @@ test("zero active context cannot discard nonempty custom entries without an assi
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
     f.setState({ messageCount: 0 }); f.setStats({ assistantMessages: 0, totalMessages: 1 });
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0); assert.notEqual(f.runtime.getSession(), 0);
+    assert.notEqual(f.runtime.getSession(), 0);
     assert.equal(f.frames.some(frame => frame.type === "get_messages"), false);
   } finally { await f.runtime.stop(); }
 });
@@ -470,7 +460,7 @@ for (const stats of [
   try {
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" }); f.setStats(stats);
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0); assert.notEqual(f.runtime.getSession(), 0);
+    assert.notEqual(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); }
 });
 
@@ -480,12 +470,12 @@ for (const state of [{ sessionId: "different" }, { sessionFile: "/different/sess
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
     f.afterStats(() => f.setState(state));
     assert.deepEqual(await f.runtime.checkpointRestart?.({ id: "test", path: "/owned/session.jsonl" }), { kind: "unavailable" });
-    assert.equal(f.directKills, 0);
+
   } finally { await f.runtime.stop(); }
 });
 
 for (const failure of ["handler-throws", "extension-error"] as const) test(`startup dialog ${failure} settles readiness and fences the owned child without End`, async () => {
-  const f = fixture(false, true, true);
+  const f = fixture(false, true);
   f.runtime.setInteractionHandler?.(() => { if (failure === "handler-throws") throw new Error("synthetic host handler failure"); });
   let settled = false;
   const starting = f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
@@ -497,13 +487,13 @@ for (const failure of ["handler-throws", "extension-error"] as const) test(`star
     assert.equal(settled, true);
     assert.equal((await starting).ok, false);
     assert.equal(f.runtime.getSession(), 0);
-    assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0); assert.equal(f.directKills, 0);
+    assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0);
     assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
   } finally { await f.runtime.stop(); await starting; }
 });
 
 test("dialog identity exhaustion revokes adapter capabilities and retains the owned recovery fence", async () => {
-  const f = fixture(false, true);
+  const f = fixture();
   f.runtime.setInteractionHandler?.(() => undefined);
   try {
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
@@ -512,13 +502,13 @@ test("dialog identity exhaustion revokes adapter capabilities and retains the ow
     assert.equal(f.runtime.getSession(), 0);
     const prepared = f.runtime.preparePrompt({ kind: "plain", body: "must not send" }, session);
     assert.equal((await prepared.send(() => assert.fail("revoked transport must not send"))).delivery, "not-sent");
-    assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0); assert.equal(f.directKills, 0);
+    assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0);
     assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
   } finally { await f.runtime.stop(); }
 });
 
 test("standard dialogs without a host handler cancel only once per remote identity", async () => {
-  const f = fixture(false, true);
+  const f = fixture();
   try {
     await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
     const request = { type: "extension_ui_request", id: "unhandled", method: "input", title: "Input" };
@@ -530,7 +520,7 @@ test("standard dialogs without a host handler cancel only once per remote identi
 
 for (const mode of ["no-handler", "aborting", "controlled"] as const) test(`unavailable dialog cancellation is replay-safe and bounded while ${mode}`, async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
-  const f = fixture(false, true);
+  const f = fixture();
   let offered = 0;
   if (mode === "aborting") f.runtime.setInteractionHandler?.(() => { offered++; });
   try {
@@ -544,13 +534,13 @@ for (const mode of ["no-handler", "aborting", "controlled"] as const) test(`unav
     assert.equal(f.frames.filter(frame => frame.type === "extension_ui_response").length, 1);
     context.mock.timers.tick(5000); await new Promise(resolve => setImmediate(resolve));
     assert.equal(f.runtime.getSession(), 0);
-    assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0); assert.equal(f.directKills, 0);
+    assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0);
     assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
   } finally { await f.runtime.stop(); }
 });
 
 test("Stop cancellation chain can drain a late dialog without reoffering or retiring healthy transport", async () => {
-  const f = fixture(false, true);
+  const f = fixture();
   let offered = 0;
   let reply!: import("../../../extension/interactions/index.js").InteractionReplyCallback;
   f.runtime.setInteractionHandler?.((_form, answer) => { offered++; reply = answer; });
@@ -570,13 +560,13 @@ test("Stop cancellation chain can drain a late dialog without reoffering or reti
 
 for (const title of ["Input", null]) test(`disposal during automatic cancellation of ${title === null ? "malformed" : "valid"} dialog preserves owned uncertainty`, async context => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
-  const f = fixture(false, true);
+  const f = fixture();
   await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } });
   f.stallReplies();
   f.frame({ type: "extension_ui_request", id: "disposing", method: "input", title });
   await f.runtime.stop();
   context.mock.timers.tick(5000); await new Promise(resolve => setImmediate(resolve));
-  assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0); assert.equal(f.directKills, 0);
+  assert.equal(f.endCalls, 0); assert.equal(f.recoveryCalls, 0);
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, false);
 });
 
@@ -584,7 +574,7 @@ for (const rpcDelay of [2000, 4000]) test(`Stop has one five-second observation 
   context.mock.timers.enable({ apis: ["setTimeout"] });
   let now = 0;
   context.mock.method(performance, "now", () => now);
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
   // A registered extension command retains its handler lease until its prompt response.
   const sending = f.runtime.preparePrompt({ kind: "plain", body: "/sysprompt" }, f.runtime.getSession()).send(() => undefined);
@@ -614,7 +604,7 @@ for (const rpcDelay of [2000, 4000]) test(`Stop has one five-second observation 
     assert.equal(f.runtime.getSession(), 0);
     assert.equal(f.endCalls, 0);
     assert.equal(f.recoveryCalls, 0);
-    assert.equal(f.directKills, 0);
+
     now = 8000; context.mock.timers.tick(3000);
     f.frame({ type: "response", id: command.id, command: "prompt", success: true });
     await new Promise(resolve => setImmediate(resolve));
@@ -631,7 +621,7 @@ test("Stop cannot accept late success after its absolute deadline when timer del
   context.mock.timers.enable({ apis: ["setTimeout"] });
   let now = 0;
   context.mock.method(performance, "now", () => now);
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
   const sending = f.runtime.preparePrompt({ kind: "plain", body: "/sysprompt" }, f.runtime.getSession()).send(() => undefined);
   const command = f.frames.find(frame => frame.type === "prompt");
@@ -650,7 +640,7 @@ test("Stop cannot accept late success after its absolute deadline when timer del
     assert.equal((await stopping).ok, false);
     assert.equal(f.endCalls, 0);
     assert.equal(f.recoveryCalls, 0);
-    assert.equal(f.directKills, 0);
+
     assert.equal(f.runtime.getSession(), 0);
   } finally { await f.runtime.stop(); await Promise.all([stopping, sending]); }
 });
@@ -659,7 +649,7 @@ test("Stop can confirm handler settlement within the remaining shared budget wit
   context.mock.timers.enable({ apis: ["setTimeout"] });
   let now = 0;
   context.mock.method(performance, "now", () => now);
-  const f = fixture(false, true);
+  const f = fixture();
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
   const session = f.runtime.getSession();
   const sending = f.runtime.preparePrompt({ kind: "plain", body: "/sysprompt" }, session).send(() => undefined);
@@ -679,7 +669,7 @@ test("Stop can confirm handler settlement within the remaining shared budget wit
     assert.equal(f.runtime.getSession(), session);
     assert.equal(f.endCalls, 0);
     assert.equal(f.recoveryCalls, 0);
-    assert.equal(f.directKills, 0);
+
     now = 5001; context.mock.timers.tick(2);
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(f.runtime.getSession(), session, "successful Stop must release its observation timer");
