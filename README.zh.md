@@ -90,6 +90,22 @@ npm run verify:webview -- path/to/pi-vscode.vsix
 
 可选 VSIX 参数检查 `extension/dist/webview/webview.js` 与 `extension/dist/webview/webview.css` 是否存在。这些是静态资源检查，不会安装 VSIX、启动开发服务器或运行 pi。生产 Webview 加载打包的本地资源，不依赖开发服务器。
 
+组包前必须先运行 `npm run compile`：编译产物缺失时打包脚本会拒绝执行，而不是产出一个无法激活的包。然后：
+
+```bash
+npm run package:vsix
+```
+
+`npm run package:vsix` 依据声明的 `files` 条目与固定版本的 pi 运行时子树组装 `dist/pi-vscode-validation.vsix`，包含其嵌套的生产依赖。传入 `--out <path>` 可选择其他输出位置。相同输入树下输出确定，打包脚本本身不发布、不签名、也不安装。若要本地安装到独立的扩展目录，可把 `--extensions-dir` 指向一个临时目录：
+
+```bash
+code --extensions-dir /tmp/pi-vsix-profile --install-extension dist/pi-vscode-validation.vsix
+```
+
+CLI 证明清单可安装，不证明激活或运行时行为。须分别验证 macOS 原生开发宿主与安装版宿主；Windows 实机验收在当前范围外。独立扩展目录不隔离 VS Code 应用级共享存储。
+
+打包脚本调用 `zip` 命令。Windows 默认 shell 没有该命令，因此在那里打包会明确报错，而不会写出一个半成品归档；请在提供该命令的宿主上组包。
+
 按[贡献指南](CONTRIBUTING.zh.md)选择与改动匹配的检查。集成探针须遵守 [pi 集成指南](docs/guides/agent/pi-integration.zh.md)，与默认自动化测试分开执行。
 
 ## 文档

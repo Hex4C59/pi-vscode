@@ -104,7 +104,8 @@
     "spike:runtime": "npm run compile && node dist/spike-runtime.js",
     "docs:i18n:check": "node scripts/docs/docs-i18n-check.mjs",
     "docs:verify": "node scripts/docs/docs-verify.mjs",
-    "docs:health": "node scripts/docs/docs-health.mjs"
+    "docs:health": "node scripts/docs/docs-health.mjs",
+    "package:vsix": "node scripts/packaging/package-vsix.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

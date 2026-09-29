@@ -85,6 +85,22 @@ npm run verify:webview -- path/to/pi-vscode.vsix
 
 The optional VSIX argument checks for `extension/dist/webview/webview.js` and `extension/dist/webview/webview.css`. These are static asset checks; they do not install the VSIX, start a development server or run pi. Production Webviews load the packaged local assets and do not depend on a dev server.
 
+`npm run compile` must run before packaging: the packager refuses to build from a tree whose compiled output is missing rather than producing a package that cannot activate. Then:
+
+```bash
+npm run package:vsix
+```
+
+`npm run package:vsix` assembles `dist/pi-vscode-validation.vsix` from the declared `files` entries and the pinned pi runtime subtree, including its nested production dependencies. Pass `--out <path>` to choose another destination. The output is deterministic for a fixed input tree and is not published, signed or installed by the packager itself. To install it locally into a separate extensions directory, point `--extensions-dir` at a scratch directory:
+
+```bash
+code --extensions-dir /tmp/pi-vsix-profile --install-extension dist/pi-vscode-validation.vsix
+```
+
+The CLI proves manifest installability, not activation or runtime behavior. Verify the native macOS development and installed hosts separately; Windows real-host acceptance is outside the current scope. A separate extensions directory does not isolate VS Code application-shared storage.
+
+The packager invokes the `zip` binary. That command is not present in a default Windows shell, so packaging there fails with an explicit error rather than writing a partial archive; build the archive on a host that provides it.
+
 Follow [Contributing](CONTRIBUTING.md) for checks matched to the change. Integration probes require the [pi integration playbook](docs/guides/agent/pi-integration.md); they are separate from the default automated tests.
 
 ## Documentation
