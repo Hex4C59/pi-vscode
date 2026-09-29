@@ -50,6 +50,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-021 execution and native F5 closure](2026-09-27-wi-021-execution-closure.md) | September 27 UTC delegated scoped acceptance; native F5 and installed package separately verified; gates unchanged |
 | [WI-019 formal chat closure](2026-09-27-wi-019-formal-chat.md) | Delegated Q16, shared production presentation, separate native F5/installed validation; other WIs/ADRs/gates unchanged |
 | [WI-015 React/Vite acceptance](2026-09-27-wi-015-react-acceptance.md) | Delegated migration/ADR 0003 acceptance, added installed lifecycle evidence; gates remain Open |
+| [WI-025 sidebar visual craft closure](2026-09-29-wi-025-active-superseded.md) | Maintainer F5 visual acceptance on 2026-09-29; approved scope, layered evidence and unverified installed/full-execution limits |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
 ## Superseded handoffs
@@ -62,7 +63,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [Goal session-continuity checkpoint](2026-09-23-goal-session-handoff.md) | WI-017 executable delivery and maintainer-requested pause; next implementation not started, acceptance and gates remain open |
 | [WI-024 paused proposal](2026-09-28-wi-024-paused-proposal.md) | Provider/model configuration scope, delivery and superseded handoff moved out of ACTIVE for WI-025; WI-024 is paused, not closed, and its maintainer F5 remains pending in the ACTIVE parking lot |
 | [ACTIVE candidate and verification checkpoint history](2026-09-27-active-checkpoint-history.md) | Superseded entry narratives and preserved Chinese source; WI-019/021 acceptance, F5 blockers and pending decisions remain in ACTIVE |
-| [WI-025 superseded ACTIVE rounds and handoffs](2026-09-29-wi-025-active-superseded.md) | Full Build rounds 2–5, round-6 evidence and handoffs beyond the two most recent; WI-025 stays Build — scope in ACTIVE |
+| [WI-025 historical Build rounds and handoffs](2026-09-29-wi-025-active-superseded.md) | Full Build rounds 2–5, round-6 evidence and superseded handoffs; closure recorded at the top of the same file |
 
 ## Agent rule
 

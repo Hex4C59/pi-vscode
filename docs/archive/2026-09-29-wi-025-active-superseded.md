@@ -5,11 +5,19 @@ English | [中文](2026-09-29-wi-025-active-superseded.zh.md)
 - Type: Reference
 - Status: Archived
 - Created: 2026-09-29
-- Authority: historical Build slices, verification and handoff evidence only; current WI, approval boundary and open acceptance stay in [`ACTIVE.md`](../../ACTIVE.md)
+- Authority: historical WI-025 scope, Build slices, verification and handoff evidence; current status is in [`ACTIVE.md`](../../ACTIVE.md)
+
+## Closure — 2026-09-29
+
+The maintainer explicitly confirmed F5 visual acceptance for the WI-025 current focus on 2026-09-29. This closes the approved sidebar visual craft slice, including the separately authorized no-folder/setup corrections and pre-session thinking-level control. It is a maintainer acceptance, distinct from the agent's earlier synthetic-browser and isolated native F5 checks. No new ADR or architecture gate was involved; the PRD remains Draft, with this slice individually accepted.
+
+The approved work covered the shared token scale, welcome and composer, session navigation/history, conversation and activity, task actions, settings/confirmation dialogs, attachment presentation/focus, and the bounded startup corrections recorded in the [PRD](../product-requirements.md). Existing trust, permission, secret, runtime and session contracts remained in force. The detailed rounds and previous handoffs below remain historical evidence, including their then-pending F5 wording. The final pre-session handoff recorded 730/730 tests, compile, lint and webview verification, plus an isolated RPC startup check; these were not rerun by the acceptance-recording task.
+
+The confirmation covers WI-025's F5 visual acceptance only. This WI did not establish installed-VSIX behavior, full real-model/tool/approval/Stop flows, exact native width and short-window matrices, or native forced-colors and animation timing. WI-023 and paused WI-024 retain their own F5 items in ACTIVE; no new Build work, commit or push follows from this confirmation.
 
 ## Why archived
 
-On 2026-09-29 the maintainer authorized compressing the ACTIVE entry point. **WI-025 remains Build / WIP=1.** Full text for Build rounds 2–5, the long round-6 evidence table, and handoffs beyond the two most recent entries moved to the Chinese file below. This does not close WI-025 or upgrade acceptance (maintainer F5 / installed VSIX remain open in ACTIVE). Latest ACTIVE handoffs cover pre-session thinking (maintainer confirmed in testing) and grouped commit authorization; evidence here is a dated snapshot, not live authority.
+On 2026-09-29 the maintainer authorized compressing the ACTIVE entry point. At that checkpoint WI-025 remained Build / WIP=1; the maintainer's later F5 visual confirmation and closure are recorded above. Full text for Build rounds 2–5, the long round-6 evidence table, and superseded handoffs moved to the Chinese file below. The statements of pending F5 and installed VSIX in those older entries are dated snapshots, not live acceptance status.
 
 ## Preview entry points
 

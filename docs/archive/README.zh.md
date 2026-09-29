@@ -54,6 +54,7 @@
 | [WI-021执行与原生F5收尾](2026-09-27-wi-021-execution-closure.zh.md) | 9月27日UTC委托限定接受；F5／安装分别验证，gates不变 |
 | [WI-019正式chat收尾](2026-09-27-wi-019-formal-chat.zh.md) | Q16委托评估、共享正式展示、独立F5／安装；其他WI／ADR／gates不变 |
 | [WI-015 React／Vite验收](2026-09-27-wi-015-react-acceptance.zh.md) | 委托迁移／ADR0003接受、新安装生命周期证据；当时gates仍Open |
+| [WI-025 侧栏视觉工艺收尾](2026-09-29-wi-025-active-superseded.zh.md) | 维护者 2026-09-29 F5 视觉验收；批准范围、分层证据与安装／完整执行未验边界 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |
 
 ## 被替代的交接
@@ -66,7 +67,7 @@
 | [Goal会话连续性检查点](2026-09-23-goal-session-handoff.zh.md) | WI-017可执行交付与维护者请求暂停；当时下一实现未开始、验收／gates仍待 |
 | [WI-024暂停提案](2026-09-28-wi-024-paused-proposal.zh.md) | 为WI-025移出ACTIVE的供应商／模型配置范围、交付与被替代交接；WI-024暂停而非关闭，维护者F5仍在ACTIVE停车场待办 |
 | [ACTIVE候选与验证检查点历史](2026-09-27-active-checkpoint-history.zh.md) | 旧入口过程及原始中文；当时WI-019／021验收、F5阻塞及未决由ACTIVE持有 |
-| [WI-025 已替代切片与交接](2026-09-29-wi-025-active-superseded.zh.md) | 第二～五轮完整 Build 记录、第六轮证据与超出两条的交接；WI-025 仍为 Build，当前范围见 ACTIVE |
+| [WI-025 历史 Build 切片与交接](2026-09-29-wi-025-active-superseded.zh.md) | 第二～五轮完整 Build 记录、第六轮证据与已替代交接；同文件顶部记录关闭结论 |
 
 ## Agent 规则
 
