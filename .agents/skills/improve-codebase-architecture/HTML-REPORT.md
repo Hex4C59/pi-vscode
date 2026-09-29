@@ -2,7 +2,7 @@
 
 The architectural review is rendered as a single self-contained HTML file in the OS temp directory. Tailwind and Mermaid both come from CDNs. Mermaid handles graph-shaped diagrams reliably; hand-built divs and inline SVG handle the more editorial visuals (mass diagrams, cross-sections). Mix the two: don't lean on Mermaid for everything, it'll start to look generic.
 
-Generated prose is Chinese. Architecture nouns stay English. The rule is [Tone](#tone).
+Generated prose is everyday Chinese. The rule is [Tone](#tone).
 
 ## Scaffold
 
@@ -37,22 +37,22 @@ Generated prose is Chinese. Architecture nouns stay English. The rule is [Tone](
 
 ## Header
 
-Repo name, date, and a compact legend in Chinese: 实线框 = module，虚线 = seam，红箭头 = 泄漏，深色厚框 = deep module. No introduction paragraph. Straight into the candidates.
+Repo name, date, and a compact legend in everyday Chinese: 实线框 = 一块代码，虚线 = 调用方和内部的分界，红箭头 = 不该露出去的依赖，深色厚框 = 外面简单、里面承担复杂。No introduction paragraph. Straight into the candidates.
 
 ## Candidate card
 
-The diagrams carry the weight. Prose is sparse Chinese. Architecture nouns from `/codebase-design` stay English inside those sentences.
+The diagrams carry the weight. Prose is sparse everyday Chinese. Visible text follows [Tone](#tone), including words inside diagrams.
 
 Each candidate is one `<article>`. Visible labels are Chinese:
 
-- **标题**: short, names the deepening (e.g. "收拢 Order intake").
-- **徽章**: recommendation strength (`强` = emerald, `值得探索` = amber, `推测` = slate), plus a dependency-category tag (`进程内`, `可本地替换`, `端口与 adapter`, `测试替身`). These four tags are the Chinese labels for `in-process`, `local-substitutable`, `ports & adapters`, and `mock`.
-- **文件**: monospaced list, `font-mono text-sm`.
+- **标题**: short, names the change in everyday words (e.g. "收拢订单入口").
+- **徽章**: recommendation strength (`强` = emerald, `值得探索` = amber, `推测` = slate), plus where the change sits (`就在这块代码里`, `可以换成本地实现`, `外部连接可以替换`, `测试用的假实现`). These four tags are the plain labels for `in-process`, `local-substitutable`, `ports & adapters`, and `mock`.
+- **文件**: monospaced list, `font-mono text-sm`. Paths stay as paths.
 - **之前 / 之后**: the centrepiece. Two columns, side by side. See patterns below. Column headings are `之前` and `之后`.
-- **问题**: one Chinese sentence. What hurts.
-- **做法**: one Chinese sentence. What changes.
-- **收益**: short Chinese phrases. e.g. "测试只过一个 interface", "定价泄漏停在 seam 内", "删掉 4 个 shallow 包装".
-- **ADR 提示** (if applicable): one Chinese line in an amber-tinted box.
+- **问题**: one everyday Chinese sentence. What hurts, in files and behaviour the reader already knows.
+- **做法**: one everyday Chinese sentence. What changes.
+- **收益**: short everyday Chinese phrases. e.g. "测试只从这一处进", "定价规则不再散落在调用方", "删掉 4 个空包装".
+- **ADR 提示** (if applicable): one everyday Chinese line in an amber-tinted box.
 
 No paragraphs of explanation. If the diagram needs a paragraph to be understood, redraw the diagram.
 
@@ -98,7 +98,7 @@ Before: a tree of function calls rendered as nested boxes. After: the same tree 
 - Lean editorial, not corporate-dashboard. Generous whitespace. Serif optional for headings (`font-serif` works well with stone/slate).
 - Colour sparingly: one accent (emerald or indigo) plus red for leakage and amber for warnings.
 - Keep diagrams ~320px tall so before/after sits comfortably side by side without scrolling.
-- Use `text-xs uppercase tracking-wider` for module labels inside diagrams, so they read as schematic, not as UI.
+- Diagram labels are short everyday Chinese, same rule as [Tone](#tone). Code identifiers stay in their original case. A label like `INTERFACE · MOUNTCHAT` is a failed label; write `对外只留：挂载聊天`.
 - The only scripts are the Tailwind CDN and the Mermaid ESM import. The report is otherwise static: no app code, no interactivity beyond Mermaid's own rendering.
 
 ## Top recommendation section
@@ -107,17 +107,34 @@ One larger card. Heading `首要建议`. Candidate name, one Chinese sentence on
 
 ## Tone
 
-Write the report in Chinese. Keep these architecture nouns in English, embedded in the Chinese sentence: module, interface, implementation, depth, deep, shallow, seam, adapter, leverage, locality.
+The page is for a maintainer who has not read the design glossary. Write everyday Chinese. A sentence is done when that reader can say what is wrong and what would change without asking what a word means.
 
-Use those English nouns for the architecture. File paths, code identifiers, and domain terms taken from `CONTEXT.md` stay as written there. Everything else the reader sees — titles, badges, column headings, problems, solutions, wins, legends, ADR callouts — is Chinese.
+File paths, code identifiers, and domain terms taken from `CONTEXT.md` stay as written there. Everything else the reader sees — titles, badges, diagram labels, column headings, problems, solutions, wins, legends, ADR callouts — is everyday Chinese.
+
+Say the design ideas in plain words:
+
+| While exploring, the agent may think… | The page says… |
+|---|---|
+| shallow module | 调用方要懂的，和里面做的差不多多 |
+| deep module | 外面只留很少的事，复杂留在里面 |
+| interface | 调用方必须知道的事 |
+| implementation | 里面的代码 |
+| seam | 调用方和内部的分界 |
+| leak | 不该由调用方知道的事露了出去 |
+| adapter | 接上的一种具体做法 |
+| leverage | 调用方少记几件事，还能用到同样的能力 |
+| locality | 改动和 bug 集中在一处 |
+| deletion test | 拿掉这块之后，复杂是消失了，还是散回调用方 |
 
 **Phrasings that fit:**
 
-- "Order intake module 是 shallow 的：interface 几乎和 implementation 一样宽。"
-- "定价从 seam 漏了出去。"
-- "加深：一个 interface，一处测试。"
-- "两个 adapter 才撑得起这条 seam：生产用 HTTP，测试用内存。"
+- "订单入口这块代码，调用方要懂的和里面做的差不多多。"
+- "定价规则露到了调用方，改一处修不好。"
+- "收成一块：调用方只记一件事，测试也只从这里进。"
+- "生产走 HTTP，测试走内存，所以这里值得单独切开。"
 
-**收益** name the gain with those nouns: *"locality：bug 集中在一个 module"*, *"leverage：一个 interface，N 个调用点"*, *"interface 变短，implementation 吃进那些包装"*. Glossary gains only; skip vague praise such as "更好维护" or "更干净".
+**收益** names that kind of gain: "bug 集中在一处", "调用方少记几件事", "空包装收进里面". Skip vague praise such as "更好维护" or "更干净". Skip the heading 「删除测试」; readers hear "delete the tests". Write what happens if that code is removed.
 
-No hedging, no throat-clearing. If a sentence could be a bullet, make it a bullet. If a bullet could be cut, cut it. If a term isn't in the `/codebase-design` glossary, reach for one that is before inventing a new one.
+These English words stay in the agent's notes and off the page: module, interface, implementation, depth, deep, shallow, seam, adapter, leverage, locality. The same ban covers diagram labels and Mermaid node text.
+
+No hedging, no throat-clearing. If a sentence could be a bullet, make it a bullet. If a bullet could be cut, cut it.

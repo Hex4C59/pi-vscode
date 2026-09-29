@@ -24,7 +24,7 @@ Reproducible initial views accept URL parameters: `specimen=composer|settings|hi
 
 ## Settings structure candidates
 
-For the maintainer-requested fundamental settings redesign, open the isolated [settings structure study](assets/settings-redesign-study.html) with `?variant=A` (custom editor page) or `?variant=B` (sidebar navigation). The maintainer selected A on 2026-09-29 for WI-026 implementation; B remains a study alternative. Both study pages use sample data and memory-only actions, and selection is not production visual acceptance. The [research](../../../docs/discussions/2026-09-29-settings-redesign-research.md) distinguishes official native-Settings guidance, local visual evidence, tradeoffs and sampled checks. This study does not replace the approved model-picker baseline below or establish production behavior.
+For the maintainer-requested fundamental settings redesign, open the isolated [settings structure study](assets/settings-redesign-study.html) with `?variant=A` (custom editor page) or `?variant=B` (sidebar navigation). The maintainer selected A on 2026-09-29 for WI-026 implementation and later confirmed production F5 visual acceptance the same day. B remains a study alternative. Both study pages use sample data and memory-only actions; opening them is not that acceptance. The [research](../../../docs/discussions/2026-09-29-settings-redesign-research.md) distinguishes official native-Settings guidance, local visual evidence, tradeoffs and sampled checks. This study does not replace the approved model-picker baseline below or establish production behavior.
 
 ## Approved model-picker visual baseline
 

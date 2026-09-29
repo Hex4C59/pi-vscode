@@ -10,7 +10,7 @@ Surface architectural friction and propose **deepening opportunities**: refactor
 
 This command is _informed_ by the project's domain model and built on a shared design vocabulary:
 
-- Call the Skill tool with "codebase-design" for the architecture vocabulary (**module**, **interface**, **depth**, **seam**, **adapter**, **leverage**, **locality**) and its principles (the deletion test, "the interface is the test surface", "one adapter = hypothetical seam, two = real"). Use these terms exactly in every suggestion, and don't drift into "component," "service," "API," or "boundary."
+- Call the Skill tool with "codebase-design" for the architecture vocabulary (**module**, **interface**, **depth**, **seam**, **adapter**, **leverage**, **locality**) and its principles (the deletion test, "the interface is the test surface", "one adapter = hypothetical seam, two = real"). Use these terms while exploring and grilling. The HTML page is the exception: its visible text follows [HTML-REPORT.md](HTML-REPORT.md) Tone, everyday Chinese with no design glossary.
 - The domain language in `CONTEXT.md` gives names to good seams; ADRs in `docs/adr/` record decisions this command should not re-litigate.
 
 ## Process
@@ -44,14 +44,14 @@ For each candidate, render a card with:
 
 - **Files**: which files/modules are involved
 - **Problem**: why the current architecture is causing friction
-- **Solution**: one Chinese sentence for what would change. Report prose is Chinese; architecture nouns stay English. [HTML-REPORT.md](HTML-REPORT.md) Tone is the rule.
-- **Benefits**: explained in terms of locality and leverage, and how tests would improve
+- **Solution**: one everyday Chinese sentence for what would change. [HTML-REPORT.md](HTML-REPORT.md) Tone is the rule.
+- **Benefits**: where a change or a bug would sit afterwards, what callers would no longer have to learn, and how tests would improve. Say that in everyday Chinese.
 - **Before / After diagram**: side-by-side, custom-drawn, illustrating the shallowness and the deepening
 - **Recommendation strength**: one of `Strong`, `Worth exploring`, `Speculative`, rendered as a badge
 
 End the report with a **Top recommendation** section: which candidate you'd tackle first and why.
 
-**Use CONTEXT.md vocabulary for the domain, and the `/codebase-design` vocabulary for the architecture.** If `CONTEXT.md` defines "Order," talk about "the Order intake module," not "the FooBarHandler," and not "the Order service."
+**Name domain things with `CONTEXT.md`.** If `CONTEXT.md` defines "Order," the page says 「订单入口」, not a class name and not the design glossary. Design words stay in the agent's notes.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly in the card (e.g. a warning callout: _"与 ADR-0007 冲突，仍值得重开，因为……"_). Don't list every theoretical refactor an ADR forbids.
 
