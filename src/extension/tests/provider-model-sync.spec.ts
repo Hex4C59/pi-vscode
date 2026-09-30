@@ -1,16 +1,73 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { test, type TestContext } from "node:test";
+import { ProviderConfig, type ProviderConfigDeps } from "../models/providerConfig.js";
 import { harness, settingsRuntime, tick, folder } from "./harness.js";
 
 function savedDefaultFixture(host: ReturnType<typeof harness>): void {
   const owner = host.provider as unknown as { providerConfig: {
     snapshot: { defaultProvider: string | null; defaultModelId: string | null; busy: boolean; error: string | null };
     refresh(): Promise<void>;
-    setDefaultModel(provider: string, modelId: string): Promise<void>;
+    setDefaultModel(provider: string, modelId: string): Promise<{ kind: "committed"; provider: string; modelId: string }>;
   } };
   owner.providerConfig.refresh = async () => {};
   owner.providerConfig.setDefaultModel = async (provider, modelId) => {
     Object.assign(owner.providerConfig.snapshot, { defaultProvider: provider, defaultModelId: modelId, busy: false, error: null });
+    return { kind: "committed", provider, modelId };
+  };
+}
+
+function liveDefaultSettings(t: TestContext): {
+  settings: Awaited<ReturnType<ProviderConfigDeps["createSettings"]>>;
+  deps: ProviderConfigDeps;
+} {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "pi-default-sync-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  let defaultProvider: string | undefined;
+  let defaultModel: string | undefined;
+  const models = [
+    { id: "old-model", name: "Old", provider: "fixture" },
+    { id: "new-model", name: "New", provider: "fixture" },
+  ];
+  const settings = {
+    getDefaultProvider: () => defaultProvider,
+    getDefaultModel: () => defaultModel,
+    getDefaultThinkingLevel: () => "medium" as const,
+    getModelThinkingLevel: () => undefined,
+    setModelThinkingLevel: () => {},
+    setDefaultModelAndProvider(provider: string, modelId: string) { defaultProvider = provider; defaultModel = modelId; },
+    reload: async () => {},
+    flush: async () => {},
+    drainErrors: () => [],
+  };
+  return {
+    settings,
+    deps: {
+      createRuntime: async () => ({
+        thinkingOptions: () => ({ level: "medium" as const, levels: ["off", "medium", "high"] }),
+        getProviders: () => [{
+          id: "fixture", name: "Fixture",
+          auth: { apiKey: { login: async () => ({ type: "api_key" as const, key: "sk-test" }) } },
+          getModels: () => models,
+        }],
+        getProviderAuthStatus: () => ({ configured: true, source: "stored", label: "stored key" }),
+        listCredentials: async () => [{ providerId: "fixture", type: "api_key" }],
+        getModels: () => models,
+        getAvailable: async () => models,
+        login: async () => {},
+        logout: async () => {},
+      }),
+      createSettings: async () => settings,
+      promptUi: {
+        showInputBox: async () => undefined,
+        showQuickPick: async () => undefined,
+        showInformationMessage: async () => undefined,
+        openExternal: async () => false,
+      },
+      modelsPath: () => path.join(directory, "models.json"),
+    },
   };
 }
 
@@ -111,5 +168,41 @@ test("refresh providers re-applies the saved default into the live session", asy
     assert.equal(applied.length, beforeRefresh + 1, "refresh must apply the saved default again");
     assert.equal(applied.at(-1), "hellocode/gpt-6-sol");
     assert.equal(v.state().chatModel, "hellocode / gpt-6-sol");
+  } finally { h.provider.dispose(); }
+});
+
+test("a failed default save keeps the old projection and does not apply the requested live model", async t => {
+  const live = liveDefaultSettings(t);
+  const r = settingsRuntime();
+  const applied: string[] = [];
+  const h = harness([folder()], true, undefined, r.runtime);
+  const config = Reflect.get(h.provider, "providerConfig");
+  assert.ok(config instanceof ProviderConfig);
+  Reflect.set(config, "deps", live.deps);
+  Reflect.set(config, "settings", undefined);
+  Reflect.set(config, "runtime", undefined);
+  const models = Reflect.get(h.provider, "models") as {
+    applyConfiguredModel(provider: string, modelId: string): Promise<void>;
+  };
+  const apply = models.applyConfiguredModel.bind(models);
+  models.applyConfiguredModel = async (provider, modelId) => {
+    applied.push(`${provider}/${modelId}`);
+    return apply(provider, modelId);
+  };
+  try {
+    const v = h.createView();
+    v.action("chooseResources", { choice: "allow" });
+    await tick(); await tick();
+    v.action("setDefaultModel", { provider: "fixture", modelId: "old-model" });
+    await tick(); await tick();
+    assert.equal(config.snapshot.defaultModelId, "old-model");
+    assert.deepEqual(applied, ["fixture/old-model"]);
+    live.settings.flush = async () => { throw new Error("disk write failed"); };
+    v.action("setDefaultModel", { provider: "fixture", modelId: "new-model" });
+    await tick(); await tick();
+    assert.equal(config.snapshot.defaultProvider, "fixture");
+    assert.equal(config.snapshot.defaultModelId, "old-model");
+    assert.match(config.snapshot.error ?? "", /Could not save the default model/);
+    assert.deepEqual(applied, ["fixture/old-model"]);
   } finally { h.provider.dispose(); }
 });

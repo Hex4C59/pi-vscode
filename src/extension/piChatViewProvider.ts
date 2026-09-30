@@ -871,13 +871,17 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         break;
       }
       case "logoutProvider": await this.providerConfig.logout(message.providerId); break;
-      case "setDefaultModel": await this.providerConfig.setDefaultModel(message.provider, message.modelId); break;
+      case "setDefaultModel": {
+        const saved = await this.providerConfig.setDefaultModel(message.provider, message.modelId);
+        if (saved.kind === "committed") await this.syncSessionModelsAfterProviderConfig(saved.provider, saved.modelId);
+        this.publish();
+        return;
+      }
       case "setDefaultThinkingLevel":
         await this.providerConfig.setDefaultThinkingLevel(message.provider, message.modelId, message.level);
         this.publish(); return;
     }
-    if (message.type === "setDefaultModel") await this.syncSessionModelsAfterProviderConfig(message.provider, message.modelId);
-    else await this.syncSessionModelsAfterProviderConfig();
+    await this.syncSessionModelsAfterProviderConfig();
     this.publish();
   }
 

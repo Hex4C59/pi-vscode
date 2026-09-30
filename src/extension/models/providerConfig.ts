@@ -91,6 +91,12 @@ export type EndpointAddResult = {
   selection?: { providerId: string; modelId: string };
 };
 
+export type DefaultModelSaveResult =
+  | { kind: "committed"; provider: string; modelId: string }
+  | { kind: "failed" }
+  | { kind: "not-run" }
+  | { kind: "stale" };
+
 const empty = (): ProviderConfigProjection => ({
   busy: false, error: null, defaultProvider: null, defaultModelId: null, defaultThinkingLevel: null, thinkingLevels: [], providers: [], catalog: [],
 });
@@ -500,34 +506,43 @@ export class ProviderConfig {
     }
   }
 
-  async setDefaultModel(provider: string, modelId: string): Promise<void> {
-    if (this.value.busy || this.saving) return;
+  async setDefaultModel(provider: string, modelId: string): Promise<DefaultModelSaveResult> {
+    if (this.value.busy || this.saving) return { kind: "not-run" };
     this.saving = true;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
     this.changed();
     try {
-      const settings = await this.ensureSettings();
-      const runtime = await this.ensureRuntime();
-      if (settings.drainErrors().length) throw new Error("settings unavailable");
-      settings.setDefaultModelAndProvider(provider, modelId);
-      await settings.flush();
-      if (settings.drainErrors().length) throw new Error("settings write failed");
-      if (token !== this.revision) return;
-      this.value = {
-        ...this.value,
-        busy: false,
-        error: null,
-        defaultProvider: provider,
-        defaultModelId: modelId,
-        ...this.thinkingProjection(runtime, settings),
-      };
+      return await this.commitDefaultModel(token, provider, modelId);
     } catch {
-      if (token !== this.revision) return;
+      if (token !== this.revision) return { kind: "stale" };
       this.value = { ...this.value, busy: false, error: "Could not save the default model." };
       this.settings = undefined;
+      this.changed();
+      return { kind: "failed" };
     } finally { this.saving = false; }
+  }
+
+  private async commitDefaultModel(
+    token: number, provider: string, modelId: string,
+  ): Promise<DefaultModelSaveResult> {
+    const settings = await this.ensureSettings();
+    const runtime = await this.ensureRuntime();
+    if (settings.drainErrors().length) throw new Error("settings unavailable");
+    settings.setDefaultModelAndProvider(provider, modelId);
+    await settings.flush();
+    if (settings.drainErrors().length) throw new Error("settings write failed");
+    if (token !== this.revision) return { kind: "stale" };
+    this.value = {
+      ...this.value,
+      busy: false,
+      error: null,
+      defaultProvider: provider,
+      defaultModelId: modelId,
+      ...this.thinkingProjection(runtime, settings),
+    };
     this.changed();
+    return { kind: "committed", provider, modelId };
   }
 
   async setDefaultThinkingLevel(provider: string, modelId: string, level: string): Promise<void> {

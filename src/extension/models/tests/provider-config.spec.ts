@@ -180,7 +180,9 @@ test("pre-session strength save failure keeps applied projection and saving reje
   const settings = await dependencies.createSettings();
   const config = new ProviderConfig(dependencies, () => {});
   await config.refresh();
-  await config.setDefaultModel("anthropic", "claude");
+  assert.deepEqual(await config.setDefaultModel("anthropic", "claude"), {
+    kind: "committed", provider: "anthropic", modelId: "claude",
+  });
   const thinkingWrites: string[] = [];
   const defaultWrites: string[] = [];
   const originalSetThinking = settings.setModelThinkingLevel;
@@ -198,7 +200,7 @@ test("pre-session strength save failure keeps applied projection and saving reje
   const pending = config.setDefaultThinkingLevel("anthropic", "claude", "high");
   await new Promise(resolve => setImmediate(resolve));
   await config.setDefaultThinkingLevel("anthropic", "claude", "off");
-  await config.setDefaultModel("anthropic", "other");
+  assert.deepEqual(await config.setDefaultModel("anthropic", "other"), { kind: "not-run" });
   assert.deepEqual(thinkingWrites, ["high"]);
   assert.deepEqual(defaultWrites, []);
   assert.equal(config.snapshot.busy, true);
@@ -209,4 +211,34 @@ test("pre-session strength save failure keeps applied projection and saving reje
   assert.equal(config.snapshot.busy, false);
   assert.match(config.snapshot.error ?? "", /Could not save/);
   assert.ok(!JSON.stringify(config.snapshot).includes("private credentials"));
+});
+
+test("a default-model flush failure keeps the old projection and reports failed", async t => {
+  const dependencies = deps(t);
+  const settings = await dependencies.createSettings();
+  const config = new ProviderConfig(dependencies, () => {});
+  await config.refresh();
+  await config.setDefaultModel("anthropic", "claude");
+  settings.flush = async () => { throw new Error("disk write failed"); };
+  assert.deepEqual(await config.setDefaultModel("anthropic", "other"), { kind: "failed" });
+  assert.equal(config.snapshot.defaultProvider, "anthropic");
+  assert.equal(config.snapshot.defaultModelId, "claude");
+  assert.equal(config.snapshot.busy, false);
+  assert.match(config.snapshot.error ?? "", /Could not save the default model/);
+});
+
+test("a superseded default-model save reports stale without applying the new projection", async t => {
+  const dependencies = deps(t);
+  const settings = await dependencies.createSettings();
+  const config = new ProviderConfig(dependencies, () => {});
+  await config.refresh();
+  await config.setDefaultModel("anthropic", "claude");
+  let finish!: () => void;
+  settings.flush = () => new Promise<void>(resolve => { finish = resolve; });
+  const pending = config.setDefaultModel("anthropic", "other");
+  await new Promise(resolve => setImmediate(resolve));
+  Reflect.set(config, "revision", Number(Reflect.get(config, "revision")) + 1);
+  finish();
+  assert.deepEqual(await pending, { kind: "stale" });
+  assert.equal(config.snapshot.defaultModelId, "claude");
 });
