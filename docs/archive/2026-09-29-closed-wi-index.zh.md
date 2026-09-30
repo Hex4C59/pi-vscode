@@ -100,6 +100,7 @@
 | WI-072 | RPC 内部 helper 分组；根协调文件保留 | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-072-acceptance.zh.md); [方案: 2026-10-01-wi-072-approved-proposal](2026-10-01-wi-072-approved-proposal.zh.md) |
 | WI-073 | DOC-NAV-01 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-073-acceptance.zh.md); [方案](2026-10-01-wi-073-approved-proposal.zh.md) |
 | WI-074 | DOC-NAV-02 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-074-acceptance.zh.md); [方案](2026-10-01-wi-074-approved-proposal.zh.md) |
+| WI-075 | DOC-ORG-03 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-075-acceptance.zh.md); [方案](2026-10-01-wi-075-approved-proposal.zh.md); [评估](2026-10-01-wi-075-guide-placement-evaluation.zh.md) |
 
 
 ## 不在本索引

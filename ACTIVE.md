@@ -11,35 +11,22 @@
 | 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证。 |
 | 收尾 | 记录验收身份、检查结果与未决项；按规则归档并清理资源。 |
 
-## 正在做（WIP=1）
+## 当前无活动 WI（WIP=0）
 
-| 字段 | 内容 |
-|---|---|
-| **ID** | WI-075（DOC-ORG-03） |
-| **阶段** | 建造（Prepare 范围核对完成后，依本轮明确授权晋升） |
-| **Gate ID** | none |
-| **Decision** | none |
-| **PRD 判定** | 纯技术：指南归属收益评估，仅文档组织／检索，不改用户可见行为 |
-
-### 目标与范围
-
-评估 docs/git-commit-convention 与 docs/bilingual-documentation 是否值得迁至 guides，核对全部引用与校验配置。收益不足就保留原路径，记录理由并结束；不为一致性迁移。
-
-### 方案与架构核对
-
-保持历史状态与现行权威入口，成对维护中英，不复制正文或补造证据。给出有证据的保留／迁移结论，规则与权威不变；若需迁移，先核对中英、入站／相对链接与配置影响。 风险是漏项、错链或把历史当作授权；以目录清单与现有材料逐项核对。运行 `npm run docs:verify`；关闭运行 `npm run docs:health`。
-
-### 验收
-
-给出有证据的保留／迁移结论，规则与权威不变；若需迁移，先核对中英、入站／相对链接与配置影响。 执行 docs:verify，关闭执行 docs:health；无产品代码变化，不要求 F5 或安装验证。
-
-### 范围外与批准边界
-
-2026-10-01 本轮维护者明确允许 WI-072 关闭后，按 Prepare→Build 逐个晋升 DOC-NAV-01／02、DOC-ORG-03。当前仅 DOC-ORG-03，WIP=1。实现文档先提交，ACTIVE 关闭另提交。不改变产品行为、ADR／批准状态，不移动或删除历史文件，不启动 PI-GAP（含现有 PI-GAP-28），不 push。
+本轮明确授权的 WI-072、DOC-NAV-01（WI-073）、DOC-NAV-02（WI-074）、DOC-ORG-03（WI-075）已串行关闭。没有自动晋升产品 WI。大目标未标完成，等待维护者点名下一独立切片；不 push。
 
 ## 当前焦点与未决项
 
-当前串行处理 DOC-ORG-03。PI-GAP 仍仅为产品候选，须维护者点名并另行确认 PRD／范围；下载／市场仍排除。
+已完成本轮技术／文档授权。DOC-ORG-03 结论为保留两个指南原路径。Draft ADR 0010 保持 Draft；其两条既有文档警告保留。PI-GAP-01–28 都仍是候选（含既有记录中的 PI-GAP-28），没有产品 Build 授权。
+
+### 下一产品切片的 Prepare 问题（待点名，不启动）
+
+- 先点名单个 PI-GAP ID，再确定最小可观察范围；不把整组候选合并成一个 WI。
+- 若点名组内首项 PI-GAP-01，先决定本次只做 steering 还是 follow-up；队列展示／取回是否另拆后续切片。不默认一次交付整项。
+- 确认本次输入仅文字还是含附件，忙碌／空闲／Stop／断线／切换时的准入、失败保留与未知投递规则；不丢失或自动重发。
+- 核对锁定版本公开 RPC／SDK 的可行性与现有实现，再补中英 PRD 的已批准行为、错误／空状态、WI／REQ 追踪和端到端可重复工件；确定是否需要 F5／安装 VSIX 验收。点名前不写用户可见实现或把候选当批准。
+
+下载／市场、额外生态、Chat Participant、remote／multi-root、额外平台、跳过审批和公开发布仍排除。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -47,9 +34,9 @@
 
 本机插件清单切片 1–7、模型芯片、弹出层互斥、拒绝资源提示、规范模型身份、REQ-009 macOS 五类证据与 Webview 目录整理已关闭；下载／市场仍排除。见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
 
-### docs 目录检索与归属整理（文档维护，待晋升）
+### docs 目录检索与归属整理（本轮已关闭；保留原候选范围）
 
-2026-10-01 维护者要求把目录评估中的问题记录为后续任务。**仅授权记录；不改变当前 WI、既有队列顺序或 WIP=1，不沿用已有 `/goal` 批准自动启动本组 Build。** 晋升时按 Prepare→Build 确认具体范围。保留 architecture／decisions／guides／reference／discussions／archive 大分类。
+以下保留最初停车场记录；本轮独立授权与三项关闭记录见表后。2026-10-01 维护者要求把目录评估中的问题记录为后续任务。**仅授权记录；不改变当前 WI、既有队列顺序或 WIP=1，不沿用已有 `/goal` 批准自动启动本组 Build。** 晋升时按 Prepare→Build 确认具体范围。保留 architecture／decisions／guides／reference／discussions／archive 大分类。
 
 | ID／优先级 | 问题与范围 | 完成标准 |
 |---|---|---|
@@ -62,6 +49,8 @@
 DOC-NAV-01 已在本轮独立授权下按 WI-073 完成；见[验收](docs/archive/2026-10-01-wi-073-acceptance.zh.md)。
 
 DOC-NAV-02 已在本轮独立授权下按 WI-074 完成；见[验收](docs/archive/2026-10-01-wi-074-acceptance.zh.md)。
+
+DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archive/2026-10-01-wi-075-acceptance.zh.md)。
 
 ### pi 功能差距待办（产品候选，待晋升）
 
@@ -125,10 +114,14 @@ DOC-NAV-02 已在本轮独立授权下按 WI-074 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-01 — WI-075 关闭；到达本轮授权边界
+
+[评估](docs/archive/2026-10-01-wi-075-guide-placement-evaluation.zh.md)结论保留指南原路径；[验收](docs/archive/2026-10-01-wi-075-acceptance.zh.md)记录实际检查。docs:verify／docs:health 均 0 错误，保留 ADR 0010 两条警告。没有启动 PI-GAP，等待维护者点名单个产品切片；大目标未结束。
+
 ### 2026-10-01 — WI-074 关闭
 
-见[验收](docs/archive/2026-10-01-wi-074-acceptance.zh.md)。本轮授权只晋升 DOC-ORG-03；其余候选未启动。
+26 份讨论及中文对已按用途导航，未移动／归档讨论。见[验收](docs/archive/2026-10-01-wi-074-acceptance.zh.md)。WI-072 的 compile／lint／1064 测试证据见其[验收](docs/archive/2026-10-01-wi-072-acceptance.zh.md)，不当作文档切片重新跑的代码测试。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-074。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-075。

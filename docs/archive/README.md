@@ -64,3 +64,5 @@ At WI close or confirmed document replacement, the agent performs affected archi
 Navigation maintenance: WI-073 — [numbered history](2026-09-29-closed-wi-index.md).
 
 Navigation maintenance: WI-074 — [numbered history](2026-09-29-closed-wi-index.md).
+
+Navigation maintenance: WI-075 — [numbered history](2026-09-29-closed-wi-index.md).
