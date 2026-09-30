@@ -13,41 +13,41 @@
 
 ## 正在做（WIP=1）
 
-拒绝项目资源后给出持续可见提示。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
+活跃模型身份用供应商／模型 id，不用显示名。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-068 |
+| **ID** | WI-069 |
 | **阶段** | 建造 |
 | **Gate ID** | none |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：既有 REQ-001 在 VS Code 已信任但拒绝 pi 项目资源后，会话可继续且须可见表明未加载项目本地 pi 资源 |
+| **PRD 判定** | 用户可见：既有 REQ-002 在跨供应商同名时仍须标出唯一已应用模型 |
 
 ### 目标与范围
 
-生产路径 [`ProjectResourceConsent`](src/webview/chat/project-resource-consent.tsx) 进入 settled 且 `choice === "decline"` 后，显示一条持续状态提示。不恢复旧 [`WorkspaceSetup`](src/webview/components/workspace-setup.tsx) 卡片，不提供改选控件，不改宿主同意协议或运行时加载边界。允许（allow）路径不新增提示。
+[`formatModelLabel`](src/adapter/runtime/pi-rpc-model-parse.ts) 把当前模型投影为 `provider / modelId`，不再优先 `name`。目录项 `label` 仍可用显示名。WI-066 芯片展示与 WI-042 radio 身份规则不变。不改宿主协议字段名，不把供应商画回芯片。
 
 ### 方案与架构核对
 
-Webview 展示层复用已有 `choice`。不把路径或秘密送进 Webview。不把资源信任写成沙箱或文件系统隔离。设置页／审批／执行配置不在本切片。
+Adapter 在 start／get_state 投影时产出规范身份；Webview `appliedCatalogIdentity` 已按该字符串匹配。同名显示标签不再让当前模型无法唯一匹配。不改 pi 运行时选模。
 
 ### 验收
 
-拒绝并就绪后 `#declined-resources` 可见；允许路径无该节点；未选择前无该节点。compile／lint／`npm test`。不要求原生 F5。
+同名显示名的两个目录项下，投影为各自 `provider / modelId`；选择器只标一个 radio。compile／lint／`npm test`。不要求原生 F5。
 
 ### 范围外与批准边界
 
-REQ-002 同名缺口、REQ-009、目录整理、docs 目录整理、改选／重启运行时 UI。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
+REQ-009、目录整理、docs 目录整理、芯片重新显示供应商。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
 
 ## 当前焦点与未决项
 
-正在做拒绝资源提示。REQ-002 同名缺口、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
+正在做活跃模型规范身份。REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
 
-[PRD](docs/product-requirements.zh.md) 自用 macOS Accepted 仍有：REQ-002 跨供应商同名标不清；REQ-009 macOS 五类完整矩阵证据仍缺。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
+[PRD](docs/product-requirements.zh.md) 自用 macOS Accepted 仍有：REQ-009 macOS 五类完整矩阵证据仍缺。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
 ## 停车场
 
-本机插件清单切片 1–7、模型芯片标签与弹出层互斥已关闭；下载／市场仍排除。见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
+本机插件清单切片 1–7、模型芯片、弹出层互斥与拒绝资源提示已关闭；下载／市场仍排除。见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
 
 ### Runtime 目录整理（纯技术，低于 Webview 目录整理）
 
@@ -69,14 +69,14 @@ REQ-002 同名缺口、REQ-009、目录整理、docs 目录整理、改选／重
 
 ## 最近交接
 
-### 2026-10-01 — WI-068 晋升（拒绝资源提示）
+### 2026-10-01 — WI-069 晋升（规范模型身份）
 
-维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-067 已关闭。本切片只补生产路径拒绝后的持续提示。
+维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-068 已关闭。本切片只改当前模型投影，不改芯片去供应商。
 
-### 2026-10-01 — WI-067 关闭（弹出层互斥）
+### 2026-10-01 — WI-068 关闭（拒绝资源提示）
 
-打开模型选择器或执行配置时一次只显示一张卡片。见[验收](docs/archive/2026-10-01-wi-067-acceptance.zh.md)。
+拒绝后显示未加载项目本地 pi 资源。见[验收](docs/archive/2026-10-01-wi-068-acceptance.zh.md)。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-067。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-068。

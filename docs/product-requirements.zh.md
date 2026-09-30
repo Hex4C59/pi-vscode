@@ -425,6 +425,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-066 | REQ-002 作曲区模型芯片展示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-066-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-066-acceptance.zh.md)。不关闭 REQ-002 同名缺口。 |
 | WI-067 | REQ-002／REQ-006 作曲区模型选择器与执行配置互斥 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-067-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-067-acceptance.zh.md)。 |
 | WI-068 | REQ-001 拒绝项目资源后的持续提示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-068-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-068-acceptance.zh.md)。 |
+| WI-069 | REQ-002 活跃模型身份使用供应商／模型 id，不用显示名 | 进行中 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
