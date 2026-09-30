@@ -24,7 +24,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     openProviderApiKey: ["providerId"], openProviderOAuth: ["providerId"], logoutProvider: ["providerId"],
     addCustomEndpoint: ["displayName", "baseUrl", "modelId"], removeCustomEndpoint: ["providerId"],
     setDefaultModel: ["provider", "modelId"], setDefaultThinkingLevel: ["provider", "modelId", "level"], refreshProviderConfig: [],
-    addPluginInventoryEntry: [], removePluginInventoryEntry: ["id"],
+    addPluginInventoryEntry: [], removePluginInventoryEntry: ["id"], setPluginInventoryEnabled: ["id", "enabled"],
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
@@ -71,6 +71,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     if (typeof message.baseUrl !== "string" || !isPublicHttpUrl(message.baseUrl)) return undefined;
     if (typeof message.modelId !== "string" || !isCustomModelId(message.modelId)) return undefined;
   }
+  if (message.type === "setPluginInventoryEnabled" && typeof message.enabled !== "boolean") return undefined;
   if (message.type === "chooseExecutionProfile" && message.profile !== "controlled" && message.profile !== "trusted") return undefined;
   if (message.type === "answerInteraction") {
     const answer = message.answer;

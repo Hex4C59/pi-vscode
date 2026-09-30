@@ -56,6 +56,15 @@ export class PluginInventorySettings {
     await this.append(picked.entryPath, current);
   }
 
+  async setEnabled(id: string, enabled: boolean, current: () => boolean): Promise<void> {
+    if (!this.begin(current)) return;
+    await this.mutate(current, loaded => {
+      const match = loaded.find(entry => inventoryEntryId(entry.path) === id);
+      if (!match) return { error: "unknown-entry" as const, entries: loaded };
+      return { entries: loaded.map(entry => entry === match ? { ...entry, enabled } : entry) };
+    });
+  }
+
   async remove(id: string, current: () => boolean): Promise<void> {
     if (!this.begin(current)) return;
     await this.mutate(current, loaded => {
@@ -115,5 +124,9 @@ export class PluginInventorySettings {
 }
 
 function project(entries: PluginInventoryEntry[]): PluginInventoryProjection["entries"] {
-  return entries.map(entry => ({ id: inventoryEntryId(entry.path), displayName: extensionDisplayName(entry.path) }));
+  return entries.map(entry => ({
+    id: inventoryEntryId(entry.path),
+    displayName: extensionDisplayName(entry.path),
+    enabled: entry.enabled,
+  }));
 }

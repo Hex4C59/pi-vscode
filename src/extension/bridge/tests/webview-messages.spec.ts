@@ -16,6 +16,7 @@ test("v3 exact actions reject old pages, accessors, paths and invalid identities
     { type: "setThinkingLevel", level: "high" }, { type: "setChatModel", provider: "p", modelId: "m" },
     { type: "addPluginInventoryEntry" },
     { type: "removePluginInventoryEntry", id: "entry-1" },
+    { type: "setPluginInventoryEnabled", id: "entry-1", enabled: false },
   ];
   for (const action of actions) {
     const valid = { ...envelope, ...action };
@@ -29,6 +30,7 @@ test("v3 exact actions reject old pages, accessors, paths and invalid identities
   assert.equal(parseWebviewMessage({ ...draft, text: "x", draftRevision: Number.MAX_SAFE_INTEGER + 1 }), undefined);
   assert.equal(parseWebviewMessage(Object.create({ version: 3, type: "ping" })), undefined);
   assert.equal(parseWebviewMessage({ version: 3, type: "ping", [Symbol("extra")]: 1 }), undefined);
+  assert.equal(parseWebviewMessage({ ...envelope, type: "setPluginInventoryEnabled", id: "entry-1", enabled: "false" }), undefined);
 });
 
 test("accepts only v3 bootstrap ping and returns pong", () => {

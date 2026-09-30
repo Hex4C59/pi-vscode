@@ -257,9 +257,17 @@ export class PreviewBridge implements WebviewBridge {
       case "addPluginInventoryEntry":
         this.pluginInventory = this.pluginInventory.entries.some(entry => entry.displayName === "preview-extension.ts")
           ? { ...this.pluginInventory, error: "duplicate-path" }
-          : { busy: false, error: null, entries: [...this.pluginInventory.entries, { id: "preview-extension", displayName: "preview-extension.ts" }] };
+          : { busy: false, error: null, entries: [...this.pluginInventory.entries, { id: "preview-extension", displayName: "preview-extension.ts", enabled: true }] };
         this.emitSettings();
         break;
+      case "setPluginInventoryEnabled": {
+        const entries = this.pluginInventory.entries.map(entry => entry.id === message.id ? { ...entry, enabled: message.enabled } : entry);
+        this.pluginInventory = entries.some(entry => entry.id === message.id)
+          ? { busy: false, error: null, entries }
+          : { ...this.pluginInventory, error: "unknown-entry" };
+        this.emitSettings();
+        break;
+      }
       case "removePluginInventoryEntry": {
         const entries = this.pluginInventory.entries.filter(entry => entry.id !== message.id);
         this.pluginInventory = entries.length === this.pluginInventory.entries.length

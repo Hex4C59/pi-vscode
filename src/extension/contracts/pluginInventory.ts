@@ -8,7 +8,7 @@ export type PluginInventoryError =
   | "too-large"
   | "write-failed";
 
-export type PluginInventoryItem = { id: string; displayName: string };
+export type PluginInventoryItem = { id: string; displayName: string; enabled: boolean };
 
 export type PluginInventoryProjection = {
   busy: boolean;
@@ -18,4 +18,5 @@ export type PluginInventoryProjection = {
 
 export type PluginInventoryIntent =
   | { type: "addPluginInventoryEntry" }
-  | { type: "removePluginInventoryEntry"; id: string };
+  | { type: "removePluginInventoryEntry"; id: string }
+  | { type: "setPluginInventoryEnabled"; id: string; enabled: boolean };

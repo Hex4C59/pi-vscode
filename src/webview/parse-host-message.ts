@@ -270,8 +270,8 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
       if (!hasFields(message, [...envelope, "busy", "error", "entries"]) || typeof message.busy !== "boolean"
         || !(message.error === null || oneOf(message.error, errors))) return;
       const entries = list(message.entries, 64, item => {
-        const entry = exactRecord(item, ["id", "displayName"]);
-        return entry && id(entry.id) && utf8Text(entry.displayName, 512) ? entry : undefined;
+        const entry = exactRecord(item, ["id", "displayName", "enabled"]);
+        return entry && id(entry.id) && utf8Text(entry.displayName, 512) && typeof entry.enabled === "boolean" ? entry : undefined;
       });
       return entries && new Set(entries.map(entry => entry.id)).size === entries.length
         ? { ...message, entries } as unknown as HostMessage : undefined;

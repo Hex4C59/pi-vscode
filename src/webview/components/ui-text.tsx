@@ -5,6 +5,8 @@ export type UiText =
   | "Settings" | "Settings categories" | "General" | "Providers" | "Plugins" | "Back to providers"
   | "Search models" | "No matching models" | "Manage providers" | "API key" | "Configured" | "Not configured"
   | "Add from disk" | "Remove forgets the path. Files on disk stay."
+  | "Enable is the next idle Trusted apply. A running runtime does not change until then."
+  | "Enabled"
   | "No plugins in this inventory." | "Loading plugins…" | "Adding plugin…"
   | "That plugin is no longer in the inventory."
   | "This plugin is already in the inventory."

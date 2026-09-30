@@ -95,6 +95,7 @@
 | [WI-060 宿主存储接受](2026-10-01-wi-060-acceptance.zh.md) | 配置范围清单文件；损坏／过大不改写 |
 | [WI-061 设置添加接受](2026-10-01-wi-061-acceptance.zh.md) | 设置「插件」空列表与从磁盘添加；无移除／启用／加载 |
 | [WI-062 清单移除接受](2026-10-01-wi-062-acceptance.zh.md) | 删清单项；磁盘文件仍在；无启用／加载 |
+| [WI-063 启用标志接受](2026-10-01-wi-063-acceptance.zh.md) | 持久化 enabled；活 runtime 不变；无 `-e` 应用 |
 | [macOS 验证与自用验收](2026-09-30-macos-verification-acceptance.zh.md) | 双窗口 F5／安装、崩溃清理、ADR 0005 真实 OAuth／端点、自用 PRD |
 | [WI-036 批准提案](2026-09-30-wi-036-approved-proposal.zh.md) | 完整批准 owner-loss 精确 child 范围；历史，不是新的 Build 授权 |
 | [WI-057 批准提案](2026-09-30-wi-057-approved-proposal.zh.md) | 完整批准已保存默认应用顺序封装；历史，不是新的 Build 授权 |
@@ -103,6 +104,7 @@
 | [WI-060 批准提案](2026-10-01-wi-060-approved-proposal.zh.md) | 完整批准宿主清单存储范围；历史，不是新的 Build 授权 |
 | [WI-061 批准提案](2026-10-01-wi-061-approved-proposal.zh.md) | 完整批准设置「插件」从磁盘添加范围；历史，不是新的 Build 授权 |
 | [WI-062 批准提案](2026-10-01-wi-062-approved-proposal.zh.md) | 完整批准清单移除范围；历史，不是新的 Build 授权 |
+| [WI-063 批准提案](2026-10-01-wi-063-approved-proposal.zh.md) | 完整批准启用／关闭范围；历史，不是新的 Build 授权 |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |

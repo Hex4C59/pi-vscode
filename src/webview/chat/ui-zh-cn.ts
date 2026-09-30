@@ -6,6 +6,8 @@ export const chineseUi = {
   "Search models": "搜索模型", "No matching models": "没有匹配的模型", "Manage providers": "管理供应商", "API key": "API 密钥", "Configured": "已配置", "Not configured": "未配置",
   "Add from disk": "从磁盘添加",
   "Remove forgets the path. Files on disk stay.": "移除只会忘掉路径。磁盘上的文件仍在。",
+  "Enable is the next idle Trusted apply. A running runtime does not change until then.": "启用表示下一次空闲受信应用。活 runtime 在此之前不变。",
+  "Enabled": "已启用",
   "No plugins in this inventory.": "清单里还没有插件。", "Loading plugins…": "正在加载插件…", "Adding plugin…": "正在添加插件…",
   "That plugin is no longer in the inventory.": "该插件已不在清单中。",
   "This plugin is already in the inventory.": "该插件已在清单中。",

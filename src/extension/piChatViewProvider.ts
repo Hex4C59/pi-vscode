@@ -773,7 +773,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === "refreshProviderConfig" || message.type === "openProviderApiKey" || message.type === "openProviderOAuth"
       || message.type === "addCustomEndpoint" || message.type === "removeCustomEndpoint" || message.type === "logoutProvider"
       || message.type === "setDefaultThinkingLevel" || message.type === "setDefaultModel"
-      || message.type === "addPluginInventoryEntry" || message.type === "removePluginInventoryEntry") {
+      || message.type === "addPluginInventoryEntry" || message.type === "removePluginInventoryEntry"
+      || message.type === "setPluginInventoryEnabled") {
       await this.configureSettings(message);
       return;
     }
@@ -869,6 +870,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
     if (message.type === "removePluginInventoryEntry") {
       await this.pluginInventory.remove(message.id, () => !this.disposed);
+      return;
+    }
+    if (message.type === "setPluginInventoryEnabled") {
+      await this.pluginInventory.setEnabled(message.id, message.enabled, () => !this.disposed);
       return;
     }
     await this.configureProvider(message);

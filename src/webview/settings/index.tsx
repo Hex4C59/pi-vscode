@@ -71,7 +71,8 @@ function SettingsPage({ config, inventory, locale, onLanguage, onAction }: Props
         </select>
       </div> : page === "plugins" ? <PluginsPanel inventory={inventory}
         onAdd={() => onAction({ type: "addPluginInventoryEntry" })}
-        onRemove={id => onAction({ type: "removePluginInventoryEntry", id })} />
+        onRemove={id => onAction({ type: "removePluginInventoryEntry", id })}
+        onEnabled={(id, enabled) => onAction({ type: "setPluginInventoryEnabled", id, enabled })} />
         : !config ? <p role="status">{t("Loading providers…")}</p> : <>
         {config.error && <p className="settings-page__error" role="alert">{config.error}</p>}
         {page === "models" ? <ModelsPanel config={config} models={models} query={query} onQuery={setQuery} onAction={onAction} onProviders={() => navigate("providers")} />
