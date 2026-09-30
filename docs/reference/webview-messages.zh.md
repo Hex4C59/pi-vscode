@@ -26,7 +26,7 @@
 
 宿主 `models` 模块拥有规范化 `models.json` 父目录旁的 `.models.json.pi-vscode.lock` 和全部事务临时文件。添加／删除在读取前只抢锁一次，持锁完成合并与原子替换；争用立即失败，不排队、不自动重试。锁只包含随机所有权 token 和 PID，不含配置正文或凭据。父目录别名共享锁；链接或其他无法确认的目标文件身份拒绝写入。
 
-内部结果区分 `committed`、含固定原因的 `not-committed` 与 `committed-cleanup-failed`。只有干净提交才继续模型重载与登录／注销。争用、检测到版本冲突、非法输入／文件和写入失败通过 `providerConfigState.error` 投影有界固定文本。清理失败保留替换是否发生的事实；已提交但清理失败说明 endpoint 已保存／删除，但未继续凭据动作。不把原始异常、私有路径、锁元数据或配置正文交给 Webview。刷新读取现状，重试须显式执行，不重放不确定修改。原有 API key 收集取消仍可留下已干净提交的 endpoint。
+内部结果区分 `committed`、含固定原因的 `not-committed` 与 `committed-cleanup-failed`。只有干净提交才继续模型重载与登录／注销。争用、检测到版本冲突、非法输入／文件、序列化输出超过 1 MiB 读取预算和写入失败通过 `providerConfigState.error` 投影有界固定文本。清理失败保留替换是否发生的事实；已提交但清理失败说明 endpoint 已保存／删除，但未继续凭据动作。不把原始异常、私有路径、锁元数据或配置正文交给 Webview。刷新读取现状，重试须显式执行，不重放不确定修改。原有 API key 收集取消仍可留下已干净提交的 endpoint。
 
 替换前，宿主用新读取核对原始文件字节及身份（或缺失状态）；不一致时拒绝替换，保留外部版本。不遵守锁协议的外部写入仍可在检查与 rename 之间竞争；这不是文件系统 CAS，也不保护任意外部写入。释放只删除当前事务身份匹配的锁，失败保留屏障。崩溃遗留锁不根据年龄或 PID 清理。恢复要求关闭相关写入宿主并由维护者核对，再手工删除已确认的遗留锁；渲染器没有解锁／删文件能力。Webview v3、endpoint 意图字段与凭据所有权保持。[ADR 0007](../decisions/0007-endpoint-write-transaction.zh.md)与 [WI-038 验收记录](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)记录已接受决定与证据。
 

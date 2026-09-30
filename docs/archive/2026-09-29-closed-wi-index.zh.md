@@ -69,6 +69,7 @@
 | WI-044 | Vite 配置纳入提交检查实现输入（TOOL-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-044-macos-acceptance.zh.md) |
 | WI-045 | 缺失审阅路径正文与 tooltip 共用翻译入口（UI-03） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-045-macos-acceptance.zh.md) |
 | WI-046 | 诊断探针拥有 child／pipe 错误、boolean success 与观察退出（RUNTIME-03／04／05） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-046-macos-acceptance.zh.md) |
+| WI-047 | endpoint 写入输出须在提交前落入 1 MiB 读取预算（ARCH-06） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-047-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

@@ -195,6 +195,8 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 已接受 WI-038 中，`customEndpoints.ts` 拥有文档校验／合并，`endpointFileTransaction.ts` 拥有规范化路径身份、跨宿主互斥、替换与自有资源清理；`ProviderConfig` 只在干净提交后继续重载／登录／注销。[Accepted ADR 0007](../decisions/0007-endpoint-write-transaction.zh.md) 记录立即拒绝争用、保守遗留锁与外部编辑尽力检测。精确结果语义归消息契约。[验收与限制](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)。
 
+**endpoint 写入输出预算（WI-047，2026-09-30 接受）：** 序列化替换文本必须在创建临时文件前落入 1 MiB 读取预算。pretty-print 扩大超限时保留原文件，报告 `too-large`，不登录。[验收与限制](../archive/2026-09-30-wi-047-macos-acceptance.zh.md)。
+
 ### 保存会话 helper（WI-017）
 
 Agent 执行仍使用 subprocess RPC；独立短生命周期 adapter helper 导入声明发行版的公开 SessionManager，负责当前项目列表、身份校验与活动分支历史；extension host 不为保存会话读取加载 SessionManager，也不解析 session 文件。这一 worker 隔离不禁止前述独立宿主供应商／设置 SDK 路径。生产包包含 dist/session-worker.mjs 与声明发行依赖。报文版本、上限和请求／响应校验的唯一来源是 `session-worker-protocol.ts`。宿主拥有进程生命周期，worker 拥有 SessionManager 调用与流读写。Helper 有输入／输出上限、期限／取消与实际 close 观察。Host 拥有原生交接确认、Stop／settlement、当前资源策略、fresh grants 及不透明 UI 能力。运行时就绪校验请求的公开会话 ID 与路径，不匹配则保持未就绪。UI 历史窗口与不可变保留文本分块不定义模型上下文、不恢复当前工作区文件。参见[消息契约](../reference/webview-messages.zh.md#wi-017-t017-03--有界恢复历史与保留文本契约)及 ACTIVE 的实现／验证状态；[WI-017委托接受](../archive/2026-09-28-wi-017-session-acceptance.zh.md)不自动接受广泛gate／ADR。
