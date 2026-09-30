@@ -13,15 +13,15 @@
 
 ## 当前状态
 
-扩展已有 React／TypeScript 侧栏，承载限定的工作区设置、草稿／流式、模型／thinking、活动／审批、Stop 与有界混合附件（最多 20 项／1 MiB UTF-8）：整文件和固定编辑器选区；来源变化后明确确认最新整文件内容或旧选区快照。REQ-001～REQ-009 完整产品闭环仍未实现。当前范围、实跑验证和待验收项由 [`ACTIVE.md`](ACTIVE.md) 单点维护，不由本概览维护。
+扩展已有 React／TypeScript 侧栏，承载限定的工作区设置、草稿／流式、模型／thinking、活动／审批、Stop 与有界混合附件（最多 20 项／1 MiB UTF-8）：整文件和固定编辑器选区；来源变化后明确确认最新整文件内容或旧选区快照。[PRD](docs/product-requirements.zh.md) 已作为**自用 macOS 本机 VS Code 安装版 VSIX** Accepted，standing non-goals 仍排除。已批准实现与剩余 macOS 验证均已完成；[`ACTIVE.md`](ACTIVE.md) 维护当前工作，[macOS 验证记录](docs/archive/2026-09-30-macos-verification-acceptance.zh.md) 记录验收证据及限制。验收为受托代理身份，不是维护者亲自测试。
 
-- 浏览器、实际 F5 与已安装 VSIX 证据分别记录；真实 pi 配本机合成 provider 不是真实模型证据或维护者验收。
-- 活跃附件历史已实现有界分页和按需完整预览；已有路径不自动接受整份 PRD、架构 gate 或发布。
-- 模型／thinking 切片接受及独立信任／生命周期边界接受分别记录在[关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)与 [gate 表](docs/reference/architecture-gates.zh.md)。限定证据不认证完整产品闭环或全部环境。
+- 浏览器、实际 F5 与已安装 VSIX 证据分别记录；真实 pi 配本机合成 provider 不是真实模型证据。
+- 活跃附件历史已有界分页和按需完整预览。
+- 模型／thinking 切片接受及独立信任／生命周期边界接受分别记录在[关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)与 [gate 表](docs/reference/architecture-gates.zh.md)。各记录保留限定证据的适用范围；自用验收不认证全部环境。
 - 已覆盖的内置 write/edit 在审批前及最终授权前检查未保存编辑；被阻止时须明确恢复，绝不自动保存。不保证拦截 shell 写入或最终检查之后的编辑。
-- 修改后审查现将可靠的 write/edit before/after 文本保存在 host 内存，提供原生只读 diff 和当前源导航。可展开面板区分工具报告目标与观察到的工作区变化、解释捕获／归因限制，历史差异保留到 runtime／项目替换；它不是补丁审批或回滚。保存会话现通过 pi 公开 API 提供当前项目目录、确认后的顺序新建／恢复，以及有界的不可变历史／附件文本预览；不会自动加载历史工具，确认也不是所有权锁。其余产品闭环和维护者验收仍待完成，当前证据见 ACTIVE。[PRD](docs/product-requirements.zh.md) 保持 Draft；当前架构接受状态及限制归 [gate 表](docs/reference/architecture-gates.zh.md)。
+- 修改后审查现将可靠的 write/edit before/after 文本保存在 host 内存，提供原生只读 diff 和当前源导航。可展开面板区分工具报告目标与观察到的工作区变化、解释捕获／归因限制，历史差异保留到 runtime／项目替换；它不是补丁审批或回滚。保存会话现通过 pi 公开 API 提供当前项目目录、确认后的顺序新建／恢复，以及有界的不可变历史／附件文本预览；不会自动加载历史工具，确认也不是所有权锁。
 
-仓库尚无 Marketplace 或 Open VSX 发布验收记录。[历史](docs/archive/2026-09-21-closed-wi-history.zh.md)中的验证 VSIX 仅通过解压包检查，不等于已安装包验收。
+Marketplace 与 Open VSX 公开发布仍范围外。Windows 实机 F5／安装版 VSIX 与 Cursor 验收也在已接受的自用目标之外。[历史](docs/archive/2026-09-21-closed-wi-history.zh.md)中的旧验证 VSIX 仅通过解压包检查；当前 macOS 安装版 VSIX 验收另见上方记录。
 
 ## 从源码运行
 
@@ -58,7 +58,7 @@ npm run preview:webview
 4. **已捕获审阅：** 展开紧凑计数入口，检查已捕获／工具报告／观察到／不可用标签，并分页查看 33 个合成结果。差异／源码操作明确为模拟，并报告原生打开不可用。可在任务、会话浏览期间组合“模拟已捕获修改”“模拟审阅丢失”与“模拟待审批操作”。短视口中新审批到达会收起展开审阅；用户重新展开后局部滚动，不遮挡审批按钮或 Stop。
 5. **保存的会话／新建／恢复：** 历史默认收起，只替换中间消息区；历史图标、Back 或 Escape 恢复阅读位置／焦点。输入区、Stop 与到达的审批仍可操作。模拟交接可确认／取消／失败，只有提交切换才清空当前工作；恢复历史提供有界分页／原文分块。Reset、热刷新／卸载释放旧监听／定时器及身份。
 
-消息、代码、工具／审批输入和历史快照保持原文。场景工厂位于 `scenarios.ts`，外部 host 模拟位于 `preview-bridge.ts`，开发外壳样式位于 `preview.css`；共享 `styles.css` 汇总既有覆盖顺序。预览**不会**启动 pi、使用 VS Code 能力、读取工作区文件、请求 provider，也不证明 F5／安装版行为。本轮技术证据、待体验确认及正式切换条件由 [ACTIVE](ACTIVE.md) 记录。
+消息、代码、工具／审批输入和历史快照保持原文。场景工厂位于 `scenarios.ts`，外部 host 模拟位于 `preview-bridge.ts`，开发外壳样式位于 `preview.css`；共享 `styles.css` 汇总既有覆盖顺序。预览**不会**启动 pi、使用 VS Code 能力、读取工作区文件、请求 provider，也不证明 F5／安装版行为。当前技术证据及宿主／安装验收由 [ACTIVE](ACTIVE.md) 记录。
 
 `npm run watch` 使用 esbuild 监视 extension host 与 approval gate，并重建生产 Webview 输出。它是生产重建 watcher，不会启动浏览器预览服务器或提供浏览器 HMR；需要浏览器预览时运行 `npm run preview:webview`。
 

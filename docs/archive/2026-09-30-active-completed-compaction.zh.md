@@ -40,6 +40,18 @@ RUNTIME-01／02、CORE-01／02、UI-01～03、TOOL-01／02、RUNTIME-03～05、�
 
 审查覆盖限制（长文件抽查、不重启全仓逐断言审查、历史 `npm test` 计数）留在上述讨论中。它们不是当前测试证据。
 
+## Follow-up entry cleanup (2026-09-30)
+
+已批准队列与 macOS 自用验收完成后，维护者再次要求清理 ACTIVE。入口现保留会话契约、WIP=0、当前验收范围与身份、standing non-goals、一条简短文档交接及历史指针。本归档前文的未决措辞是首次压缩时的快照，不是当前工作：WI-057／WI-058 已关闭，见[已关闭索引](2026-09-29-closed-wi-index.zh.md)。
+
+从入口移出的内容在此或既有证据归属文档中保留：
+
+- **macOS 验证交接：** 双窗口 F5／安装版所有权、崩溃清理、自定义端点调用及 OAuth 设备码／浏览器交互见[验证记录](2026-09-30-macos-verification-acceptance.zh.md)。记录的是代理受托自用验收，不是维护者亲自测试，也不是隔离 profile 已登录 Copilot。该验证会话未重跑 compile／lint／test，未创建 Git 提交。
+- **停车场清空交接：** WI-058 每窗口恢复域与 ADR 0009 已接受。侧栏对比按 WI-025／UI skill 结案，不采用 Claude Code 珊瑚色，见[讨论](../discussions/2026-09-28-claude-code-ui-comparison.zh.md)。剩余 11 文件审查结案：生产文案已由 WI-058 覆盖，其余仅用于预览。范围外能力升格为 standing non-goals；已停止的逐断言审查未重启。
+- **文档纠正检查点：** 中英文 README 已同步自用 macOS Accepted 状态及既有证据。该次修改前，`master` HEAD 为 `5bea9ae`，与本地记录的 `origin/master` 提交差异为 `0 / 0`，未运行 fetch。文档结构／双语及 health 检查通过，错误与提示均为 0；`git diff --check` 通过。这些是历史观察，不是当前 Git 或行为测试证据。该文档任务未运行 compile／lint／test，未提交或推送。
+
+重复的 WI-057／WI-058 行改由已关闭索引查找；现行 gate 状态见 [gate 表](../reference/architecture-gates.zh.md)。本次仅调整入口组织，不新增 WI、产品需求、验收或 Git 授权。
+
 ## Original Chinese source appendix
 
 <a id="original-chinese-source-appendix"></a>

@@ -66,6 +66,18 @@ Evidence entries remain: [runtime helpers](../discussions/2026-09-30-runtime-hel
 
 Coverage limits from the audit (partial long-file reads, no full-repo assertion audit restart, historical `npm test` counts) stay in those discussion files. They are not current test evidence.
 
+## Follow-up entry cleanup (2026-09-30)
+
+The maintainer subsequently asked to clean ACTIVE again after the approved queue and macOS personal-use acceptance had completed. The entry now keeps the session contract, WIP=0, current acceptance scope and identity, standing non-goals, one short documentation handoff and history pointers. The earlier open-item wording in this archive is a snapshot of the first compaction, not current work: WI-057 and WI-058 are closed in the [closed WI index](2026-09-29-closed-wi-index.md).
+
+Material removed from the entry is retained here or in its existing evidence owner:
+
+- **macOS verification handoff:** dual-window F5/installed ownership, crash cleanup, custom-endpoint call and OAuth device-code/browser interaction are in the [verification record](2026-09-30-macos-verification-acceptance.md). It records agent-delegated personal-use acceptance, not personal maintainer testing or an authenticated Copilot session in the isolated profile. That verification session did not rerun compile/lint/test or create Git commits.
+- **Parking-lot closure handoff:** WI-058 per-window recovery and ADR 0009 were accepted. Sidebar comparison closed under WI-025 and the UI skill without adopting Claude Code's coral color; see the [discussion](../discussions/2026-09-28-claude-code-ui-comparison.md). The remaining eleven-file audit closed: production copy was covered by WI-058, and the other files were preview-only. Excluded capabilities became standing non-goals; the stopped assertion audit was not restarted.
+- **Documentation correction checkpoint:** the English/Chinese README was synchronized to the accepted personal-use macOS status and existing evidence. Before those edits, `master` HEAD was `5bea9ae`, with `0 / 0` commit differences against locally recorded `origin/master`; no fetch was run. Documentation verification and health both passed with zero errors/notices, and `git diff --check` passed. These are historical observations, not current Git or behavior-test evidence. No compile/lint/test, commit or push was performed in that documentation task.
+
+The duplicated WI-057/WI-058 rows now resolve through the closed WI index. Current gate status resolves through the [gate table](../reference/architecture-gates.md). This cleanup changes entry organization only; it creates no WI, product requirement, acceptance or Git authorization.
+
 ## Original Chinese source appendix
 
 The [Chinese source appendix](2026-09-30-active-completed-compaction.zh.md#original-chinese-source-appendix) preserves the original ACTIVE paragraphs for the authorization table, closed focus checklist, closed parking-lot audit/ARCH rows and the duplicated completed-WI table. Only relative Markdown links were kept. There was no English counterpart to that ACTIVE record; this English page owns the archival explanation, not a new translation of every historical observation.
