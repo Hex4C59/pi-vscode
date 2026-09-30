@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run compile
+      - run: npm run verify:webview
+      - run: npm run verify:package-files
       - run: npm run lint
       - run: npm test
 

@@ -94,6 +94,7 @@
     "build:webview": "vite build --config vite.config.mts",
     "preview:webview": "vite --config vite.config.mts",
     "verify:webview": "node scripts/packaging/verify-webview-assets.mjs",
+    "verify:package-files": "node scripts/packaging/package-vsix.mjs --check-files",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.tests.json",
     "test": "node scripts/testing/run-tests.mjs",

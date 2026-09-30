@@ -32,6 +32,16 @@ const STAGE_TIMESTAMP_SECONDS = 315_532_800;
 /** Fields regenerated for the packaged extension, never copied verbatim. */
 const REGENERATED_MANIFEST_FIELDS = new Set(['main', 'files', 'version']);
 
+/** Dist files the delivery entry must select; unpack-run checks stay in verify-vsix. */
+export const REQUIRED_PACKAGE_FILES = Object.freeze([
+  'dist/extension.js',
+  'dist/webview/webview.js',
+  'dist/webview/webview.css',
+  'dist/runtime-supervisor.mjs',
+  'dist/session-worker.mjs',
+  'dist/approval-gate.mjs',
+]);
+
 /** Minimal deterministic archive tool required to build the VSIX. */
 const ARCHIVE_TOOL = Object.freeze({ bin: 'zip', args: ['-X', '-q', '-r'] });
 
@@ -39,6 +49,27 @@ export class PackagingError extends Error {}
 
 function fail(message) {
   throw new PackagingError(message);
+}
+
+function assertRequiredPackageFiles(found) {
+  for (const required of REQUIRED_PACKAGE_FILES) {
+    if (!found.has(required)) {
+      fail(`${required} is missing; run \`npm run compile\` before packaging`);
+    }
+  }
+}
+
+export async function assertRequiredPackageFilesOnDisk(root = repoRoot) {
+  for (const required of REQUIRED_PACKAGE_FILES) {
+    const absolute = resolveInsideRepo(root, required);
+    if (!existsSync(absolute)) {
+      fail(`${required} is missing; run \`npm run compile\` before packaging`);
+    }
+    const info = await stat(absolute);
+    if (!info.isFile() || info.size === 0) {
+      fail(`${required} is missing; run \`npm run compile\` before packaging`);
+    }
+  }
 }
 
 function toPosix(relative) {
@@ -327,11 +358,7 @@ export async function collectPackageFiles(root) {
 
   // Run the build before packaging: a stale or empty dist silently produces a
   // package that cannot activate, so fail here instead of shipping it.
-  for (const required of ['dist/extension.js', 'dist/webview/webview.js']) {
-    if (!found.has(required)) {
-      fail(`${required} is missing; run \`npm run compile\` before packaging`);
-    }
-  }
+  assertRequiredPackageFiles(found);
 
   return {
     files: [...found].sort(),
@@ -478,7 +505,14 @@ export async function packageVsix({ root = repoRoot, out } = {}) {
 }
 
 async function main() {
-  const out = parseArgs(process.argv.slice(2), repoRoot);
+  const argv = process.argv.slice(2);
+  if (argv[0] === '--check-files') {
+    if (argv.length !== 1) fail('--check-files does not take other arguments');
+    await assertRequiredPackageFilesOnDisk();
+    console.log('required package files present');
+    return;
+  }
+  const out = parseArgs(argv, repoRoot);
   const summary = await packageVsix({ root: repoRoot, out });
   const { size } = await stat(summary.outputPath);
   console.log(

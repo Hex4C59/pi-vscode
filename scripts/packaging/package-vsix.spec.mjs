@@ -13,6 +13,8 @@ import path from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 
 import {
+  assertRequiredPackageFilesOnDisk,
+  collectPackageFiles,
   bareRuntimeSpecifiers,
   buildExtensionManifest,
   buildVsixManifest,
@@ -351,6 +353,38 @@ test('packageVsix rejects a manifest that drops a required build output', { skip
       });
     },
   );
+});
+
+test('collectPackageFiles rejects a tree that only selects host and webview JS', async () => {
+  await withFixture(
+    { declaredFiles: ['dist/extension.js', 'dist/webview/webview.js', 'assets', 'LICENSE', 'node_modules/**'] },
+    async ({ root }) => {
+      await assert.rejects(() => collectPackageFiles(root), (error) => {
+        assert.ok(error instanceof PackagingError);
+        assert.match(error.message, /dist\/webview\/webview\.css is missing/);
+        return true;
+      });
+    },
+  );
+});
+
+test('collectPackageFiles rejects a tree that selects CSS but omits runtime helpers', async () => {
+  await withFixture(
+    { declaredFiles: ['dist/extension.js', 'dist/webview/**', 'assets', 'LICENSE', 'node_modules/**'] },
+    async ({ root }) => {
+      await assert.rejects(() => collectPackageFiles(root), (error) => {
+        assert.ok(error instanceof PackagingError);
+        assert.match(error.message, /dist\/runtime-supervisor\.mjs is missing/);
+        return true;
+      });
+    },
+  );
+});
+
+test('assertRequiredPackageFilesOnDisk accepts the synthetic complete tree', async () => {
+  await withFixture({}, async ({ root }) => {
+    await assertRequiredPackageFilesOnDisk(root);
+  });
 });
 
 test('packageVsix rejects a missing pinned runtime subtree', { skip: !ZIP_AVAILABLE }, async () => {
