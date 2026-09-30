@@ -11,33 +11,9 @@
 | 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证，不虚报接受。 |
 | 收尾 | 对照批准、记录代理或维护者的实际验收身份；正常ADR／gate、双语归档、检查与资源清理。 |
 
-## 正在做（WIP=1）
+## 当前无活动 WI（WIP=0）
 
-| 字段 | 当前值 |
-|---|---|
-| **ID** | WI-056 |
-| **阶段** | 建造 — ARCH-04 内部模型与 Webview DTO 耦合盘点 |
-| **Gate ID** | 无新增 |
-| **Decision** | none |
-| **PRD 判定** | 纯技术：核对实际变更传播；不为假想扩展复制类型 |
-
-### 目标与范围
-
-- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 ARCH-04「先盘点」的实施授权。
-- **目标／范围**：区分合理共享值对象与展示专有字段。只有确认存在维护成本时才提出分离并明确转换所有者。本切片不复制类型、不实施分离。
-- **PRD**：纯技术。
-
-### 方案与架构核对
-
-读 `models/types.ts`、`runtimeLifecycle.ts` 与 `webviewProtocol.ts` 的引用方向。Decision：none。无 gate。
-
-### 验收
-
-讨论记录给出：共享字段、传播成本、是否需要分离。compile／lint／完整 `npm test`（若无代码变更则作为回归）。
-
-### 范围外与批准边界
-
-- **范围外**：复制或分离全部 DTO、WI-036、gate／ADR、整份 PRD、推送。
+授权建造队列已空。停车场仍有 WI-036（Prepare 未批准 Build）与原 ARCH-02 顺序封装（已确认设计，不自动开 WI）。WIP=0 不是那些项的实施授权。
 
 ## 验收授权与平台决定
 
@@ -88,7 +64,8 @@
 
 ## 当前焦点与未决项
 
-- [x] WI-055 代理受托接受并关闭：生产 RPC 实现全部可选 lifecycle 方法；noop 仅 handoff；不拆接口。[记录](docs/archive/2026-09-30-wi-055-macos-acceptance.zh.md)。ARCH-04 盘点为当前 WIP。
+- [x] WI-056 代理受托接受并关闭：共享值对象保留，未复制 DTO。[记录](docs/archive/2026-09-30-wi-056-macos-acceptance.zh.md)。授权建造队列已空（WIP=0）。
+- [x] WI-055 代理受托接受并关闭：生产 RPC 实现全部可选 lifecycle 方法；noop 仅 handoff；不拆接口。[记录](docs/archive/2026-09-30-wi-055-macos-acceptance.zh.md)。ARCH-04 盘点已关闭。
 - [x] WI-054 代理受托接受并关闭：发送／模型／Stop／profile／会话／文件夹准入分属不同所有者，未合并 busy。[记录](docs/archive/2026-09-30-wi-054-macos-acceptance.zh.md)。ARCH-03 盘点已关闭。
 - [x] WI-053 代理受托接受并关闭：流式 stringify／lex 与历史预览遍历已测，不优化。[记录](docs/archive/2026-09-30-wi-053-macos-acceptance.zh.md)。ARCH-01 盘点已关闭。
 - [x] WI-052 代理受托接受并关闭：启动设置、诊断 stderr、artifact inflate 与 test／Git 目前不需要库内预算。[记录](docs/archive/2026-09-30-wi-052-macos-acceptance.zh.md)。ARCH-08 测量已关闭。
@@ -134,13 +111,13 @@
 
 ## 最近交接
 
+### 2026-09-30 — WI-056 受托接受并关闭
+
+维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。模型／activity／附件值对象与 Webview DTO 共享保留，未复制类型。本次关闭重跑 compile／lint／完整 **1016** 项测试（12 580 ms）。记录见[验收](docs/archive/2026-09-30-wi-056-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-arch-04-dto-coupling.zh.md)。无 gate／ADR。不推送。授权建造队列已空（WIP=0）。WI-036 仍待 Prepare；原 ARCH-02 顺序封装不自动开 WI。
+
 ### 2026-09-30 — WI-055 受托接受并关闭
 
 维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。运行时可选项留在同一 lifecycle。本次关闭重跑 compile／lint／完整 **1016** 项测试（12 691 ms）。记录见[验收](docs/archive/2026-09-30-wi-055-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-arch-03-runtime-capabilities.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-056 ARCH-04 盘点。
-
-### 2026-09-30 — WI-054 受托接受并关闭
-
-维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。准入所有者已列表；未合并 busy。本次关闭重跑 compile／lint／完整 **1016** 项测试（12 688 ms）。记录见[验收](docs/archive/2026-09-30-wi-054-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-arch-01-admission-owners.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-055 ARCH-03 盘点。
 
 ## 停车场
 
@@ -148,7 +125,7 @@
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044／WI-045／WI-046／WI-047／WI-048／WI-049／WI-050／WI-051／WI-052／WI-053／WI-054／WI-055 已接受关闭，当前唯一活动 WI 为 WI-056 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044／WI-045／WI-046／WI-047／WI-048／WI-049／WI-050／WI-051／WI-052／WI-053／WI-054／WI-055／WI-056 已接受关闭，当前无活动 WI（WIP=0）；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -190,7 +167,7 @@
 - [x] **ARCH-01：跨功能准入与状态转换的可理解性（WI-054 已关闭）。** 所有者与操作表见[讨论](docs/discussions/2026-09-30-arch-01-admission-owners.zh.md)；未合并 busy，未按文件长度拆分。[验收](docs/archive/2026-09-30-wi-054-macos-acceptance.zh.md)。
 - [ ] **ARCH-02：默认配置应用流程封装。** 复用下方已有“已保存默认应用到活跃运行会话模型”停车场项，不重复开 WI。[当前调用方](src/extension/piChatViewProvider.ts)仍需掌握“刷新 RPC 目录 → 应用默认 → 无模型时重启并读取持久默认”的顺序及 SDK／RPC 差异。候选完成标准：该流程由一个明确所有者封装，成功、失败、过期结果与重启条件可经接口验证；现有用户可见规则保持不变。
 - [x] **ARCH-03：运行时接口的能力组合（WI-055 已关闭）。** 生产 RPC 实现全部可选项；noop 仅 handoff；不拆接口。见[讨论](docs/discussions/2026-09-30-arch-03-runtime-capabilities.zh.md)与[验收](docs/archive/2026-09-30-wi-055-macos-acceptance.zh.md)。
-- [ ] **ARCH-04：内部模型与 Webview DTO 的耦合取舍（WI-056 Build）。** [模型状态类型](src/extension/models/types.ts)从 workspace 投影提取字段，[运行时契约](src/extension/contracts/runtimeLifecycle.ts)复用展示协议类型。当前 WIP：核对实际变更传播，区分合理共享值对象与展示专有字段；单一前端下不为假想扩展提前复制所有类型。
+- [x] **ARCH-04：内部模型与 Webview DTO 的耦合取舍（WI-056 已关闭）。** 共享值对象保留；`ModelSettingsContext` 已是仅宿主类型。见[讨论](docs/discussions/2026-09-30-arch-04-dto-coupling.zh.md)与[验收](docs/archive/2026-09-30-wi-056-macos-acceptance.zh.md)。
 
 **扩大审查补充（维护者要求继续检查，未批准修复）：**
 
@@ -222,6 +199,7 @@
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-056 | 模型与 Webview 共享值对象保留；未复制 DTO（ARCH-04） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-056-macos-acceptance.zh.md) |
 | WI-055 | 运行时可选项留在同一 lifecycle；不拆分（ARCH-03） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-055-macos-acceptance.zh.md) |
 | WI-054 | 准入所有者已列表；busy 标志保持分离（ARCH-01） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-054-macos-acceptance.zh.md) |
 | WI-053 | 流式发布与历史预览成本目前不值得优化（ARCH-08） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-053-macos-acceptance.zh.md) |
