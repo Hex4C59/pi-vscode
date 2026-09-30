@@ -3,6 +3,7 @@ export type * from "./webviewProtocol.js";
 export type {
   PiRuntimeLifecycle, RuntimeEvent, ProjectTrustFlag, RuntimeStartResult, ExtensionExecutionProfile,
   PromptInput, AttachmentPromptResult, PromptResult,
+  RetainedRunState, RetainedRunHandoff,
   ModelProjectionResult, ModelMutationResult,
 } from "./runtimeLifecycle.js";
 export { noopPiRuntimeLifecycle } from "./runtimeLifecycle.js";

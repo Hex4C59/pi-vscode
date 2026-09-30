@@ -1,4 +1,5 @@
 import type { Readable, Writable } from "node:stream";
+import type { RetainedRunHandoff } from "../../../extension/contracts/index.js";
 
 /** RPC capabilities only; process termination is deliberately absent. */
 export type RuntimeLink = {
@@ -19,5 +20,7 @@ export type RuntimeProcess = {
   inspect(): Promise<"none" | "pending" | "terminal" | "blocked">;
   end(): Promise<ProcessResult>;
   recover(): Promise<ProcessResult>;
+  /** Startup handoff for a retained run; never runs while a launch is in flight or a run is active here. */
+  handoff(): Promise<RetainedRunHandoff>;
   describeFailure(reason: ProcessFailure): string;
 };

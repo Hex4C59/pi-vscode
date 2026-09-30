@@ -33,6 +33,7 @@ function deferredOwnedLaunch() {
       async inspect() { return { kind: "blocked", code: "invalid-record" }; },
       async end() { ends++; return { ok: true }; },
       async recover() { recoveries++; return { ok: true }; },
+      async handoff() { return { ok: true, outcome: "none" }; },
     }),
   });
   return {

@@ -40,6 +40,138 @@ test("explicit native trusted selection preserves draft and live conversation, n
   }
 });
 
+function profileState(view: ReturnType<ReturnType<typeof harness>["createView"]>): ExecutionProfileProjection {
+  view.state();
+  return [...view.sent].reverse().find(value => (value as { type: string }).type === "executionProfileState") as ExecutionProfileProjection;
+}
+
+for (const folders of [[folder()], []]) test(`startup handoff shows a normal ${folders.length ? "empty" : "no-folder"} page after retirement`, async () => {
+  const r = settingsRuntime(); let handoffs = 0;
+  r.runtime.handoffRetainedRuntime = async () => { handoffs++; return { ok: true, outcome: "retired" }; };
+  r.runtime.getOwnershipState = async () => "none";
+  r.runtime.endOwnedRuntime = async () => assert.fail("no explicit End ceremony after handoff");
+  const h = harness(folders, true, undefined, r.runtime);
+  try {
+    const v = h.createView(); await tick();
+    assert.equal(profileState(v).phase, "idle");
+    assert.equal(profileState(v).canEnd, false);
+    assert.equal(profileState(v).canRecover, false);
+    assert.equal(v.state().runtime, "not-started");
+    assert.equal(v.state().status, folders.length ? "eligible" : "no-folder");
+    if (folders.length) { v.action("chooseResources", { choice: "decline" }); await tick(); assert.equal(v.state().runtime, "ready"); }
+    assert.equal(handoffs, 1);
+  } finally { h.provider.dispose(); }
+});
+
+for (const failure of ["exit-unconfirmed", "owner-unavailable", "blocked", "throws"] as const) test(`startup handoff ${failure} preserves explicit recovery and rejects an early launch`, async () => {
+  const r = settingsRuntime(); let finish!: () => void; let starts = 0;
+  r.runtime.handoffRetainedRuntime = () => new Promise((resolve, reject) => { finish = () => {
+    if (failure === "throws") reject(new Error("private diagnostic"));
+    else if (failure === "blocked") resolve({ ok: false, code: "blocked", reason: "invalid-record" });
+    else resolve({ ok: false, code: failure });
+  }; });
+  r.runtime.getOwnershipState = async () => failure === "blocked" ? "blocked" : "pending";
+  r.runtime.start = async () => { starts++; return { ok: true, modelLabel: null }; };
+  const h = harness([folder()], true, undefined, r.runtime);
+  try {
+    const v = h.createView();
+    v.action("chooseResources", { choice: "decline" }); await tick();
+    assert.equal(starts, 0);
+    finish(); await tick();
+    assert.equal(starts, 0);
+    assert.equal(profileState(v).phase, "recovery-required");
+    assert.equal(profileState(v).canEnd, failure !== "blocked");
+    assert.equal(profileState(v).canRecover, false);
+    assert.equal(v.state().runtime, "not-started");
+    assert.doesNotMatch(JSON.stringify(v.sent), /private diagnostic/);
+  } finally { h.provider.dispose(); }
+});
+
+test("a live owner in another window never shows End or Recover even after occupied launch failure", async () => {
+  const r = settingsRuntime(); let starts = 0;
+  r.runtime.handoffRetainedRuntime = async () => ({ ok: true, outcome: "live-owner" });
+  r.runtime.getOwnershipState = async () => "pending";
+  r.runtime.endOwnedRuntime = async () => assert.fail("must not end another live owner");
+  r.runtime.recoverOwnedRuntime = async () => assert.fail("must not retire another live owner");
+  r.runtime.start = async () => { starts++; return { ok: false, detail: "Another runtime occupies the shared recovery domain. No replacement was launched." }; };
+  const h = harness([folder()], true, undefined, r.runtime);
+  try {
+    const v = h.createView(); await tick();
+    assert.equal(profileState(v).phase, "idle");
+    v.action("chooseResources", { choice: "decline" }); await tick();
+    assert.equal(starts, 1);
+    assert.equal(v.state().runtime, "error");
+    assert.match(v.state().runtimeDetail ?? "", /occupies/);
+    assert.equal(profileState(v).phase, "idle");
+    assert.equal(profileState(v).canEnd, false);
+    assert.equal(profileState(v).canRecover, false);
+    v.action("endOwnedRuntime"); v.action("recoverControlledRuntime"); await tick();
+    assert.equal(profileState(v).phase, "idle");
+  } finally { h.provider.dispose(); }
+});
+
+test("a window that later acquires its own run keeps in-session failure recovery", async () => {
+  const r = settingsRuntime();
+  r.runtime.handoffRetainedRuntime = async () => ({ ok: true, outcome: "live-owner" });
+  r.runtime.getOwnershipState = async () => "pending";
+  const h = harness([folder()], true, undefined, r.runtime);
+  try {
+    const v = h.createView(); await tick();
+    v.action("chooseResources", { choice: "decline" }); await tick();
+    assert.equal(v.state().runtime, "ready");
+    r.events.fire({ kind: "runtime_error", session: r.runtime.getSession(), detail: "Own run failed" });
+    await tick();
+    assert.equal(profileState(v).phase, "recovery-required");
+    assert.equal(profileState(v).canEnd, true);
+  } finally { h.provider.dispose(); }
+});
+
+test("a disposed host ignores late startup handoff completion", async () => {
+  const r = settingsRuntime(); let finish!: () => void; let starts = 0;
+  r.runtime.handoffRetainedRuntime = () => new Promise(resolve => { finish = () => resolve({ ok: true, outcome: "retired" }); });
+  r.runtime.start = async () => { starts++; return { ok: true, modelLabel: null }; };
+  const h = harness([folder()], true, undefined, r.runtime);
+  const v = h.createView(); v.action("chooseResources", { choice: "decline" }); await tick();
+  h.provider.dispose();
+  const sent = v.sent.length;
+  finish(); await tick();
+  assert.equal(starts, 0);
+  assert.equal(v.sent.length, sent);
+});
+
+test("another window clearing the domain removes the stranded recovery ceremony", async () => {
+  const r = settingsRuntime(); let ownership: "pending" | "none" = "pending";
+  r.runtime.handoffRetainedRuntime = async () => ({ ok: false, code: "owner-unavailable" });
+  r.runtime.getOwnershipState = async () => ownership;
+  const h = harness([folder()], true, undefined, r.runtime);
+  try {
+    const v = h.createView(); await tick();
+    assert.equal(profileState(v).phase, "recovery-required");
+    ownership = "none"; v.state(); await tick();
+    assert.equal(profileState(v).phase, "idle");
+    assert.equal(profileState(v).errorCode, null);
+    assert.equal(profileState(v).canEnd, false);
+    assert.equal(profileState(v).canRecover, false);
+    v.action("chooseResources", { choice: "decline" }); await tick();
+    assert.equal(v.state().runtime, "ready");
+  } finally { h.provider.dispose(); }
+});
+
+test("workspace change while startup handoff waits never launches the old cwd", async () => {
+  const r = settingsRuntime(); let finish!: () => void; let starts = 0;
+  r.runtime.handoffRetainedRuntime = () => new Promise(resolve => { finish = () => resolve({ ok: true, outcome: "retired" }); });
+  r.runtime.start = async () => { starts++; return { ok: true, modelLabel: null }; };
+  const h = harness([folder()], true, undefined, r.runtime);
+  try {
+    const v = h.createView(); v.action("chooseResources", { choice: "decline" }); await tick();
+    h.api.workspace.workspaceFolders = []; h.change.fire();
+    finish(); await tick();
+    assert.equal(starts, 0);
+    assert.equal(v.state().status, "no-folder");
+    assert.equal(v.state().runtime, "not-started");
+  } finally { h.provider.dispose(); }
+});
+
 test("recovery requires observed terminal ownership and an explicit second action, never an End acknowledgement alone", async () => {
   const r = settingsRuntime();
   let ownership: "pending" | "terminal" | "none" = "pending";

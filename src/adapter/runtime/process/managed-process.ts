@@ -43,7 +43,7 @@ export function createManagedProcess(owner: RuntimeOwner): RuntimeProcess {
         if (blocked || token !== generation) return { ok: false, detail: blockedDetail };
         const launched = await owner.launch(input);
         if (!launched.ok) {
-          return { ok: false, detail: launched.code === "occupied" ? "The runtime recovery domain is occupied. End the prior owned runtime and recover deliberately; no replacement was launched." : "Runtime ownership startup failed. Recovery evidence must be checked before another launch." };
+          return { ok: false, detail: launched.code === "occupied" ? "Another runtime occupies the shared recovery domain. No replacement was launched." : "Runtime ownership startup failed. Recovery evidence must be checked before another launch." };
         }
         if (token !== generation) {
           blocked = true;
@@ -95,6 +95,18 @@ export function createManagedProcess(owner: RuntimeOwner): RuntimeProcess {
         if (launching || token !== generation) return { ok: false, detail: pendingDetail };
         const result = await recover();
         if (result.ok && token === generation) blocked = false;
+        return result;
+      });
+    },
+    handoff() {
+      // A retained run is handed off only while this instance owns nothing of its own.
+      if (launching || active) return Promise.resolve({ ok: false, code: "busy" } as const);
+      const token = generation;
+      return serialize(async () => {
+        if (launching || active || token !== generation) return { ok: false, code: "busy" } as const;
+        const result = await owner.handoff();
+        // A retired or absent domain is clean again, so a later launch may reserve it.
+        if (token === generation && result.ok && (result.outcome === "none" || result.outcome === "retired")) blocked = false;
         return result;
       });
     },

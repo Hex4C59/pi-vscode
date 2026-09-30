@@ -49,6 +49,7 @@ export function createMemoryProcess(connect: (input: ProcessLaunch) => MemoryCon
       if (reason === "uncertain") blocked = true;
     },
     async inspect() { return blocked ? "blocked" : active ? "pending" : "none"; },
+    async handoff() { return { ok: true, outcome: "none" }; },
     async end() { endCalls++; return { ok: true }; },
     async recover() {
       if (pending) return { ok: false, detail: "Launch pending." };

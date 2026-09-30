@@ -4,7 +4,7 @@ import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel } from "./bridge/index.js";
 import { ModelSettings, ProviderConfig, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
-import type { PiRuntimeLifecycle, RuntimeEvent } from "./contracts/index.js";
+import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage, ProviderConfigIntent } from "./contracts/index.js";
 
@@ -57,6 +57,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private ownershipState: "none" | "pending" | "terminal" | "blocked" = "none";
   private ownershipQuery = 0;
   private recoveryBusy = false;
+  /** Another live host owns the retained run, so this window never ends it. */
+  private retainedRunElsewhere = false;
+  private retainedHandoff: Promise<void> | undefined;
   private extensionFeedback: { feedback: ExtensionFeedback[]; omittedFeedback: number } = { feedback: [], omittedFeedback: 0 };
   private lastInteractionProjection = "";
   private lastProfileProjection = "";
@@ -171,7 +174,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       api.workspace.onDidChangeWorkspaceFolders(() => { this.refresh(true); this.publish(); this.draft.publish(); }),
       api.workspace.onDidGrantWorkspaceTrust(() => { this.refresh(); this.publish(); this.draft.publish(); }),
     ];
-    void this.refreshOwnership();
+    this.startRetainedHandoff();
   }
 
   private clearChat(preserveSessionTransition = false): void {
@@ -330,6 +333,17 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const projectTrust = choice === "allow" ? "approve" : "no-approve";
     this.state = { ...this.state, runtime: "starting", runtimeDetail: null };
     this.publish();
+    // Never race the startup handoff: a launch must not reserve a domain whose leftover
+    // run is still being ended and retired.
+    if (this.retainedHandoff) await this.retainedHandoff;
+    if (token !== this.reconcileToken || this.disposed) return;
+    this.refresh();
+    if (this.state.status !== "eligible" || this.state.choice !== choice || this.state.folder?.path !== folderPath) return;
+    if (this.profilePhase === "recovery-required") {
+      this.state = { ...this.state, runtime: "not-started", runtimeDetail: null };
+      this.publish();
+      return;
+    }
     const interactionReady = await this.interactionReset;
     if (token !== this.reconcileToken || this.disposed) return;
     if (!interactionReady) { this.state = { ...this.state, runtime: "error", runtimeDetail: "Extension interaction reset could not be confirmed." }; this.publish(); return; }
@@ -357,6 +371,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         runtimeDetail: result.detail.length > 300 ? `${result.detail.slice(0, 297)}...` : result.detail,
       };
     } else {
+      this.retainedRunElsewhere = false;
+      this.ownershipState = "none";
       this.runtimeSession = this.runtime.getSession();
       this.untouchedControlledConversation = !resume && this.executionProfile.kind === "controlled";
       this.liveConversation = result.conversation ? { id: result.conversation.id, path: result.conversation.path } : undefined;
@@ -402,6 +418,36 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     await this.reconcileRuntime(this.liveConversation, true);
   }
 
+  /** Resolve previous-owner leftovers once, before admitting a runtime launch. */
+  private startRetainedHandoff(): void {
+    const handoff = this.runtime.handoffRetainedRuntime?.bind(this.runtime);
+    if (!handoff) { this.retainedHandoff = this.refreshOwnership(); return; }
+    this.retainedHandoff = (async () => {
+      let result: RetainedRunHandoff;
+      try { result = await handoff(); }
+      catch { result = { ok: false, code: "owner-unavailable" }; }
+      if (this.disposed) return;
+      if (result.ok && (result.outcome === "none" || result.outcome === "retired")) {
+        this.ownershipQuery++;
+        this.ownershipState = "none";
+        this.retainedRunElsewhere = false;
+        if (this.profilePhase === "recovery-required") { this.profilePhase = "idle"; this.profileError = null; }
+        this.publish();
+        return;
+      }
+      if (result.ok) {
+        // A live owner elsewhere is not uncertainty this window can act on, and ADR 0006
+        // forbids ending it. The blocked launch reports the occupied domain where it happens.
+        this.ownershipQuery++;
+        this.ownershipState = "pending";
+        this.retainedRunElsewhere = true;
+        this.publish();
+        return;
+      }
+      await this.refreshOwnership();
+    })();
+  }
+
   private async refreshOwnership(): Promise<void> {
     if (!this.runtime.getOwnershipState || this.disposed) return;
     const query = ++this.ownershipQuery;
@@ -409,7 +455,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     try { observed = await this.runtime.getOwnershipState(); } catch { observed = "blocked"; }
     if (this.disposed || query !== this.ownershipQuery || this.state.runtime === "ready") return;
     this.ownershipState = observed;
-    if (observed !== "none") {
+    if (observed === "none") {
+      // Another window may have completed the handoff or recovery; never stay on a banner
+      // whose actions no longer have a retained run behind them.
+      if (this.profilePhase === "recovery-required") { this.profilePhase = "idle"; this.profileError = null; }
+      this.retainedRunElsewhere = false;
+    } else if (!(this.retainedRunElsewhere && observed === "pending")) {
       this.profilePhase = "recovery-required";
       this.profileError = observed === "blocked" ? "owner-unavailable" : "exit-evidence-required";
     }
@@ -506,7 +557,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     finally {
       if (this.profileOperation === operation) {
         this.profileOperation = undefined;
-        if (this.ownershipState !== "none") this.profilePhase = "recovery-required";
+        if (this.ownershipState !== "none" && !this.retainedRunElsewhere) this.profilePhase = "recovery-required";
         else this.profilePhase = this.profileError && !checkpointRejected ? "error" : "idle";
         this.publish();
       }

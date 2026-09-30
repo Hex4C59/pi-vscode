@@ -1,4 +1,7 @@
 import type { ChildProcess } from "node:child_process";
+import type { RetainedRunHandoff, RetainedRunState } from "../../extension/contracts/index.js";
+
+export type { RetainedRunState };
 
 /** Host-only lifecycle metadata. Never contains prompts, credentials or session contents. */
 export type RecoveryFence = { version: 1; runId: string; hostId: string; childId: string; createdAt: number };
@@ -25,5 +28,7 @@ export type RuntimeOwner = {
   inspect(): Promise<RecoveryState>;
   end(): Promise<{ ok: true } | { ok: false; code: "owner-unavailable" | "exit-unconfirmed" }>;
   recover(): ReturnType<RecoveryStore["retire"]>;
+  /** Startup handoff for a retained run: only an owner-lost run is ended, never a live owner. */
+  handoff(): Promise<RetainedRunHandoff>;
 };
 export type RuntimeOwnerOptions = { directory: string; workerPath: string };

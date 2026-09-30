@@ -524,6 +524,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     stop,
     getOwnershipState: () => environment.process.inspect(),
     endOwnedRuntime: () => environment.process.end(),
+    handoffRetainedRuntime: () => environment.process.handoff(),
     async recoverOwnedRuntime() {
       const result = await environment.process.recover();
       if (result.ok) executionProfile = { kind: "controlled" };

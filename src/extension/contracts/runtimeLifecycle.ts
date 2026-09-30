@@ -19,6 +19,19 @@ export type PromptInput =
 export type AttachmentPromptResult = { rejection?: "authentication"; delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown"; code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost" };
 export type PromptResult = { ok: true } | { ok: false; detail: string };
 
+/** Supervision state of the run recorded in the shared recovery domain. */
+export type RetainedRunState = "owned" | "owner-lost" | "exited" | "never-spawned" | "termination-unconfirmed";
+
+/**
+ * Host-start handoff for a run left behind by a previous host. `retired` means the
+ * matching terminal receipt was observed before the fence was retired; `live-owner`
+ * means another live host still holds the run, so this host must not touch it.
+ */
+export type RetainedRunHandoff =
+  | { ok: true; outcome: "none" | "retired" | "live-owner" }
+  | { ok: false; code: "exit-unconfirmed" | "owner-unavailable" | "busy" }
+  | { ok: false; code: "blocked"; reason: "storage-unavailable" | "invalid-record" };
+
 export type ModelProjectionResult =
   | {
     ok: true;
@@ -62,6 +75,8 @@ export interface PiRuntimeLifecycle {
   getOwnershipState?(): Promise<"none" | "pending" | "terminal" | "blocked">;
   endOwnedRuntime?(): Promise<PromptResult>;
   recoverOwnedRuntime?(): Promise<PromptResult>;
+  /** Startup handoff for a run a previous host left behind; never touches a live owner. */
+  handoffRetainedRuntime?(): Promise<RetainedRunHandoff>;
   /** Stop current task without clearing live-session grants. */
   abortTask?(): Promise<PromptResult>;
   /** Fail closed without treating transport revocation as child termination. */
@@ -84,6 +99,9 @@ export interface PiRuntimeLifecycle {
 export const noopPiRuntimeLifecycle: PiRuntimeLifecycle = {
   async start() {
     return { ok: true, modelLabel: null };
+  },
+  async handoffRetainedRuntime() {
+    return { ok: true, outcome: "none" };
   },
   async stop() {
     /* WI-006 tests: no subprocess */

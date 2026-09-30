@@ -6,6 +6,7 @@ import { test } from "node:test";
 import { createManagedProcess } from "../process/managed-process.js";
 import { createDirectProcess } from "../process/direct-process.js";
 import type { RuntimeOwner } from "../../ownership/types.js";
+import type { RetainedRunHandoff } from "../../../extension/contracts/index.js";
 import type { ProcessLaunch } from "../process/types.js";
 import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
 
@@ -29,14 +30,64 @@ function ownedFixture() {
   const native = nativeChild();
   const calls: string[] = [];
   let endOk = true; let recoverOk = true;
+  let handoff: RetainedRunHandoff = { ok: true, outcome: "none" };
   const owner: RuntimeOwner = {
     async launch() { calls.push("launch"); return { ok: true, process: native.process, runId: "exact-run" }; },
     async inspect() { return { kind: "empty" }; },
     async end() { calls.push("end"); return endOk ? { ok: true } : { ok: false, code: "exit-unconfirmed" }; },
     async recover() { calls.push("recover"); return recoverOk ? { ok: true } : { ok: false, code: "exit-unconfirmed" }; },
+    async handoff() { calls.push("handoff"); return handoff; },
   };
-  return { ...native, owner, calls, strategy: createManagedProcess(owner), failEnd() { endOk = false; }, failRecovery() { recoverOk = false; } };
+  return { ...native, owner, calls, strategy: createManagedProcess(owner),
+    failEnd() { endOk = false; }, failRecovery() { recoverOk = false; },
+    setHandoff(result: RetainedRunHandoff) { handoff = result; } };
 }
+
+test("managed handoff clears a verified uncertain block and stays idle-only", async () => {
+  const f = ownedFixture();
+  assert.equal((await f.strategy.launch(input)).ok, true);
+  assert.deepEqual(await f.strategy.handoff(), { ok: false, code: "busy" });
+  assert.deepEqual(f.calls, ["launch"]);
+  await f.strategy.release("uncertain");
+  f.setHandoff({ ok: false, code: "exit-unconfirmed" });
+  assert.deepEqual(await f.strategy.handoff(), { ok: false, code: "exit-unconfirmed" });
+  assert.equal((await f.strategy.launch(input)).ok, false);
+  f.setHandoff({ ok: true, outcome: "retired" });
+  assert.deepEqual(await f.strategy.handoff(), { ok: true, outcome: "retired" });
+  assert.equal((await f.strategy.launch(input)).ok, true);
+  await f.strategy.release("idle");
+  assert.deepEqual(f.calls, ["launch", "handoff", "handoff", "launch", "end", "recover"]);
+  assert.deepEqual(f.signals, []);
+});
+
+test("managed handoff refuses an in-flight launch without touching its owner", async () => {
+  const f = ownedFixture();
+  const launch = f.owner.launch;
+  let finish!: () => void;
+  f.owner.launch = input => new Promise(resolve => { finish = () => { void launch(input).then(resolve); }; });
+  const starting = f.strategy.launch(input);
+  await nextTurn();
+  assert.deepEqual(await f.strategy.handoff(), { ok: false, code: "busy" });
+  assert.deepEqual(f.calls, []);
+  finish();
+  assert.equal((await starting).ok, true);
+  await f.strategy.release("idle");
+});
+
+test("a launch waits for an already running handoff before reserving", async () => {
+  const f = ownedFixture();
+  let finish!: () => void;
+  f.owner.handoff = () => new Promise(resolve => { f.calls.push("handoff"); finish = () => resolve({ ok: true, outcome: "retired" }); });
+  const handingOff = f.strategy.handoff();
+  await nextTurn();
+  const starting = f.strategy.launch(input);
+  await nextTurn();
+  assert.deepEqual(f.calls, ["handoff"]);
+  finish();
+  assert.deepEqual(await handingOff, { ok: true, outcome: "retired" });
+  assert.equal((await starting).ok, true);
+  await f.strategy.release("idle");
+});
 
 test("managed idle release observes end then recovery once; repeated release shares cleanup", async () => {
   const f = ownedFixture();

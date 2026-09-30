@@ -382,6 +382,19 @@ test("owner loss retains a live child, its open stdin, and durable exit observat
   assert.equal(worker.process.exitCode, null, "worker remains alive to observe the exact child");
 });
 
+test("observation leaves a live owner's child running and accepting input", async t => {
+  const fixture = await runtimeFixture(t);
+  const before = await waitForState(fixture.statePath, state => state.tick >= 2);
+  const response: unknown = JSON.parse(await sendControl(fixture.directory, fixture.runId, { version: 1, runId: fixture.runId, action: "observe" }));
+  assert.deepEqual(response, { version: 1, runId: fixture.runId, state: "owned", endRequested: false });
+  fixture.worker.process.stdin?.write("echo-probe\n");
+  await fixture.worker.waitForStdout("synthetic-echo\n");
+  const after = await waitForState(fixture.statePath, state => state.tick > before.tick);
+  assert.equal(after.stdinEnded, false);
+  assert.equal(fixture.worker.process.exitCode, null);
+  assert.equal((await createRecoveryStore(fixture.directory).inspect()).kind, "pending");
+});
+
 test("an explicit control end is acknowledged and records actual child exit", async t => {
   const fixture = await runtimeFixture(t);
   const { directory, runId, worker } = fixture;

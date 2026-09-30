@@ -51,6 +51,8 @@ export function createDirectProcess(spawnProcess: typeof spawn = spawn): Runtime
     async inspect() { return "none"; },
     async end() { return unavailable; },
     async recover() { return unavailable; },
+    // The spike strategy keeps no recovery fence, so no retained run can be handed off.
+    async handoff() { return { ok: true, outcome: "none" }; },
   };
 }
 

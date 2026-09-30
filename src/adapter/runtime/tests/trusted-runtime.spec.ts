@@ -117,6 +117,7 @@ test("an occupied durable recovery domain does not launch a replacement runtime"
       async inspect() { return { kind: "blocked", code: "invalid-record" }; },
       async end() { assert.fail("startup must not terminate an unrelated/unknown old runtime"); },
       async recover() { assert.fail("startup must not silently clear a recovery fence"); },
+      async handoff() { assert.fail("startup must not hand off an unreadable record"); },
     }),
   });
   const result = await runtime.start({ cwd: "/project", projectTrust: "no-approve" });
