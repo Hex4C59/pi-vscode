@@ -26,7 +26,7 @@
 | `npm run compile` | exit 0 | esbuild + 三份 `tsc --noEmit` |
 | `npm run lint` | exit 0 | `eslint src` |
 | `npm test` | 1027 通过，0 失败／跳过，12 583 ms | 双域 reserve、兄弟跳过／上限、外域交接隔离、占用文案、受信配置 UI |
-| 双窗口 macOS F5／安装版 VSIX | **未跑** | 两个活宿主编辑同一文件夹仍未验证 |
+| 双窗口 macOS F5／安装版 VSIX | 2026-09-30 已记录 | 两个活宿主、一个隔离文件夹；[原生证据](2026-09-30-macos-verification-acceptance.zh.md) |
 
 ## Limits
 

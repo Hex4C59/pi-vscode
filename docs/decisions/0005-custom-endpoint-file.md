@@ -3,10 +3,10 @@
 English | [中文](0005-custom-endpoint-file.zh.md)
 
 - Type: ADR
-- Status: Draft
+- Status: Accepted
 - Created: 2026-09-29
 - Decision approval: 2026-09-29, maintainer confirmed the WI-030 implementation plan
-- Verification: maintainer confirmed the settings sign-in and add-endpoint controls on 2026-09-29. Compile, lint, tests and docs checks were recorded before that close and were not rerun. A live browser sign-in, a live endpoint call and a new installed VSIX are still not recorded, so this ADR stays Draft.
+- Verification: 2026-09-30 agent under the remaining-verification `/goal`. Isolated installed VSIX SHA-256 `9ea45ac170e86036324b87490d7d3036612a484a54a90a1ddae1911278121271`. Live custom endpoint: `live-loopback` written without `apiKey`, one `/chat/completions` returned `live-endpoint-ok`. Live OAuth: GitHub Copilot Sign in showed native device code `C649-184F` and opened a browser; isolated `auth.json` was not populated. [Evidence](../archive/2026-09-30-macos-verification-acceptance.md). Compile/lint/tests were not rerun in that session.
 - Gates: none. Existing `gate-webview-trust` still applies: secrets stay out of the Webview.
 - Work item: WI-030
 
@@ -35,4 +35,4 @@ The RPC child loads `models.json` itself. An in-memory `registerProvider` call w
 
 ## Consequences
 
-Rewriting a valid file changes JSON formatting and drops comments, because comments are not safe to round-trip with `JSON.parse`. Comment-only or invalid files are not rewritten. The ADR stays Draft until a live browser sign-in and a live endpoint call are recorded. Maintainer confirmation of the settings controls closed WI-030; it did not accept a gate.
+Rewriting a valid file changes JSON formatting and drops comments, because comments are not safe to round-trip with `JSON.parse`. Comment-only or invalid files are not rewritten. Live isolated-host verification on 2026-09-30 recorded the endpoint write, a real completion, native device-code display and a browser open; it did not store a GitHub Copilot token in the throwaway profile. Maintainer confirmation of the settings controls closed WI-030; this ADR accepts no gate.

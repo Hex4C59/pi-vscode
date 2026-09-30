@@ -30,7 +30,7 @@ Agent proposals may conclude **“do not do this yet”**, **“current state is
 
 ## 3. Sources of truth
 
-Use [AGENTS](../../AGENTS.md) for document responsibilities and conflict priority. Individually approved slices of a Draft PRD take their scope from ACTIVE and its linked approval record; that does not promote the entire PRD. Read the [gate table](../reference/architecture-gates.md) for status and the [ADR index](../decisions/README.md) for established technical decisions.
+Use [AGENTS](../../AGENTS.md) for document responsibilities and conflict priority. The PRD is Accepted for personal-use macOS local VS Code installed VSIX; standing non-goals stay excluded. Historical slice records still bound their own evidence limits. Read the [gate table](../reference/architecture-gates.md) for status and the [ADR index](../decisions/README.md) for established technical decisions.
 
 When a new confirmed choice in chat differs from ACTIVE, update ACTIVE to that confirmed choice while retaining unresolved conditions.
 

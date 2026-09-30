@@ -37,4 +37,4 @@ A memory UUID plus a bounded sibling scan is enough to stop cross-window blockin
 
 ## Consequences
 
-A second window can start its own runtime while the first still runs. They may edit the same workspace files. Reload allocates a new UUID; the previous directory is a sibling and is handed off as owner-lost. Dual-window macOS F5 is recorded separately from automated reserve tests. This ADR does not accept the whole Draft PRD or close a gate.
+A second window can start its own runtime while the first still runs. They may edit the same workspace files. Reload allocates a new UUID; the previous directory is a sibling and is handed off as owner-lost. Dual-window macOS F5 and isolated installed VSIX were recorded on 2026-09-30. This ADR does not close a gate.

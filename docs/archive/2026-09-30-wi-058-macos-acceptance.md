@@ -23,7 +23,7 @@ This close re-ran compile, lint and the full suite on the current worktree.
 | `npm run compile` | exit 0 | esbuild + three `tsc --noEmit` projects |
 | `npm run lint` | exit 0 | `eslint src` |
 | `npm test` | 1027 pass, 0 fail/skip, 12 583 ms | Dual-domain reserve, sibling skip/cap, foreign-handoff isolation, occupied copy, trusted-profile UI |
-| Dual-window macOS F5 / installed VSIX | **Not run** | Two live hosts editing one folder remain unverified |
+| Dual-window macOS F5 / installed VSIX | Recorded 2026-09-30 | Two live hosts, one isolated folder; [native evidence](2026-09-30-macos-verification-acceptance.md) |
 
 ## Limits
 

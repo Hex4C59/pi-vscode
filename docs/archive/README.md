@@ -58,13 +58,13 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-027 UiText copy consolidation](2026-09-29-wi-027-ui-text.md) | Maintainer acceptance on 2026-09-29; attachment preview-failure and interaction chrome; F5 / VSIX outside |
 | [WI-028 RPC and process policy](2026-09-29-wi-028-runtime-process.md) | Maintainer technical acceptance on 2026-09-29; RuntimeProcess seam, automated checks; Linux spike / F5 / VSIX outside |
 | [WI-029 RPC runtime internal modules](2026-09-29-wi-029-rpc-runtime-modules.md) | Maintainer technical acceptance on 2026-09-29; three internal modules, automated checks; real pi / F5 / VSIX outside |
-| [WI-030 OAuth and custom endpoint](2026-09-29-wi-030-oauth-endpoint.md) | Maintainer completed the remaining settings check on 2026-09-29; live login, live endpoint and a new VSIX stay outside; ADR 0005 stays Draft |
+| [WI-030 OAuth and custom endpoint](2026-09-29-wi-030-oauth-endpoint.md) | Maintainer settings check 2026-09-29; live isolated VSIX/OAuth/endpoint recorded 2026-09-30; ADR 0005 Accepted |
 | [WI-031 session-worker protocol](2026-09-29-wi-031-session-worker-protocol.md) | Maintainer technical acceptance on 2026-09-29; shared message validation, unchanged version; F5 / VSIX outside |
 | [WI-032 delegated acceptance](2026-09-30-wi-032-macos-evaluation.md) | Six-entry rules, 139 focused tests and macOS smoke; closed under final delegation, native sensitive interactions unverified |
 | [WI-033 delegated acceptance](2026-09-30-wi-033-macos-evaluation.md) | Captured real pi bytes through production reader/runtime; closed under final delegation, non-JSON ignore and native fault-path limits retained |
 | [WI-034 delegated acceptance](2026-09-30-wi-034-macos-evaluation.md) | Packaging, real extracted RPC/gate, native F5 and isolated installed rendering; scoped close, not full product acceptance |
 | [WI-035 delegated acceptance](2026-09-30-wi-035-macos-acceptance.md) | Exact-receipt handoff, actual F5/isolated installed and live-owner evidence; ADR 0006 Accepted with failure and scope limits |
-| [WI-036 delegated acceptance](2026-09-30-wi-036-macos-acceptance.md) | Exact-child cleanup on owner loss; supervisor process evidence; ADR 0008 Accepted; VS Code crash F5/installed unverified |
+| [WI-036 delegated acceptance](2026-09-30-wi-036-macos-acceptance.md) | Exact-child cleanup on owner loss; supervisor process evidence; ADR 0008 Accepted; window-crash F5/installed recorded 2026-09-30 |
 | [WI-037 delegated acceptance](2026-09-30-wi-037-macos-acceptance.md) | Bounded thinking streaming and complete quoted credential redaction; actual macOS F5/isolated installed SSE evidence |
 | [WI-039 delegated acceptance](2026-09-30-wi-039-macos-acceptance.md) | Installed VSIX runtime dependency closure (PACKAGE-01); unpacked import verification and isolated installed provider loading |
 | [WI-038 delegated acceptance](2026-09-30-wi-038-macos-acceptance.md) | Cross-host endpoint write exclusion; two-window contention/serial-commit evidence; ADR 0007 Accepted |
@@ -86,7 +86,8 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-055 delegated acceptance](2026-09-30-wi-055-macos-acceptance.md) | Runtime optionals stay on one lifecycle; not split (ARCH-03) |
 | [WI-056 delegated acceptance](2026-09-30-wi-056-macos-acceptance.md) | Shared model/Webview value objects kept; DTOs not copied (ARCH-04) |
 | [WI-057 delegated acceptance](2026-09-30-wi-057-macos-acceptance.md) | Saved-default apply order extracted (ARCH-02); user-visible rules frozen |
-| [WI-058 delegated acceptance](2026-09-30-wi-058-macos-acceptance.md) | Per-window recovery domains; ADR 0009 Accepted; dual-window F5 unverified |
+| [WI-058 delegated acceptance](2026-09-30-wi-058-macos-acceptance.md) | Per-window recovery domains; ADR 0009 Accepted; dual-window F5/installed recorded 2026-09-30 |
+| [macOS verification and personal-use acceptance](2026-09-30-macos-verification-acceptance.md) | Dual-window F5/installed, crash cleanup, ADR 0005 live OAuth/endpoint, personal-use PRD |
 | [WI-036 approved proposal](2026-09-30-wi-036-approved-proposal.md) | Complete approved owner-loss exact-child scope; historical, no new Build authorization |
 | [WI-057 approved proposal](2026-09-30-wi-057-approved-proposal.md) | Complete approved Saved-default apply encapsulation; historical, no new Build authorization |
 | [WI-058 approved proposal](2026-09-30-wi-058-approved-proposal.md) | Complete approved per-window recovery-domain scope; historical, no new Build authorization |

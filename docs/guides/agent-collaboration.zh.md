@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[agent-collaboration.md](agent-collaboration.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-22
+- 最近同步：2026-09-30
 
 - 类型：指南
 - 状态：Accepted
@@ -35,7 +35,7 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 ## 3. 权威来源
 
-文档职责与冲突顺序以 [AGENTS](../../AGENTS.zh.md) 为准。Draft PRD 中单独获批的切片，以 ACTIVE 及其关联批准记录明确范围；这不提升整份 PRD。Gate 状态查 [Gate 表](../reference/architecture-gates.zh.md)，既有技术决定查 [ADR 索引](../decisions/README.zh.md)。
+文档职责与冲突顺序以 [AGENTS](../../AGENTS.zh.md) 为准。PRD 已作为自用 macOS 本机 VS Code 安装版 VSIX 接受；standing non-goals 仍排除。历史切片记录仍约束各自证据限度。Gate 状态查 [Gate 表](../reference/architecture-gates.zh.md)，既有技术决定查 [ADR 索引](../decisions/README.zh.md)。
 
 聊天中的新确认与 ACTIVE 不一致时，按已确认决定更新 ACTIVE，保留未决条件。
 

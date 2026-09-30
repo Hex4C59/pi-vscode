@@ -59,7 +59,7 @@
 | WI-033 | 运行时报文校验与真实 pi 字节注入；非 JSON 忽略规则保留 | 2026-09-30 代理按维护者最终委托接受；不是原生活跃宿主坏帧注入 | [记录](2026-09-30-wi-033-macos-evaluation.zh.md) |
 | WI-034 | 确定性 VSIX 组包、解包 RPC／gate 与 macOS F5／隔离安装激活 | 2026-09-30 代理按维护者最终委托接受；不是完整 REQ-009 或整份 PRD 接受 | [记录](2026-09-30-wi-034-macos-evaluation.zh.md) |
 | WI-035 | 回执保障启动交接、活所有者安全、实际 macOS F5／隔离安装证据；ADR 0006 Accepted | 2026-09-30 代理依据维护者本次明确委托接受；共享域与会话内恢复不变 | [记录](2026-09-30-wi-035-macos-acceptance.zh.md) |
-| WI-036 | 宿主丢失时清理精确自有子进程；ADR 0008 Accepted | 2026-09-30 代理依据完成剩余任务的 goal 接受；VS Code 崩溃 F5／安装未验证 | [记录](2026-09-30-wi-036-macos-acceptance.zh.md) |
+| WI-036 | 宿主丢失时清理精确自有子进程；ADR 0008 Accepted | 2026-09-30 代理；窗口崩溃 F5／安装已记录 | [记录](2026-09-30-wi-036-macos-acceptance.zh.md) |
 | WI-037 | 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 代理依据本次明确的实机取证并完结委托接受；助手正文逐 delta 仍范围外 | [记录](2026-09-30-wi-037-macos-acceptance.zh.md) |
 | WI-039 | 交付 VSIX 包含自身 bundle 会加载的运行时依赖闭包（PACKAGE-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；ARCH-07 仍停车场 | [记录](2026-09-30-wi-039-macos-acceptance.zh.md) |
 | WI-038 | 跨宿主 endpoint 写入互斥及明确冲突／清理结果（ARCH-05）；ADR 0007 Accepted | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；ADR 0005 与输出预算仍范围外 | [记录](2026-09-30-wi-038-macos-acceptance.zh.md) |
@@ -81,7 +81,7 @@
 | WI-055 | 运行时可选项留在同一 lifecycle；不拆分（ARCH-03） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-055-macos-acceptance.zh.md) |
 | WI-056 | 模型与 Webview 共享值对象保留；未复制 DTO（ARCH-04） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-056-macos-acceptance.zh.md) |
 | WI-057 | 已保存默认应用顺序抽出；用户可见规则冻结（ARCH-02） | 2026-09-30 代理依据完成剩余任务的 goal 接受；无 gate 或 ADR | [记录](2026-09-30-wi-057-macos-acceptance.zh.md) |
-| WI-058 | 每个 VS Code 窗口独立恢复域；ADR 0009 Accepted | 2026-09-30 代理依据完成停车场任务的 goal 接受；双窗口 F5 未验证 | [记录](2026-09-30-wi-058-macos-acceptance.zh.md) |
+| WI-058 | 每个 VS Code 窗口独立恢复域；ADR 0009 Accepted | 2026-09-30 代理；双窗口 F5／安装已记录 | [记录](2026-09-30-wi-058-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

@@ -10,7 +10,7 @@ English | [中文](vscode-extension-architecture.zh.md)
 - Sibling reference: [`pi-desktop`](https://github.com/earendil-works/pi-desktop) (Electron presentation layer; same pi integration principles, different host)
 - Upstream: [pi](https://github.com/earendil-works/pi) coding-agent runtime (read-only sibling checkout `../pi` during development)
 
-> Accepted structural boundaries under ADR0001–0004. Actual feature/environment delivery remains scoped to the linked WI evidence; this is not whole-PRD acceptance or release certification.
+> Accepted structural boundaries under ADR0001–0004. Actual feature/environment delivery remains scoped to the linked WI evidence. Personal-use macOS installed VSIX is Accepted in the PRD; this is not public-release certification.
 
 ## 1. Context
 
@@ -187,7 +187,7 @@ Scoped model and thinking acceptance, layered evidence and closure are recorded 
 
 `ProviderConfig` in `src/extension/models/` imports public `ModelRuntime` and `SettingsManager` from the declared pi coding-agent release, plus pi-ai capability functions. It owns provider readiness, native API-key/OAuth interaction, the default model and per-model thinking settings. pi auth storage and settings remain authoritative; this is not a new provider stack, agent loop or product SecretStorage copy. Webviews receive bounded secret-free projections and send named intents, not SDK calls. Saved defaults and applied/pending live-session settings are distinct; `SavedDefaultApply` in `src/extension/models/` owns their application order.
 
-The host's `customEndpoints.ts` writes bounded non-secret entries in the documented pi `models.json`; credentials still use public login. [Draft ADR 0005](../decisions/0005-custom-endpoint-file.md) records that approved slice and outstanding verification, not Accepted architecture or live endpoint certification. [The message contract](../reference/webview-messages.md) owns exact provider/default DTOs and failure semantics.
+The host's `customEndpoints.ts` writes bounded non-secret entries in the documented pi `models.json`; credentials still use public login. [Accepted ADR 0005](../decisions/0005-custom-endpoint-file.md) records that slice after isolated installed VSIX live custom-endpoint completion and live GitHub Copilot device-code/browser OAuth; isolated `auth.json` was not populated. [The message contract](../reference/webview-messages.md) owns exact provider/default DTOs and failure semantics.
 
 For accepted WI-038, `customEndpoints.ts` owns document validation/merge while `endpointFileTransaction.ts` owns canonical path identity, cross-host exclusion, replacement and owned-resource cleanup. `ProviderConfig` continues reload/login/logout only after a clean commit. [Accepted ADR 0007](../decisions/0007-endpoint-write-transaction.md) records immediate contention refusal, conservative leftover locks and best-effort external-edit detection. Exact outcomes belong to the message contract. [Acceptance and limits](../archive/2026-09-30-wi-038-macos-acceptance.md).
 

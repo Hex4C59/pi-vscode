@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[2026-09-29-wi-030-oauth-endpoint.md](2026-09-29-wi-030-oauth-endpoint.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-29
+- 最近同步：2026-09-30
 
 - 类型：参考
 - 状态：Archived
@@ -19,6 +19,10 @@
 批准行为仍在 WI-026 的编辑区设置页。带公开 OAuth 登录的供应商由宿主发起登录。宿主只打开不含用户信息的 http(s) 链接，并在原生提示中显示设备码。一个自定义 OpenAI 兼容端点包含显示名称、Base URL 和模型 id；API key 仍经宿主密码框和 `ModelRuntime.login` 保存。`models.json` 不写入 API key、请求头、shell 命令或环境变量插值。损坏的文件保持不变。删除仅限于该文件中的非内置供应商。
 
 暂停前记录的代理检查：`compile`、`lint`、`npm test`（771/771）、`verify:webview`、`docs:verify`（0 个错误；两条 Draft ADR 警告）。本次关闭未重跑这些检查。
+
+## 后续 — 2026-09-30
+
+隔离安装版真实自定义端点补全与 GitHub Copilot 设备码／浏览器 OAuth 已记录。[ADR 0005](../decisions/0005-custom-endpoint-file.zh.md) 已 Accepted。[证据](2026-09-30-macos-verification-acceptance.zh.md)。
 
 ## 替换原因
 

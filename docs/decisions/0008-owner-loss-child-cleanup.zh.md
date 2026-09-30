@@ -10,7 +10,7 @@
 - 状态：Accepted
 - 创建：2026-09-30
 - 决定批准：2026-09-30 维护者 `/goal` 完成 ACTIVE 剩余任务，进入已记录的 WI-036 Build 切片
-- 验证：2026-09-30，代理依据该要求接受；compile／lint、1016 项自动化测试，以及 IPC 断开、父 stdin 结束与 stdout 管道丢失的真实 Node supervisor 进程测试；[分层证据与限制](../archive/2026-09-30-wi-036-macos-acceptance.zh.md)
+- 验证：2026-09-30，代理依据该要求接受；compile／lint、1016 项自动化测试，以及 IPC 断开、父 stdin 结束与 stdout 管道丢失的真实 Node supervisor 进程测试；同日补录窗口崩溃 F5 与隔离安装版；[分层证据与限制](../archive/2026-09-30-wi-036-macos-acceptance.zh.md)；[原生崩溃证据](../archive/2026-09-30-macos-verification-acceptance.zh.md)
 - Gate：不关闭 gate。只取代 ADR 0002 在 owner-loss 时保留精确 child 存活的规则。ADR 0006 启动交接与会话内恢复仍有效。共享域准入后来由 [ADR 0009](0009-per-window-recovery-domains.zh.md) 取代。
 - 工作项：WI-036 按批准范围接受并关闭
 - 相关：[ADR 0002](0002-interaction-contract-route.zh.md)、[ADR 0006](0006-owned-runtime-handoff.zh.md)
@@ -38,4 +38,4 @@ ADR 0002 在宿主丢失后继续观察精确 pi child，并不终止它。后�
 
 ## Consequences
 
-丢失宿主时会在无对话框的情况下中断其精确 pi child。后续激活可退休匹配回执并显示正常页。失败或未确认清理仍阻塞替代。工具后代可能仍在。VS Code 窗口崩溃 F5 与安装版 VSIX 证据与 supervisor 进程测试分开记录；本 ADR 不接受整份 Draft PRD，也不关闭 gate。
+丢失宿主时会在无对话框的情况下中断其精确 pi child。后续激活可退休匹配回执并显示正常页。失败或未确认清理仍阻塞替代。工具后代可能仍在。窗口崩溃 F5 与隔离安装版已于 2026-09-30 记录。本 ADR 不关闭 gate。

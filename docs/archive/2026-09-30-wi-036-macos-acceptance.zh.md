@@ -30,12 +30,12 @@ spawn 之后，宿主 IPC 断开、父 stdin 结束／关闭／错误或父 stdo
 
 ## 原生证据
 
-macOS 27.0.0（arm64）。本切片的原生证据是真实 Node supervisor worker 进程。VS Code 窗口崩溃 F5 与隔离安装版 VSIX 未跑，未验证。
+macOS 27.0.0（arm64）。本切片原先的原生证据是真实 Node supervisor worker 进程。窗口崩溃 F5 与隔离安装版 VSIX 已于 2026-09-30 补录：SIGKILL 某一窗口的 `node.mojom.NodeService` 所有者结束该域精确 `pi` child（`child-exited`）；兄弟仍为 `owned`。[证据](2026-09-30-macos-verification-acceptance.zh.md)。
 
 ## 失败、清理与限制
 
 - 精确 child 退出不证明工具后代、脱离进程组或文件回滚。
-- 每窗口独立域仍未实现。
+- 每窗口独立域已实现（WI-058／ADR 0009）。
 - 不关闭 gate。未 Git 提交或推送。
 
 ## 最终处置

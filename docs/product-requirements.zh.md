@@ -5,15 +5,17 @@
 - 翻译状态：Machine Draft
 - 权威原文：[product-requirements.md](product-requirements.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-30（macOS 平台与 WI-032／033 限定接受状态）
+- 最近同步：2026-09-30（自用 macOS 验证与 ADR 0005／PRD Accepted）
 
 - 类型：产品需求
-- 状态：**Draft**
+- 状态：**Accepted**（自用 macOS 本机 VS Code 安装版 VSIX；standing non-goals 排除）
 - 创建：2026-09-19
-- 权威：用户可见范围与验收仅限明确记录的 WI 批准或委托；本 Draft 本身不授权实现
+- 权威：已接受的自用 macOS 本机 VS Code 用户可见范围；公开发布、Windows、Cursor、跳过审批、远程／多根与额外 OS 仍排除。各切片归档仍约束各自证据限度。
 - 相关：[`../ACTIVE.md`](../ACTIVE.md)、[`architecture/`](architecture/)、[`guides/agent-collaboration.md`](guides/agent-collaboration.md)
 
-> 维护者于 2026-09-19 确认 D-01～D-04，并于 2026-09-22 授权整合修订后的产品目标。这是记录这些选择的批准，不是 Build 授权或整份 PRD 验收。PRD 保持 Draft。单项 WI 授权与委托收尾仍以各自记录的范围为限；截至 2026-09-28 的委托关闭见追溯表及链接归档。范围授权、实现证据、代理受托评估、维护者亲自检查、整份 PRD 验收与 Gate 接受分别记录。已记录范围之外的需求仍是提案。
+> 维护者于 2026-09-19 确认 D-01～D-04，并于 2026-09-22 授权整合修订后的产品目标。这是记录这些选择的批准，不是 Build 授权或整份 PRD 验收。PRD 在 2026-09-30 前保持 Draft。
+
+**自用验收（2026-09-30）：** 维护者 `/goal` 完成剩余验证与验收，授权代理把本 PRD **作为自用 macOS 本机 VS Code 安装版 VSIX 目标**接受。证据：[macOS 验证记录](archive/2026-09-30-macos-verification-acceptance.zh.md)。身份为代理受托，不是维护者亲自测试。standing non-goals 仍排除。本次验收不开关 gate。
 
 **实施授权更新（2026-09-22 UTC；历史记录）：** 维护者长期 Goal 授权串行实现 REQ-001～REQ-009 的明确范围，先整合 WI-015，再恢复符合条件的暂停事项。[ACTIVE](../ACTIVE.md) 维护当前 WI、授权边界与证据。该授权当时不接受 Draft PRD 或 ADR／gate。2026-09-27 的专项委托后来只在记录范围内授权证据驱动的选择与收尾；两项授权都不接受整份 PRD。
 
@@ -33,9 +35,9 @@
 
 保留左侧 Explorer，聊天优先使用辅助侧栏。可选编辑区标签不代表改变默认布局。参考客户端用于借鉴可观察的工作流程，不追求像素一致或未经支持的安全承诺。
 
-## 下一可用交付（2026-09-22 修订目标；Draft）
+## 下一可用交付（2026-09-22 修订目标；2026-09-30 自用 macOS 已接受）
 
-**平台变更（维护者确认，2026-09-30）：** 自用验收平台由本文原述的「Windows 本地 VS Code」改为 **macOS 本机 VS Code**；维护者只在 macOS 上测试，Windows 实机 F5 与安装版 VSIX **移出验收范围**，不再计为待补缺口。原 Windows 表述作为历史保留，不再代表当前验收平台。此变更不改变 Cursor、公开发布、全生态或其他 OS 的既有排除项，也不接受整份 Draft。
+**平台变更（维护者确认，2026-09-30）：** 自用验收平台由本文原述的「Windows 本地 VS Code」改为 **macOS 本机 VS Code**；维护者只在 macOS 上测试，Windows 实机 F5 与安装版 VSIX **移出验收范围**，不再计为待补缺口。原 Windows 表述作为历史保留，不再代表当前验收平台。此变更不改变 Cursor、公开发布、全生态或其他 OS 的既有排除项。
 
 下一目标是**维护者自用、macOS 本机 VS Code 上的已安装 VSIX**，不是公开发布。Cursor 尽力兼容，单列证据，不继承 VS Code 验收。保留单个本地工作区文件夹（Git 或非 Git）、每窗口一个活跃运行会话、已有 pi 凭证，以及显式的工作区文本文件／选区上下文。完整 provider 登录界面、多根、远程环境及并行会话仍不在此目标内。
 
@@ -136,9 +138,9 @@
 
 **WI-026 方案 A（2026-09-29，维护者选择）：** 用单实例编辑区设置页替代侧栏设置弹窗，聊天留在侧栏。分类为通用、默认模型、供应商；默认模型使用可搜索列表并标出已保存选择；凭据操作仅在供应商详情出现。语言在两个界面间内存同步，宿主重启恢复默认。执行配置移到输入区权限展开层，保留警告、可用性、确认与恢复。加载、空态、错误与 busy 仍明确；密钥输入继续由原生宿主提示处理。关闭设置不影响聊天、草稿或运行任务。验收覆盖双语、窄宽及编辑区宽度、键盘导航、独立页面标识、过期消息拒绝与设置能力白名单。此项替代旧弹窗布局，不改变模型应用或凭据语义；自定义编辑页是对 VS Code 原生 Settings 建议的明确例外，见[研究](discussions/2026-09-29-settings-redesign-research.zh.md)。关联 REQ-002／003。维护者于 2026-09-29 确认 F5 视觉验收。安装 VSIX 不在该次接受内。见[收尾](archive/2026-09-29-wi-026-active-superseded.zh.md)。
 
-## 候选需求与验收
+## 需求与验收
 
-各项完整需求仍为 Draft，部分切片已有单独批准和验收。新增 Build 前，按[协作指南](guides/agent-collaboration.zh.md)将选定切片关联到一个 WI，明确可观察的验收与相关决策并记录批准。
+自用 macOS 本机 VS Code 安装版 VSIX 已 Accepted。standing non-goals 仍排除。新增 Build 前，按[协作指南](guides/agent-collaboration.zh.md)将选定切片关联到一个 WI，明确可观察的验收与相关决策并记录批准。
 
 ### REQ-001 — 项目与信任可见性
 
@@ -162,9 +164,9 @@ WI-006 当时仅记录选择，不启动 pi；随后 WI-007 接入根据选择�
 
 **WI-024 已接受切片（2026-09-29，维护者 F5 视觉验收）：** 可在扩展内配置 API Key 与已保存默认模型。密钥只经宿主密码提示输入。同一次确认覆盖已记录的 WI-023 检查：设置布局与模型选择器可见。OAuth、自定义端点、环境中的云凭证和付费探测不在该次接受内。现行设置表面是 WI-026 编辑区页面。见[收尾](archive/2026-09-28-wi-024-paused-proposal.zh.md)。
 
-**WI-030 已接受切片（2026-09-29，维护者确认）：** 维护者完成剩余的设置页检查：登录入口和添加端点。在该设置页，带公开 OAuth 登录的供应商可由宿主发起登录。宿主只打开不含用户信息的 http(s) 链接，在原生提示中显示设备码，令牌不进入 Webview。一个自定义 OpenAI 兼容端点包含显示名称、Base URL 和模型 id；API key 仍由宿主密码框经 `ModelRuntime.login` 保存。端点合入 `models.json` 时不写 API key、请求头、shell 命令或环境变量插值。损坏的文件保持不变。删除仅限于该文件中的非内置供应商。环境云凭证、付费探测、其他自定义 API 和第二套凭据存储不在范围内。本次确认不记录真实浏览器登录、真实端点调用或新的安装包。ADR 0005 仍为 Draft。见[收尾](archive/2026-09-29-wi-030-oauth-endpoint.zh.md)。
+**WI-030 已接受切片（2026-09-29，维护者确认）：** 维护者完成剩余的设置页检查：登录入口和添加端点。在该设置页，带公开 OAuth 登录的供应商可由宿主发起登录。宿主只打开不含用户信息的 http(s) 链接，在原生提示中显示设备码，令牌不进入 Webview。一个自定义 OpenAI 兼容端点包含显示名称、Base URL 和模型 id；API key 仍由宿主密码框经 `ModelRuntime.login` 保存。端点合入 `models.json` 时不写 API key、请求头、shell 命令或环境变量插值。损坏的文件保持不变。删除仅限于该文件中的非内置供应商。环境云凭证、付费探测、其他自定义 API 和第二套凭据存储不在范围内。2026-09-30 记录了隔离安装版真实端点补全与 GitHub Copilot 设备码／浏览器交互；[ADR 0005](decisions/0005-custom-endpoint-file.zh.md) 已 Accepted。见[WI-030 收尾](archive/2026-09-29-wi-030-oauth-endpoint.zh.md)与 [macOS 验证](archive/2026-09-30-macos-verification-acceptance.zh.md)。
 
-**WI-038 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／ARCH-05）：** 同一配置文件的自定义 endpoint 添加／删除在扩展宿主之间互斥。锁争用或检测到外部版本变化时，明确失败，不改文件、不启动登录／注销。文件替换成功与清理失败分别报告；已提交但清理失败时不自动继续凭据动作或重试修改。遗留锁保留，恢复要求关闭相关写入宿主，由维护者核对后手工清理。不遵守锁协议的外部写入仍可在最终版本检查与替换之间竞争，检测是尽力而为。缺失文件创建、损坏文件拒绝、原生供应商保护与凭据隔离保持。本次不修复输出大小预算，也不接受 ADR 0005。[验收与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。
+**WI-038 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／ARCH-05）：** 同一配置文件的自定义 endpoint 添加／删除在扩展宿主之间互斥。锁争用或检测到外部版本变化时，明确失败，不改文件、不启动登录／注销。文件替换成功与清理失败分别报告；已提交但清理失败时不自动继续凭据动作或重试修改。遗留锁保留，恢复要求关闭相关写入宿主，由维护者核对后手工清理。不遵守锁协议的外部写入仍可在最终版本检查与替换之间竞争，检测是尽力而为。缺失文件创建、损坏文件拒绝、原生供应商保护与凭据隔离保持。本次不修复输出大小预算。[ADR 0005](decisions/0005-custom-endpoint-file.zh.md) 后来于 2026-09-30 Accepted；本 WI 当时仍未认证真实 OAuth。[验收与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。
 
 **WI-025 启动前强度（2026-09-29，明确授权）：** 会话启动前的模型入口与会话内共用模型／强度呈现。已配置默认模型只提供上游支持档位，通过 pi 公开设置按模型保存强度；重开／重载后保留，新会话沿用上游启动默认，恢复历史则保留该会话已保存状态。切换默认模型恢复各自有效保存值。无模型／能力时禁用强度且设置入口可达；加载、保存失败、不支持或过期选择不暗示成功。选择默认值不启动会话、不授予项目资源同意、不调用模型。验收持久化、启动、非法输入与正式挂载键盘交互；WI-008／WI-009 活跃会话语义保持。
 
@@ -235,7 +237,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **WI-036 已接受切片（代理依据完成剩余任务的 goal，2026-09-30；REQ-005／006）：** 宿主 IPC 断开、父 stdin 结束或 stdout 管道丢失后，supervisor 对本 run 精确自有 child 走与显式 End 相同的有界 SIGTERM（5 秒）再 SIGKILL（5 秒）。不以关闭 pi stdin 作为杀进程手段。回执仍拥有退休。会话内 Stop／协议不确定、以及本宿主不拥有之域的活所有者保护仍有效。共享域准入后来由 WI-058 取代。[验收与限制](archive/2026-09-30-wi-036-macos-acceptance.zh.md)。
 
-**WI-058 已接受切片（代理依据完成停车场任务的 goal，2026-09-30；REQ-005／006）：** 每个 VS Code 窗口在 `recovery-v1/windows/<uuid>/` 各自准入运行时。同一文件夹上的两窗口可同时跑，并可能改同一批文件。占用启动点名本窗口域。活的 `owned` 兄弟不结束。[验收与限制](archive/2026-09-30-wi-058-macos-acceptance.zh.md)。[ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 已 Accepted。双窗口 macOS F5 仍未验证。不接受整份 Draft PRD。
+**WI-058 已接受切片（代理依据完成停车场任务的 goal，2026-09-30；REQ-005／006）：** 每个 VS Code 窗口在 `recovery-v1/windows/<uuid>/` 各自准入运行时。同一文件夹上的两窗口可同时跑，并可能改同一批文件。占用启动点名本窗口域。活的 `owned` 兄弟不结束。双窗口 macOS F5 与隔离安装版 VSIX，以及窗口崩溃精确 child 清理，已于 2026-09-30 记录。[验收与限制](archive/2026-09-30-wi-058-macos-acceptance.zh.md)；原生双窗口／崩溃证据见 [macOS 验证](archive/2026-09-30-macos-verification-acceptance.zh.md)。[ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 已 Accepted。
 
 **WI-040 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-006／CORE-01）：** 同时最多八张待审批卡。并发预检查不得准入第九张。取消与错误路径释放已预留或已占用槽位。这是本地准入不变量，不宣称已修复非法投影、断连或内存耗尽。[验收与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。
 
@@ -346,11 +348,11 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选择、压缩／统计、会话切换／历史和扩展 UI 对话框。公开 SDK 提供会话枚举和认证操作，但它们不等于内建 RPC 命令。编辑器附件与审查 UI 由宿主负责。权限弹窗、计划模式、MCP 和代码检查点需要扩展，不是内建同等功能。会话 fork 不等于代码回滚。
 
-上文定义完整目标；不表示每项都仍待完成，也不表示所有需求均已接受。限定 WI 的评估、日期、宿主／版本范围与限制见追溯表及链接归档；委托记录表示代理受托评估，不是维护者亲自检查。三个架构 gate 已由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 按其记录的范围／证据限制单独接受。本 Draft 本身不授权记录范围外的工作，也不改变 ADR／gate 状态；WI-010／Goal 限定收尾见[归档](archive/2026-09-28-wi-010-goal-closure.zh.md)。见[架构门槛](reference/architecture-gates.zh.md)。
+上文定义自用目标；不表示每个延期 non-goal 都已交付。限定 WI 的评估、日期、宿主／版本范围与限制见追溯表及链接归档；委托记录表示代理受托评估，不是维护者亲自检查。三个架构 gate 已由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 按其记录的范围／证据限制单独接受。本文档不授权记录范围外的工作，也不改变 ADR／gate 状态；WI-010／Goal 限定收尾见[归档](archive/2026-09-28-wi-010-goal-closure.zh.md)。见[架构门槛](reference/architecture-gates.zh.md)。
 
 ## 工作追溯
 
-版本方向可以跨越未来 WI，而 ACTIVE 同时只维护一个当前实现 WI。2026-09-27 委托仅授权在明确覆盖的范围内依证据做决定与收尾，不接受整份 Draft PRD。ACTIVE 维护当前工作；下表是限定追溯，不能替代链接归档中的验收证据。
+版本方向可以跨越未来 WI，而 ACTIVE 同时只维护一个当前实现 WI。2026-09-27 委托仅授权在明确覆盖的范围内依证据做决定与收尾。2026-09-30 剩余验证 `/goal` 后来把本 PRD 作为自用 macOS 安装版接受。ACTIVE 维护当前工作；下表是限定追溯，不能替代链接归档中的验收证据。
 
 | WI ID | PRD 范围 | 验收／状态 |
 |-------|----------|-----------|
@@ -375,14 +377,14 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-025 | REQ-001～008 既有流程的展示：上文侧栏视觉工艺切片 | 2026-09-28 授权 Build；维护者 2026-09-29 确认 F5 视觉验收；安装 VSIX 与真实模型完整流程未因此确认 |
 | WI-023 | REQ-002 设置布局与模型选择器可见 | 2026-09-29 维护者 F5 视觉验收；记录中的剩余项只有这次检查。安装 VSIX 不在范围内。[收尾](archive/2026-09-28-wi-024-paused-proposal.zh.md) |
 | WI-024 | REQ-002 扩展内 API Key 与已保存默认模型 | 2026-09-29 维护者 F5 视觉验收设置分区、Add key 与模型选择器恢复。OAuth、自定义端点、付费调用和安装 VSIX 不在该次接受内。[收尾](archive/2026-09-28-wi-024-paused-proposal.zh.md) |
-| WI-030 | REQ-002 OAuth 登录与一个 OpenAI 兼容端点 | 维护者于 2026-09-29 完成剩余设置页检查。真实浏览器登录、真实端点调用和新的安装包不在本次关闭内。ADR 0005 仍为 Draft。[收尾](archive/2026-09-29-wi-030-oauth-endpoint.zh.md) |
+| WI-030 | REQ-002 OAuth 登录与一个 OpenAI 兼容端点 | 维护者于 2026-09-29 完成剩余设置页检查。2026-09-30 记录隔离安装版真实端点调用与 GitHub Copilot 设备码／浏览器 OAuth；[ADR 0005](decisions/0005-custom-endpoint-file.zh.md) 已 Accepted。[收尾](archive/2026-09-29-wi-030-oauth-endpoint.zh.md)；[原生证据](archive/2026-09-30-macos-verification-acceptance.zh.md) |
 | WI-026 | REQ-002／003 编辑区设置页、输入区执行入口及内存语言同步 | 2026-09-29 维护者 F5 视觉验收；安装 VSIX 不在范围内。[收尾](archive/2026-09-29-wi-026-active-superseded.zh.md) |
 | WI-027 | REQ-003 附件预览失败句；REQ-006 扩展交互与执行配置界面文案；现有英文与中文句按表面分开保留 | 2026-09-29 维护者接受；仅展示层收回 UiText；本切片不要求 F5／VSIX；无新 REQ。[收尾](archive/2026-09-29-wi-027-ui-text.zh.md) |
 | WI-033 | REQ-002／004／005／006 运行时输入拒收、就绪、模型与 Stop 结果 | 维护者于 2026-09-29 授权实施；于 2026-09-30 按最终委托接受，[证据与限制](archive/2026-09-30-wi-033-macos-evaluation.zh.md)明确保留。 |
 | WI-032 | REQ-003 附件正文拒收；REQ-004 活动与助手文本打码；REQ-006 审批拒绝；REQ-007 审阅不可用；REQ-009 运行时对话框与扩展反馈拒收 | 维护者于 2026-09-29 授权该切片。一份宿主共用凭据文本规则；尽力识别，不是新 REQ。于 2026-09-30 按最终委托接受；[证据与原生交互限制](archive/2026-09-30-wi-032-macos-evaluation.zh.md)明确保留。 |
 | WI-035 | REQ-005／REQ-006 宿主启动时的遗留自有运行时交接 | 2026-09-30 批准并由代理依据维护者明确委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-035-macos-acceptance.zh.md)。Accepted ADR 0006 只在激活时对失去所有者的运行执行回执保障交接；另一域的活窗口所有权与会话内 Stop／协议故障恢复不变。共享域准入后来由 WI-058 取代。不接受整份 Draft PRD。 |
-| WI-036 | REQ-005／REQ-006 宿主丢失时清理精确自有子进程 | 2026-09-30 由代理依据完成剩余任务的 goal 接受；[supervisor 进程证据与限制](archive/2026-09-30-wi-036-macos-acceptance.zh.md)。[ADR 0008](decisions/0008-owner-loss-child-cleanup.zh.md) 已 Accepted。VS Code 窗口崩溃 F5 与安装版 VSIX 仍未验证。不接受整份 Draft PRD。 |
-| WI-058 | REQ-005／REQ-006 每个 VS Code 窗口独立恢复域 | 2026-09-30 由代理依据完成停车场任务的 goal 接受；[自动化双域证据与限制](archive/2026-09-30-wi-058-macos-acceptance.zh.md)。[ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 已 Accepted。双窗口 macOS F5 仍未验证。不接受整份 Draft PRD。 |
+| WI-036 | REQ-005／REQ-006 宿主丢失时清理精确自有子进程 | 2026-09-30 由代理依据完成剩余任务的 goal 接受；[supervisor 进程证据与限制](archive/2026-09-30-wi-036-macos-acceptance.zh.md)。[ADR 0008](decisions/0008-owner-loss-child-cleanup.zh.md) 已 Accepted。窗口崩溃 F5／隔离安装版于 2026-09-30 补录，见 [macOS 验证](archive/2026-09-30-macos-verification-acceptance.zh.md)。 |
+| WI-058 | REQ-005／REQ-006 每个 VS Code 窗口独立恢复域 | 2026-09-30 由代理依据完成停车场任务的 goal 接受；[自动化双域证据与限制](archive/2026-09-30-wi-058-macos-acceptance.zh.md)。[ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 已 Accepted。双窗口 F5／安装版于 2026-09-30 补录，见 [macOS 验证](archive/2026-09-30-macos-verification-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
@@ -391,19 +393,19 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-043 | REQ-002 模型弹层 Escape 在与添加上下文菜单重叠时忽略已消费事件（UI-02） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[jsdom 重叠证据与限制](archive/2026-09-30-wi-043-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-045 | REQ-007 缺失审阅路径正文与 tooltip 共用翻译入口（UI-03） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[en／zh-CN 证据与限制](archive/2026-09-30-wi-045-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-039 | REQ-009 交付 VSIX 必须包含自身 bundle 会加载的运行时依赖闭包（安装版供应商配置属 REQ-002） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解包 import 验证、隔离安装版供应商配置加载与限制](archive/2026-09-30-wi-039-macos-acceptance.zh.md)。不新增 gate、ADR 或整份 PRD 接受。 |
-| 剩余范围 | 未由单项已接受 WI 覆盖的 Draft 需求 | 完整产品目标及未分配切片仍未接受；WI-010／Goal 限定收尾见[归档](archive/2026-09-28-wi-010-goal-closure.zh.md)。2026-09-27 委托只覆盖明确记录且有证据的范围，不接受整份 PRD。 |
+| 剩余范围 | standing non-goals 与额外 OS／公开发布 | 自用 macOS 安装版 VSIX 已 Accepted。Windows、Cursor、跳过审批、远程／多根、额外 OS 与公开发布仍排除。[验证](archive/2026-09-30-macos-verification-acceptance.zh.md)。 |
 
 | REQ ID | 可观察的验收目标 | 范围 |
 |--------|------------------|------|
 | REQ-001 | 执行前显示项目和信任状态；阻断不合格工作区 | 工作区／启动切片已单独验收 |
-| REQ-002 | 显示并选择可用模型／thinking；忙碌时明确下一轮意图 | WI-008／WI-009，完整要求仍为 Draft |
-| REQ-003 | 显式附加、预览及移除工作区文本／选区 | WI-014 已按委托接受批准范围 T014-01～05；WI-027 覆盖双语预览失败句，不合并不同表面的措辞。WI-032 共用凭据文本拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。旧的 T014-02 Build／待办文字现为历史状态。范围及限制见[归档](archive/2026-09-28-wi-014-attachment-acceptance.zh.md)；不因此接受整份 PRD。 |
-| REQ-004 | 展示流式文本、真实活动及有界错误；区分受理与完成 | WI-004 最小切片；WI-009 thinking；WI-010 原受控／Stop 切片；WI-021 retry／compaction 与可靠终态切片按委托接受。WI-032 共用活动与助手文本打码于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。更广泛 session-streaming gate 由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 单独接受；不等于接受整份 PRD。 |
-| REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。WI-035 覆盖下次激活时的遗留交接；WI-036 覆盖该宿主丢失时的精确 child 清理。三个 gate 已由 ADR 0004 单独接受；更广泛产品需求仍为 Draft。 |
-| REQ-006 | 覆盖范围内审批；受控默认、显式可信配置及仅空闲切换／失败恢复 | WI-010 原受控切片；WI-013 按 ADR 0002 接受有界可信加载、工具覆盖及自有 runtime 恢复目标；WI-027 覆盖双语扩展交互与执行配置界面文案。WI-032 共用审批拒绝于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。WI-035／036 覆盖遗留交接与 owner-loss 精确 child 清理，不接受每窗口独立域。限定 WI 范围之外的产品需求仍为 Draft；三个架构 gate 已由 ADR 0004 单独接受。 |
+| REQ-002 | 显示并选择可用模型／thinking；忙碌时明确下一轮意图 | WI-008／WI-009；WI-030／ADR 0005 真实 OAuth 交互与自定义端点；自用已 Accepted；额外供应商／生态仍排除 |
+| REQ-003 | 显式附加、预览及移除工作区文本／选区 | WI-014 已按委托接受批准范围 T014-01～05；WI-027 覆盖双语预览失败句，不合并不同表面的措辞。WI-032 共用凭据文本拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。旧的 T014-02 Build／待办文字现为历史状态。范围及限制见[归档](archive/2026-09-28-wi-014-attachment-acceptance.zh.md)。自用已 Accepted；额外附件类型仍排除。 |
+| REQ-004 | 展示流式文本、真实活动及有界错误；区分受理与完成 | WI-004 最小切片；WI-009 thinking；WI-010 原受控／Stop 切片；WI-021 retry／compaction 与可靠终态切片按委托接受。WI-032 共用活动与助手文本打码于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。更广泛 session-streaming gate 由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 单独接受。自用已 Accepted。 |
+| REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。WI-035 覆盖下次激活时的遗留交接；WI-036 覆盖该宿主丢失时的精确 child 清理。三个 gate 已由 ADR 0004 单独接受。自用 macOS 已 Accepted；跳过审批与额外 OS 仍排除。 |
+| REQ-006 | 覆盖范围内审批；受控默认、显式可信配置及仅空闲切换／失败恢复 | WI-010 原受控切片；WI-013 按 ADR 0002 接受有界可信加载、工具覆盖及自有 runtime 恢复目标；WI-027 覆盖双语扩展交互与执行配置界面文案。WI-032 共用审批拒绝于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。WI-035／036 覆盖遗留交接与 owner-loss 精确 child 清理；WI-058 后来接受每窗口独立域。自用 macOS 已 Accepted；跳过审批仍排除。三个架构 gate 已由 ADR 0004 单独接受。 |
 | REQ-007 | 对可识别受控写入保护脏编辑器，诚实审阅已应用 diff | WI-016限定委托接受；[证据](archive/2026-09-28-wi-016-review-acceptance.zh.md)。WI-032 共用审阅正文不可用于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
 | REQ-008 | 列出当前项目已保存会话，主动恢复、顺序交接及重新授权 | WI-017限定委托接受；[证据](archive/2026-09-28-wi-017-session-acceptance.zh.md) |
-| REQ-009 | 自用已安装VSIX的五类成功／失败与代表性真实扩展 | 平台为 macOS 本机 VS Code（2026-09-30 维护者确认，Windows 已移出验收范围）。[WI-010组合验收](archive/2026-09-28-wi-010-goal-closure.zh.md)在已接受各WI基础上核对五类与实际资源调用、核心闭环及故障恢复；原批准代表范围已按委托接受，不声称全生态／Cursor／其他平台，整份PRD仍Draft。WI-032 共用对话框与反馈拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
+| REQ-009 | 自用已安装VSIX的五类成功／失败与代表性真实扩展 | 平台为 macOS 本机 VS Code（2026-09-30 维护者确认，Windows 已移出验收范围）。[WI-010组合验收](archive/2026-09-28-wi-010-goal-closure.zh.md)在已接受各WI基础上核对五类与实际资源调用、核心闭环及故障恢复；原批准代表范围已按委托接受，不声称全生态／Cursor／其他平台。WI-032 共用对话框与反馈拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
 
 ## 非目标与延期能力
 
@@ -419,4 +421,4 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 
 先起草行为再请求批准，缺少批准不是保留空 PRD 的理由。WI 进入 Build 前，记录是否用户可见、关联选定需求和可观察验收、解决相关待决项，并取得维护者确认。纯技术 WI 说明无需新增产品需求的原因。Close 时将实际行为与已批准切片对照，记录延期差异。
 
-不得将这份含未决提案的文档整体提升。提升前须将未决／延期候选与明确批准的范围分开，并在双语文档中明确批准边界。然后才能经维护者授权将已同意范围标为 Accepted、更新 WI 追溯并运行 `npm run docs:verify`。关 gate 和用户验收仍是独立决定。需求被替代时，按[归档规则](archive/README.zh.md)保留原因及替代依据。
+自用 macOS 安装版 VSIX 已于 2026-09-30 按剩余验证 `/goal` 标为 Accepted。未决的公开发布、Windows、Cursor 及其他 standing non-goals 仍排除，不得随该次接受一并提升。后续范围变更后更新 WI 追溯并运行 `npm run docs:verify`。关 gate 仍是独立决定。需求被替代时，按[归档规则](archive/README.zh.md)保留原因及替代依据。

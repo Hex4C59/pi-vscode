@@ -15,7 +15,7 @@
 - 同级参考：pi-desktop（Electron 呈现层；pi 集成原则相同，宿主不同）
 - 上游：[pi](https://github.com/earendil-works/pi) coding-agent runtime（开发期只读同级检出 `../pi`）
 
-> ADR0001～0004 已接受的结构边界。实际功能／环境交付仍以对应 WI 证据为限；不代表整份 PRD 接受或发布认证。
+> ADR0001～0004 已接受的结构边界。实际功能／环境交付仍以对应 WI 证据为限。PRD 已接受自用 macOS 安装版 VSIX；这不是公开发布认证。
 
 ## 1. 背景
 
@@ -193,7 +193,7 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 `src/extension/models/` 中的 `ProviderConfig` 从声明的 pi coding-agent 发行版导入公开 `ModelRuntime`、`SettingsManager`，并使用 pi-ai 能力函数。它拥有供应商就绪状态、原生 API-key／OAuth 交互、默认模型及逐模型 thinking 设置。pi 认证存储与设置仍为权威，不新增 provider 栈、agent 循环或产品 SecretStorage 副本。Webview 接收有界无密钥投影并发送具名意图，不调用 SDK。已保存默认与已应用／待应用实时会话设置不同，跨模块应用顺序归 `src/extension/models/` 中的 `SavedDefaultApply`。
 
-宿主 `customEndpoints.ts` 向公开文档定义的 pi `models.json` 写入有界无密钥条目，凭据仍经公开 login 保存。[Draft ADR 0005](../decisions/0005-custom-endpoint-file.zh.md) 记录该批准切片与剩余验证，不代表架构已接受或真实端点认证。精确供应商／默认 DTO 与失败语义归[消息契约](../reference/webview-messages.zh.md)。
+宿主 `customEndpoints.ts` 向公开文档定义的 pi `models.json` 写入有界无密钥条目，凭据仍经公开 login 保存。[Accepted ADR 0005](../decisions/0005-custom-endpoint-file.zh.md) 记录该切片：隔离安装版真实自定义端点补全与 GitHub Copilot 设备码／浏览器 OAuth；隔离 `auth.json` 未写入。精确供应商／默认 DTO 与失败语义归[消息契约](../reference/webview-messages.zh.md)。
 
 已接受 WI-038 中，`customEndpoints.ts` 拥有文档校验／合并，`endpointFileTransaction.ts` 拥有规范化路径身份、跨宿主互斥、替换与自有资源清理；`ProviderConfig` 只在干净提交后继续重载／登录／注销。[Accepted ADR 0007](../decisions/0007-endpoint-write-transaction.zh.md) 记录立即拒绝争用、保守遗留锁与外部编辑尽力检测。精确结果语义归消息契约。[验收与限制](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)。
 

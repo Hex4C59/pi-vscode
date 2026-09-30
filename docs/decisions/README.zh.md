@@ -39,14 +39,13 @@
 | 0007 | 跨宿主 endpoint 文件事务（WI-038） | 不关闭 gate | [0007-endpoint-write-transaction.zh.md](0007-endpoint-write-transaction.zh.md) |
 | 0008 | 宿主丢失时清理精确自有子进程（WI-036） | 不关闭 gate | [0008-owner-loss-child-cleanup.zh.md](0008-owner-loss-child-cleanup.zh.md) |
 | 0009 | 每窗口独立恢复域（WI-058） | 不关闭 gate | [0009-per-window-recovery-domains.zh.md](0009-per-window-recovery-domains.zh.md) |
+| 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 不关闭 gate | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
 
 ## Draft ADR
 
-| ID | 标题 | Gate | 文件 |
-|----|------|------|------|
-| 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 无 | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
+无。
 
-0005 保持 Draft。维护者在检查设置页控件后关闭了 WI-030。真实浏览器登录和真实端点调用仍未记录，因此本 ADR 不接受任何 gate。
+0005 于 2026-09-30 由代理依据剩余验证 `/goal` 接受：隔离安装版真实自定义端点补全，以及 GitHub Copilot 设备码／浏览器 OAuth 交互。隔离 `auth.json` 未写入。不关闭 gate。[证据](../archive/2026-09-30-macos-verification-acceptance.zh.md)。
 
 0006 于 2026-09-30 由代理按维护者对 WI-035 的明确委托接受，实际 macOS F5／隔离安装交接与完整自动化检查已完成。只取代 ADR 0002 的启动仪式，会话内恢复不变。共享域准入后来由 ADR 0009 取代。[证据与限制](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)；不关闭 gate。
 

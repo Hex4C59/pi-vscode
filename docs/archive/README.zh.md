@@ -62,13 +62,13 @@
 | [WI-027 收回 UiText 文案](2026-09-29-wi-027-ui-text.zh.md) | 维护者 2026-09-29 接受；附件预览失败句与交互界面文案；F5／VSIX 不在本切片内 |
 | [WI-028 RPC 与进程策略](2026-09-29-wi-028-runtime-process.zh.md) | 维护者 2026-09-29 技术接受；RuntimeProcess 接缝与自动化检查；Linux spike／F5／VSIX 不在本次证据内 |
 | [WI-029 RPC 运行时内部模块](2026-09-29-wi-029-rpc-runtime-modules.zh.md) | 维护者 2026-09-29 技术接受；三内部模块与自动化检查；真实 pi／F5／VSIX 不在本次证据内 |
-| [WI-030 OAuth 与自定义端点](2026-09-29-wi-030-oauth-endpoint.zh.md) | 维护者 2026-09-29 完成剩余设置页检查；真实登录、真实端点和新安装包不在本次关闭内；ADR 0005 仍为 Draft |
+| [WI-030 OAuth 与自定义端点](2026-09-29-wi-030-oauth-endpoint.zh.md) | 维护者 2026-09-29 完成剩余设置页检查；2026-09-30 记录隔离安装版真实端点／OAuth；ADR 0005 Accepted |
 | [WI-031 会话 worker 协议](2026-09-29-wi-031-session-worker-protocol.zh.md) | 维护者 2026-09-29 技术接受；共用报文校验、版本未改；F5／VSIX 不在本切片内 |
 | [WI-032 代理受托接受](2026-09-30-wi-032-macos-evaluation.zh.md) | 六入口规则、定向 139 项测试与 macOS smoke；最终委托后关闭，原生敏感交互未验证 |
 | [WI-033 代理受托接受](2026-09-30-wi-033-macos-evaluation.zh.md) | 真实 pi 捕获字节经生产 reader／runtime；最终委托后关闭，保留非 JSON 忽略与原生故障路径限制 |
 | [WI-034 代理受托接受](2026-09-30-wi-034-macos-evaluation.zh.md) | 组包、解包真实 RPC／gate、原生 F5 与隔离安装渲染；限定关闭，不是完整产品验收 |
 | [WI-035 代理受托接受](2026-09-30-wi-035-macos-acceptance.zh.md) | 精确回执交接、实际 F5／隔离安装与活所有者证据；ADR 0006 Accepted，保留失败与范围限制 |
-| [WI-036 代理受托接受](2026-09-30-wi-036-macos-acceptance.zh.md) | 宿主丢失时清理精确 child；supervisor 进程证据；ADR 0008 Accepted；VS Code 崩溃 F5／安装未验证 |
+| [WI-036 代理受托接受](2026-09-30-wi-036-macos-acceptance.zh.md) | 宿主丢失时清理精确 child；supervisor 进程证据；ADR 0008 Accepted；窗口崩溃 F5／安装已于 2026-09-30 记录 |
 | [WI-037 代理受托接受](2026-09-30-wi-037-macos-acceptance.zh.md) | 有界 thinking 流式与完整引号凭据脱敏；实际 macOS F5／隔离安装 SSE 证据 |
 | [WI-039 代理受托接受](2026-09-30-wi-039-macos-acceptance.zh.md) | 安装版 VSIX 运行时依赖闭包（PACKAGE-01）；解包 import 验证与隔离安装版供应商配置加载 |
 | [WI-038 代理受托接受](2026-09-30-wi-038-macos-acceptance.zh.md) | 跨宿主 endpoint 写入互斥；双窗口争用／串行提交证据；ADR 0007 Accepted |
@@ -90,7 +90,8 @@
 | [WI-055 代理受托接受](2026-09-30-wi-055-macos-acceptance.zh.md) | 运行时可选项留在同一 lifecycle；不拆分（ARCH-03） |
 | [WI-056 代理受托接受](2026-09-30-wi-056-macos-acceptance.zh.md) | 模型与 Webview 共享值对象保留；未复制 DTO（ARCH-04） |
 | [WI-057 代理受托接受](2026-09-30-wi-057-macos-acceptance.zh.md) | 已保存默认应用顺序抽出（ARCH-02）；用户可见规则冻结 |
-| [WI-058 代理受托接受](2026-09-30-wi-058-macos-acceptance.zh.md) | 每窗口恢复域；ADR 0009 Accepted；双窗口 F5 未验证 |
+| [WI-058 代理受托接受](2026-09-30-wi-058-macos-acceptance.zh.md) | 每窗口恢复域；ADR 0009 Accepted；双窗口 F5／安装已于 2026-09-30 记录 |
+| [macOS 验证与自用验收](2026-09-30-macos-verification-acceptance.zh.md) | 双窗口 F5／安装、崩溃清理、ADR 0005 真实 OAuth／端点、自用 PRD |
 | [WI-036 批准提案](2026-09-30-wi-036-approved-proposal.zh.md) | 完整批准 owner-loss 精确 child 范围；历史，不是新的 Build 授权 |
 | [WI-057 批准提案](2026-09-30-wi-057-approved-proposal.zh.md) | 完整批准已保存默认应用顺序封装；历史，不是新的 Build 授权 |
 | [WI-058 批准提案](2026-09-30-wi-058-approved-proposal.zh.md) | 完整批准每窗口恢复域范围；历史，不是新的 Build 授权 |

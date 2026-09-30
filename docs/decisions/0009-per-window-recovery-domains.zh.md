@@ -41,4 +41,4 @@ VS Code 没有稳定窗口 id。`vscode.env.sessionId` 不是已证实的每窗�
 
 ## Consequences
 
-第二窗口可在第一窗口仍运行时启动自己的 runtime。它们可能编辑同一工作区文件。Reload 分配新 UUID；旧目录成为兄弟并按 owner-lost 交接。双窗口 macOS F5 与自动化 reserve 测试分开记录。本 ADR 不接受整份 Draft PRD，也不关闭 gate。
+第二窗口可在第一窗口仍运行时启动自己的 runtime。它们可能编辑同一工作区文件。Reload 分配新 UUID；旧目录成为兄弟并按 owner-lost 交接。双窗口 macOS F5 与隔离安装版已于 2026-09-30 记录。本 ADR 不关闭 gate。

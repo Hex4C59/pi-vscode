@@ -34,14 +34,13 @@ Initial proposals and unexplained spike failures retain their pending state and 
 | 0007 | Cross-host endpoint file transactions (WI-038) | none closed | [0007-endpoint-write-transaction.md](0007-endpoint-write-transaction.md) |
 | 0008 | Exact-child cleanup on owner loss (WI-036) | none closed | [0008-owner-loss-child-cleanup.md](0008-owner-loss-child-cleanup.md) |
 | 0009 | Per-window independent recovery domains (WI-058) | none closed | [0009-per-window-recovery-domains.md](0009-per-window-recovery-domains.md) |
+| 0005 | Custom OpenAI-compatible endpoints in models.json (WI-030) | none closed | [0005-custom-endpoint-file.md](0005-custom-endpoint-file.md) |
 
 ## Draft ADRs
 
-| ID | Title | Gate | File |
-|----|-------|------|------|
-| 0005 | Custom OpenAI-compatible endpoints in models.json (WI-030) | none | [0005-custom-endpoint-file.md](0005-custom-endpoint-file.md) |
+None.
 
-0005 stays Draft. The maintainer closed WI-030 after checking the settings controls. A live browser sign-in and a live endpoint call are still unrecorded, so this ADR does not accept a gate.
+0005 was Accepted on 2026-09-30 by the agent under the remaining-verification `/goal`, after an isolated installed VSIX live custom-endpoint completion and a live GitHub Copilot device-code/browser OAuth interaction. Isolated `auth.json` was not populated. No gate closed. [Evidence](../archive/2026-09-30-macos-verification-acceptance.md).
 
 0006 was Accepted on 2026-09-30 by the agent under the maintainer's explicit WI-035 delegation, after actual macOS F5/isolated installed handoff and full automated checks. It supersedes only ADR 0002's startup ceremony; in-session recovery remains unchanged. Shared-domain admission was later replaced by ADR 0009. [Evidence and limits](../archive/2026-09-30-wi-035-macos-acceptance.md); no gate closed.
 

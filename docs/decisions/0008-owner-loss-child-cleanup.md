@@ -6,7 +6,7 @@ English | [中文](0008-owner-loss-child-cleanup.zh.md)
 - Status: Accepted
 - Created: 2026-09-30
 - Decision approval: 2026-09-30 maintainer `/goal` to complete remaining ACTIVE tasks, entering the recorded WI-036 Build slice
-- Verification: 2026-09-30, agent acceptance under that request; compile/lint, 1016 automated tests, and real Node supervisor process tests for IPC disconnect, parent stdin end and stdout pipe loss; [layered evidence and limits](../archive/2026-09-30-wi-036-macos-acceptance.md)
+- Verification: 2026-09-30, agent acceptance under that request; compile/lint, 1016 automated tests, and real Node supervisor process tests for IPC disconnect, parent stdin end and stdout pipe loss; window-crash F5 and isolated installed VSIX recorded later the same day; [layered evidence and limits](../archive/2026-09-30-wi-036-macos-acceptance.md); [native crash evidence](../archive/2026-09-30-macos-verification-acceptance.md)
 - Gates: none closed. Supersedes only ADR 0002's owner-loss keep-alive rule for the exact child. ADR 0006 startup handoff and in-session recovery remain. Shared-domain admission was later replaced by [ADR 0009](0009-per-window-recovery-domains.md).
 - Work item: WI-036 accepted and closed within the approved scope
 - Related: [ADR 0002](0002-interaction-contract-route.md), [ADR 0006](0006-owned-runtime-handoff.md)
@@ -34,4 +34,4 @@ Leaving the child running after the host is gone was the leftover-process incide
 
 ## Consequences
 
-A lost host interrupts its exact pi child without a dialog. A later activation can retire a matching receipt and show the normal page. Failed or unconfirmed cleanup still blocks replacement. Tool descendants may remain. VS Code window-crash F5 and installed-VSIX evidence are recorded separately from supervisor process tests; this ADR does not accept the whole Draft PRD or close a gate.
+A lost host interrupts its exact pi child without a dialog. A later activation can retire a matching receipt and show the normal page. Failed or unconfirmed cleanup still blocks replacement. Tool descendants may remain. Window-crash F5 and isolated installed VSIX were recorded on 2026-09-30. This ADR does not close a gate.

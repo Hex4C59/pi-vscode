@@ -27,12 +27,12 @@ This close reran compile, lint and the full suite on the current tree.
 
 ## Native evidence
 
-macOS 27.0.0 (arm64). Real Node supervisor worker processes are the native evidence for this slice. VS Code window-crash F5 and isolated installed VSIX were not run and are unverified.
+macOS 27.0.0 (arm64). Real Node supervisor worker processes remain the original native evidence for this slice. Window-crash F5 and isolated installed VSIX were recorded on 2026-09-30: SIGKILL of one window's `node.mojom.NodeService` owner ended that domain's exact `pi` child (`child-exited`); the sibling stayed `owned`. [Evidence](2026-09-30-macos-verification-acceptance.md).
 
 ## Failures, Cleanup and Limits
 
 - Exact-child exit does not prove tool descendants, detached process groups or file rollback.
-- Per-window independent domains remain unimplemented.
+- Per-window independent domains are implemented (WI-058 / ADR 0009).
 - No gate closed. No Git commit or push.
 
 ## Final Disposition

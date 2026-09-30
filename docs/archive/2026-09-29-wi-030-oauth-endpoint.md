@@ -15,6 +15,10 @@ The approved behavior stays the WI-026 editor settings page. A provider with pub
 
 Agent checks recorded before the pause: `compile`, `lint`, `npm test` (771/771), `verify:webview`, `docs:verify` (0 errors; two Draft-ADR warnings). This close did not rerun them.
 
+## Follow-up — 2026-09-30
+
+Isolated installed VSIX live custom-endpoint completion and GitHub Copilot device-code/browser OAuth were recorded. [ADR 0005](../decisions/0005-custom-endpoint-file.md) is Accepted. [Evidence](2026-09-30-macos-verification-acceptance.md).
+
 ## Replacement reason
 
 ACTIVE keeps WI-031 as the current item. The paused WI-030 proposal and handoff move here.
