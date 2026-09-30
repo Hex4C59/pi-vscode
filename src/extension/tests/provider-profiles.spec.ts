@@ -3,26 +3,30 @@ import { test } from "node:test";
 import { mkdir, mkdtemp, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import type { PiRuntimeLifecycle, ExecutionProfileProjection } from "../contracts/index.js";
-import { folder, harness, settingsRuntime, tick } from "./harness.js";
+import { folder, harness, settingsRuntime, tick, writeEnabledPlugin } from "./harness.js";
 
-test("explicit native trusted selection preserves draft and live conversation, never sends entry paths to renderer", async () => {
+test("idle Trusted apply from inventory preserves draft and live conversation, never sends entry paths to renderer", async () => {
   const root = path.resolve("dist/tests-fixtures/extension-loading"); await mkdir(root, { recursive: true });
-  const dir = await mkdtemp(path.join(root, "provider-")); const entry = path.join(dir, "extension.ts"); await writeFile(entry, "export default function () {}\n");
+  const dir = await mkdtemp(path.join(root, "provider-")); const store = await mkdtemp(path.join(root, "store-"));
+  const entry = path.join(dir, "extension.ts"); await writeFile(entry, "export default function () {}\n");
+  await writeEnabledPlugin(store, entry);
   const r = settingsRuntime(); const starts: Parameters<PiRuntimeLifecycle["start"]>[0][] = [];
   r.runtime.checkpointRestart = async conversation => ({ kind: "resume", conversation });
   const original = r.runtime.start;
   r.runtime.start = async options => { starts.push(options); await original(options); return { ok: true, modelLabel: null, conversation: { id: "session-id", path: "/owned-session", name: "Live" } }; };
-  const h = harness([folder()], true, undefined, r.runtime);
+  const h = harness([folder()], true, undefined, r.runtime, undefined, undefined, { globalStorage: store });
   try {
     const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
     assert.equal(v.state().runtime, "ready");
     const state = v.state(); const draft = v.attachments().draft;
     v.send("updateDraft", { generation: state.generation, viewId: state.viewId, draftRevision: draft.revision, editSequence: 1, text: "unsent" });
-    h.api.window.showOpenDialog = async () => [folder(entry).uri];
+    let picks = 0;
+    h.api.window.showOpenDialog = async () => { picks += 1; return undefined; };
     h.api.window.showWarningMessage = async (message, options, ...items) => { assert.ok(message.includes(entry)); assert.equal(options.modal, true); return items[0]; };
     v.action("chooseExecutionProfile", { profile: "trusted" });
     for (let i = 0; i < 100 && starts.length < 2; i++) await new Promise(resolve => setTimeout(resolve, 5));
     await tick();
+    assert.equal(picks, 0);
     assert.equal(starts.length, 2);
     assert.deepEqual(starts[1]?.profile, { kind: "trusted", entryPath: entry });
     assert.deepEqual(starts[1]?.resume, { id: "session-id", path: "/owned-session" });
@@ -36,7 +40,8 @@ test("explicit native trusted selection preserves draft and live conversation, n
     assert.equal(v.state().controlledExecution, true);
   } finally {
     h.provider.dispose();
-    assert.equal(path.dirname(dir), root); await rm(dir, { recursive: true });
+    assert.equal(path.dirname(dir), root); assert.equal(path.dirname(store), root);
+    await rm(dir, { recursive: true }); await rm(store, { recursive: true });
   }
 });
 
@@ -202,7 +207,9 @@ test("recovery requires observed terminal ownership and an explicit second actio
 
 test("fresh empty profile switch does not resume an unpersisted session path", async () => {
   const root = path.resolve("dist/wi013-checkpoint-evidence/fixtures"); await mkdir(root, { recursive: true });
-  const dir = await mkdtemp(path.join(root, "fresh-")); const entry = path.join(dir, "extension.ts"); await writeFile(entry, "export default function () {}\n");
+  const dir = await mkdtemp(path.join(root, "fresh-")); const store = await mkdtemp(path.join(root, "fresh-store-"));
+  const entry = path.join(dir, "extension.ts"); await writeFile(entry, "export default function () {}\n");
+  await writeEnabledPlugin(store, entry);
   const r = settingsRuntime(); const starts: Parameters<PiRuntimeLifecycle["start"]>[0][] = [];
   const start = r.runtime.start;
   r.runtime.start = async options => {
@@ -210,11 +217,10 @@ test("fresh empty profile switch does not resume an unpersisted session path", a
     return { ok: true, modelLabel: null, conversation: { id: starts.length === 1 ? "fresh" : "replacement", path: "/unpersisted-session", name: null } };
   };
   r.runtime.checkpointRestart = async () => ({ kind: "empty" });
-  const h = harness([folder()], true, undefined, r.runtime);
+  const h = harness([folder()], true, undefined, r.runtime, undefined, undefined, { globalStorage: store });
   try {
     const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
     assert.equal(v.state().runtime, "ready");
-    h.api.window.showOpenDialog = async () => [folder(entry).uri];
     h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
     v.action("chooseExecutionProfile", { profile: "trusted" });
     for (let i = 0; i < 100 && starts.length < 2; i++) await new Promise(resolve => setTimeout(resolve, 5));
@@ -222,12 +228,18 @@ test("fresh empty profile switch does not resume an unpersisted session path", a
     assert.equal(starts.length, 2);
     assert.equal(starts[1]?.resume, undefined);
     assert.equal(v.state().runtime, "ready");
-  } finally { h.provider.dispose(); assert.equal(path.dirname(dir), root); await rm(dir, { recursive: true }); }
+  } finally {
+    h.provider.dispose();
+    assert.equal(path.dirname(dir), root); assert.equal(path.dirname(store), root);
+    await rm(dir, { recursive: true }); await rm(store, { recursive: true });
+  }
 });
 
 for (const checkpoint of ["unavailable", "throws", "missing"] as const) test(`profile checkpoint ${checkpoint} preserves the old ready runtime and draft`, async () => {
   const root = path.resolve("dist/wi013-checkpoint-evidence/fixtures"); await mkdir(root, { recursive: true });
-  const dir = await mkdtemp(path.join(root, "blocked-")); const entry = path.join(dir, "extension.ts"); await writeFile(entry, "export default function () {}\n");
+  const dir = await mkdtemp(path.join(root, "blocked-")); const store = await mkdtemp(path.join(root, "blocked-store-"));
+  const entry = path.join(dir, "extension.ts"); await writeFile(entry, "export default function () {}\n");
+  await writeEnabledPlugin(store, entry);
   const r = settingsRuntime(); let starts = 0; let stops = 0;
   const start = r.runtime.start;
   r.runtime.start = async options => { starts++; await start(options); return { ok: true, modelLabel: null, conversation: { id: "nonempty", path: "/not-yet-persisted", name: null } }; };
@@ -236,14 +248,13 @@ for (const checkpoint of ["unavailable", "throws", "missing"] as const) test(`pr
     if (checkpoint === "throws") throw new Error("RPC unavailable");
     return { kind: "unavailable" };
   };
-  const h = harness([folder()], true, undefined, r.runtime);
+  const h = harness([folder()], true, undefined, r.runtime, undefined, undefined, { globalStorage: store });
   try {
     const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
     assert.equal(v.state().runtime, "ready");
     const state = v.state(); const draft = v.attachments().draft;
     v.send("updateDraft", { generation: state.generation, viewId: state.viewId, draftRevision: draft.revision, editSequence: 1, text: "retain this draft" });
     const previousStops = stops;
-    h.api.window.showOpenDialog = async () => [folder(entry).uri];
     h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
     v.action("chooseExecutionProfile", { profile: "trusted" });
     for (let i = 0; i < 100; i++) {
@@ -257,7 +268,11 @@ for (const checkpoint of ["unavailable", "throws", "missing"] as const) test(`pr
     assert.equal(starts, 1); assert.equal(stops, previousStops);
     assert.equal(v.state().runtime, "ready"); assert.equal(v.state().controlledExecution, true);
     assert.equal(v.attachments().draft.text, "retain this draft");
-  } finally { h.provider.dispose(); assert.equal(path.dirname(dir), root); await rm(dir, { recursive: true }); }
+  } finally {
+    h.provider.dispose();
+    assert.equal(path.dirname(dir), root); assert.equal(path.dirname(store), root);
+    await rm(dir, { recursive: true }); await rm(store, { recursive: true });
+  }
 });
 
 for (const submitted of [false, true]) test(`owned recovery ${submitted ? 'retains a submitted session identity' : 'replaces an untouched controlled session without resuming a nonexistent file'}`, async () => {

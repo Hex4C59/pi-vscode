@@ -569,8 +569,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (!current()) return;
     if (apply.kind === "too-many") { this.profileError = "too-many-enabled"; return; }
     if (apply.kind === "unusable") { this.profileError = "inventory-unusable"; return; }
+    if (apply.kind !== "single") { this.profileError = "no-enabled-plugin"; return; }
     const result = await selectTrustedExtension({
-      pick: apply.kind === "single" ? async () => apply.entryPath : () => this.pickTrustedFile(),
+      pick: async () => apply.entryPath,
       confirm: entryPath => this.confirmTrustedLoad(entryPath),
     }, current);
     if (!current()) return;
@@ -579,14 +580,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       return;
     }
     return result;
-  }
-
-  private async pickTrustedFile(): Promise<string | undefined> {
-    const files = await this.api.window.showOpenDialog({
-      canSelectFiles: true, canSelectFolders: false, canSelectMany: false,
-      filters: { "pi extension": ["ts", "js", "mjs", "cjs"] }, openLabel: "Select trusted pi extension",
-    });
-    return files?.length === 1 && files[0]?.scheme === "file" ? files[0].fsPath : undefined;
   }
 
   private async confirmTrustedLoad(entryPath: string): Promise<boolean> {

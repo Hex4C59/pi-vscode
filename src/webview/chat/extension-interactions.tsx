@@ -26,6 +26,7 @@ const profilePhases: Readonly<Record<ExecutionProfileProjection["phase"], UiText
 const profileErrors = {
   "too-many-enabled": "Too many plugins are enabled. Disable extras in Settings so only one loads.",
   "inventory-unusable": "The plugin inventory cannot be read. Trusted apply did not start.",
+  "no-enabled-plugin": "Enable a plugin in Settings before choosing Trusted execution.",
 } satisfies Readonly<Record<string, UiText>>;
 
 function interactionError(code: string, t: UiTranslator): string {
@@ -345,7 +346,7 @@ export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, de
     <>
       <p className="execution-profile-controls__coverage">{t("Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.")}</p>
       <p className="execution-profile-controls__domain">{t("Each VS Code window admits its own runtime. Two windows on the same folder can change the same files at once.")}</p>
-      <p className="execution-profile-controls__chooser-note">{t("Choosing trusted confirms the enabled Settings plugin, or opens the file picker when none is enabled, then asks the host to load it.")}</p>
+      <p className="execution-profile-controls__chooser-note">{t("Choosing trusted loads the enabled Settings plugin after host confirmation. Add plugins in Settings.")}</p>
     </>
   );
   const choices = (
@@ -356,17 +357,17 @@ export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, de
           {state.profile === "controlled" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
           <span className="execution-profile-controls__choice-note">{t("Covered tools ask for approval. This is not a sandbox.")}</span>
         </button>
-        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted confirms the enabled Settings plugin, or opens the file picker when none is enabled, then asks the host to load it.")}>
+        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted loads the enabled Settings plugin after host confirmation. Add plugins in Settings.")}>
           <span className="execution-profile-controls__choice-title">{t("Trusted execution")}</span>
           {state.profile === "trusted" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
-          <span className="execution-profile-controls__choice-note">{t("Loads the enabled Settings plugin after host confirmation, or uses the file picker when none is enabled. Not a sandbox.")}</span>
+          <span className="execution-profile-controls__choice-note">{t("Loads the enabled Settings plugin after host confirmation. Not a sandbox.")}</span>
         </button>
       </> : <>
         <button type="button" data-profile-choice="controlled" disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
           {t("Use controlled execution")}
         </button>
-        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted confirms the enabled Settings plugin, or opens the file picker when none is enabled, then asks the host to load it.")}>
-          {t("Load a trusted extension…")}
+        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted loads the enabled Settings plugin after host confirmation. Add plugins in Settings.")}>
+          {t("Use trusted execution")}
         </button>
       </>}
     </div>

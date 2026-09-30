@@ -15,7 +15,7 @@ test("saved-session intents are bounded named capabilities rather than storage p
 
 import type { SessionBackend, SavedSession } from "../contracts/sessionBackend.js";
 import type { SessionStateMessage, SavedHistoryStateMessage } from "../contracts/webviewProtocol.js";
-import { folder, harness, settingsRuntime, tick } from "./harness.js";
+import { folder, harness, settingsRuntime, tick, writeEnabledPlugin } from "./harness.js";
 const saved: SavedSession = { id: "public-pi-id", path: "/private-store/session.jsonl", name: "Saved task", firstMessage: "Earlier question", modified: "2026-09-22T00:00:00.000Z" };
 function backend(): SessionBackend { return {
  async list(_cwd, page) { return { ok: true, entries: [saved], page, total: 1 }; },
@@ -402,8 +402,10 @@ for (const handoff of ["new", "restore"] as const) test(`confirmed ${handoff} di
  const { mkdir, mkdtemp, writeFile, rm } = await import("node:fs/promises");
  const path = await import("node:path");
  const root = path.resolve("dist/tests-fixtures/session-profile"); await mkdir(root, { recursive: true });
- const dir = await mkdtemp(path.join(root, "handoff-")); const entry = path.join(dir, "extension.ts");
+ const dir = await mkdtemp(path.join(root, "handoff-")); const store = await mkdtemp(path.join(root, "handoff-store-"));
+ const entry = path.join(dir, "extension.ts");
  await writeFile(entry, "export default function () {}\n");
+ await writeEnabledPlugin(store, entry);
  const r = settingsRuntime();
  const starts: Parameters<typeof r.runtime.start>[0][] = [];
  const originalStart = r.runtime.start;
@@ -413,11 +415,10 @@ for (const handoff of ["new", "restore"] as const) test(`confirmed ${handoff} di
   return { ok: true, modelLabel: null, conversation: options.resume
    ? { ...options.resume, name: "Restored" } : { id: "current-session", path: "/owned-current", name: "Current" } };
  };
- const store = backend(); const inspect = store.inspect;
- const h = harness([folder()], true, undefined, r.runtime, store);
+ const storeBackend = backend(); const inspect = storeBackend.inspect;
+ const h = harness([folder()], true, undefined, r.runtime, storeBackend, undefined, { globalStorage: store });
  try {
   const v = h.createView(); v.action("chooseResources", { choice: "allow" }); await tick();
-  h.api.window.showOpenDialog = async () => [folder(entry).uri];
   h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
   v.action("chooseExecutionProfile", { profile: "trusted" });
   for (let i = 0; i < 100 && starts.length < 2; i++) await new Promise(resolve => setTimeout(resolve, 5));
@@ -437,11 +438,11 @@ for (const handoff of ["new", "restore"] as const) test(`confirmed ${handoff} di
   assert.equal(v.attachments().draft.text, "Retain until committed");
   h.api.window.showWarningMessage = async (_message, _options, ...items) => items[0];
   if (handoff === "restore") {
-   store.inspect = async () => ({ ok: false, code: "unavailable" });
+   storeBackend.inspect = async () => ({ ok: false, code: "unavailable" });
    request(); await tick(); await tick();
    assert.equal(sessionState(v).error, "unavailable"); assert.equal(starts.length, 2);
    assert.equal(profile().profile, "trusted"); assert.equal(v.attachments().draft.text, "Retain until committed");
-   store.inspect = inspect;
+   storeBackend.inspect = inspect;
   }
   request(); await tick(); await tick();
   assert.equal(starts.length, 3);
@@ -450,6 +451,8 @@ for (const handoff of ["new", "restore"] as const) test(`confirmed ${handoff} di
   assert.equal(v.state().controlledExecution, true); assert.equal(v.attachments().draft.text, "");
   assert.deepEqual(starts[2]?.resume, handoff === "restore" ? { id: saved.id, path: saved.path } : undefined);
  } finally {
-  h.provider.dispose(); assert.equal(path.dirname(dir), root); await rm(dir, { recursive: true });
+  h.provider.dispose();
+  assert.equal(path.dirname(dir), root); assert.equal(path.dirname(store), root);
+  await rm(dir, { recursive: true }); await rm(store, { recursive: true });
  }
 });

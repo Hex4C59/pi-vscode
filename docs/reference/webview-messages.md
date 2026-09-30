@@ -55,7 +55,7 @@ Accept plain/null-prototype objects with exact own enumerable data fields; rejec
 | addPluginInventoryEntry | None; host opens the native file picker and appends a canonical local pi-extension path to the profile inventory. Projection is opaque id plus basename; this is not load consent |
 | removePluginInventoryEntry | id of a currently projected inventory row; host drops that list entry and does not delete disk files |
 | setPluginInventoryEnabled | id plus boolean enabled; persists the next-idle Trusted eligibility flag without loading or mutating a live runtime |
-| chooseExecutionProfile | profile: controlled / trusted; trusted applies one enabled inventory path after native consent, or the file picker when none is enabled; extra enabled entries fail visibly |
+| chooseExecutionProfile | profile: controlled / trusted; trusted applies one enabled inventory path after native consent; missing or extra enabled entries fail visibly without a composer picker |
 | answerInteraction / cancelInteraction | id; the former additionally answer matching the active form's exact method |
 | endOwnedRuntime / recoverControlledRuntime | None; exact retained run in this recovery domain only, under ADR0002 receipt rules |
 

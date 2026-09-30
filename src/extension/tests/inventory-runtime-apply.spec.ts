@@ -118,6 +118,25 @@ test("extra enabled inventory entries fail visibly and do not start Trusted", as
   } finally { h.provider.dispose(); }
 });
 
+test("zero enabled inventory entries fail visibly without a composer picker", async t => {
+  const { h, v, starts } = await applyFixture(t);
+  try {
+    let picks = 0;
+    let warnings = 0;
+    h.api.window.showOpenDialog = async () => { picks += 1; return undefined; };
+    h.api.window.showWarningMessage = async () => { warnings += 1; return undefined; };
+    v.action("chooseExecutionProfile", { profile: "trusted" });
+    for (let i = 0; i < 40; i++) await tick();
+    assert.equal(picks, 0);
+    assert.equal(warnings, 0);
+    assert.equal(starts.length, 1);
+    const profile = profileState(v);
+    assert.equal(profile.profile, "controlled");
+    assert.equal(profile.phase, "error");
+    assert.equal(profile.errorCode, "no-enabled-plugin");
+  } finally { h.provider.dispose(); }
+});
+
 test("a damaged inventory fails visibly instead of opening the picker", async t => {
   const { h, v, starts, globalStorage } = await applyFixture(t);
   try {

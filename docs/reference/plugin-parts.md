@@ -125,7 +125,7 @@ Opened from the shield. Call this **Execution profile**, not a second settings p
 |---|---|---|
 | 1 | 执行配置 | **Execution profile** (the card) |
 | 2 | 受控执行 | **Controlled** execution |
-| 3 | 受信执行 | **Trusted** execution (loads the enabled Settings plugin after host confirmation, or the file picker when none is enabled) |
+| 3 | 受信执行 | **Trusted** execution (loads the enabled Settings plugin after host confirmation) |
 | 4 | 权限入口 / 盾牌 | Permissions control that opened it |
 
 **Notes** and **Session grants** fold out inside the same card. Grants are this session’s tool allowances, not VS Code workspace trust.
@@ -189,7 +189,7 @@ This list is the pi-global default for new chats. It is not the same object as t
 
 API keys are typed in a **VS Code password prompt**, not inside this page.
 
-A Settings **Plugins** category lists remembered local pi extensions (add, remove and enable) and is **not in these screenshots**. Idle Trusted apply loads at most one enabled extra `-e` after the existing coverage warning (WI-064). Extra enabled entries fail visibly. Composer fold remains later.
+A Settings **Plugins** category lists remembered local pi extensions (add, remove and enable) and is **not in these screenshots**. Idle Trusted apply loads at most one enabled extra `-e` after the existing coverage warning (WI-064). Extra or missing enabled entries fail visibly. Composer permissions show status and recovery only (WI-065); add is in Settings.
 
 ## Surfaces that appear only when needed
 

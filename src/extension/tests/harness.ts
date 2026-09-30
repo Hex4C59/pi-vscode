@@ -3,6 +3,7 @@ import type { SessionBackend } from "../contracts/sessionBackend.js";
 import { PiChatViewProvider } from "../piChatViewProvider.js";
 import { noopPiRuntimeLifecycle, type PiRuntimeLifecycle, type RuntimeEvent } from "../contracts/runtimeLifecycle.js";
 import type { WorkspaceStateMessage, AttachmentStateMessage } from "../bridge/webviewMessages.js";
+import { replacePluginInventory } from "../extension-loading/index.js";
 
 export class Event<T> {
   readonly listeners = new Set<(value: T) => unknown>();
@@ -181,4 +182,9 @@ export async function readySettings() {
   }
   r.calls.length = 0;
   return { r, h, v };
+}
+
+export async function writeEnabledPlugin(globalStorage: string, entryPath: string): Promise<void> {
+  const written = await replacePluginInventory(globalStorage, [{ path: entryPath, enabled: true }]);
+  if (!written.ok) throw new Error(`fixture inventory write failed: ${written.reason}`);
 }

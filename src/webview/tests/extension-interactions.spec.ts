@@ -255,6 +255,27 @@ test("execution profile shows trusted identity and only dispatches host-approved
 });
 
 
+test("missing enabled plugins explain the host error without implying a switch", async () => {
+  const state: ExecutionProfileProjection = {
+    profile: "controlled",
+    displayName: null,
+    phase: "error",
+    errorCode: "no-enabled-plugin",
+    canSwitch: true,
+    canEnd: false,
+    canRecover: false,
+  };
+  const view = await mount(createElement(ExecutionProfileControls, {
+    state,
+    onChoose: () => undefined,
+    onEnd: () => undefined,
+    onRecover: () => undefined,
+  }));
+  try {
+    assert.match(view.get(".execution-profile-controls__error").textContent ?? "", /enable a plugin in settings/i);
+  } finally { await view.close(); }
+});
+
 test("too many enabled plugins explain the host error without implying a switch", async () => {
   const state: ExecutionProfileProjection = {
     profile: "controlled",
