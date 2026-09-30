@@ -73,6 +73,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-051 | Composer flags and FileSnapshot validators have no confirmed production mis-pair | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-051-macos-acceptance.md) |
 | WI-052 | Startup, diagnostic, artifact and test/Git costs need no in-repo budget now | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-052-macos-acceptance.md) |
 | WI-053 | Streaming publish and history preview costs do not justify optimization now | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-053-macos-acceptance.md) |
+| WI-054 | Admission owners tabulated; busy flags stay separate (ARCH-01) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-054-macos-acceptance.md) |
 
 ## Not in this index
 
