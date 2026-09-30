@@ -69,7 +69,9 @@ function SettingsPage({ config, inventory, locale, onLanguage, onAction }: Props
         <select id="settings-language" value={locale} disabled={!config} onChange={event => onLanguage(event.currentTarget.value === "zh-CN" ? "zh-CN" : "en")}>
           {uiLanguages.map(item => <option key={item.locale} value={item.locale}>{item.label}</option>)}
         </select>
-      </div> : page === "plugins" ? <PluginsPanel inventory={inventory} onAdd={() => onAction({ type: "addPluginInventoryEntry" })} />
+      </div> : page === "plugins" ? <PluginsPanel inventory={inventory}
+        onAdd={() => onAction({ type: "addPluginInventoryEntry" })}
+        onRemove={id => onAction({ type: "removePluginInventoryEntry", id })} />
         : !config ? <p role="status">{t("Loading providers…")}</p> : <>
         {config.error && <p className="settings-page__error" role="alert">{config.error}</p>}
         {page === "models" ? <ModelsPanel config={config} models={models} query={query} onQuery={setQuery} onAction={onAction} onProviders={() => navigate("providers")} />

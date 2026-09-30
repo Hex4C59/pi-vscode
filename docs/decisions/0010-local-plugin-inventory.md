@@ -6,7 +6,7 @@ English | [中文](0010-local-plugin-inventory.zh.md)
 - Status: Draft
 - Created: 2026-10-01
 - Decision approval: 2026-10-01 maintainer `/goal` to complete every ACTIVE.md task, serial WI starting at WI-059
-- Verification: pending remove/enable UI and runtime apply. WI-060 implemented the host file store with damage/size tests. WI-061 added Settings Plugins empty list and add from disk without skipping load consent. ADR stays Draft until load consent still cannot be skipped.
+- Verification: pending enable UI and runtime apply. WI-060 implemented the host file store with damage/size tests. WI-061 added Settings Plugins empty list and add from disk without skipping load consent. WI-062 removes list entries without deleting disk files. ADR stays Draft until load consent still cannot be skipped.
 - Gates: none closed. Does not replace ADR 0002 load consent, coverage warnings, asking, or owned-runtime recovery.
 - Work item: WI-059 records the product boundary; later slices implement
 - Related: [ADR 0002](0002-interaction-contract-route.md), [REQ-010](../product-requirements.md), [discussion](../discussions/2026-10-01-local-plugin-inventory.md)

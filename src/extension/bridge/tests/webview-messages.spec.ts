@@ -15,6 +15,7 @@ test("v3 exact actions reject old pages, accessors, paths and invalid identities
     { type: "setDefaultThinkingLevel", provider: "p", modelId: "m", level: "high" },
     { type: "setThinkingLevel", level: "high" }, { type: "setChatModel", provider: "p", modelId: "m" },
     { type: "addPluginInventoryEntry" },
+    { type: "removePluginInventoryEntry", id: "entry-1" },
   ];
   for (const action of actions) {
     const valid = { ...envelope, ...action };

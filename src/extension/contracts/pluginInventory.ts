@@ -3,11 +3,12 @@ export type PluginInventoryError =
   | "duplicate-path"
   | "invalid-entry"
   | "existing-unusable"
+  | "unknown-entry"
   | "too-many"
   | "too-large"
   | "write-failed";
 
-export type PluginInventoryItem = { displayName: string };
+export type PluginInventoryItem = { id: string; displayName: string };
 
 export type PluginInventoryProjection = {
   busy: boolean;
@@ -15,4 +16,6 @@ export type PluginInventoryProjection = {
   entries: PluginInventoryItem[];
 };
 
-export type PluginInventoryIntent = { type: "addPluginInventoryEntry" };
+export type PluginInventoryIntent =
+  | { type: "addPluginInventoryEntry" }
+  | { type: "removePluginInventoryEntry"; id: string };

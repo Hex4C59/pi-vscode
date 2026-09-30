@@ -82,6 +82,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-059 | Local plugin-inventory product boundary (docs only); Draft ADR 0010 | 2026-10-01 agent under complete-ACTIVE `/goal`; no store/UI/load | [record](2026-10-01-wi-059-acceptance.md) |
 | WI-060 | Host plugin-inventory file store | 2026-10-01 agent under complete-ACTIVE `/goal`; no Settings UI or runtime load | [record](2026-10-01-wi-060-acceptance.md) |
 | WI-061 | Settings Plugins empty list and add from disk | 2026-10-01 agent under complete-ACTIVE `/goal`; no remove, enable or runtime load | [record](2026-10-01-wi-061-acceptance.md) |
+| WI-062 | Remove from plugin inventory | 2026-10-01 agent under complete-ACTIVE `/goal`; disk files stay; no enable or runtime load | [record](2026-10-01-wi-062-acceptance.md) |
 
 ## Not in this index
 

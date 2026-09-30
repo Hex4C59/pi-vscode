@@ -266,14 +266,15 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
       return { ...message, providers, catalog, thinkingLevels } as unknown as HostMessage;
     }
     case "pluginInventoryState": {
-      const errors = ["duplicate-path", "invalid-entry", "existing-unusable", "too-many", "too-large", "write-failed"] as const;
+      const errors = ["duplicate-path", "invalid-entry", "existing-unusable", "unknown-entry", "too-many", "too-large", "write-failed"] as const;
       if (!hasFields(message, [...envelope, "busy", "error", "entries"]) || typeof message.busy !== "boolean"
         || !(message.error === null || oneOf(message.error, errors))) return;
       const entries = list(message.entries, 64, item => {
-        const entry = exactRecord(item, ["displayName"]);
-        return entry && utf8Text(entry.displayName, 512) ? entry : undefined;
+        const entry = exactRecord(item, ["id", "displayName"]);
+        return entry && id(entry.id) && utf8Text(entry.displayName, 512) ? entry : undefined;
       });
-      return entries ? { ...message, entries } as unknown as HostMessage : undefined;
+      return entries && new Set(entries.map(entry => entry.id)).size === entries.length
+        ? { ...message, entries } as unknown as HostMessage : undefined;
     }
     case "pong":
       return hasFields(message, envelope) ? message as unknown as HostMessage : undefined;

@@ -4,7 +4,10 @@ import type { UiText } from "../components/index.js";
 export const chineseUi = {
   "Settings": "设置", "Settings categories": "设置分类", "General": "通用", "Providers": "供应商", "Plugins": "插件", "Back to providers": "返回供应商",
   "Search models": "搜索模型", "No matching models": "没有匹配的模型", "Manage providers": "管理供应商", "API key": "API 密钥", "Configured": "已配置", "Not configured": "未配置",
-  "Add from disk": "从磁盘添加", "No plugins in this inventory.": "清单里还没有插件。", "Loading plugins…": "正在加载插件…", "Adding plugin…": "正在添加插件…",
+  "Add from disk": "从磁盘添加",
+  "Remove forgets the path. Files on disk stay.": "移除只会忘掉路径。磁盘上的文件仍在。",
+  "No plugins in this inventory.": "清单里还没有插件。", "Loading plugins…": "正在加载插件…", "Adding plugin…": "正在添加插件…",
+  "That plugin is no longer in the inventory.": "该插件已不在清单中。",
   "This plugin is already in the inventory.": "该插件已在清单中。",
   "That file cannot be added as a pi extension.": "该文件不能作为 pi 扩展添加。",
   "The plugin inventory file is damaged or too large and was left unchanged.": "插件清单文件已损坏或过大，未改写。",

@@ -69,7 +69,7 @@ test("settings rejects obsolete and foreign projections, and handles empty searc
   } finally { await h.close(); }
 });
 
-const inventory = { ...envelope, type: "pluginInventoryState", busy: false, error: null as null, entries: [] as { displayName: string }[] };
+const inventory = { ...envelope, type: "pluginInventoryState", busy: false, error: null as null, entries: [] as { id: string; displayName: string }[] };
 
 test("plugins category shows an empty inventory and asks the host to add from disk", async () => {
   const h = await settingsHarness();
@@ -82,16 +82,34 @@ test("plugins category shows an empty inventory and asks the host to add from di
     assert.equal(h.root.querySelector('[aria-label="Refresh providers"]'), null);
     await h.click(".settings-page__actions button");
     assert.deepEqual(h.sent.at(-1), { ...envelope, type: "addPluginInventoryEntry" });
-    await h.receive({ ...inventory, error: "duplicate-path", entries: [{ displayName: "hello.ts" }] });
+    await h.receive({ ...inventory, error: "duplicate-path", entries: [{ id: "hello", displayName: "hello.ts" }] });
     assert.match(h.get('[role="alert"]').textContent ?? "", /already in the inventory/);
     assert.match(h.get(".settings-page__plugins").textContent ?? "", /hello\.ts/);
   } finally { await h.close(); }
 });
 
+test("plugins remove sends the opaque id and discloses that disk files stay", async () => {
+  const h = await settingsHarness();
+  try {
+    await h.receive(config);
+    await h.receive({ ...inventory, entries: [{ id: "keep1", displayName: "keep.ts" }, { id: "drop1", displayName: "drop.ts" }] });
+    await h.click(".settings-page__nav button:last-child");
+    assert.match(h.root.textContent ?? "", /Files on disk stay/);
+    await h.click(".settings-page__plugins .settings-page__row:last-child button");
+    assert.deepEqual(h.sent.at(-1), { ...envelope, type: "removePluginInventoryEntry", id: "drop1" });
+    await h.receive({ ...inventory, entries: [{ id: "keep1", displayName: "keep.ts" }] });
+    assert.doesNotMatch(h.get(".settings-page__plugins").textContent ?? "", /drop\.ts/);
+    await h.receive({ ...inventory, error: "unknown-entry", entries: [{ id: "keep1", displayName: "keep.ts" }] });
+    assert.match(h.get('[role="alert"]').textContent ?? "", /no longer in the inventory/);
+  } finally { await h.close(); }
+});
+
 test("plugin inventory projections reject paths and extra fields", () => {
-  const valid = { version: 3, generation: 1, viewId: "view", type: "pluginInventoryState", busy: false, error: null, entries: [{ displayName: "a.ts" }] };
+  const valid = { version: 3, generation: 1, viewId: "view", type: "pluginInventoryState", busy: false, error: null, entries: [{ id: "a1", displayName: "a.ts" }] };
   assert.deepEqual(parseHostMessage(valid), valid);
   assert.equal(parseHostMessage({ ...valid, path: "/secret.ts" }), undefined);
-  assert.equal(parseHostMessage({ ...valid, entries: [{ displayName: "a.ts", path: "/a.ts" }] }), undefined);
+  assert.equal(parseHostMessage({ ...valid, entries: [{ id: "a1", displayName: "a.ts", path: "/a.ts" }] }), undefined);
+  assert.equal(parseHostMessage({ ...valid, entries: [{ displayName: "a.ts" }] }), undefined);
   assert.equal(parseHostMessage({ ...valid, error: "cancelled" }), undefined);
+  assert.equal(parseHostMessage({ ...valid, entries: [{ id: "a1", displayName: "a.ts" }, { id: "a1", displayName: "b.ts" }] }), undefined);
 });

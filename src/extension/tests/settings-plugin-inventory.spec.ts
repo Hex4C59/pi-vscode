@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test, type TestContext } from "node:test";
 import { parseHostMessage } from "../../webview/parse-host-message.js";
-import { PLUGIN_INVENTORY_FILE } from "../extension-loading/index.js";
+import { PLUGIN_INVENTORY_FILE, inventoryEntryId } from "../extension-loading/index.js";
 import { folder, harness, settingsRuntime, tick } from "./harness.js";
 
 async function inventorySettings(t: TestContext) {
@@ -77,7 +77,7 @@ test("adding from disk remembers the basename, writes the store, and does not as
     const { panel, envelope } = await openSettings(h, v);
     panel.receive.fire({ ...envelope, type: "addPluginInventoryEntry" });
     const inventory = await settle(panel, item => "entries" in item && item.entries.length === 1);
-    assert.deepEqual(inventory.entries, [{ displayName: "hello.ts" }]);
+    assert.deepEqual(inventory.entries, [{ id: inventoryEntryId(entry), displayName: "hello.ts" }]);
     assert.equal(JSON.stringify(inventory).includes(entry), false);
     const stored = JSON.parse(await readFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE), "utf8")) as {
       entries: { path: string; enabled: boolean }[];
@@ -126,5 +126,59 @@ test("cancelling the native picker does not write an inventory file", async t =>
     const inventory = await settle(panel, item => picked > 0 && item.busy === false && item.error === null);
     await assert.rejects(readFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE)));
     assert.deepEqual(inventory.entries, []);
+  } finally { h.provider.dispose(); }
+});
+
+test("removing an entry drops the path and leaves the disk file", async t => {
+  const { h, v, r, globalStorage, plugins } = await inventorySettings(t);
+  try {
+    const keep = path.join(plugins, "keep.ts");
+    const drop = path.join(plugins, "drop.ts");
+    await writeFile(keep, "export default {}\n");
+    await writeFile(drop, "export default {}\n");
+    const session = r.runtime.getSession();
+    const { panel, envelope } = await openSettings(h, v);
+    h.api.window.showOpenDialog = async () => [{ scheme: "file", fsPath: keep }];
+    panel.receive.fire({ ...envelope, type: "addPluginInventoryEntry" });
+    await settle(panel, item => "entries" in item && item.entries.length === 1);
+    h.api.window.showOpenDialog = async () => [{ scheme: "file", fsPath: drop }];
+    panel.receive.fire({ ...envelope, type: "addPluginInventoryEntry" });
+    await settle(panel, item => "entries" in item && item.entries.length === 2);
+    r.calls.length = 0;
+    panel.receive.fire({ ...envelope, type: "removePluginInventoryEntry", id: inventoryEntryId(drop) });
+    const inventory = await settle(panel, item => "entries" in item && item.entries.length === 1 && item.error === null);
+    assert.deepEqual(inventory.entries, [{ id: inventoryEntryId(keep), displayName: "keep.ts" }]);
+    assert.equal(JSON.stringify(inventory).includes(drop), false);
+    const stored = JSON.parse(await readFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE), "utf8")) as {
+      entries: { path: string }[];
+    };
+    assert.deepEqual(stored.entries.map(entry => entry.path), [keep]);
+    assert.equal(await readFile(drop, "utf8"), "export default {}\n");
+    assert.equal(r.runtime.getSession(), session);
+    assert.equal(v.state().runtime, "ready");
+    assert.deepEqual(r.calls, []);
+  } finally { h.provider.dispose(); }
+});
+
+test("unknown inventory ids and a damaged file leave the store unchanged", async t => {
+  const { h, v, globalStorage, plugins } = await inventorySettings(t);
+  try {
+    const entry = path.join(plugins, "hello.ts");
+    await writeFile(entry, "export default {}\n");
+    h.api.window.showOpenDialog = async () => [{ scheme: "file", fsPath: entry }];
+    const { panel, envelope } = await openSettings(h, v);
+    panel.receive.fire({ ...envelope, type: "addPluginInventoryEntry" });
+    await settle(panel, item => "entries" in item && item.entries.length === 1);
+    const before = await readFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE), "utf8");
+    panel.receive.fire({ ...envelope, type: "removePluginInventoryEntry", id: "missing-entry-id" });
+    const missing = await settle(panel, item => "error" in item && item.error === "unknown-entry");
+    assert.equal(await readFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE), "utf8"), before);
+    assert.equal(missing.error, "unknown-entry");
+    await writeFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE), "{not json");
+    panel.receive.fire({ ...envelope, type: "removePluginInventoryEntry", id: inventoryEntryId(entry) });
+    const damaged = await settle(panel, item => "error" in item && item.error === "existing-unusable");
+    assert.equal(await readFile(path.join(globalStorage, PLUGIN_INVENTORY_FILE), "utf8"), "{not json");
+    assert.equal(damaged.error, "existing-unusable");
+    assert.deepEqual(damaged.entries, []);
   } finally { h.provider.dispose(); }
 });

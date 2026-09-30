@@ -4,7 +4,9 @@ import { createContext, useContext } from "react";
 export type UiText =
   | "Settings" | "Settings categories" | "General" | "Providers" | "Plugins" | "Back to providers"
   | "Search models" | "No matching models" | "Manage providers" | "API key" | "Configured" | "Not configured"
-  | "Add from disk" | "No plugins in this inventory." | "Loading plugins…" | "Adding plugin…"
+  | "Add from disk" | "Remove forgets the path. Files on disk stay."
+  | "No plugins in this inventory." | "Loading plugins…" | "Adding plugin…"
+  | "That plugin is no longer in the inventory."
   | "This plugin is already in the inventory."
   | "That file cannot be added as a pi extension."
   | "The plugin inventory file is damaged or too large and was left unchanged."

@@ -1,5 +1,5 @@
 export { selectTrustedExtension, inspectPickedExtension, extensionDisplayName } from "./select-extension.js";
-export { PluginInventorySettings } from "./inventory-settings.js";
+export { PluginInventorySettings, inventoryEntryId } from "./inventory-settings.js";
 export {
   PLUGIN_INVENTORY_FILE,
   PLUGIN_INVENTORY_MAX_BYTES,
