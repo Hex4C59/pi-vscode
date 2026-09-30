@@ -13,47 +13,41 @@
 
 ## 正在做（WIP=1）
 
-已启用清单接到 runtime。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
+消息编辑区执行配置收拢。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-064 |
+| **ID** | WI-065 |
 | **阶段** | 建造 |
 | **Gate ID** | none |
 | **Decision** | Draft ADR 0010 |
-| **PRD 判定** | 用户可见：REQ-010 切片 6，空闲受信应用已启用项 |
+| **PRD 判定** | 用户可见：REQ-010 切片 7，权限区只留状态／恢复 |
 
 ### 目标与范围
 
-空闲受信启动或切换执行配置时，经公开 pi API 加载当时已启用的清单路径。沿用覆盖警告与原生加载确认。受控从不加载清单。多于 pinned 发行版允许的 `-e` 条数须可见失败。失败恢复规则不变。不跳过审批、不自动发现未列入路径。
+权限区只显示当前执行配置状态，以及需要时的恢复。添加／移除／启用只在设置「插件」。切到 Trusted 不再打开文件选择器；零启用项可见失败并指向设置。加载语义、覆盖警告、受控默认不变。不下载、不市场。
 
 ### 方案与架构核对
 
-宿主在空闲 Trusted apply 时读取清单 enabled 项。0 项时保留现有作曲区选择器通道。1 项时对该路径做现有确认后 `-e`。多于 1 且发行版只接受一个 `-e` 则可见失败，不静默丢掉。添加／开关本身仍不改写活 runtime。
+作曲区去掉选择器通道。Trusted 只走 WI-064 的已启用 apply。零启用或损坏清单给出固定错误码，不打开原生选择器。受控切换保留。恢复条保留。Webview 仍只投影。
 
 ### 验收
 
-受控启动不带清单 `-e`。空闲切到 Trusted 且仅一项已启用时确认后加载该路径。多项已启用可见失败且不启动该 Trusted。compile／lint／`npm test`。不要求原生 F5。
+空闲切到 Trusted 且一项已启用时仍确认后加载。零启用项不打开选择器、不启动 Trusted。恢复控件仍可见。compile／lint／`npm test`。不要求原生 F5。
 
 ### 范围外与批准边界
 
-作曲区收拢、下载／市场、ADR 0010 Accepted。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
+下载／市场、ADR 0010 Accepted。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
 
 ## 当前焦点与未决项
 
-正在做清单切片 6。模型芯片、选择器互斥、REQ-001／002、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
+正在做清单切片 7。模型芯片、选择器互斥、REQ-001／002、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
 
 [PRD](docs/product-requirements.zh.md) 自用 macOS Accepted 仍有：REQ-001 拒绝资源后无持续提示；REQ-002 跨供应商同名标不清；REQ-009 macOS 五类完整矩阵证据仍缺。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
 ## 停车场
 
-本机插件清单（一次只晋升一项）。边界见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
-
-| 顺序 | 切片 | 范围内 | 依赖 |
-|------:|------|--------|------|
-| 7 | 消息编辑区入口收拢 | 权限区只留状态／恢复；管理在设置 | 6 |
-
-**不进本队列：** 下载、市场、远程目录、自动更新。
+本机插件清单切片 1–7 已全部晋升；下载／市场仍排除。见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
 
 ### 作曲区模型控件（独立）
 
@@ -79,14 +73,14 @@
 
 ## 最近交接
 
-### 2026-10-01 — WI-064 晋升（已启用项接到 runtime）
+### 2026-10-01 — WI-065 晋升（消息编辑区入口收拢）
 
-维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-063 已关闭。本切片只在空闲受信 apply 时经公开 API 加载已启用路径。
+维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-064 已关闭。本切片去掉作曲区文件选择器，权限区只留状态／恢复。
 
-### 2026-10-01 — WI-063 关闭（启用／关闭）
+### 2026-10-01 — WI-064 关闭（已启用项接到 runtime）
 
-Settings 可持久化 `enabled`。活 runtime 不变。ADR 0010 仍 Draft。见[验收](docs/archive/2026-10-01-wi-063-acceptance.zh.md)。
+空闲 Trusted 最多应用一个已启用额外 `-e`，仍确认。多项可见失败。见[验收](docs/archive/2026-10-01-wi-064-acceptance.zh.md)。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-063。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-064。
