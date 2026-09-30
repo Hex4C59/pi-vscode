@@ -13,45 +13,41 @@
 
 ## 正在做（WIP=1）
 
-作曲区模型芯片标签。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
+作曲区模型选择器与执行配置互斥。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-066 |
+| **ID** | WI-067 |
 | **阶段** | 建造 |
 | **Gate ID** | none |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：REQ-002 作曲区模型控件展示，不改宿主身份字符串 |
+| **PRD 判定** | 用户可见：既有 REQ-002 模型选择器与 REQ-006 执行配置，一次只开一张 |
 
 ### 目标与范围
 
-关闭芯片、打开的弹出层标题与列表行：不显示供应商；模型 id 按确认规则格式化（`gpt`→`GPT`，其余字母段 Title Case）；英文思考强度首字母大写。目标读法 `GPT-6-Sol · Low`。去掉打开面板的 Model／Thinking level／Open provider settings。居中的名称＋强度一块点击打开模型列表。滑条只改思考强度。WI-042 radio 身份不变。不修 REQ-002 跨供应商同名缺口。
+打开模型选择器时关闭执行配置；打开执行配置时关闭模型选择器。添加上下文菜单、历史面板与设置页不在本切片。不改模型身份、Trusted 加载或审批。
 
 ### 方案与架构核对
 
-在 Webview `ModelPickerView` 从 `provider / modelId`（或 catalog `modelId`）格式化。不改 `chatModel` 协议。专用缩写仅列出 `gpt`。未知字母段 Title Case。`xhigh` 英文为 `Xhigh`。设置里同一组件跟同一格式。互斥弹出层仍停放。
+Webview 作曲区本地协调两个弹出面。不改宿主协议。设置页共用的 `ModelPickerView` 无执行配置，保持独立。
 
 ### 验收
 
-`hellocode / gpt-6-sol` 加 `low` 显示 `GPT-6-Sol · Low`。列表行无供应商。compile／lint／`npm test`。不要求原生 F5。
+同一时刻最多一张卡片可见。compile／lint／`npm test`。不要求原生 F5。
 
 ### 范围外与批准边界
 
-选择器与执行配置互斥、REQ-001／009、目录整理、docs 目录整理。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
+REQ-001／002 同名缺口／009、目录整理、docs 目录整理。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
 
 ## 当前焦点与未决项
 
-正在做模型芯片。互斥、REQ-001／002 同名缺口、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
+正在做弹出层互斥。REQ-001／002 同名缺口、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
 
 [PRD](docs/product-requirements.zh.md) 自用 macOS Accepted 仍有：REQ-001 拒绝资源后无持续提示；REQ-002 跨供应商同名标不清；REQ-009 macOS 五类完整矩阵证据仍缺。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
 ## 停车场
 
-本机插件清单切片 1–7 已关闭；下载／市场仍排除。见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
-
-### 作曲区弹出层互斥（独立）
-
-**互斥：** 模型选择器与执行配置一次只开一个。见[讨论](docs/discussions/2026-10-01-model-chip-label.zh.md)。
+本机插件清单切片 1–7 与模型芯片标签已关闭；下载／市场仍排除。见 [REQ-010](docs/product-requirements.zh.md)／[Draft ADR 0010](docs/decisions/0010-local-plugin-inventory.zh.md)。
 
 ### Runtime 目录整理（纯技术，低于 Webview 目录整理）
 
@@ -73,14 +69,14 @@
 
 ## 最近交接
 
-### 2026-10-01 — WI-066 晋升（模型芯片标签）
+### 2026-10-01 — WI-067 晋升（弹出层互斥）
 
-维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-065 已关闭。本切片只改 Webview 展示，不改 WI-042 身份。
+维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-066 已关闭。本切片只协调作曲区两张卡片。
 
-### 2026-10-01 — WI-065 关闭（消息编辑区入口收拢）
+### 2026-10-01 — WI-066 关闭（模型芯片标签）
 
-作曲区 Trusted 不再打开文件选择器。零启用项可见失败。见[验收](docs/archive/2026-10-01-wi-065-acceptance.zh.md)。
+芯片与列表显示格式化模型 id、不显示供应商。见[验收](docs/archive/2026-10-01-wi-066-acceptance.zh.md)。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-065。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-066。
