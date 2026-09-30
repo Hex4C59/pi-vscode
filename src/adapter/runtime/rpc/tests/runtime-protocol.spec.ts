@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { RuntimeEvent } from "../../../extension/contracts/index.js";
-import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
-import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "./memory-process.js";
+import type { RuntimeEvent } from "../../../../extension/contracts/index.js";
+import { createPiRpcRuntime } from "../../pi-rpc-runtime.js";
+import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "../../tests/memory-process.js";
 
 function fixture() {
   let connection!: MemoryConnection;

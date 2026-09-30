@@ -38,7 +38,7 @@
 
 ### RUNTIME-03／P2：诊断进程的异步错误绕过失败结果返回
 
-[runPiRuntimeProbe](../../src/adapter/runtime/pi-rpc-probe.ts#L63)没有安装 child `error` 监听器。异步 spawn 错误不会被外层 `try`／`catch` 捕获。
+[runPiRuntimeProbe](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L63)没有安装 child `error` 监听器。异步 spawn 错误不会被外层 `try`／`catch` 捕获。
 
 隔离 Node 探针使用确认不存在的工作目录及 dummy CLI 路径调用真实 helper。启动失败产生未处理的 `ENOENT`，测试进程以状态 1 退出，而不是返回 `ok: false`；没有启动 pi CLI。未测量 VS Code extension-host 对该事件的全局错误处理，不据此宣称实际扩展宿主一定崩溃。
 
@@ -46,7 +46,7 @@
 
 ### RUNTIME-04／P2：没有观察到进程退出，也会报告诊断成功
 
-[stopChildProcess](../../src/adapter/runtime/pi-rpc-probe.ts#L153)在期限到达时发送 SIGKILL 并立即 resolve，没有确认退出，也不检查 kill 是否被接受。[调用方](../../src/adapter/runtime/pi-rpc-probe.ts#L118)随后丢弃 child 引用，并报告进程在期限内退出。
+[stopChildProcess](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L153)在期限到达时发送 SIGKILL 并立即 resolve，没有确认退出，也不检查 kill 是否被接受。[调用方](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L118)随后丢弃 child 引用，并报告进程在期限内退出。
 
 合成 child 返回成功 RPC 回复，拒绝两次 kill，没有发出 exit，退出码与信号码保持 null。触发注入的截止时间后，真实 helper 仍返回 `ok: true`，detail 为 `process exited within timeout`。
 
@@ -54,7 +54,7 @@
 
 ### RUNTIME-05／P2：诊断回复按 truthiness 判断成功
 
-[回复准入](../../src/adapter/runtime/pi-rpc-probe.ts#L95)匹配 type／id／command，但不要求 `success` 为 boolean。[结果判断](../../src/adapter/runtime/pi-rpc-probe.ts#L111)会接受非 boolean 的 truthy 值。
+[回复准入](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L95)匹配 type／id／command，但不要求 `success` 为 boolean。[结果判断](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L111)会接受非 boolean 的 truthy 值。
 
 合成回复的 `success` 为字符串 `"false"`，随后确实观察到合成 child 退出，helper 仍返回 `ok: true`。这是独立于 RUNTIME-04 的另一条误报成功路径。
 
@@ -63,7 +63,7 @@
 ## 未量测的资源风险
 
 - [启动模型设置](../../src/adapter/runtime/piStartupModel.ts#L26)同步读取，且没有读取大小预算。
-- [诊断 stderr](../../src/adapter/runtime/pi-rpc-probe.ts#L70)无限累计；只截断最终返回 detail，并不能限制累计时的内存。
+- [诊断 stderr](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L70)无限累计；只截断最终返回 detail，并不能限制累计时的内存。
 
 这是实现观察，不是已量测的用户可见回归。应先确认调用范围、正常开销及必要预算，不与五项确认故障混为同一状态。
 
@@ -73,20 +73,20 @@
 
 | 本轮新文件 | 审查／证据 |
 |---|---|
-| [interaction-writer](../../src/adapter/runtime/interaction-writer.ts) | 交付、背压及监听器清理；运行已有测试 |
+| [interaction-writer](../../src/adapter/runtime/rpc/interaction-writer.ts) | 交付、背压及监听器清理；运行已有测试 |
 | [command-classification](../../src/adapter/runtime/command-classification.ts) | 有界命令目录及 slash 派发判断 |
 | [runtime-errors](../../src/adapter/runtime/runtime-errors.ts) | 有界详情及固定用户错误分类 |
-| [pi-rpc-model-parse](../../src/adapter/runtime/pi-rpc-model-parse.ts) | 标签、身份、thinking levels 及目录解析 |
-| [rpc-replies](../../src/adapter/runtime/rpc-replies.ts) | 身份匹配、超时、暂停／恢复及清理；运行已有测试 |
+| [pi-rpc-model-parse](../../src/adapter/runtime/rpc/pi-rpc-model-parse.ts) | 标签、身份、thinking levels 及目录解析 |
+| [rpc-replies](../../src/adapter/runtime/rpc/rpc-replies.ts) | 身份匹配、超时、暂停／恢复及清理；运行已有测试 |
 | [child-link](../../src/adapter/runtime/process/child-link.ts) | 传输监听器、lost 回调及 abandon 行为 |
 | [activityProjection](../../src/adapter/runtime/activityProjection.ts) | 有界投影及真实增量脱敏探针 |
 | [extension-feedback](../../src/adapter/runtime/extension-feedback.ts) | own data property 校验、替换及容量限制 |
 | [piStartupModel](../../src/adapter/runtime/piStartupModel.ts) | 全局设置路径、读取及 fallback |
-| [pi-rpc-probe](../../src/adapter/runtime/pi-rpc-probe.ts) | 路径解析、诊断、回复及终止；隔离探针 |
+| [pi-rpc-probe](../../src/adapter/runtime/rpc/pi-rpc-probe.ts) | 路径解析、诊断、回复及终止；隔离探针 |
 | [credentialText](../../src/extension/contracts/credentialText.ts) | 共享检测／脱敏规则；真实合成值探针 |
-| [rpc-replies 测试](../../src/adapter/runtime/tests/rpc-replies.spec.ts) | 阅读并运行 14 项已有测试 |
+| [rpc-replies 测试](../../src/adapter/runtime/rpc/tests/rpc-replies.spec.ts) | 阅读并运行 14 项已有测试 |
 | [activity-projection 测试](../../src/adapter/runtime/tests/activity-projection.spec.ts) | 阅读现有覆盖；因 decoder 依赖此前已检查，本轮不运行 |
-| [interaction-writer 测试](../../src/adapter/runtime/tests/interaction-writer.spec.ts) | 阅读并运行 3 项已有测试 |
+| [interaction-writer 测试](../../src/adapter/runtime/rpc/tests/interaction-writer.spec.ts) | 阅读并运行 3 项已有测试 |
 
 ## 验证与限制
 

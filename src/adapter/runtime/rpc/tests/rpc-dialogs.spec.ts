@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { credentialLikeSamples, ordinaryText } from "../../../extension/contracts/tests/credential-samples.js";
+import { credentialLikeSamples, ordinaryText } from "../../../../extension/contracts/tests/credential-samples.js";
 import { createRpcDialogs } from "../rpc-dialogs.js";
 
 test("standard select uses opaque local options and writes the original value only once", () => {

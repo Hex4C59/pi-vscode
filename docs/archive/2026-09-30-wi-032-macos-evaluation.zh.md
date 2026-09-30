@@ -31,9 +31,9 @@
 
 | 入口 | 源码与本轮测试结果 |
 |---|---|
-| RPC 对话 | [rpc-dialogs](../../src/adapter/runtime/rpc-dialogs.ts) 元数据使用 `containsCredentialLikeText`；三类样例取消且不发表单，普通文本打开；[测试](../../src/adapter/runtime/tests/rpc-dialogs.spec.ts) 保留用户主动填写 input／editor 的字面回答与 32 KiB 回答上限 |
+| RPC 对话 | [rpc-dialogs](../../src/adapter/runtime/rpc/rpc-dialogs.ts) 元数据使用 `containsCredentialLikeText`；三类样例取消且不发表单，普通文本打开；[测试](../../src/adapter/runtime/rpc/tests/rpc-dialogs.spec.ts) 保留用户主动填写 input／editor 的字面回答与 32 KiB 回答上限 |
 | 扩展反馈 | [extension-feedback](../../src/adapter/runtime/extension-feedback.ts) 共用拒收规则检查文本与 key；[测试](../../src/adapter/runtime/tests/extension-feedback.spec.ts) 只投影固定安全句，拒绝时不改变 keyed 状态，UTF-8／帧限制不变 |
-| 活动与最终文字 | [activityProjection](../../src/adapter/runtime/activityProjection.ts) 的 `displayText` 调用 `redactCredentialLikeText`；[活动测试](../../src/adapter/runtime/tests/activity-projection.spec.ts) 覆盖三类和打码后的 16,384 字符截断；[RPC 帧测试](../../src/adapter/runtime/tests/rpc-frames.spec.ts) 覆盖最终／增量打码后预算及私钥整段隐藏 |
+| 活动与最终文字 | [activityProjection](../../src/adapter/runtime/activityProjection.ts) 的 `displayText` 调用 `redactCredentialLikeText`；[活动测试](../../src/adapter/runtime/tests/activity-projection.spec.ts) 覆盖三类和打码后的 16,384 字符截断；[RPC 帧测试](../../src/adapter/runtime/rpc/tests/rpc-frames.spec.ts) 覆盖最终／增量打码后预算及私钥整段隐藏 |
 | 工具审批 | [toolApproval](../../src/extension/editor-tools/toolApproval.ts) 在策略与卡片生成前检查序列化 input；[测试](../../src/extension/editor-tools/tests/tool-approval.spec.ts) 三类均拒绝且零卡片，再证明普通输入可产生卡片，既有大小／生命周期检查通过 |
 | 变更审阅 | [changeReview](../../src/extension/editor-tools/changeReview.ts) 对有界解码后的磁盘文字调用共用拒收规则；[测试](../../src/extension/editor-tools/tests/change-review.spec.ts) 三类均为 `sensitive-source`／diff unavailable，保留不安全字节为零，普通文本 unchanged；路径规则独立保留 |
 | 文件／选区附件 | [fileAttachment](../../src/extension/draft/fileAttachment.ts) 的 `checkedText` 调用共用规则；[测试](../../src/extension/draft/tests/file-attachment.spec.ts) 三类逐一检查文件／选区 `sensitive-source`、不入附件、不写 runtime，并接纳普通文本，源身份与大小规则不变 |

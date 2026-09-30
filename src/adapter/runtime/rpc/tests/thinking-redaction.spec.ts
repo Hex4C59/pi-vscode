@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createRpcFrames, type FrameContext } from "../rpc-frames.js";
-import { redactCredentialLikeText, type ActivityItem } from "../../../extension/contracts/index.js";
+import { createRpcFrames, type FrameContext } from "../../rpc-frames.js";
+import { redactCredentialLikeText, type ActivityItem } from "../../../../extension/contracts/index.js";
 
 const LIMIT = 16_384;
 const context: FrameContext = { session: 1, aborting: false, gateId: "synthetic-gate", cwd: "/synthetic", executionProfile: { kind: "controlled" } };

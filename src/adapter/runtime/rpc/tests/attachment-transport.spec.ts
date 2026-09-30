@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PromptInput } from "../../../extension/contracts/runtimeLifecycle.js";
+import type { PromptInput } from "../../../../extension/contracts/runtimeLifecycle.js";
 import { serializePromptFrame } from "../jsonl.js";
-import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
-import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "./memory-process.js";
+import { createPiRpcRuntime } from "../../pi-rpc-runtime.js";
+import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "../../tests/memory-process.js";
 
 async function transportFixture(writeFault?: "throw") {
   let connection!: MemoryConnection;

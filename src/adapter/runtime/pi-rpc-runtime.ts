@@ -1,10 +1,10 @@
 import { createExtensionFeedback } from "./extension-feedback.js";
 import { extensionCommandNames, dispatchedExtensionCommand } from "./command-classification.js";
-import { createInteractionWriter } from "./interaction-writer.js";
-import { createRpcDialogs } from "./rpc-dialogs.js";
+import { createInteractionWriter } from "./rpc/interaction-writer.js";
+import { createRpcDialogs } from "./rpc/rpc-dialogs.js";
 import { createRpcFrames, sameGateCwd } from "./rpc-frames.js";
-import { createRpcOccupancy } from "./rpc-occupancy.js";
-import { createRpcReplies, requireRpcResponse, RPC_PROTOCOL_ERROR, type RpcReplyResult, type RpcResponse } from "./rpc-replies.js";
+import { createRpcOccupancy } from "./rpc/rpc-occupancy.js";
+import { createRpcReplies, requireRpcResponse, RPC_PROTOCOL_ERROR, type RpcReplyResult, type RpcResponse } from "./rpc/rpc-replies.js";
 import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
 import type { RuntimeLink } from "./process/types.js";
 import { randomUUID } from "node:crypto";
@@ -15,8 +15,8 @@ import type { GateCall } from "../../extension/contracts/index.js";
 import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../index.js";
 import type { Readable } from "node:stream";
 
-import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./jsonl.js";
-import { resolvePiCliPath } from "./pi-rpc-probe.js";
+import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./rpc/jsonl.js";
+import { resolvePiCliPath } from "./rpc/pi-rpc-probe.js";
 import { readPiStartupModelArg } from "./piStartupModel.js";
 import type {
   ExtensionExecutionProfile,
@@ -33,7 +33,7 @@ import {
   parseModelCatalog,
   parseThinkingLevels,
   readThinkingLevel,
-} from "./pi-rpc-model-parse.js";
+} from "./rpc/pi-rpc-model-parse.js";
 
 const START_TIMEOUT_MS = 15_000;
 const PROMPT_TIMEOUT_MS = 30_000;

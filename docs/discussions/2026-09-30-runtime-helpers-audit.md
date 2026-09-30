@@ -34,7 +34,7 @@ Candidate follow-up: redact whole structured credential values before presentati
 
 ### RUNTIME-03 / P2: Diagnostic subprocess errors escape the failure-result path
 
-[runPiRuntimeProbe](../../src/adapter/runtime/pi-rpc-probe.ts#L63) installs no child `error` listener. An asynchronous spawn error is not caught by the surrounding `try`/`catch`.
+[runPiRuntimeProbe](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L63) installs no child `error` listener. An asynchronous spawn error is not caught by the surrounding `try`/`catch`.
 
 An isolated Node harness invokes the real helper with a verified nonexistent working directory and a dummy CLI path. The failed spawn emits unhandled `ENOENT`; the harness exits with status 1 instead of returning `ok: false`. No pi CLI starts. The effect of the same event in VS Code's extension-host error handling was not measured; do not claim that this probe proved the actual extension host crashes.
 
@@ -42,7 +42,7 @@ Candidate follow-up: own child and pipe error events, settle the diagnostic once
 
 ### RUNTIME-04 / P2: Diagnostic success is reported without observed process exit
 
-[stopChildProcess](../../src/adapter/runtime/pi-rpc-probe.ts#L153) sends SIGKILL after its deadline and immediately resolves, without confirming exit or checking whether the kill was accepted. [The caller](../../src/adapter/runtime/pi-rpc-probe.ts#L118) then discards the child and reports that it exited within the timeout.
+[stopChildProcess](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L153) sends SIGKILL after its deadline and immediately resolves, without confirming exit or checking whether the kill was accepted. [The caller](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L118) then discards the child and reports that it exited within the timeout.
 
 A synthetic child returns a successful RPC response, refuses both kill attempts, emits no exit, and retains null exit/signal codes. After the injected deadline, the real helper nevertheless returns `ok: true` with `process exited within timeout`.
 
@@ -50,7 +50,7 @@ Candidate follow-up: distinguish response success, stop attempt, and observed te
 
 ### RUNTIME-05 / P2: Diagnostic response success is checked by truthiness
 
-[Response admission](../../src/adapter/runtime/pi-rpc-probe.ts#L95) matches type/id/command but does not validate `success` as a boolean. [The result check](../../src/adapter/runtime/pi-rpc-probe.ts#L111) accepts truthy nonboolean values.
+[Response admission](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L95) matches type/id/command but does not validate `success` as a boolean. [The result check](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L111) accepts truthy nonboolean values.
 
 A synthetic response with `success: "false"`, followed by an actually observed synthetic child exit, returns `ok: true`. This is a separate false-success route from RUNTIME-04.
 
@@ -59,7 +59,7 @@ Candidate follow-up: require a valid public RPC response shape and exact boolean
 ## Unmeasured Resource Risks
 
 - [Startup-model settings](../../src/adapter/runtime/piStartupModel.ts#L26) are read synchronously and without a read-size budget.
-- [Diagnostic stderr](../../src/adapter/runtime/pi-rpc-probe.ts#L70) accumulates without a memory budget; slicing the eventual returned detail does not bound its accumulation.
+- [Diagnostic stderr](../../src/adapter/runtime/rpc/pi-rpc-probe.ts#L70) accumulates without a memory budget; slicing the eventual returned detail does not bound its accumulation.
 
 These are implementation observations, not measured user-visible regressions. Determine invocation scope, normal cost and required budgets before assigning them the same status as the five confirmed defects.
 
@@ -69,20 +69,20 @@ This round inspected 11 new implementation files and 3 new test files. All retur
 
 | New file | Review / evidence |
 |---|---|
-| [interaction-writer](../../src/adapter/runtime/interaction-writer.ts) | Delivery, backpressure, listener cleanup; existing tests run |
+| [interaction-writer](../../src/adapter/runtime/rpc/interaction-writer.ts) | Delivery, backpressure, listener cleanup; existing tests run |
 | [command-classification](../../src/adapter/runtime/command-classification.ts) | Bounded command catalogue and slash dispatch |
 | [runtime-errors](../../src/adapter/runtime/runtime-errors.ts) | Bounded details and fixed user-facing error classification |
-| [pi-rpc-model-parse](../../src/adapter/runtime/pi-rpc-model-parse.ts) | Labels, identities, thinking levels and catalogue parsing |
-| [rpc-replies](../../src/adapter/runtime/rpc-replies.ts) | Identity matching, timeout, pause/resume and cleanup; existing tests run |
+| [pi-rpc-model-parse](../../src/adapter/runtime/rpc/pi-rpc-model-parse.ts) | Labels, identities, thinking levels and catalogue parsing |
+| [rpc-replies](../../src/adapter/runtime/rpc/rpc-replies.ts) | Identity matching, timeout, pause/resume and cleanup; existing tests run |
 | [child-link](../../src/adapter/runtime/process/child-link.ts) | Transport listeners, loss callbacks and abandon behavior |
 | [activityProjection](../../src/adapter/runtime/activityProjection.ts) | Bounded projection and real incremental-redaction probes |
 | [extension-feedback](../../src/adapter/runtime/extension-feedback.ts) | Own-data-property validation, replacement and capacity limits |
 | [piStartupModel](../../src/adapter/runtime/piStartupModel.ts) | Global settings path, read and fallback behavior |
-| [pi-rpc-probe](../../src/adapter/runtime/pi-rpc-probe.ts) | Resolution, diagnostics, response and stop behavior; isolated probes |
+| [pi-rpc-probe](../../src/adapter/runtime/rpc/pi-rpc-probe.ts) | Resolution, diagnostics, response and stop behavior; isolated probes |
 | [credentialText](../../src/extension/contracts/credentialText.ts) | Shared detection/redaction rules; real synthetic-value probes |
-| [rpc-replies tests](../../src/adapter/runtime/tests/rpc-replies.spec.ts) | Read and ran 14 existing tests |
+| [rpc-replies tests](../../src/adapter/runtime/rpc/tests/rpc-replies.spec.ts) | Read and ran 14 existing tests |
 | [activity-projection tests](../../src/adapter/runtime/tests/activity-projection.spec.ts) | Read existing coverage; not run because its decoder dependency was reviewed earlier |
-| [interaction-writer tests](../../src/adapter/runtime/tests/interaction-writer.spec.ts) | Read and ran 3 existing tests |
+| [interaction-writer tests](../../src/adapter/runtime/rpc/tests/interaction-writer.spec.ts) | Read and ran 3 existing tests |
 
 ## Verification and Limits
 

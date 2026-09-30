@@ -1,5 +1,5 @@
-import { containsCredentialLikeText } from "../../extension/contracts/index.js";
-import type { InteractionFormInput, InteractionReplyCallback } from "../../extension/interactions/index.js";
+import { containsCredentialLikeText } from "../../../extension/contracts/index.js";
+import type { InteractionFormInput, InteractionReplyCallback } from "../../../extension/interactions/index.js";
 import { serializeJsonLine } from "./jsonl.js";
 
 type OpenResult = { kind: "dialog"; form: InteractionFormInput; reply: InteractionReplyCallback } | { kind: "duplicate" } | { kind: "rejected"; code?: "identity-budget"; cancellation?: Promise<void> };

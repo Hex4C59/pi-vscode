@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bearerText, fieldAssignmentText, ordinaryText, privateKeyText } from '../../../extension/contracts/tests/credential-samples.js';
 import { ActivityProjection } from '../activityProjection.js';
-import { decodeRuntimeEvent } from '../rpc-events.js';
+import { decodeRuntimeEvent } from '../rpc/rpc-events.js';
 
 function projection() {
   const activity = new ActivityProjection();

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { privateKeyText } from "../../../extension/contracts/tests/credential-samples.js";
-import type { FrameContext } from "../rpc-frames.js";
-import { createRpcFrames } from "../rpc-frames.js";
+import { privateKeyText } from "../../../../extension/contracts/tests/credential-samples.js";
+import type { FrameContext } from "../../rpc-frames.js";
+import { createRpcFrames } from "../../rpc-frames.js";
 
 function context(overrides: Partial<FrameContext> = {}): FrameContext {
   return { session: 1, aborting: false, gateId: "gate", cwd: "/project", executionProfile: { kind: "controlled" }, ...overrides };

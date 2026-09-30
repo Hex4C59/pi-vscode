@@ -41,7 +41,7 @@ Historical WI-001 verification summary, consolidated from the separate spike not
 - **Date and package**: 2026-09-19; `@earendil-works/pi-coding-agent@0.85.1`.
 - **Goal**: verify runtime startup, one RPC request/response and shutdown for the baseline.
 - **Command and recorded result**: `npm run spike:runtime` → **OK** (`get_state succeeded; process exited within timeout`).
-- **Recorded mechanism**: spawn `dist/bundle/cli.js --mode rpc --no-session`, send `get_state` over LF JSONL, then SIGTERM within the recorded 5-second timeout. Source entry points: [runtime probe](../../src/adapter/runtime/pi-rpc-probe.ts) and [JSONL helper](../../src/adapter/runtime/jsonl.ts); current source is not an immutable snapshot of that run.
+- **Recorded mechanism**: spawn `dist/bundle/cli.js --mode rpc --no-session`, send `get_state` over LF JSONL, then SIGTERM within the recorded 5-second timeout. Source entry points: [runtime probe](../../src/adapter/runtime/rpc/pi-rpc-probe.ts) and [JSONL helper](../../src/adapter/runtime/rpc/jsonl.ts); current source is not an immutable snapshot of that run.
 - **Recorded scope**: no LLM/provider calls. This verifies neither end-user chat, streaming, tool approval, project-resource trust nor long-lived session management.
 - **Evidence limits**: the original note retained a success summary, not raw execution logs or exact OS/Node/VS Code versions. Those details are not reconstructed here, and no network-isolation guarantee is inferred.
 - **Maintainer acceptance**: F5 Extension Development Host showed the Pi placeholder in the Secondary Side Bar; the maintainer accepted that visual check and the runtime spike on 2026-09-19. Gate closure is recorded by this ADR and the [gate table](../reference/architecture-gates.md).

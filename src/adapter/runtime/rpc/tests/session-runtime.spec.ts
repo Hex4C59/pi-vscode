@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PassThrough } from "node:stream";
 import path from "node:path";
-import { createMemoryConnection, createMemoryProcess } from "./memory-process.js";
-import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
+import { createMemoryConnection, createMemoryProcess } from "../../tests/memory-process.js";
+import { createPiRpcRuntime } from "../../pi-rpc-runtime.js";
 const identity = { sessionId: "saved-id", sessionFile: "/private-store/saved.jsonl", sessionName: "Saved conversation" };
 function fixture(state: unknown = identity, reportedCwd?: string) {
  let output: PassThrough; let gate: { runtime: string; cwd: string }; const replies: Record<string,unknown>[]=[];
@@ -186,7 +186,7 @@ test("runtime model labels are bounded before startup and refreshed host project
 });
 
 test("final assistant text stays within the projection budget after redaction expands it", async () => {
- const f = fixture(); const events: import("../../../extension/contracts/index.js").RuntimeEvent[] = [];
+ const f = fixture(); const events: import("../../../../extension/contracts/index.js").RuntimeEvent[] = [];
  const unsubscribe = f.runtime.subscribe(event => events.push(event));
  try {
   assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);

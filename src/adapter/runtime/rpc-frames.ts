@@ -1,7 +1,7 @@
 import { parseGateEnvelope, type ExtensionExecutionProfile, type RuntimeEvent } from "../../extension/contracts/index.js";
 import { sameNativePath } from "../index.js";
 import { ActivityProjection, displayText } from "./activityProjection.js";
-import { decodeRuntimeEvent, isRecord, type RuntimeFrameEvent } from "./rpc-events.js";
+import { decodeRuntimeEvent, isRecord, type RuntimeFrameEvent } from "./rpc/rpc-events.js";
 import { formatRuntimeError } from "./runtime-errors.js";
 
 type HelloEnvelope = Extract<NonNullable<ReturnType<typeof parseGateEnvelope>>, { kind: "hello" }>;

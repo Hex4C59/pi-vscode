@@ -1,5 +1,5 @@
 import { redactCredentialLikeText, type ActivityItem } from "../../extension/contracts/index.js";
-import type { RuntimeFrameEvent } from "./rpc-events.js";
+import type { RuntimeFrameEvent } from "./rpc/rpc-events.js";
 
 const LIMIT = 16_384;
 const ITEM_LIMIT = 63;

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PassThrough } from "node:stream";
-import { createMemoryConnection, createMemoryProcess } from "./memory-process.js";
-import type { RuntimeEvent } from "../../../extension/contracts/runtimeLifecycle.js";
-import { createPiRpcRuntime } from "../pi-rpc-runtime.js";
+import { createMemoryConnection, createMemoryProcess } from "../../tests/memory-process.js";
+import type { RuntimeEvent } from "../../../../extension/contracts/runtimeLifecycle.js";
+import { createPiRpcRuntime } from "../../pi-rpc-runtime.js";
 
 test("review completion events survive activity overflow and reject old-runtime frames", async () => {
   const outputs: PassThrough[] = [];
