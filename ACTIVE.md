@@ -15,29 +15,29 @@
 
 | 字段 | 当前值 |
 |---|---|
-| **ID** | WI-052 |
-| **阶段** | 建造 — 资源与期限风险先测量 |
+| **ID** | WI-053 |
+| **阶段** | 建造 — ARCH-08 流式与历史预览成本先测量 |
 | **Gate ID** | 无新增 |
 | **Decision** | none |
-| **PRD 判定** | 纯技术：测量启动配置同步、诊断 stderr、artifact 读取／inflate、同步 test／Git 的成本与外层约束；不宣称已卡顿或卡死 |
+| **PRD 判定** | 纯技术：测量发布字节、解析次数与延迟；不优化、不自行解析 session 文件 |
 
 ### 目标与范围
 
-- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场「资源与期限风险先测量」的实施授权。与 ARCH-08 分开取证。
-- **目标／范围**：记录启动配置同步有无大小预算、诊断 stderr 是否累计、artifact 是整体读取还是按 ZIP 声明限制 inflate、同步 test／Git 有无库内 timeout，以及各自外层约束。产出测量记录。确定必要预算后再另开修复；本切片不实施预算。
-- **PRD**：纯技术。不把未测量风险写成缺陷。
+- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 ARCH-08「先测量」的实施授权。
+- **目标／范围**：对代表性长对话／大量 session 负载，测量宿主每 delta 全量 workspace 发布、会话组件遍历、Markdown 重新 lex、以及历史 worker 预览定位／列出／校验再 open 与 totalChars 遍历的成本。保留公共 SDK 与身份／anchor 校验。产出测量记录。测量后再决定是否优化；本切片不实施优化。
+- **PRD**：纯技术。不把未测量风险写成已复现卡顿。
 
 ### 方案与架构核对
 
-读生产路径与脚本实现，必要时对代表性样本计时或计字节。不优化 ARCH-08 流式／历史预览。Decision：none。无 gate。
+读生产路径，用合成或现有夹具计量；不改热路径。Decision：none。无 gate。
 
 ### 验收
 
-讨论记录给出：四处路径的实际读取／累计／超时行为、外层约束、是否需要预算。compile／lint／完整 `npm test`（若无代码变更则作为回归）。
+讨论记录给出：各步的代表负载、字节／次数／延迟、以及是否值得优化。compile／lint／完整 `npm test`（若无代码变更则作为回归）。
 
 ### 范围外与批准边界
 
-- **范围外**：实施预算或超时、ARCH-08 优化、ARCH-01～04 重构、WI-036、gate／ADR、整份 PRD、推送。
+- **范围外**：实施流式／历史优化、自行解析 session 文件、资源预算实施、ARCH-01～04 重构、WI-036、gate／ADR、整份 PRD、推送。
 
 ## 验收授权与平台决定
 
@@ -74,6 +74,7 @@
 | WI-050 | TOOL-02 拒绝未收集的 `.spec.tsx` | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-051 | 接口风险先核验 Composer 与 FileSnapshot | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-052 | 资源与期限风险先测量 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
+| WI-053 | ARCH-08 流式与历史预览成本先测量 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 
 授权边界（与 2026-09-27 委托先例一致，且不继承其范围）：
 
@@ -84,7 +85,8 @@
 
 ## 当前焦点与未决项
 
-- [x] WI-051 代理受托接受并关闭：生产 Composer 标志由 `Candidate` 从同一 workspace 派生；FileSnapshot 按 `DraftAttachment.kind` 配对校验器；未确认生产错误配对。[记录](docs/archive/2026-09-30-wi-051-macos-acceptance.zh.md)。资源与期限测量为当前 WIP。
+- [x] WI-052 代理受托接受并关闭：启动设置、诊断 stderr、artifact inflate 与 test／Git 目前不需要库内预算。[记录](docs/archive/2026-09-30-wi-052-macos-acceptance.zh.md)。ARCH-08 测量为当前 WIP。
+- [x] WI-051 代理受托接受并关闭：生产 Composer 标志由 `Candidate` 从同一 workspace 派生；FileSnapshot 按 `DraftAttachment.kind` 配对校验器；未确认生产错误配对。[记录](docs/archive/2026-09-30-wi-051-macos-acceptance.zh.md)。资源与期限测量已关闭。
 - [x] WI-050 代理受托接受并关闭：已收集 `tests/` 下 `.spec.tsx` 使发现失败；现有规格仍为 `.spec.ts`。[记录](docs/archive/2026-09-30-wi-050-macos-acceptance.zh.md)。接口风险核验已关闭。
 - [x] WI-049 代理受托接受并关闭：组包收集与 CI 在缺 helper／CSS 时失败；`verify-vsix` 仍独立。[记录](docs/archive/2026-09-30-wi-049-macos-acceptance.zh.md)。TOOL-02 已关闭。
 - [x] WI-048 代理受托接受并关闭：默认保存失败保留旧投影；实时 applyConfiguredModel 收不到新模型。[记录](docs/archive/2026-09-30-wi-048-macos-acceptance.zh.md)。ARCH-07 已关闭。
@@ -126,13 +128,13 @@
 
 ## 最近交接
 
+### 2026-09-30 — WI-052 受托接受并关闭
+
+维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。代表性成本不支持立刻加库内大小或时间预算。本次关闭重跑 compile／lint／完整 **1016** 项测试（12 849 ms）。记录见[验收](docs/archive/2026-09-30-wi-052-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-resource-timeout-measurement.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-053 ARCH-08 测量。
+
 ### 2026-09-30 — WI-051 受托接受并关闭
 
 维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。生产 Composer 标志与 FileSnapshot 校验器无已证实错误配对，未收紧类型。本次关闭重跑 compile／lint／完整 **1016** 项测试。记录见[验收](docs/archive/2026-09-30-wi-051-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-interface-risk-verification.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-052 资源与期限测量。
-
-### 2026-09-30 — WI-050 受托接受并关闭
-
-维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。应用规格继续只用 `.spec.ts`；已收集 `.spec.tsx` 使发现失败。本次关闭重跑 compile／lint／完整 **1016** 项测试。记录见[验收](docs/archive/2026-09-30-wi-050-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-051 接口风险核验。
 
 ## 停车场
 
@@ -140,7 +142,7 @@
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044／WI-045／WI-046／WI-047／WI-048／WI-049／WI-050／WI-051 已接受关闭，当前唯一活动 WI 为 WI-052 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044／WI-045／WI-046／WI-047／WI-048／WI-049／WI-050／WI-051／WI-052 已接受关闭，当前唯一活动 WI 为 WI-053 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -171,7 +173,7 @@
 
 - [x] **接口风险先核验（WI-051 已关闭）。** 生产 Composer 标志由 `Candidate` 派生；FileSnapshot 按 kind 配对校验器；未确认生产错误配对，未收紧类型。证据见[验收](docs/archive/2026-09-30-wi-051-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-interface-risk-verification.zh.md)。
 - [x] **TOOL-02／条件性 P3：TSX 规格发现（WI-050 已关闭）。** 应用规格只用 `.spec.ts`；已收集 `.spec.tsx` 使发现失败。证据见[验收](docs/archive/2026-09-30-wi-050-macos-acceptance.zh.md)。
-- [ ] **资源与期限风险先测量（WI-052 Build）：** 与 ARCH-08 分开取证启动配置同步无大小预算、诊断 stderr 累计、artifact 整体读取／按 ZIP 声明限制 inflate，以及同步 test／Git 无库内 timeout 的成本与外层约束；确定必要预算后再修，不宣称已经卡顿、耗尽或卡死。当前 WIP。
+- [x] **资源与期限风险先测量（WI-052 已关闭）。** 启动设置、诊断 stderr、artifact inflate 与 test／Git 目前不需要库内预算；不宣称卡顿或耗尽。证据见[验收](docs/archive/2026-09-30-wi-052-macos-acceptance.zh.md)与[讨论](docs/discussions/2026-09-30-resource-timeout-measurement.zh.md)。
 **审查停止与覆盖缺口：** [进度清单](docs/discussions/code-audit-progress.json)保留未检查的 1 个中文文案与 10 个预览源码，不自动排队继续；HTML/CSS 与技术 spike 排除。此前部分阅读仍只是部分覆盖，包含文档结构校验末尾 14 行；有检查记录不等于完整源码／分支／集成验收。后续修复所需定向上下文核对与回归，不等于重启全面审查。
 **本次整理检查：** 仅更新本入口与审查进度；文档结构／双语及本次路径空白检查见交接回复。未重跑 compile／lint／完整测试／F5／安装验收，未改应用代码、暂存或提交；旧报告的探针与测试结果仍是历史证据。
 
@@ -190,7 +192,7 @@
 - [x] **ARCH-06／P2：endpoint 写入越过自身读取预算（WI-047 已关闭）。** 输出预算在提交前验证，超限保留原文件并报告 `too-large`；pretty-print 扩大同样约束。证据见[验收](docs/archive/2026-09-30-wi-047-macos-acceptance.zh.md)。
 - [x] **ARCH-02 补充／P2：默认保存失败仍修改实时模型（WI-048 已关闭）。** 操作接口区分已提交、失败、未执行及过期；后续动作只基于明确提交结果。flush 失败保留旧投影且实时 apply 收不到新模型。证据见[验收](docs/archive/2026-09-30-wi-048-macos-acceptance.zh.md)。
 - [x] **ARCH-07／P2：组包入口未强制完整产物验证（WI-049 已关闭）。** 交付入口缺 helper／CSS 时失败；CI 在 compile 后运行 `verify:webview` 与 `verify:package-files`。`verify-vsix` 仍为独立解包运行验证。证据见[验收](docs/archive/2026-09-30-wi-049-macos-acceptance.zh.md)。
-- [ ] **ARCH-08／性能风险，未测量：流式展示与历史预览的重复工作。** [宿主](src/extension/piChatViewProvider.ts#L234)每个 delta 更新并发布全量 workspace，浏览器更新全局快照，[会话组件](src/webview/chat/candidate-conversation.tsx#L41)重新遍历消息，[Markdown](src/webview/chat/reply-markdown.tsx#L104)每次调用重新 lex 文本；[历史 worker](src/adapter/sessions/sessionWorker.ts#L112)每次预览重新定位、列出并校验所有 session，再 open 目标，[预览投影](src/adapter/sessions/session-history-projection.ts#L106)为 totalChars 遍历全文。有回复／响应预算不等于有处理成本预算；不声称已复现卡顿。候选下一步：确定代表性长对话／大量 session 负载，测量发布字节、解析次数及延迟后再决定是否优化；保留公共 SDK 与身份／anchor 校验，不自行解析 session 文件。
+- [ ] **ARCH-08／性能风险，未优化（WI-053 Build）：** [宿主](src/extension/piChatViewProvider.ts#L234)每个 delta 更新并发布全量 workspace，浏览器更新全局快照，[会话组件](src/webview/chat/candidate-conversation.tsx#L41)重新遍历消息，[Markdown](src/webview/chat/reply-markdown.tsx#L104)每次调用重新 lex 文本；[历史 worker](src/adapter/sessions/sessionWorker.ts#L112)每次预览重新定位、列出并校验所有 session，再 open 目标，[预览投影](src/adapter/sessions/session-history-projection.ts#L106)为 totalChars 遍历全文。有回复／响应预算不等于有处理成本预算；不声称已复现卡顿。当前 WIP：确定代表性长对话／大量 session 负载并测量后再决定是否优化；保留公共 SDK 与身份／anchor 校验，不自行解析 session 文件。
 
 - [x] **PACKAGE-01／P1（WI-039 已接受关闭）：隔离安装版 VSIX 缺少已声明依赖 `@earendil-works/pi-ai`。** 根因、红／绿解包 import 与隔离安装版 `provider-loaded: true` 见[验收](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。把验证串接进 `package:vsix`／CI 的资产清单已由 WI-049 覆盖；`verify-vsix` 解包运行仍独立。
 
@@ -214,6 +216,7 @@
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-052 | 启动、诊断、artifact 与 test／Git 成本目前不需要库内预算 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-052-macos-acceptance.zh.md) |
 | WI-051 | Composer 标志与 FileSnapshot 校验器未确认生产错误配对 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-051-macos-acceptance.zh.md) |
 | WI-050 | 未收集的 `.spec.tsx` 使发现失败（TOOL-02） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-050-macos-acceptance.zh.md) |
 | WI-049 | 组包入口缺必需 helper 或 CSS 时失败（ARCH-07） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-049-macos-acceptance.zh.md) |
