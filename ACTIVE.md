@@ -15,31 +15,31 @@
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-073（DOC-NAV-01） |
+| **ID** | WI-074（DOC-NAV-02） |
 | **阶段** | 建造（Prepare 范围核对完成后，依本轮明确授权晋升） |
 | **Gate ID** | none |
 | **Decision** | none |
-| **PRD 判定** | 纯技术：归档导航整理，仅文档组织／检索，不改用户可见行为 |
+| **PRD 判定** | 纯技术：讨论索引分组，仅文档组织／检索，不改用户可见行为 |
 
 ### 目标与范围
 
-只整理 docs/archive/README 与 closed-wi-index；不移动归档文件。按 WI 串联已有提案、验收与历史，按类别导航非 WI 记录，缺失材料显式说明。
+只整理 docs/discussions/README 中英索引，按产品／UI、架构、技术调研和审计证据分组，可交叉链接；不默认新建目录，不归档或移动讨论。
 
 ### 方案与架构核对
 
-保持历史状态与现行权威入口，成对维护中英，不复制正文或补造证据。两个索引分工清晰，所有现有材料可定位且历史限制不变。 风险是漏项、错链或把历史当作授权；以目录清单与现有材料逐项核对。运行 `npm run docs:verify`；关闭运行 `npm run docs:health`。
+保持历史状态与现行权威入口，成对维护中英，不复制正文或补造证据。全部现有讨论可定位，背景不构成实现授权，未决问题与当前权威入口不隐藏。 风险是漏项、错链或把历史当作授权；以目录清单与现有材料逐项核对。运行 `npm run docs:verify`；关闭运行 `npm run docs:health`。
 
 ### 验收
 
-两个索引分工清晰，所有现有材料可定位且历史限制不变。运行 docs:verify 与关闭 docs:health；不要求产品构建、F5。
+全部现有讨论可定位，背景不构成实现授权，未决问题与当前权威入口不隐藏。 执行 docs:verify，关闭执行 docs:health；无产品代码变化，不要求 F5 或安装验证。
 
 ### 范围外与批准边界
 
-2026-10-01 本轮维护者明确允许 WI-072 关闭后，按 Prepare→Build 逐个晋升 DOC-NAV-01／02、DOC-ORG-03。当前仅 DOC-NAV-01，WIP=1。实现文档先提交，ACTIVE 关闭另提交。不改变产品行为、ADR／批准状态，不移动或删除历史文件，不启动 PI-GAP（含现有 PI-GAP-28），不 push。
+2026-10-01 本轮维护者明确允许 WI-072 关闭后，按 Prepare→Build 逐个晋升 DOC-NAV-01／02、DOC-ORG-03。当前仅 DOC-NAV-02，WIP=1。实现文档先提交，ACTIVE 关闭另提交。不改变产品行为、ADR／批准状态，不移动或删除历史文件，不启动 PI-GAP（含现有 PI-GAP-28），不 push。
 
 ## 当前焦点与未决项
 
-当前串行处理 DOC-NAV-01。PI-GAP 仍仅为产品候选，须维护者点名并另行确认 PRD／范围；下载／市场仍排除。
+当前串行处理 DOC-NAV-02。PI-GAP 仍仅为产品候选，须维护者点名并另行确认 PRD／范围；下载／市场仍排除。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -58,6 +58,8 @@
 | DOC-ORG-03／低，可不迁移 | docs 根目录的 [Git 提交约定](docs/git-commit-convention.md)与[双语文档指南](docs/bilingual-documentation.md)属于指南，与 guides 的归属略不一致。先评估移动收益及全部引用／校验配置影响，再提出保留或迁移方案。 | 记录保留或迁移的理由。若确认迁移，中英文成对移动，修复入站／相对链接、导航与必要校验配置，规则内容与权威性不变；若收益不足，明确保留并结束评估，不为一致性强制改路径。 |
 
 **共同验收与边界：** 仅文档组织／检索，不改产品行为、批准状态、ADR 状态或历史事实，不删除历史，不为单份架构文档增设无必要层级。涉及双语索引或迁移时同步对应语言；完成后运行 `npm run docs:verify` 与 `npm run docs:health`，报告错误、警告与未验证项。Draft ADR 0010 的状态／索引警告不是本组目录缺陷，不以改成 Accepted 来消除。本次记录未执行上述整理。
+
+DOC-NAV-01 已在本轮独立授权下按 WI-073 完成；见[验收](docs/archive/2026-10-01-wi-073-acceptance.zh.md)。
 
 ### pi 功能差距待办（产品候选，待晋升）
 
@@ -121,10 +123,10 @@
 
 ## 最近交接
 
-### 2026-10-01 — WI-072 关闭
+### 2026-10-01 — WI-073 关闭
 
-见[验收](docs/archive/2026-10-01-wi-072-acceptance.zh.md)。本轮授权只晋升 DOC-NAV-01；其余候选未启动。
+见[验收](docs/archive/2026-10-01-wi-073-acceptance.zh.md)。本轮授权只晋升 DOC-NAV-02；其余候选未启动。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-072。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-073。
