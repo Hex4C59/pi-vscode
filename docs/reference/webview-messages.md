@@ -49,7 +49,7 @@ Accept plain/null-prototype objects with exact own enumerable data fields; rejec
 | openProviderOAuth | providerId; host runs pi OAuth login. URLs and device codes stay in native prompts, never in the webview payload |
 | addCustomEndpoint | displayName, baseUrl, modelId; host merges one OpenAI-compatible models.json entry and then collects the API key natively. No apiKey field is accepted |
 | removeCustomEndpoint | providerId of a non-built-in models.json provider; host deletes that object and logs out |
-| setDefaultModel | provider + modelId; persists pi default via SettingsManager, then refreshes/applies session model when ready |
+| setDefaultModel | provider + modelId; persists pi default via SettingsManager; applies the live session model only when that write reports committed |
 | setDefaultThinkingLevel | provider + modelId + level; current default identity and supported level required; saves per-model defaults without starting a runtime |
 | refreshProviderConfig | None; reloads non-secret provider status and default-model catalogue |
 | chooseExecutionProfile | profile: controlled / trusted; trusted still obtains entry through native picker and consent |

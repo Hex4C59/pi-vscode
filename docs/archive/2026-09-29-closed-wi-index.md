@@ -67,6 +67,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-045 | Missing review-path body and tooltip share one translation entry (UI-03) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-045-macos-acceptance.md) |
 | WI-046 | Diagnostic probe owns child/pipe errors, boolean success and observed exit (RUNTIME-03/04/05) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-046-macos-acceptance.md) |
 | WI-047 | Endpoint write output must fit the 1 MiB read budget before commit (ARCH-06) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-047-macos-acceptance.md) |
+| WI-048 | Failed default save does not apply the requested live session model (ARCH-02 supplement) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-048-macos-acceptance.md) |
 
 ## Not in this index
 
