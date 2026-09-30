@@ -42,6 +42,9 @@
 | ID | 标题 | Gate | 文件 |
 |----|------|------|------|
 | 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 无 | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
+| 0007 | 跨宿主 endpoint 文件事务（WI-038） | 无 | [0007-endpoint-write-transaction.zh.md](0007-endpoint-write-transaction.zh.md) |
+
+0007 记录维护者批准的 WI-038 锁、冲突与遗留锁恢复取舍；实施／验证及最终接受仍待完成，不接受 ADR 0005，也不改 gate。
 
 0005 保持 Draft。维护者在检查设置页控件后关闭了 WI-030。真实浏览器登录和真实端点调用仍未记录，因此本 ADR 不接受任何 gate。
 

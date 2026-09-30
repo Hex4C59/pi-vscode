@@ -857,13 +857,19 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       case "openProviderApiKey": await this.providerConfig.openApiKey(message.providerId); break;
       case "openProviderOAuth": await this.providerConfig.openOAuth(message.providerId); break;
       case "addCustomEndpoint": {
-        const saved = await this.providerConfig.addCustomEndpoint(message);
+        const result = await this.providerConfig.addCustomEndpoint(message);
+        if (result?.write.kind !== "committed") { this.publish(); return; }
+        const saved = result.selection;
         if (saved && this.state.runtime === "ready") await this.syncSessionModelsAfterProviderConfig(saved.providerId, saved.modelId);
         else await this.syncSessionModelsAfterProviderConfig();
         this.publish();
         return;
       }
-      case "removeCustomEndpoint": await this.providerConfig.removeCustomEndpoint(message.providerId); break;
+      case "removeCustomEndpoint": {
+        const result = await this.providerConfig.removeCustomEndpoint(message.providerId);
+        if (result?.kind !== "committed") { this.publish(); return; }
+        break;
+      }
       case "logoutProvider": await this.providerConfig.logout(message.providerId); break;
       case "setDefaultModel": await this.providerConfig.setDefaultModel(message.provider, message.modelId); break;
       case "setDefaultThinkingLevel":

@@ -7,6 +7,7 @@ import {
   MAX_MODEL_CATALOG_ENTRIES, MAX_MODEL_ID_CHARS, MAX_MODEL_LABEL_CHARS, MAX_MODEL_PROVIDER_CHARS,
 } from "../contracts/index.js";
 import { addOpenAiEndpoint, listRemovableEndpointIds, removeOpenAiEndpoint } from "./customEndpoints.js";
+import type { EndpointFileSystem, EndpointWriteResult } from "./endpointFileTransaction.js";
 
 type AuthPrompt =
   | { type: "text"; message: string; placeholder?: string; signal?: AbortSignal }
@@ -82,6 +83,12 @@ export type ProviderConfigDeps = {
   createSettings(): Promise<SettingsManagerLike>;
   promptUi: ProviderConfigPromptUi;
   modelsPath(): string;
+  endpointFileSystem?: EndpointFileSystem;
+};
+
+export type EndpointAddResult = {
+  write: EndpointWriteResult;
+  selection?: { providerId: string; modelId: string };
 };
 
 const empty = (): ProviderConfigProjection => ({
@@ -153,6 +160,22 @@ export function createDefaultProviderConfigDeps(promptUi: ProviderConfigPromptUi
     promptUi,
     modelsPath: () => path.join(resolvePiAgentDir(), "models.json"),
   };
+}
+
+function endpointWriteError(result: EndpointWriteResult, action: "save" | "remove"): string {
+  if (result.kind === "committed-cleanup-failed") {
+    const done = action === "save" ? "saved" : "removed";
+    return `The endpoint was ${done}, but file cleanup failed. Credential actions were not continued. Close writing windows and verify the leftover lock before clearing it, then refresh.`;
+  }
+  if (result.kind === "not-committed") {
+    if (result.cleanupFailed) return "The endpoint was not changed, but file cleanup failed. Close writing windows and verify leftover transaction files before clearing them, then refresh.";
+    if (result.reason === "occupied") return "The endpoint file is locked. Try again after the other write finishes. If this persists, close writing windows and verify the leftover lock before clearing it.";
+    if (result.reason === "conflict") return "The endpoint file changed during the operation, so it was not overwritten. Refresh and try again.";
+    if (result.reason === "invalid") return "The endpoint file is invalid, so it was not changed.";
+    if (result.reason === "exists") return "An endpoint with this name already exists. Refresh or choose another name.";
+    if (result.reason === "missing") return "The endpoint no longer exists in the file. Refresh before continuing.";
+  }
+  return action === "save" ? "Could not save the endpoint. Try again." : "Could not remove the endpoint. Try again.";
 }
 
 function canLoginWithApiKey(provider: SdkProvider): boolean {
@@ -376,7 +399,7 @@ export class ProviderConfig {
     await this.loginWith(providerId, "oauth");
   }
 
-  async addCustomEndpoint(input: { displayName: string; baseUrl: string; modelId: string }): Promise<{ providerId: string; modelId: string } | undefined> {
+  async addCustomEndpoint(input: { displayName: string; baseUrl: string; modelId: string }): Promise<EndpointAddResult | undefined> {
     if (this.saving) return undefined;
     const providerId = endpointProviderId(input.displayName);
     if (!providerId) {
@@ -390,66 +413,72 @@ export class ProviderConfig {
     this.changed();
     let saved: { providerId: string; modelId: string } | undefined;
     let cancelled = false;
-    let invalid = false;
+    let result: EndpointWriteResult | undefined;
     try {
       const runtime = await this.ensureRuntime();
-      const failure = await addOpenAiEndpoint(this.deps.modelsPath(), {
+      result = await addOpenAiEndpoint(this.deps.modelsPath(), {
         providerId, displayName: input.displayName, baseUrl: input.baseUrl, modelId: input.modelId,
-      }, id => runtime.getRegisteredNativeProvider?.(id) !== undefined);
-      if (failure) throw new Error(failure);
-      await runtime.reloadModels?.();
-      if (token !== this.revision) return undefined;
-      await runtime.login(providerId, "api_key", this.interaction());
-      if (token === this.revision) saved = { providerId, modelId: input.modelId };
+      }, id => runtime.getRegisteredNativeProvider?.(id) !== undefined, this.deps.endpointFileSystem);
+      if (result.kind === "committed") {
+        await runtime.reloadModels?.();
+        if (token !== this.revision) return undefined;
+        await runtime.login(providerId, "api_key", this.interaction());
+        if (token === this.revision) saved = { providerId, modelId: input.modelId };
+      }
     } catch (error) {
       cancelled = error instanceof Error && error.message === "cancelled";
-      invalid = error instanceof Error && error.message === "invalid";
     } finally { this.saving = false; }
     if (token !== this.revision) return undefined;
+    if (!result || result.kind !== "committed") {
+      const write: EndpointWriteResult = result ?? { kind: "not-committed", reason: "write", cleanupFailed: false };
+      this.publishEndpointError(write, "save");
+      return { write };
+    }
     const beforeRefresh = this.revision;
     await this.refresh();
-    if (this.revision !== beforeRefresh + 1 || saved || cancelled) return saved;
-    this.value = {
-      ...this.value,
-      busy: false,
-      error: invalid ? "The endpoint file is invalid, so it was not changed." : "Could not save the endpoint. Try again.",
-    };
-    this.changed();
-    return undefined;
+    if (this.revision !== beforeRefresh + 1) return undefined;
+    if (!saved && !cancelled) this.publishEndpointError(result, "save");
+    return saved ? { write: result, selection: saved } : { write: result };
   }
 
-  async removeCustomEndpoint(providerId: string): Promise<void> {
+  private publishEndpointError(result: EndpointWriteResult, action: "save" | "remove"): void {
+    this.value = { ...this.value, busy: false, error: endpointWriteError(result, action) };
+    this.changed();
+  }
+
+  async removeCustomEndpoint(providerId: string): Promise<EndpointWriteResult | undefined> {
     if (this.saving) return;
     this.saving = true;
     const token = ++this.revision;
     this.value = { ...this.value, busy: true, error: null };
     this.changed();
     let removed = false;
-    let invalid = false;
+    let result: EndpointWriteResult | undefined;
     try {
       const runtime = await this.ensureRuntime();
-      const result = await removeOpenAiEndpoint(
-        this.deps.modelsPath(),
-        providerId,
-        id => runtime.getRegisteredNativeProvider?.(id) !== undefined,
+      result = await removeOpenAiEndpoint(
+        this.deps.modelsPath(), providerId,
+        id => runtime.getRegisteredNativeProvider?.(id) !== undefined, this.deps.endpointFileSystem,
       );
-      if (result !== "removed") throw new Error(result);
-      await runtime.reloadModels?.();
-      await runtime.logout(providerId);
-      removed = true;
-    } catch (error) {
-      invalid = error instanceof Error && error.message === "invalid";
-    } finally { this.saving = false; }
+      if (result.kind === "committed") {
+        await runtime.reloadModels?.();
+        if (token !== this.revision) return;
+        await runtime.logout(providerId);
+        removed = true;
+      }
+    } catch { /* Fixed error below; never forward storage or SDK exceptions. */ }
+    finally { this.saving = false; }
     if (token !== this.revision) return;
+    if (!result || result.kind !== "committed") {
+      const write: EndpointWriteResult = result ?? { kind: "not-committed", reason: "write", cleanupFailed: false };
+      this.publishEndpointError(write, "remove");
+      return write;
+    }
     const beforeRefresh = this.revision;
     await this.refresh();
-    if (this.revision !== beforeRefresh + 1 || removed) return;
-    this.value = {
-      ...this.value,
-      busy: false,
-      error: invalid ? "The endpoint file is invalid, so it was not changed." : "Could not remove the endpoint. Try again.",
-    };
-    this.changed();
+    if (this.revision !== beforeRefresh + 1) return undefined;
+    if (!removed) this.publishEndpointError(result, "remove");
+    return result;
   }
 
   async logout(providerId: string): Promise<void> {

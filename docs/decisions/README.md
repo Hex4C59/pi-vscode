@@ -37,6 +37,9 @@ Initial proposals and unexplained spike failures retain their pending state and 
 | ID | Title | Gate | File |
 |----|-------|------|------|
 | 0005 | Custom OpenAI-compatible endpoints in models.json (WI-030) | none | [0005-custom-endpoint-file.md](0005-custom-endpoint-file.md) |
+| 0007 | Cross-host endpoint file transactions (WI-038) | none | [0007-endpoint-write-transaction.md](0007-endpoint-write-transaction.md) |
+
+0007 records the maintainer-approved WI-038 lock, conflict and stale-lock recovery choices. Implementation/verification and final acceptance remain pending; it neither accepts ADR 0005 nor changes a gate.
 
 0005 stays Draft. The maintainer closed WI-030 after checking the settings controls. A live browser sign-in and a live endpoint call are still unrecorded, so this ADR does not accept a gate.
 

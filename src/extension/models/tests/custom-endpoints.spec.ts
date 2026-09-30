@@ -26,7 +26,7 @@ test("endpoint merge keeps other providers and never stores the API key", async 
   const added = await addOpenAiEndpoint(target, {
     providerId: "local-vllm", displayName: "Local vLLM", baseUrl: "http://127.0.0.1:8000/v1", modelId: "qwen2.5",
   }, id => id === "openai");
-  assert.equal(added, undefined);
+  assert.deepEqual(added, { kind: "committed" });
   const text = readFileSync(target, "utf8");
   const saved = JSON.parse(text) as { note: string; providers: Record<string, { apiKey?: string; api?: string; models?: { id: string }[] }> };
   assert.equal(saved.note, "keep");
@@ -40,10 +40,10 @@ test("endpoint merge keeps other providers and never stores the API key", async 
   const collided = await addOpenAiEndpoint(target, {
     providerId: "local-vllm", displayName: "Local vLLM", baseUrl: "http://127.0.0.1:8000/v1", modelId: "other",
   }, () => false);
-  assert.equal(collided, "exists");
-  assert.equal(await addOpenAiEndpoint(target, {
+  assert.deepEqual(collided, { kind: "not-committed", reason: "exists", cleanupFailed: false });
+  assert.deepEqual(await addOpenAiEndpoint(target, {
     providerId: "openai", displayName: "openai", baseUrl: "https://example.com/v1", modelId: "gpt",
-  }, id => id === "openai"), "native");
+  }, id => id === "openai"), { kind: "not-committed", reason: "native", cleanupFailed: false });
   assert.equal(readFileSync(target, "utf8"), text);
 });
 
@@ -53,9 +53,9 @@ test("a damaged models file is left unchanged", async t => {
   const result = await addOpenAiEndpoint(target, {
     providerId: "local", displayName: "local", baseUrl: "http://127.0.0.1:11434/v1", modelId: "llama3.1:8b",
   }, () => false);
-  assert.equal(result, "invalid");
+  assert.deepEqual(result, { kind: "not-committed", reason: "invalid", cleanupFailed: false });
   assert.equal(readFileSync(target, "utf8"), "{ providers: oops }\n");
-  assert.equal(await removeOpenAiEndpoint(target, "local", () => false), "invalid");
+  assert.deepEqual(await removeOpenAiEndpoint(target, "local", () => false), { kind: "not-committed", reason: "invalid", cleanupFailed: false });
   assert.equal(readFileSync(target, "utf8"), "{ providers: oops }\n");
 });
 
@@ -63,9 +63,9 @@ test("removing an endpoint deletes only that provider", async t => {
   const target = file(t);
   writeFileSync(target, JSON.stringify({ providers: { local: { api: "openai-completions" }, kept: { api: "openai-completions" } } }));
   const before = readFileSync(target, "utf8");
-  assert.equal(await removeOpenAiEndpoint(target, "openai", () => true), "native");
+  assert.deepEqual(await removeOpenAiEndpoint(target, "openai", () => true), { kind: "not-committed", reason: "native", cleanupFailed: false });
   assert.equal(readFileSync(target, "utf8"), before);
-  assert.equal(await removeOpenAiEndpoint(target, "local", id => id === "openai"), "removed");
+  assert.deepEqual(await removeOpenAiEndpoint(target, "local", id => id === "openai"), { kind: "committed" });
   const saved = JSON.parse(readFileSync(target, "utf8")) as { providers: Record<string, unknown> };
   assert.equal(saved.providers.local, undefined);
   assert.deepEqual(saved.providers.kept, { api: "openai-completions" });
@@ -142,11 +142,8 @@ test("OAuth opens a host URL and device code without projecting them", async t =
   assert.equal(config.snapshot.error, null);
 });
 
-test("adding an endpoint writes models.json and keeps a cancelled key out of the projection", async t => {
-  const target = file(t);
-  const secret = "sk-cancelled-endpoint-fixture";
-  let seenKey = "";
-  const dependencies: ProviderConfigDeps = {
+function cancelledEndpointDependencies(target: string, secret: string, onKey: (key: string) => void): ProviderConfigDeps {
+  return {
     async createRuntime() {
       const providers = [{
         id: "local-vllm", name: "Local vLLM",
@@ -164,7 +161,7 @@ test("adding an endpoint writes models.json and keeps a cancelled key out of the
         getAvailable: async () => [{ id: "qwen2.5", name: "Qwen", provider: "local-vllm" }],
         login: async (_id, type, interaction) => {
           assert.equal(type, "api_key");
-          seenKey = await interaction.prompt({ type: "secret", message: "API key" });
+          onKey(await interaction.prompt({ type: "secret", message: "API key" }));
           throw new Error("cancelled");
         },
         logout: async () => {},
@@ -185,9 +182,15 @@ test("adding an endpoint writes models.json and keeps a cancelled key out of the
     },
     modelsPath: () => target,
   };
-  const config = new ProviderConfig(dependencies, () => {});
+}
+
+test("adding an endpoint writes models.json and keeps a cancelled key out of the projection", async t => {
+  const target = file(t);
+  const secret = "sk-cancelled-endpoint-fixture";
+  let seenKey = "";
+  const config = new ProviderConfig(cancelledEndpointDependencies(target, secret, key => { seenKey = key; }), () => {});
   const saved = await config.addCustomEndpoint({ displayName: "Local vLLM", baseUrl: "http://127.0.0.1:8000/v1", modelId: "qwen2.5" });
-  assert.equal(saved, undefined);
+  assert.deepEqual(saved, { write: { kind: "committed" } });
   const text = readFileSync(target, "utf8");
   assert.equal(text.includes("apiKey"), false);
   assert.equal(text.includes(secret), false);
