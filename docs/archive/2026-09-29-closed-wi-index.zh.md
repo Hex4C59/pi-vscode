@@ -95,6 +95,8 @@
 | WI-069 | 规范活跃模型身份 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；活跃模型用供应商／模型 id | [记录](2026-10-01-wi-069-acceptance.zh.md) |
 | WI-070 | macOS REQ-009 五类证据 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；当前安装包矩阵 | [记录](2026-10-01-wi-070-acceptance.zh.md) |
 | WI-071 | Webview 目录整理 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；按 README 分组，不改行为 | [记录](2026-10-01-wi-071-acceptance.zh.md) |
+| WI-072 | RPC 内部 helper 分组；根协调文件保留 | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-072-acceptance.zh.md) |
+
 
 ## 不在本索引
 

@@ -13,35 +13,33 @@
 
 ## 正在做（WIP=1）
 
-按 `src/adapter/runtime/` 现有 `process/` 先例，把 RPC 传输与会话文件归组到内部目录。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。WI-071 已关闭。
-
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-072 |
-| **阶段** | 建造 |
+| **ID** | WI-073（DOC-NAV-01） |
+| **阶段** | 建造（Prepare 范围核对完成后，依本轮明确授权晋升） |
 | **Gate ID** | none |
 | **Decision** | none |
-| **PRD 判定** | 纯技术：按职责分组 `src/adapter/runtime/` 内 RPC 文件，不改用户可见行为、协议或契约 |
+| **PRD 判定** | 纯技术：归档导航整理，仅文档组织／检索，不改用户可见行为 |
 
 ### 目标与范围
 
-把散落在 `src/adapter/runtime/` 根目录的 RPC 传输／会话文件归入内部目录（建议 `rpc/`，与已有 `process/` 并列），包括 `jsonl.ts`、`rpc-frames.ts`、`rpc-replies.ts`、`rpc-events.ts`、`rpc-occupancy.ts`、`rpc-dialogs.ts`、`interaction-writer.ts`、`pi-rpc-runtime.ts`、`pi-rpc-model-parse.ts`、`pi-rpc-probe.ts` 及对应测试。移动前按实际 import 核对：不要把活动投影、扩展反馈、命令分类、错误归一化、启动模型读取或 `process/` 误并入 RPC 目录。保留 `runtime/index.ts` 与 `runtime/types.ts` 作为模块公共入口。不为 `rpc/` 自动新增模块接口，除非公共入口检查要求。不改行为、RPC 契约、打包 helper 语义或测试收集合同以外的必要路径更新。
+只整理 docs/archive/README 与 closed-wi-index；不移动归档文件。按 WI 串联已有提案、验收与历史，按类别导航非 WI 记录，缺失材料显式说明。
 
 ### 方案与架构核对
 
-先列文件与消费者，再 `git mv`、改写相对 import，更新硬编码路径断言（架构边界、探针、打包、文档定位器）。`adapter/runtime` 仍是架构模块；子目录默认只是内部分组。架构层边界仍以 [vscode-extension-architecture](docs/architecture/vscode-extension-architecture.zh.md) 为准。
+保持历史状态与现行权威入口，成对维护中英，不复制正文或补造证据。两个索引分工清晰，所有现有材料可定位且历史限制不变。 风险是漏项、错链或把历史当作授权；以目录清单与现有材料逐项核对。运行 `npm run docs:verify`；关闭运行 `npm run docs:health`。
 
 ### 验收
 
-移动后 `npm run compile`、`npm run lint`、`npm test` 通过。无用户可见行为变化。路径变化则跑 `docs:verify`。WI 关闭跑 `docs:health`。
+两个索引分工清晰，所有现有材料可定位且历史限制不变。运行 docs:verify 与关闭 docs:health；不要求产品构建、F5。
 
 ### 范围外与批准边界
 
-docs 目录整理、PI-GAP-01–27、下载／市场。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理与 PI-GAP 仍停放、不自动启动。
+2026-10-01 本轮维护者明确允许 WI-072 关闭后，按 Prepare→Build 逐个晋升 DOC-NAV-01／02、DOC-ORG-03。当前仅 DOC-NAV-01，WIP=1。实现文档先提交，ACTIVE 关闭另提交。不改变产品行为、ADR／批准状态，不移动或删除历史文件，不启动 PI-GAP（含现有 PI-GAP-28），不 push。
 
 ## 当前焦点与未决项
 
-正在整理 Runtime RPC 目录。docs 目录检索与 PI-GAP-01–27 仍在停车场，须另行 Prepare→Build。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
+当前串行处理 DOC-NAV-01。PI-GAP 仍仅为产品候选，须维护者点名并另行确认 PRD／范围；下载／市场仍排除。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -89,7 +87,7 @@ docs 目录整理、PI-GAP-01–27、下载／市场。批准：维护者 `/goal
 | PI-GAP-13／需持久化决策 | 临时会话：显式关闭 pi 会话历史持久化。 | 确定启动、切换、退出与恢复边界，通过公开参数／API 实现；状态可辨识，不误列可恢复历史；不是无痕模式，不承诺无工具文件、日志、网络或供应商留存。 |
 | PI-GAP-14／后续 | 常用模型集合与快捷轮换：轮换子集、上一个／下一个模型及思考级别。 | 保留已有选择器与默认值；仅轮换实际可用项，空集合明确提示；沿用忙碌时模型变更规则，失败不伪报切换；与 PI-GAP-22 协调。 |
 | PI-GAP-15／需生命周期评估 | 资源／上下文重载：评估类似 `/reload` 的更新流程。 | 先核对公开 RPC／SDK 可行性，必要时提重启／替代方案；重新核对信任与身份，忙碌处理、实际生效内容及失败恢复明确；清单／供应商刷新不是 runtime 重载，不扩张加载权限。 成功后刷新 PI-GAP-02 实际加载报告，旧数据标失效；明确变更是否已生效，不把清单变更当作已加载。 |
-| PI-GAP-16／按实际需要分片 | 高级 runtime 设置：重试、延迟／超时、传输偏好、自动压缩预算、thinking budget、缓存保温。 | 先查继承配置、作用域与写入所有者；有效值／默认值、持久化及生效时机可解释，非法值拒绝，失败可恢复；不重造底层逻辑，披露缓存保温额外请求／费用；与 PI-GAP-03／04 分工明确。 |
+| PI-GAP-16／按实际需要分片 | 高级 runtime 设置：重试、延迟／超时、传输偏好、自动压缩预算、thinking budget、缓存保温；系统提示词自定义作为单独批准的设置切片。 | 先查继承配置、作用域与写入所有者；有效值／默认值、持久化及生效时机可解释，非法值拒绝，失败可恢复；不重造底层逻辑，披露缓存保温额外请求／费用；与 PI-GAP-03／04 分工明确。 系统提示词先验证已有 SYSTEM.md／APPEND_SYSTEM.md 加载，不误称底层缺失；明确项目／全局、替换／追加、继承、信任及生效时机，失败保留原配置；不弱化宿主审批或工作区规则，与 PI-GAP-02／15 的生效报告协调。 |
 | PI-GAP-17／需工具／信任决策 | 用户可选工具集合：初始工具子集、仅检查工作流与可用工具展示。 | 公开工具配置，实际启用集合、生效时机与恢复明确；不绕过审批，不把省略 write／edit 宣称严格只读或沙箱，说明 shell／Trusted 扩展写入能力。 |
 | PI-GAP-18／后续 | 丰富自定义模型配置：多模型、API 类型、上下文／输出上限、能力／兼容元数据及 headers。 | 分片批准字段；公开格式，保留已有模型与未知配置，字段验证和失败恢复；credentials／敏感 headers 不进入 Webview；不误称外部 models.json 支持缺失。 |
 | PI-GAP-19／需本地模型范围决策 | llama.cpp router 模型下载、加载、卸载及状态展示。 | 先确认公开控制方式与本机范围；来源、空间／网络、取消及恢复明确，加载状态可核对；卸载活动模型先处理任务；不默认安装／启动服务，登录端点不是模型管理。 |
@@ -109,20 +107,24 @@ docs 目录整理、PI-GAP-01–27、下载／市场。批准：维护者 `/goal
 | PI-GAP-26／维护性，后续 | 插件诊断报告：审查后导出诊断包，上传作为另行批准的可选切片。 | 区分插件／pi runtime 问题，记录实际版本与有界诊断；默认不附完整会话／源码／凭据，用户可审查和取消；包含会话或上传须显式同意内容、目标与可见性，失败可恢复，不自动向上游发送。 |
 | PI-GAP-27／较低 | 产品内版本信息与更新日志：插件版本、内置 pi 版本及对应变更说明。 | 展示实际包版本，区分插件与上游变更；缺失／不可用明确提示，不伪称最新版；不为打开页面隐式联网，不自动下载、安装或升级。 |
 
+#### 输入历史与系统提示词补充（待晋升）
+
+2026-10-01 维护者授权记录第四轮发现，仍仅记录，不启动实现或改变既有队列。证据见[启动选项与编辑器补充](docs/discussions/2026-10-01-pi-feature-gaps.zh.md#启动选项与编辑器补充2026-10-01)。系统提示词管理并入 PI-GAP-16，不重复编号；输入召回新增 PI-GAP-28，与 PI-GAP-22 的快捷键协调。
+
+| ID／建议优先级 | 差距与候选范围 | 完成标准／边界 |
+|---|---|---|
+| PI-GAP-28／小型便利，后续 | 已发送输入历史召回：显式取回上一条／下一条已提交文字，修改后由用户再次发送。 | 与已保存会话查看、PI-GAP-01 排队消息取回区分；先确定历史作用域、保留数量及清理／持久化边界，说明失败或投递不确定的输入是否计入；召回前保留当前未发送草稿并支持返回，不静默覆盖；只召回文字，不自动重挂旧附件或重新发送；新建／恢复／切换后不串历史，快捷键兼容多行光标与 IME，遵守既有敏感内容规则。 |
+
 **共同完成要求：** 各晋升切片须有批准的可观察验收、适用端到端验证与可重复工件；模拟、runtime、F5、安装 VSIX 证据分别记录。测试安排遵循现行 testing playbook。已有登录、模型配置、自动压缩、标准扩展交互及已保存会话恢复不列为重做任务。plan mode／子 Agent／MCP 不作为 pi 0.86.1 内置漏接项；升级上游另行评估。
 
 下列仍为 standing non-goals：额外扩展生态（本机清单除外）、编辑区 Chat Participant、remote／multi-root、额外平台、跳过审批、公开发布。
 
 ## 最近交接
 
-### 2026-10-01 — WI-072 晋升（Runtime RPC 目录整理）
+### 2026-10-01 — WI-072 关闭
 
-维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-071 已关闭。本切片只整理 `src/adapter/runtime/` 内 RPC 文件位置，不改行为。docs 目录整理与 PI-GAP 仍停放。
-
-### 2026-10-01 — WI-071 关闭（Webview 目录整理）
-
-展示文件已按 README 树分组。见[验收](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。
+见[验收](docs/archive/2026-10-01-wi-072-acceptance.zh.md)。本轮授权只晋升 DOC-NAV-01；其余候选未启动。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-071。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-072。

@@ -167,3 +167,5 @@ At WI close or confirmed document replacement, the agent performs affected archi
 - [Compatibility and old candidates](2026-09-22-pi-compatibility.md): preserves historical CF/Prepare states; accepted WIs and ADR0004 own current scope.
 - [Representative extension research](2026-09-27-wi-013-target-research.md): public sources/version and original failures behind WI-013/ADR0002.
 - [Native F5 diagnosis](2026-09-27-wi-021-native-f5.md): failed debugger route and official isolated-host selection; WI-021 is accepted.
+
+- [WI-072: Internal RPC helper grouping; root coordinators retained](2026-10-01-wi-072-acceptance.md) — [approved proposal](2026-10-01-wi-072-approved-proposal.md).

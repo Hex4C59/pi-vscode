@@ -92,6 +92,8 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-069 | Canonical live model identity | 2026-10-01 agent under complete-ACTIVE `/goal`; live model is provider/model-id | [record](2026-10-01-wi-069-acceptance.md) |
 | WI-070 | macOS REQ-009 five-category evidence | 2026-10-01 agent under complete-ACTIVE `/goal`; current installed-VSIX matrix | [record](2026-10-01-wi-070-acceptance.md) |
 | WI-071 | Webview directory organization | 2026-10-01 agent under complete-ACTIVE `/goal`; README grouping, no behavior change | [record](2026-10-01-wi-071-acceptance.md) |
+| WI-072 | Internal RPC helper grouping; root coordinators retained | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-072-acceptance.md) |
+
 
 ## Not in this index
 

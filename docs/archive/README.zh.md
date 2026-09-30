@@ -171,3 +171,5 @@ WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collabora
 - [兼容性与旧候选](2026-09-22-pi-compatibility.zh.md)：保留历史CF／Prepare状态；当前范围归已接受WI与ADR0004。
 - [代表性扩展调查](2026-09-27-wi-013-target-research.zh.md)：WI-013／ADR0002的公开来源／版本及原始失败。
 - [原生F5诊断](2026-09-27-wi-021-native-f5.zh.md)：失败debugger路线与官方隔离宿主选择；WI-021已接受。
+
+- [WI-072: RPC 内部 helper 分组；根协调文件保留](2026-10-01-wi-072-acceptance.zh.md) — [approved proposal](2026-10-01-wi-072-approved-proposal.zh.md).
