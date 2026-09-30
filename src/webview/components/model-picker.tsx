@@ -72,13 +72,12 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
   useEffect(() => {
     if (!popoverOpen) return undefined;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setPopoverOpen(false);
-        if (!animatePopover) setModelListOpen(false);
-        if (selectionFocus.current && triggerRef.current) selectionFocus.current.target = triggerRef.current;
-        triggerRef.current?.focus();
-      }
+      if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) return;
+      event.preventDefault();
+      setPopoverOpen(false);
+      if (!animatePopover) setModelListOpen(false);
+      if (selectionFocus.current && triggerRef.current) selectionFocus.current.target = triggerRef.current;
+      triggerRef.current?.focus();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);

@@ -129,3 +129,39 @@ test("mounted React model controls expose a disabled single-level slider and pre
     await h.close();
   }
 });
+
+test("Escape on an overlapping context menu does not close the model popover", async () => {
+  const h = await uiHarness();
+  try {
+    await h.click("#model-effort-trigger");
+    assert.equal(h.get("#model-popover").getAttribute("aria-hidden"), "false");
+    await h.click('button[aria-label="Add context"]');
+    const menu = h.get('[role="menu"][aria-label="Add context"]');
+    await act(async () => {
+      menu.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    });
+    assert.equal(h.root.querySelectorAll('[role="menu"][aria-label="Add context"]').length, 0);
+    assert.equal(h.get("#model-popover").getAttribute("aria-hidden"), "false");
+    assert.equal(h.dom.window.document.activeElement?.getAttribute("aria-label"), "Add context");
+  } finally {
+    await h.close();
+  }
+});
+
+test("composing Escape does not close the model popover", async () => {
+  const h = await uiHarness();
+  try {
+    await h.click("#model-effort-trigger");
+    await act(async () => {
+      h.dom.window.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+        isComposing: true,
+      }));
+    });
+    assert.equal(h.get("#model-popover").getAttribute("aria-hidden"), "false");
+  } finally {
+    await h.close();
+  }
+});
