@@ -462,7 +462,7 @@ export type UiText =
   | "Covered tools ask for approval. This is not a sandbox."
   | "Loads an extension after the VS Code file picker and host confirmation. Not a sandbox."
   | "Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval."
-  | "Only one runtime is admitted at a time in the shared recovery domain. Another VS Code window can remain blocked until the exact run is observed ended and deliberately recovered."
+  | "Each VS Code window admits its own runtime. Two windows on the same folder can change the same files at once."
   | "Ending an owned runtime may interrupt irreversible work. The host will ask for confirmation."
   | "End owned runtime…"
   | "Recover controlled execution"

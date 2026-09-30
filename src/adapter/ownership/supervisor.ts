@@ -217,6 +217,12 @@ async function supervise(directory: string, runId: string): Promise<void> {
     return terminalWork;
   };
 
+  const requestOwnedChildEnd = (): void => {
+    if (endRequested || childExited || terminalWork) return;
+    endRequested = true;
+    beginTermination();
+  };
+
   const markOwnerLost = (): void => {
     if (ownerLost || terminalWork) return;
     ownerLost = true;
@@ -225,6 +231,7 @@ async function supervise(directory: string, runId: string): Promise<void> {
     process.stdin.pause();
     if (child?.stdout) child.stdout.resume();
     if (!spawnAttempted && controlReady) void finishNeverSpawned();
+    else if (spawnAttempted) requestOwnedChildEnd();
   };
 
   function onOwnerLost(): void { markOwnerLost(); }
@@ -244,6 +251,10 @@ async function supervise(directory: string, runId: string): Promise<void> {
 
   const onChildOutput = (chunk: Buffer): void => {
     if (ownerLost || childExited) return;
+    if (!process.stdout.writable || process.stdout.destroyed) {
+      markOwnerLost();
+      return;
+    }
     try {
       if (!process.stdout.write(chunk)) child?.stdout?.pause();
     } catch {
@@ -387,8 +398,8 @@ async function supervise(directory: string, runId: string): Promise<void> {
   process.stdin.once("close", onParentLostClose);
   process.stdin.on("error", onOwnerLost);
   process.stdout.on("drain", onParentOutputDrain);
-  process.stdout.once("close", onOwnerLost);
-  process.stdout.once("error", onOwnerLost);
+  process.stdout.on("close", onOwnerLost);
+  process.stdout.on("error", onOwnerLost);
 
   if (!validInvocation(directory, runId)) {
     initializationOpen = false;

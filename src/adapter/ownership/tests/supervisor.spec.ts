@@ -360,26 +360,32 @@ test("the supervisor relays child pipes and records the exact observed child exi
   assert.ok(UUID.test(runId));
 });
 
-test("owner loss retains a live child, its open stdin, and durable exit observation without forwarding more output", async t => {
+async function loseOwnerAndAwaitExactChildExit(
+  t: TestContext,
+  lose: (fixture: RuntimeFixture) => void,
+): Promise<{ fixture: RuntimeFixture; forwardedOutputLength: number }> {
   const fixture = await runtimeFixture(t);
   const { directory, runId, worker, statePath } = fixture;
-  const before = await waitForState(statePath, state => state.tick >= 2);
   worker.process.stdin?.write("quiet-probe\n");
   await worker.waitForStdout("synthetic-quiet\n");
   await waitForState(statePath, state => state.quiet);
-  worker.process.disconnect();
-  const observedByControl = JSON.parse(await sendControl(directory, runId, { version: 1, runId, action: "observe" })) as ControlResponse;
-  assert.deepEqual(observedByControl, { version: 1, runId, state: "owner-lost", endRequested: false });
-
   const forwardedOutputLength = worker.stdout.length;
-  worker.process.stdin?.write("must-not-reach-runtime\n");
-  const after = await waitForState(statePath, state => state.tick >= before.tick + 3);
+  lose(fixture);
+  const terminal = await waitForTerminal(directory, runId);
+  assert.equal(terminal.receipt.outcome, "child-exited");
+  assert.ok(terminal.receipt.code === null || Number.isSafeInteger(terminal.receipt.code));
+  assert.ok(terminal.receipt.signal === null || terminal.receipt.signal === "SIGTERM" || terminal.receipt.signal === "SIGKILL");
+  assert.equal(await waitForWorkerExit(worker, 2500), true);
+  const after = JSON.parse(await readFile(statePath, "utf8")) as SyntheticState;
   assert.equal(after.stdinEnded, false, "owner loss must not close the direct child's stdin");
-  assert.equal(after.lastInput, "quiet-probe\n", "the supervisor no longer accepts parent writes after IPC loss");
+  assert.equal(after.lastInput, "quiet-probe\n", "the supervisor no longer accepts parent writes after owner loss");
   assert.equal(worker.stdout.length, forwardedOutputLength, "runtime output is drained and discarded after owner loss");
   assert.equal(worker.stderr, "", "runtime stderr remains discarded");
-  assert.equal((await createRecoveryStore(directory).inspect()).kind, "pending", "liveness is not fabricated into an exit receipt");
-  assert.equal(worker.process.exitCode, null, "worker remains alive to observe the exact child");
+  return { fixture, forwardedOutputLength };
+}
+
+test("IPC disconnect ends the exact owned child without closing its stdin", async t => {
+  await loseOwnerAndAwaitExactChildExit(t, fixture => { fixture.worker.process.disconnect(); });
 });
 
 test("observation leaves a live owner's child running and accepting input", async t => {
@@ -419,26 +425,25 @@ test("malformed and wrong-run control requests close without disturbing the owne
   assert.equal((await createRecoveryStore(fixture.directory).inspect()).kind, "pending");
 });
 
-test("parent stdin end loses ownership without closing the direct child's stdin", async t => {
-  const fixture = await runtimeFixture(t);
-  const initial = await waitForState(fixture.statePath, state => state.tick >= 2);
-  fixture.worker.process.stdin?.end();
-  const response = JSON.parse(await sendControl(fixture.directory, fixture.runId, { version: 1, runId: fixture.runId, action: "observe" })) as ControlResponse;
-  assert.deepEqual(response, { version: 1, runId: fixture.runId, state: "owner-lost", endRequested: false });
-  const current = await waitForState(fixture.statePath, state => state.tick >= initial.tick + 2);
-  assert.equal(current.stdinEnded, false);
-  assert.equal((await createRecoveryStore(fixture.directory).inspect()).kind, "pending");
+test("parent stdin end ends the exact owned child without closing its stdin", async t => {
+  await loseOwnerAndAwaitExactChildExit(t, fixture => { fixture.worker.process.stdin?.end(); });
 });
 
-test("loss of the parent output pipe drains child output and retains exact-child observation", async t => {
+test("loss of the parent output pipe ends the exact owned child without closing its stdin", async t => {
   const fixture = await runtimeFixture(t);
-  const initial = await waitForState(fixture.statePath, state => state.tick >= 2);
-  fixture.worker.process.stdout?.destroy();
-  const current = await waitForState(fixture.statePath, state => state.tick >= initial.tick + 2);
-  const response = JSON.parse(await sendControl(fixture.directory, fixture.runId, { version: 1, runId: fixture.runId, action: "observe" })) as ControlResponse;
-  assert.deepEqual(response, { version: 1, runId: fixture.runId, state: "owner-lost", endRequested: false });
-  assert.equal(current.stdinEnded, false);
-  assert.equal((await createRecoveryStore(fixture.directory).inspect()).kind, "pending");
+  const { directory, runId, worker, statePath } = fixture;
+  await waitForState(statePath, state => state.tick >= 2);
+  const forwardedOutputLength = worker.stdout.length;
+  worker.process.stdout?.destroy();
+  const terminal = await waitForTerminal(directory, runId);
+  assert.equal(terminal.receipt.outcome, "child-exited");
+  assert.ok(terminal.receipt.code === null || Number.isSafeInteger(terminal.receipt.code));
+  assert.ok(terminal.receipt.signal === null || terminal.receipt.signal === "SIGTERM" || terminal.receipt.signal === "SIGKILL");
+  assert.equal(await waitForWorkerExit(worker, 2500), true);
+  const after = JSON.parse(await readFile(statePath, "utf8")) as SyntheticState;
+  assert.equal(after.stdinEnded, false, "owner loss must not close the direct child's stdin");
+  assert.ok(worker.stdout.length >= forwardedOutputLength);
+  assert.equal(worker.stderr, "", "runtime stderr remains discarded");
 });
 
 test("a child spawn error records never-spawned and never reports spawned", async t => {

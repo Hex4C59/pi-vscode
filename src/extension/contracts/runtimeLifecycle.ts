@@ -19,7 +19,7 @@ export type PromptInput =
 export type AttachmentPromptResult = { rejection?: "authentication"; delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown"; code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost" };
 export type PromptResult = { ok: true } | { ok: false; detail: string };
 
-/** Supervision state of the run recorded in the shared recovery domain. */
+/** Supervision state of the run recorded in this window's recovery domain. */
 export type RetainedRunState = "owned" | "owner-lost" | "exited" | "never-spawned" | "termination-unconfirmed";
 
 /**

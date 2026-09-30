@@ -3,7 +3,7 @@
 English | [中文](2026-09-29-live-session-saved-default.zh.md)
 
 - Type: Discussion
-- Status: Confirmed design; no Build until a later WI
+- Status: Confirmed design; implemented as WI-057 on 2026-09-30
 - Created: 2026-09-29
 - Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the PRD, or ADRs 0001–0004
 - Related: [WI-024 paused proposal](../archive/2026-09-28-wi-024-paused-proposal.md), [WI-025 archive](../archive/2026-09-29-wi-025-active-superseded.md), [CONTEXT.md](../../CONTEXT.md)
@@ -47,8 +47,8 @@ This is not a product merge. Approved WI-025 copy already treats Saved default a
 
 ## Current leaning (not implementation approval)
 
-Design settled for a later technical WI. WI-026 closed on 2026-09-29; Build still waits for the maintainer to open that WI. Maintainer confirmed this recap on 2026-09-29. When that WI is opened: move `provider-model-sync` coverage onto the sequencing module’s interface; update the host capability table in the architecture doc. No ADR: in-process extract with frozen product rules, not a trust or runtime-hosting change.
+Design settled and later implemented as WI-057 (ARCH-02). User-visible rules stay frozen. See the [acceptance record](../archive/2026-09-30-wi-057-macos-acceptance.md).
 
 ## Open questions
 
-None. Maintainer confirmed the recap on 2026-09-29. Build waits for a later WI.
+None. Implemented as WI-057 on 2026-09-30.

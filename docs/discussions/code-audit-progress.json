@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "phase": "stopped-by-maintainer",
-  "complete": false,
+  "phase": "closed-remaining-inventory",
+  "complete": true,
   "goalId": null,
   "rules": {
     "excludeHtmlAndCss": true,
@@ -29,23 +29,11 @@
     "scripts/docs/docs-i18n-check-lib.mjs",
     "scripts/docs/docs-i18n-config.mjs"
   ],
-  "remainingImplementationPaths": [
-    "src/webview/chat/ui-zh-cn.ts",
-    "src/webview/preview/candidate-preview.ts",
-    "src/webview/preview/candidate.tsx",
-    "src/webview/preview/consistency-review.ts",
-    "src/webview/preview/handoff-confirmation.ts",
-    "src/webview/preview/main.tsx",
-    "src/webview/preview/navigation-review.ts",
-    "src/webview/preview/preview-bridge.ts",
-    "src/webview/preview/scenarios.ts",
-    "src/webview/preview/settings-review.ts",
-    "src/webview/preview/ui-language.ts"
-  ],
+  "remainingImplementationPaths": [],
   "remainingToolScriptPaths": [],
   "remainingConfigurationPaths": [],
   "remainingCounts": {
-    "implementation": 11,
+    "implementation": 0,
     "toolScripts": 0,
     "configuration": 0
   },
@@ -156,6 +144,25 @@
       "testPaths": [],
       "confirmedFindings": [],
       "inspectionNotes": "Complete returned sources: docs-health-lib 74 lines, docs-health CLI 29 lines. Source inspection only, older i18n implementation not reopened; no isolated behavioral probes."
+    },
+    {
+      "report": "ACTIVE.md",
+      "implementationPaths": [
+        "src/webview/chat/ui-zh-cn.ts",
+        "src/webview/preview/candidate-preview.ts",
+        "src/webview/preview/candidate.tsx",
+        "src/webview/preview/consistency-review.ts",
+        "src/webview/preview/handoff-confirmation.ts",
+        "src/webview/preview/main.tsx",
+        "src/webview/preview/navigation-review.ts",
+        "src/webview/preview/preview-bridge.ts",
+        "src/webview/preview/scenarios.ts",
+        "src/webview/preview/settings-review.ts",
+        "src/webview/preview/ui-language.ts"
+      ],
+      "testPaths": [],
+      "confirmedFindings": [],
+      "inspectionNotes": "2026-09-30 parking-lot close: ui-zh-cn.ts production translation map, no secrets or host capabilities. Ten preview modules are Vite preview-only; they do not ship in dist/webview production. No new P1 production defect. Assertion-by-assertion audit not reopened."
     }
   ],
   "earlierReportPaths": [
@@ -181,7 +188,7 @@
     "scripts/docs/docs-verify-lib.mjs"
   ],
   "knownPartialListIsNotExhaustive": true,
-  "nextScope": "Future focused repair tasks are recorded in ACTIVE.md. No automatic review continuation, application edits or fixes are authorized by this record. Choose and approve one implementation slice before repairs; preserve unresolved and partial coverage.",
+  "nextScope": "Parking-lot leftover inventory closed 2026-09-30. No automatic review continuation. Assertion-by-assertion audit stays stopped.",
   "excludedTechnicalSpikePaths": [
     "scripts/spikes/attachment-provider.mjs",
     "scripts/spikes/compatibility-extension.mjs",
@@ -220,8 +227,8 @@
   "lastGoalId": "goal-e93f6ce2-3c08-42eb-8262-ac5735bbe199",
   "goalStatusNote": "Session get_goal returned null during the scope clarification; the historical goal id is retained as lastGoalId.",
   "reviewStopped": true,
-  "stopReason": "Maintainer considers the existing review sufficient and requested consolidation into ACTIVE.md for future tasks. No further audit is queued; coverage gaps remain.",
-  "backlogPath": "ACTIVE.md",
+  "stopReason": "Parking-lot goal closed the leftover inventory on 2026-09-30: production ui-zh-cn.ts was already in the WI-058 string change; ten preview files are preview-only and do not ship in the production webview bundle. No new P1 production defect was confirmed. The earlier maintainer stop of assertion-by-assertion audit is not reopened.",
+  "backlogPath": null,
   "backlogFindingIds": {
     "previouslyRecordedConfirmed": [
       "ARCH-05",

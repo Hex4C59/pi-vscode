@@ -3,7 +3,7 @@ import type { SessionStateMessage, SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel } from "./bridge/index.js";
-import { ModelSettings, ProviderConfig, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
+import { ModelSettings, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage, ProviderConfigIntent } from "./contracts/index.js";
@@ -43,6 +43,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private workspaceUpdatePending = false;
   private reconcileToken = 0;
   private readonly models: ModelSettings;
+  private readonly savedDefaultApply: SavedDefaultApply;
   private runtimeSession = 0;
   private promptToken = 0;
   private stoppingTask = false;
@@ -108,6 +109,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       showInformationMessage: message => this.api.window.showInformationMessage(message),
       openExternal: url => this.api.env.openExternal(this.api.Uri.parse(url)),
     }), () => this.publish());
+    this.savedDefaultApply = new SavedDefaultApply({
+      models: this.models,
+      providerConfig: this.providerConfig,
+      requestRestart: () => this.reconcileRuntime(this.liveConversation, true),
+    }, () => ({ ready: this.state.runtime === "ready", disposed: this.disposed }));
     this.settingsPanel = new SettingsPanel(this.api.window, this.extensionUri, () => {
       if (!this.disposed) this.refresh();
       return { generation: this.state.generation, locale: this.uiLocale, config: this.providerConfig.snapshot };
@@ -394,28 +400,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
    * and may be slow, so it must never hold the runtime transition or a session switch.
    */
   private async loadStartupModels(token: number, modelLabel: string | null): Promise<void> {
-    await Promise.all([this.models.load(modelLabel), this.providerConfig.refresh()]);
-    if (token !== this.reconcileToken || this.disposed || this.state.runtime !== "ready" || this.models.snapshot.chatModel) return;
-    const { defaultProvider, defaultModelId } = this.providerConfig.snapshot;
-    if (defaultProvider && defaultModelId) await this.models.applyConfiguredModel(defaultProvider, defaultModelId);
+    await this.savedDefaultApply.loadAfterReady(token, () => this.reconcileToken, modelLabel);
   }
 
-  /**
-   * Settings/auth write through the in-process SDK; the composer reads the RPC session.
-   * After credentials or defaults change, push the default into the live session, and
-   * restart once when the child still has no model (auth/--model only loaded at start).
-   */
+  /** Persist then Live session apply; one restart request if the child still has no model. */
   private async syncSessionModelsAfterProviderConfig(provider?: string, modelId?: string): Promise<void> {
-    if (this.state.runtime !== "ready") return;
-    await this.models.load(this.models.snapshot.chatModel);
-    const targetProvider = provider ?? this.providerConfig.snapshot.defaultProvider;
-    const targetModelId = modelId ?? this.providerConfig.snapshot.defaultModelId;
-    if (targetProvider && targetModelId) {
-      await this.models.applyConfiguredModel(targetProvider, targetModelId);
-    }
-    if (this.models.snapshot.chatModel) return;
-    // The restarted child applies the persisted default through loadStartupModels.
-    await this.reconcileRuntime(this.liveConversation, true);
+    await this.savedDefaultApply.syncAfterWrite(provider, modelId);
   }
 
   /** Resolve previous-owner leftovers once, before admitting a runtime launch. */
@@ -436,8 +426,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         return;
       }
       if (result.ok) {
-        // A live owner elsewhere is not uncertainty this window can act on, and ADR 0006
-        // forbids ending it. The blocked launch reports the occupied domain where it happens.
+        // A live owner of this window's own domain is not uncertainty this host can end.
+        // Foreign windows keep separate domains; occupied launch reports this domain only.
         this.ownershipQuery++;
         this.ownershipState = "pending";
         this.retainedRunElsewhere = true;
@@ -528,7 +518,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
             return files?.length === 1 && files[0]?.scheme === "file" ? files[0].fsPath : undefined;
           },
           confirm: async entryPath => await this.api.window.showWarningMessage(
-            "Run this pi extension as trusted local code?\n\n" + entryPath + "\n\nIt can access files, network and processes outside tool approvals. Switching restarts the runtime, clears grants and captured review/attachments, retains unsent text and resumes the current conversation. This is not a sandbox.",
+            "Run this pi extension as trusted local code?\n\n" + entryPath + "\n\nIt can access files, network and processes outside tool approvals. Switching restarts the runtime, clears grants and captured review/attachments, retains unsent text and resumes the current conversation. This is not a sandbox. Another VS Code window may run a second pi at the same time; they can change the same files.",
             { modal: true }, "Load trusted extension") === "Load trusted extension",
         }, current);
         if (!current()) return;

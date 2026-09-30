@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-29
+- 最近同步：2026-09-30
 - Type: Reference
 - Status: Accepted
 - Authority: **仅历史上下文**——被替代的PRD、WI、spike和讨论
@@ -68,6 +68,7 @@
 | [WI-033 代理受托接受](2026-09-30-wi-033-macos-evaluation.zh.md) | 真实 pi 捕获字节经生产 reader／runtime；最终委托后关闭，保留非 JSON 忽略与原生故障路径限制 |
 | [WI-034 代理受托接受](2026-09-30-wi-034-macos-evaluation.zh.md) | 组包、解包真实 RPC／gate、原生 F5 与隔离安装渲染；限定关闭，不是完整产品验收 |
 | [WI-035 代理受托接受](2026-09-30-wi-035-macos-acceptance.zh.md) | 精确回执交接、实际 F5／隔离安装与活所有者证据；ADR 0006 Accepted，保留失败与范围限制 |
+| [WI-036 代理受托接受](2026-09-30-wi-036-macos-acceptance.zh.md) | 宿主丢失时清理精确 child；supervisor 进程证据；ADR 0008 Accepted；VS Code 崩溃 F5／安装未验证 |
 | [WI-037 代理受托接受](2026-09-30-wi-037-macos-acceptance.zh.md) | 有界 thinking 流式与完整引号凭据脱敏；实际 macOS F5／隔离安装 SSE 证据 |
 | [WI-039 代理受托接受](2026-09-30-wi-039-macos-acceptance.zh.md) | 安装版 VSIX 运行时依赖闭包（PACKAGE-01）；解包 import 验证与隔离安装版供应商配置加载 |
 | [WI-038 代理受托接受](2026-09-30-wi-038-macos-acceptance.zh.md) | 跨宿主 endpoint 写入互斥；双窗口争用／串行提交证据；ADR 0007 Accepted |
@@ -88,6 +89,11 @@
 | [WI-054 代理受托接受](2026-09-30-wi-054-macos-acceptance.zh.md) | 准入所有者已列表；busy 标志保持分离（ARCH-01） |
 | [WI-055 代理受托接受](2026-09-30-wi-055-macos-acceptance.zh.md) | 运行时可选项留在同一 lifecycle；不拆分（ARCH-03） |
 | [WI-056 代理受托接受](2026-09-30-wi-056-macos-acceptance.zh.md) | 模型与 Webview 共享值对象保留；未复制 DTO（ARCH-04） |
+| [WI-057 代理受托接受](2026-09-30-wi-057-macos-acceptance.zh.md) | 已保存默认应用顺序抽出（ARCH-02）；用户可见规则冻结 |
+| [WI-058 代理受托接受](2026-09-30-wi-058-macos-acceptance.zh.md) | 每窗口恢复域；ADR 0009 Accepted；双窗口 F5 未验证 |
+| [WI-036 批准提案](2026-09-30-wi-036-approved-proposal.zh.md) | 完整批准 owner-loss 精确 child 范围；历史，不是新的 Build 授权 |
+| [WI-057 批准提案](2026-09-30-wi-057-approved-proposal.zh.md) | 完整批准已保存默认应用顺序封装；历史，不是新的 Build 授权 |
+| [WI-058 批准提案](2026-09-30-wi-058-approved-proposal.zh.md) | 完整批准每窗口恢复域范围；历史，不是新的 Build 授权 |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |
@@ -115,6 +121,7 @@
 
 | 记录 | 内容 |
 |------|------|
+| [ACTIVE 已完成任务压缩](2026-09-30-active-completed-compaction.zh.md) | 2026-09-30 从 ACTIVE 移出的已关闭焦点清单、逐 WI 受托授权表、已关闭审查／ARCH 停车场行与重复已完成表；现行限制仍在 ACTIVE |
 | [WI-033 已停止审查交接](2026-09-30-wi-033-audit-handoffs.md) | 维护者停止审查后原样保留的 ACTIVE 单语检查点；不是 WI 关闭或恢复审查授权 |
 | [WI-032 待接受](2026-09-29-wi-032-pending-acceptance.zh.md) | WI-033 优先后保留的范围与历史检查；待接受措辞仅为历史，已由[最终委托关闭](2026-09-30-wi-032-macos-evaluation.zh.md)替代 |
 | [工作区恢复替代的Goal前交接](2026-09-22-pre-goal-handoffs.zh.md) | 历史批准／证据，不是WI关闭或当前账本 |

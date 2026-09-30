@@ -336,7 +336,7 @@ export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, de
   const notes = (
     <>
       <p className="execution-profile-controls__coverage">{t("Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.")}</p>
-      <p className="execution-profile-controls__domain">{t("Only one runtime is admitted at a time in the shared recovery domain. Another VS Code window can remain blocked until the exact run is observed ended and deliberately recovered.")}</p>
+      <p className="execution-profile-controls__domain">{t("Each VS Code window admits its own runtime. Two windows on the same folder can change the same files at once.")}</p>
       <p className="execution-profile-controls__chooser-note">{t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}</p>
     </>
   );

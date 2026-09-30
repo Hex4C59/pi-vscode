@@ -246,7 +246,7 @@ test("execution profile shows trusted identity and only dispatches host-approved
     assert.equal(view.get('[data-profile-badge="trusted"]').textContent, "Trusted execution · chosen <script>entry</script>");
     assert.equal(view.root.querySelector("script") === null, true);
     assert.match(view.get(".execution-profile-controls__coverage").textContent ?? "", /not a security sandbox.*outside covered approval/i);
-    assert.match(view.get(".execution-profile-controls__domain").textContent ?? "", /one runtime.*recovery domain/i);
+    assert.match(view.get(".execution-profile-controls__domain").textContent ?? "", /each vs code window.*own runtime/i);
     await act(async () => view.get<HTMLButtonElement>('[data-profile-choice="controlled"]').click());
     await act(async () => view.get<HTMLButtonElement>('[data-profile-choice="trusted"]').click());
     assert.deepEqual(chosen, ["controlled", "trusted"]);

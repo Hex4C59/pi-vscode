@@ -457,7 +457,7 @@ export const chineseUi = {
   "Covered tools ask for approval. This is not a sandbox.": "覆盖的工具会请求审批。这不是安全沙箱。",
   "Loads an extension after the VS Code file picker and host confirmation. Not a sandbox.": "经 VS Code 文件选择器和宿主确认后加载扩展。不是安全沙箱。",
   "Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.": "受信扩展代码不在沙箱中；其内部代码和外部影响不受已覆盖的审批约束。已覆盖工具仍会请求审批。",
-  "Only one runtime is admitted at a time in the shared recovery domain. Another VS Code window can remain blocked until the exact run is observed ended and deliberately recovered.": "共享恢复域中同一时间只允许一个运行时。其他 VS Code 窗口可能会保持阻止，直到确认对应运行实例已结束并由用户明确恢复。",
+  "Each VS Code window admits its own runtime. Two windows on the same folder can change the same files at once.": "每个 VS Code 窗口各自准入一个运行时。同一文件夹上的两个窗口可能同时改文件。",
   "Ending an owned runtime may interrupt irreversible work. The host will ask for confirmation.": "结束自有运行时可能中断不可逆工作；宿主会请求确认。",
   "End owned runtime…": "结束自有运行时…",
   "Recover controlled execution": "恢复受控执行",

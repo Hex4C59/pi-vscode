@@ -19,7 +19,15 @@
 
 ## WI-035 局部替代
 
-2026-09-30，[Accepted ADR 0006](0006-owned-runtime-handoff.zh.md) 只用先观察、精确回执保障的自动交接取代下一宿主的启动仪式。下文启动时显式 End／Recover 的要求，对后来宿主遇到失去所有者的运行而言是历史；会话内 Stop／协议不确定性、共享域准入、精确子进程证据、不重放与无清除未知旁路仍有效。另一窗口活宿主的运行不是遗留运行，不能结束。[WI-035 代理受托接受](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 记录原生 F5／安装证据与限制。本 ADR 的其余边界保持 Accepted，不改变 gate。
+2026-09-30，[Accepted ADR 0006](0006-owned-runtime-handoff.zh.md) 只用先观察、精确回执保障的自动交接取代下一宿主的启动仪式。下文启动时显式 End／Recover 的要求，对后来宿主遇到失去所有者的运行而言是历史；会话内 Stop／协议不确定性、精确子进程证据、不重放与无清除未知旁路仍有效。另一窗口活宿主的运行不是遗留运行，不能结束。[WI-035 代理受托接受](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 记录原生 F5／安装证据与限制。共享域准入后来由 ADR 0009 取代。本 ADR 的其余边界保持 Accepted，不改变 gate。
+
+## WI-036 局部替代
+
+2026-09-30，[Accepted ADR 0008](0008-owner-loss-child-cleanup.zh.md) 只取代“宿主丢失后仍让精确 child 继续跑”的规则。supervisor 对精确自有 child 走与显式 End 相同的有界 SIGTERM／SIGKILL。仍不以关闭 pi stdin 作为杀进程手段。本宿主不拥有的域仍保护活所有者；会话内 Stop／协议不确定、精确回执、后代诚实披露以及 ADR 0006 的先观察再结束启动交接仍有效。
+
+## WI-058 局部替代
+
+2026-09-30，[Accepted ADR 0009](0009-per-window-recovery-domains.zh.md) 只取代共享域单运行时准入。每个 VS Code 窗口使用 `recovery-v1/windows/<uuid>/`。两窗口可同时跑，并可能改同一批文件。占用启动只针对本窗口域。活的 `owned` 兄弟仍不结束。精确回执、会话内不确定与 ADR 0008 owner-loss 清理仍有效。
 
 ## 背景与范围
 
@@ -44,7 +52,7 @@ REQ-006／009要求在未修改的发行版pi上显式加载受信扩展、呈�
 
 代理选择被动exact-child supervisor及持久准入fence。纯内存reload barrier无法跨越它要防护的宿主丢失；仅有marker能禁止工作，却不能积极证明丢失后的恢复条件。PID轮询／用户断言不是退出见证，断连自动kill又改变已确认的Stop兼容规则。独立Windows公开runtime探针证明观察者可独立存活，不是完整实现。
 
-**恢复域与权衡：** 以扩展实际globalStorageUri目录作为本地恢复域，共享该目录的窗口同时只准入一个Pi runtime。这是个人Windows目标的明确保守产品限制，不是机器级mutex、终端session锁或沙箱。第二个窗口显示已占用／旧runtime未知原因且不spawn。这样避免虚构稳定window identity、换workspace逃逸或未验证的多owner恢复registry。本片不支持同storage域并发独立runtime；其他VSCode profile／安装／terminal进程在所有权边界外。受信加载前与启动失败UI须披露此限制和恢复后果。这是本次委托下的产品／架构决定，不冒称维护者亲自选择或检查。
+**恢复域与权衡：** WI-013 以扩展实际 globalStorageUri 目录作为共享恢复域，共享该目录的窗口同时只准入一个 Pi runtime。[ADR 0009](0009-per-window-recovery-domains.zh.md) 后来给每个窗口独立的 `recovery-v1/windows/<uuid>/`。两窗口可同时跑，并可能改同一批文件。仅当本窗口域已有 fence 时显示占用。其他 VS Code profile／安装／terminal 进程仍在所有权边界外。受信加载前须披露并发写入。这仍是委托下的产品／架构决定，不冒称维护者亲自选择或检查。
 
 **owner与存储：** host拥有准入及显式恢复；adapter映射公开RPC；独立打包Node supervisor直接spawn并持有精确pi child。仅在globalStorageUri/recovery-v1存固定生命周期metadata：schema版本、新run／host／supervisor／child身份、时间、disposition和观察到的exit code／signal。不存provider配置、凭证、prompt、answer、扩展源码、transcript或session文件内容。每份固定record最多4KiB；host先exclusive创建并flush fence再启动，supervisor是matching terminal receipt唯一writer。覆盖host进程单独崩溃，不宣称断电持久性、磁盘损坏、同用户恶意篡改或observer同时丢失。格式／大小／版本／run不符拒绝；fence不能持久化则不spawn。缺失／不确定证据保持阻塞，不自动过期／驱逐。安全退休后仅保留当前run及最多16条已解决且无内容的诊断；不为容量删除未决证据。
 

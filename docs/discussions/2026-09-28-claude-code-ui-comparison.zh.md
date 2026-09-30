@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-09-28
 - Type: Discussion
-- Status: Open
+- Status: Resolved on 2026-09-30 under the parking-lot completion goal; no further visual WI
 - Created: 2026-09-28
 - Authority: **仅作上下文** — 不覆盖 [`ACTIVE.md`](../../ACTIVE.md)、Draft PRD 视觉方向或架构
 - Related: [把 UI 写成 Agent 规则](2026-09-28-agent-ui-rules.zh.md)
@@ -63,3 +63,7 @@ WI-024 仍在等供应商设置的 F5 验收。本次对比不授权视觉重写
 1. 继续 Codex／IDE 原生简报，还是允许在 VS Code token 之上做**有界品牌叠加**（强调色 + 空状态 + 作曲区）？
 2. 若允许，是否等 WI-024 F5 之后，再单独 Prepare 一个视觉工艺 WI？
 3. 浅色／高对比：强调色必须是带回退的 token，不能写死珊瑚色。
+
+## Resolution (2026-09-30)
+
+停车场 `/goal` 要求结束本讨论。与已接受的 IDE 原生简报、[WI-025](../archive/2026-09-29-wi-025-active-superseded.zh.md) F5 工艺、以及维护者批准的 [pi-sidebar-ui](../../.agents/skills/pi-sidebar-ui/SKILL.md) token 最匹配的方案：保留 VS Code 底色、有界欢迎标志、8px 作曲区圆角，铬件保持单色（欢迎／effort 例外已记录）。不搬 Claude Code 珊瑚色、全窗画布或品牌叠加。上方待决问题关闭：继续 Codex／IDE 原生；不再开视觉 WI。

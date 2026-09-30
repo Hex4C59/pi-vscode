@@ -3,7 +3,7 @@
 English | [中文](2026-09-28-claude-code-ui-comparison.zh.md)
 
 - Type: Discussion
-- Status: Open
+- Status: Resolved on 2026-09-30 under the parking-lot completion goal; no further visual WI
 - Created: 2026-09-28
 - Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the Draft PRD visual direction, or architecture
 - Related: [encoding UI as agent rules](2026-09-28-agent-ui-rules.md)
@@ -59,3 +59,7 @@ Out of scope unless the PRD brief is explicitly revised: full-window chat, custo
 1. Stay with the Codex / IDE-native brief, or allow a **bounded brand overlay** (accent + empty state + composer) on top of VS Code tokens?
 2. If yes, should that wait until after WI-024 F5, as a separate Prepare visual-craft WI?
 3. Light/high-contrast: accent must remain a token with fallbacks, not a hardcoded coral.
+
+## Resolution (2026-09-30)
+
+The parking-lot `/goal` asked to finish this discussion. Best fit with the accepted IDE-native brief, [WI-025](../archive/2026-09-29-wi-025-active-superseded.md) F5 craft, and the maintainer-approved [pi-sidebar-ui](../../.agents/skills/pi-sidebar-ui/SKILL.md) tokens: keep VS Code surfaces, scoped welcome mark, 8px composer radius, and monochrome chrome except the documented welcome/effort exceptions. Do not copy Claude Code coral, full-window canvas, or a brand overlay. Open questions above are closed: stay Codex/IDE-native; no extra visual WI.

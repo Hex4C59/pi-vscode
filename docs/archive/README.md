@@ -64,6 +64,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-033 delegated acceptance](2026-09-30-wi-033-macos-evaluation.md) | Captured real pi bytes through production reader/runtime; closed under final delegation, non-JSON ignore and native fault-path limits retained |
 | [WI-034 delegated acceptance](2026-09-30-wi-034-macos-evaluation.md) | Packaging, real extracted RPC/gate, native F5 and isolated installed rendering; scoped close, not full product acceptance |
 | [WI-035 delegated acceptance](2026-09-30-wi-035-macos-acceptance.md) | Exact-receipt handoff, actual F5/isolated installed and live-owner evidence; ADR 0006 Accepted with failure and scope limits |
+| [WI-036 delegated acceptance](2026-09-30-wi-036-macos-acceptance.md) | Exact-child cleanup on owner loss; supervisor process evidence; ADR 0008 Accepted; VS Code crash F5/installed unverified |
 | [WI-037 delegated acceptance](2026-09-30-wi-037-macos-acceptance.md) | Bounded thinking streaming and complete quoted credential redaction; actual macOS F5/isolated installed SSE evidence |
 | [WI-039 delegated acceptance](2026-09-30-wi-039-macos-acceptance.md) | Installed VSIX runtime dependency closure (PACKAGE-01); unpacked import verification and isolated installed provider loading |
 | [WI-038 delegated acceptance](2026-09-30-wi-038-macos-acceptance.md) | Cross-host endpoint write exclusion; two-window contention/serial-commit evidence; ADR 0007 Accepted |
@@ -84,6 +85,11 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-054 delegated acceptance](2026-09-30-wi-054-macos-acceptance.md) | Admission owners tabulated; busy flags stay separate (ARCH-01) |
 | [WI-055 delegated acceptance](2026-09-30-wi-055-macos-acceptance.md) | Runtime optionals stay on one lifecycle; not split (ARCH-03) |
 | [WI-056 delegated acceptance](2026-09-30-wi-056-macos-acceptance.md) | Shared model/Webview value objects kept; DTOs not copied (ARCH-04) |
+| [WI-057 delegated acceptance](2026-09-30-wi-057-macos-acceptance.md) | Saved-default apply order extracted (ARCH-02); user-visible rules frozen |
+| [WI-058 delegated acceptance](2026-09-30-wi-058-macos-acceptance.md) | Per-window recovery domains; ADR 0009 Accepted; dual-window F5 unverified |
+| [WI-036 approved proposal](2026-09-30-wi-036-approved-proposal.md) | Complete approved owner-loss exact-child scope; historical, no new Build authorization |
+| [WI-057 approved proposal](2026-09-30-wi-057-approved-proposal.md) | Complete approved Saved-default apply encapsulation; historical, no new Build authorization |
+| [WI-058 approved proposal](2026-09-30-wi-058-approved-proposal.md) | Complete approved per-window recovery-domain scope; historical, no new Build authorization |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
 | [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |
@@ -111,6 +117,7 @@ Gate/pending wording below retains each record's historical scope; final current
 
 | Record | Contents |
 |--------|----------|
+| [ACTIVE completed-task compaction](2026-09-30-active-completed-compaction.md) | Closed focus checklist, per-WI delegated-acceptance table, closed audit/ARCH parking rows and duplicated completed-WI table moved out of ACTIVE on 2026-09-30; live limits stay in ACTIVE |
 | [WI-033 stopped audit handoffs](2026-09-30-wi-033-audit-handoffs.md) | Original single-language ACTIVE checkpoints retained after the maintainer stopped the audit; not WI closure or renewed audit authorization |
 | [WI-032 acceptance pending](2026-09-29-wi-032-pending-acceptance.md) | Preserved scope and historical checks after WI-033 priority; pending wording is historical, superseded by the [final delegated close](2026-09-30-wi-032-macos-evaluation.md) |
 | [Pre-Goal handoffs superseded by workspace recovery](2026-09-22-pre-goal-handoffs.md) | Historical approvals/evidence; not a WI closure or current task ledger |

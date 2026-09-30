@@ -118,7 +118,7 @@ Unix 控制端点在路径不超过 103 字节时继续使用恢复目录内的 
 
 RPC 仍拥有就绪、会话身份及共享五秒 Stop 观察预算。连接失效先撤销适配能力再清理；旧连接结果保持隔离。其 `RuntimeLink` 只暴露 stdin、stdout 与连接丢失订阅，没有原生终止能力。进程策略拥有启动取消、释放串行化、清理及策略专属恢复文案。RPC 清空状态前区分空闲与不确定释放，包括返回的连接尚未接入的间隙。
 
-生产装配选择 `createManagedProcess(createRuntimeOwner(...))`。干净释放结束并退休已观察的工作；不确定时断开并排空输出，不关闭输入或自动结束托管子进程。启动未完成或缺失退出证据时禁止恢复／替换。现有 owner 仍按 ADR0002 拥有持久栅栏与精确子进程回执。直接 spawn 策略仅由 attachment spike 显式选择，保留有界 SIGTERM／SIGKILL 清理；依赖图测试确保它和测试辅助文件不进入生产。运行时测试共用内存进程／字节连接，另有原生策略及生产组合回归。宿主生命周期、Webview 契约、pi 版本与恢复存储不变。当前验证与未验证的宿主／安装包证据归 ACTIVE。
+生产装配选择 `createManagedProcess(createRuntimeOwner(...))` 绑到每窗口恢复目录，再包装 handoff，使遗留共享根与兄弟窗口目录先被观察。干净释放结束并退休已观察的工作；**会话内**不确定时断开并排空输出，不关闭输入或自动结束托管子进程。宿主 IPC／管道丢失时，supervisor 按 [ADR 0008](../decisions/0008-owner-loss-child-cleanup.zh.md) 对精确自有 child 走有界 SIGTERM／SIGKILL，stdin 仍不是杀进程手段。启动未完成或缺失退出证据时禁止恢复／替换。现有 owner 仍按 ADR0002／0008／0009 拥有持久栅栏与精确子进程回执。直接 spawn 策略仅由 attachment spike 显式选择，保留有界 SIGTERM／SIGKILL 清理；依赖图测试确保它和测试辅助文件不进入生产。运行时测试共用内存进程／字节连接，另有原生策略及生产组合回归。宿主生命周期、Webview 契约、pi 版本与恢复存储 schema 不变。当前验证与未验证的宿主／安装包证据归 ACTIVE。
 
 WI-033 补强现有所有者：帧翻译先使用纯 `rpc-events.ts` 解码器，再进入 `ActivityProjection`；请求配对核对预期命令及布尔结果，区分本地传输故障与远端响应。编排器把协议故障送入既有不确定释放流程。解码类型仅在适配层内部使用，不是宿主／Webview 契约。[消息契约](../reference/webview-messages.zh.md#运行时协议失败wi-033) 负责失败与兼容行为。不改变进程所有权或 ADR0002 恢复规则。
 
@@ -126,13 +126,13 @@ WI-033 补强现有所有者：帧翻译先使用纯 `rpc-events.ts` 解码器�
 
 ### 启动遗留运行时交接（WI-035）
 
-**已接受的启动限定替代：** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 在所需验证及本次明确委托的代理接受后采用 WI-035，只取代 ADR 0002 的下一宿主启动仪式。ADR 0002 的共享域准入与会话内 Stop／协议恢复仍保持 Accepted。[WI-035 证据](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 区分实际 F5／安装、活所有者安全与未验证分支；不接受 gate 或整份 PRD。
+**已接受的启动限定替代：** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 在所需验证及本次明确委托的代理接受后采用 WI-035，只取代 ADR 0002 的下一宿主启动仪式。ADR 0002 的会话内 Stop／协议恢复仍保持 Accepted。[ADR 0009](../decisions/0009-per-window-recovery-domains.zh.md) 后来取代共享域准入。[WI-035 证据](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 区分实际 F5／安装、活所有者安全与未验证分支；不接受 gate 或整份 PRD。
 
 `onView:pi-vscode.chat` 激活、构造 provider 后开始一个仅宿主使用的 `handoffRetainedRuntime()` promise，不是无条件 VS Code 应用启动 hook；请求启动时等待它，并重新核对 disposal、工作区身份、资格与资源选择。单独 Webview bootstrap／重建不重做交接。宿主能力可选以兼容注入 lifecycle；生产经 RPC 装配转入进程策略的必需 handoff。不新增渲染器意图或 DTO。
 
-ownership 拥有观察、原始 run 身份、结束授权与匹配持久回执退休。只有 `owner-lost` 自动结束。另一窗口的活 `owned` 运行不受影响；对应新窗口无 End／Recover 控件，尝试准入只报告共享域占用。空域／已退休结果清除失效启动恢复状态；观察／退出／存储／退休失败保留 barrier 和既有显式恢复。managed-process 与 cleanup 串行交接，拒绝活跃／在途启动，清除 blocked 前检查 generation。launch 等待之前排队的 cleanup／handoff。后来成功取得自己的运行时会清除 elsewhere-owner 标记，使本宿主后续不确定状态仍显示恢复。
+ownership 拥有观察、原始 run 身份、结束授权与匹配持久回执退休。按 [ADR 0008](../decisions/0008-owner-loss-child-cleanup.zh.md)，丢失宿主的 supervisor 当场结束该精确 child。下一激活时只有 `owner-lost` 自动结束。另一窗口域中活的 `owned` 运行不受影响。仅当**本窗口**域已有 fence 时，尝试准入才报告占用。空域／已退休结果清除失效启动恢复状态；观察／退出／存储／退休失败保留 barrier 和既有显式恢复。managed-process 与 cleanup 串行交接，拒绝活跃／在途启动，清除 blocked 前检查 generation。launch 等待之前排队的 cleanup／handoff。后来成功取得自己的运行时会清除 elsewhere-owner 标记，使本宿主后续不确定状态仍显示恢复。
 
-共享 `globalStorageUri/recovery-v1`、精确子进程记录、会话内 Stop／协议不确定性和 direct spike 清理不变。控制确认或 `exited`／`never-spawned` 状态不能代替匹配终态回执。退休写入者崩溃仍保守阻断，并发退休不保证每个调用成功；子进程退出不证明后代终止或文件回滚。精确预算与 v3 投影行为归 [ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md)及[消息契约](../reference/webview-messages.zh.md#启动交接wi-035)，实际验收与限制见 [WI-035 归档](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)。
+按 [ADR 0009](../decisions/0009-per-window-recovery-domains.zh.md)，每个宿主使用 `globalStorageUri/recovery-v1/windows/<uuid>/`；共享根只用于遗留交接。精确子进程记录、会话内 Stop／协议不确定性和 direct spike 清理仍在。控制确认或 `exited`／`never-spawned` 状态不能代替匹配终态回执。退休写入者崩溃仍保守阻断，并发退休不保证每个调用成功；子进程退出不证明后代终止或文件回滚。两窗口可能编辑同一文件夹。精确预算与 v3 投影行为归 [ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md)及[消息契约](../reference/webview-messages.zh.md#启动交接wi-035)，实际验收与限制见 [WI-035 归档](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)。
 
 ### 宿主内部能力模块
 
@@ -144,6 +144,7 @@ ownership 拥有观察、原始 run 身份、结束授权与匹配持久回执�
 | `EditorTools` | 审批策略组合、未保存文件检查及可选 `ChangeReview` 资源 | pi 审批回调、已校验工具／审阅意图、任务通知、取消／重置／释放 |
 | `ModelSettings` | 已应用／待应用模型设置与过期操作失效 | 选择、加载／应用、重置／取消及只读投影 |
 | `ProviderConfig` | 公开 SDK 供应商认证、模型目录、已保存默认与自定义端点配置 | 已校验供应商／默认意图、原生提示和有界无密钥投影 |
+| `SavedDefaultApply` | 已保存默认持久化 → 实时会话应用 → 仍无模型时请求一次重启的顺序 | `loadAfterReady`（不重启）与 `syncAfterWrite`（仍为空则重启一次）；重启是协调者回调 |
 | `SavedHistory` | 恢复会话的历史窗口、请求关联文本预览与取消 | 恢复、分页／预览、发布／重置及 helper 完成屏障 |
 
 模块接收窄能力与只读上下文，不持有 Provider 或其可写状态。草稿接纳在单次运行时发送前同步通知协调者；交付 ACK 与任务完成仍是不同事实。草稿重置通过模块自身 epoch 使已接纳提交的迟到回包失效。视图关闭只取消未提交准备／预览，已确认草稿及已接纳提交仍归宿主管理。协调者继续拥有原生会话确认及跨模块交接顺序。
@@ -190,7 +191,7 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 ### 供应商配置与已保存默认
 
-`src/extension/models/` 中的 `ProviderConfig` 从声明的 pi coding-agent 发行版导入公开 `ModelRuntime`、`SettingsManager`，并使用 pi-ai 能力函数。它拥有供应商就绪状态、原生 API-key／OAuth 交互、默认模型及逐模型 thinking 设置。pi 认证存储与设置仍为权威，不新增 provider 栈、agent 循环或产品 SecretStorage 副本。Webview 接收有界无密钥投影并发送具名意图，不调用 SDK。已保存默认与已应用／待应用实时会话设置不同，跨模块应用顺序仍归协调者。
+`src/extension/models/` 中的 `ProviderConfig` 从声明的 pi coding-agent 发行版导入公开 `ModelRuntime`、`SettingsManager`，并使用 pi-ai 能力函数。它拥有供应商就绪状态、原生 API-key／OAuth 交互、默认模型及逐模型 thinking 设置。pi 认证存储与设置仍为权威，不新增 provider 栈、agent 循环或产品 SecretStorage 副本。Webview 接收有界无密钥投影并发送具名意图，不调用 SDK。已保存默认与已应用／待应用实时会话设置不同，跨模块应用顺序归 `src/extension/models/` 中的 `SavedDefaultApply`。
 
 宿主 `customEndpoints.ts` 向公开文档定义的 pi `models.json` 写入有界无密钥条目，凭据仍经公开 login 保存。[Draft ADR 0005](../decisions/0005-custom-endpoint-file.zh.md) 记录该批准切片与剩余验证，不代表架构已接受或真实端点认证。精确供应商／默认 DTO 与失败语义归[消息契约](../reference/webview-messages.zh.md)。
 
@@ -198,7 +199,9 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 **endpoint 写入输出预算（WI-047，2026-09-30 接受）：** 序列化替换文本必须在创建临时文件前落入 1 MiB 读取预算。pretty-print 扩大超限时保留原文件，报告 `too-large`，不登录。[验收与限制](../archive/2026-09-30-wi-047-macos-acceptance.zh.md)。
 
-**默认保存失败（WI-048，2026-09-30 接受）：** `setDefaultModel` 报告已提交、失败、未执行或过期。协调者只根据已提交身份应用实时会话模型，因此 flush 失败时保留旧默认投影。这不封装原 ARCH-02 应用顺序。[验收与限制](../archive/2026-09-30-wi-048-macos-acceptance.zh.md)。
+**默认保存失败（WI-048，2026-09-30 接受）：** `setDefaultModel` 报告已提交、失败、未执行或过期。协调者只根据已提交身份应用实时会话模型，因此 flush 失败时保留旧默认投影。[验收与限制](../archive/2026-09-30-wi-048-macos-acceptance.zh.md)。
+
+**已保存默认应用顺序（WI-057，2026-09-30 接受）：** `SavedDefaultApply` 编排供应商刷新与实时会话应用。就绪加载不重启；写入后同步可在仍无模型时经协调者请求一次重启。ProviderConfig 与 ModelSettings 仍分开。[验收与限制](../archive/2026-09-30-wi-057-macos-acceptance.zh.md)。
 
 ### 保存会话 helper（WI-017）
 

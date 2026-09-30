@@ -32,6 +32,8 @@ Initial proposals and unexplained spike failures retain their pending state and 
 | 0004 | End-to-end trust and session lifecycle boundaries (WI-010) | `gate-webview-trust`, `gate-project-trust`, `gate-session-streaming` | [0004-trust-and-lifecycle.md](0004-trust-and-lifecycle.md) |
 | 0006 | Startup handoff of a leftover owned runtime (WI-035) | none closed | [0006-owned-runtime-handoff.md](0006-owned-runtime-handoff.md) |
 | 0007 | Cross-host endpoint file transactions (WI-038) | none closed | [0007-endpoint-write-transaction.md](0007-endpoint-write-transaction.md) |
+| 0008 | Exact-child cleanup on owner loss (WI-036) | none closed | [0008-owner-loss-child-cleanup.md](0008-owner-loss-child-cleanup.md) |
+| 0009 | Per-window independent recovery domains (WI-058) | none closed | [0009-per-window-recovery-domains.md](0009-per-window-recovery-domains.md) |
 
 ## Draft ADRs
 
@@ -41,9 +43,13 @@ Initial proposals and unexplained spike failures retain their pending state and 
 
 0005 stays Draft. The maintainer closed WI-030 after checking the settings controls. A live browser sign-in and a live endpoint call are still unrecorded, so this ADR does not accept a gate.
 
-0006 was Accepted on 2026-09-30 by the agent under the maintainer's explicit WI-035 delegation, after actual macOS F5/isolated installed handoff and full automated checks. It supersedes only ADR 0002's startup ceremony; shared-domain admission and in-session recovery remain unchanged. [Evidence and limits](../archive/2026-09-30-wi-035-macos-acceptance.md); no gate closed.
+0006 was Accepted on 2026-09-30 by the agent under the maintainer's explicit WI-035 delegation, after actual macOS F5/isolated installed handoff and full automated checks. It supersedes only ADR 0002's startup ceremony; in-session recovery remains unchanged. Shared-domain admission was later replaced by ADR 0009. [Evidence and limits](../archive/2026-09-30-wi-035-macos-acceptance.md); no gate closed.
 
 0007 was Accepted on 2026-09-30 by the agent under this session's complete-ACTIVE wrap-up-and-commit request, after implementation, 993 tests and macOS development/isolated installed two-window evidence. It neither accepts ADR 0005 nor changes a gate. [Evidence and limits](../archive/2026-09-30-wi-038-macos-acceptance.md).
+
+0008 was Accepted on 2026-09-30 by the agent under the complete-remaining-tasks goal, after supervisor process tests for owner-loss termination, compile/lint and 1016 automated tests. It supersedes only ADR 0002's owner-loss keep-alive rule. [Evidence and limits](../archive/2026-09-30-wi-036-macos-acceptance.md); no gate closed.
+
+0009 was Accepted on 2026-09-30 by the agent under the parking-lot completion goal, after dual-domain reserve tests, compile/lint and 1027 automated tests. It supersedes only ADR 0002's shared-domain one-runtime admission. [Evidence and limits](../archive/2026-09-30-wi-058-macos-acceptance.md); no gate closed.
 
 ## Agent workflow
 

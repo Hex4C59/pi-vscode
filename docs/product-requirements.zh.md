@@ -227,11 +227,15 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 ### REQ-006 — 执行审批策略
 
-**WI-013已接受限定选择（2026-09-28 Asia/Shanghai；ADR0002）：** 扩展共享本地恢复存储域同时只准入一个Pi runtime；共享该域的第二窗口必须显示已占用／状态未知且不spawn，不是终端session锁或机器级锁。Stop未确认／host丢失后跨reload保留禁止，另提供显式“结束自有runtime”操作；必须积极观察owned child退出并由用户有意恢复受控执行。不为制造扩展兼容自动终止，不重放任务、不静默重启trusted。独立观察者无法提供证据则恢复不可用，不接受PID不存在或用户断言。确认前披露单runtime限制及observer丢失边界，本片不支持同域并发runtime。[ADR 0002](decisions/0002-interaction-contract-route.zh.md)记录备选、生命周期metadata边界和所需验证。
+**WI-013已接受限定选择（2026-09-28 Asia/Shanghai；ADR0002）：** WI-013 原先在共享本地恢复存储域同时只准入一个 Pi runtime。[WI-058／ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 后来给每个 VS Code 窗口独立域，两窗口可同时跑，并可能改同一批文件。占用只针对本窗口域。Stop 未确认／host 丢失后对该域跨 reload 保留禁止，另提供显式“结束自有runtime”操作；必须积极观察 owned child 退出并由用户有意恢复受控执行。不为制造扩展兼容自动终止，不重放任务、不静默重启 trusted。独立观察者无法提供证据则恢复不可用，不接受 PID 不存在或用户断言。确认前须披露并发写入。[ADR 0002](decisions/0002-interaction-contract-route.zh.md)记录备选、生命周期 metadata 边界和所需验证。
 
 **两个独立策略维度（2026-09-22 确认）：** 扩展加载策略决定仅内置或显式信任第三方加载；工具审批策略决定询问或跳过覆盖范围内的审批提示。此次目标保留询问，包括允许一次与精确范围的活跃会话授权；跳过审批延期，并非永久取消。加载可信扩展仍保留可覆盖工具调用的审批，不自动批准待处理调用；扩展内部执行可能绕过覆盖，须持续明确披露。两个概念不要求两个 UI 开关。下文配置中的受控表示仅内置加询问，可信表示显式信任加载加询问；两者均不是沙箱。
 
 **WI-027 Build 切片（2026-09-29，维护者已授权）：** 界面中英切换覆盖扩展交互与执行配置界面文案。现有英文与中文句保留；不同表面保持不同措辞。扩展 title、option、origin 与反馈正文不翻译。不改变审批、可信加载或恢复语义。
+
+**WI-036 已接受切片（代理依据完成剩余任务的 goal，2026-09-30；REQ-005／006）：** 宿主 IPC 断开、父 stdin 结束或 stdout 管道丢失后，supervisor 对本 run 精确自有 child 走与显式 End 相同的有界 SIGTERM（5 秒）再 SIGKILL（5 秒）。不以关闭 pi stdin 作为杀进程手段。回执仍拥有退休。会话内 Stop／协议不确定、以及本宿主不拥有之域的活所有者保护仍有效。共享域准入后来由 WI-058 取代。[验收与限制](archive/2026-09-30-wi-036-macos-acceptance.zh.md)。
+
+**WI-058 已接受切片（代理依据完成停车场任务的 goal，2026-09-30；REQ-005／006）：** 每个 VS Code 窗口在 `recovery-v1/windows/<uuid>/` 各自准入运行时。同一文件夹上的两窗口可同时跑，并可能改同一批文件。占用启动点名本窗口域。活的 `owned` 兄弟不结束。[验收与限制](archive/2026-09-30-wi-058-macos-acceptance.zh.md)。[ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 已 Accepted。双窗口 macOS F5 仍未验证。不接受整份 Draft PRD。
 
 **WI-040 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-006／CORE-01）：** 同时最多八张待审批卡。并发预检查不得准入第九张。取消与错误路径释放已预留或已占用槽位。这是本地准入不变量，不宣称已修复非法投影、断连或内存耗尽。[验收与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。
 
@@ -376,7 +380,9 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-027 | REQ-003 附件预览失败句；REQ-006 扩展交互与执行配置界面文案；现有英文与中文句按表面分开保留 | 2026-09-29 维护者接受；仅展示层收回 UiText；本切片不要求 F5／VSIX；无新 REQ。[收尾](archive/2026-09-29-wi-027-ui-text.zh.md) |
 | WI-033 | REQ-002／004／005／006 运行时输入拒收、就绪、模型与 Stop 结果 | 维护者于 2026-09-29 授权实施；于 2026-09-30 按最终委托接受，[证据与限制](archive/2026-09-30-wi-033-macos-evaluation.zh.md)明确保留。 |
 | WI-032 | REQ-003 附件正文拒收；REQ-004 活动与助手文本打码；REQ-006 审批拒绝；REQ-007 审阅不可用；REQ-009 运行时对话框与扩展反馈拒收 | 维护者于 2026-09-29 授权该切片。一份宿主共用凭据文本规则；尽力识别，不是新 REQ。于 2026-09-30 按最终委托接受；[证据与原生交互限制](archive/2026-09-30-wi-032-macos-evaluation.zh.md)明确保留。 |
-| WI-035 | REQ-005／REQ-006 宿主启动时的遗留自有运行时交接 | 2026-09-30 批准并由代理依据维护者明确委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-035-macos-acceptance.zh.md)。Accepted ADR 0006 只在激活时对失去所有者的运行执行回执保障交接；活窗口所有权、共享域准入与会话内 Stop／协议故障恢复不变。不接受整份 Draft PRD。 |
+| WI-035 | REQ-005／REQ-006 宿主启动时的遗留自有运行时交接 | 2026-09-30 批准并由代理依据维护者明确委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-035-macos-acceptance.zh.md)。Accepted ADR 0006 只在激活时对失去所有者的运行执行回执保障交接；另一域的活窗口所有权与会话内 Stop／协议故障恢复不变。共享域准入后来由 WI-058 取代。不接受整份 Draft PRD。 |
+| WI-036 | REQ-005／REQ-006 宿主丢失时清理精确自有子进程 | 2026-09-30 由代理依据完成剩余任务的 goal 接受；[supervisor 进程证据与限制](archive/2026-09-30-wi-036-macos-acceptance.zh.md)。[ADR 0008](decisions/0008-owner-loss-child-cleanup.zh.md) 已 Accepted。VS Code 窗口崩溃 F5 与安装版 VSIX 仍未验证。不接受整份 Draft PRD。 |
+| WI-058 | REQ-005／REQ-006 每个 VS Code 窗口独立恢复域 | 2026-09-30 由代理依据完成停车场任务的 goal 接受；[自动化双域证据与限制](archive/2026-09-30-wi-058-macos-acceptance.zh.md)。[ADR 0009](decisions/0009-per-window-recovery-domains.zh.md) 已 Accepted。双窗口 macOS F5 仍未验证。不接受整份 Draft PRD。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
@@ -393,8 +399,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | REQ-002 | 显示并选择可用模型／thinking；忙碌时明确下一轮意图 | WI-008／WI-009，完整要求仍为 Draft |
 | REQ-003 | 显式附加、预览及移除工作区文本／选区 | WI-014 已按委托接受批准范围 T014-01～05；WI-027 覆盖双语预览失败句，不合并不同表面的措辞。WI-032 共用凭据文本拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。旧的 T014-02 Build／待办文字现为历史状态。范围及限制见[归档](archive/2026-09-28-wi-014-attachment-acceptance.zh.md)；不因此接受整份 PRD。 |
 | REQ-004 | 展示流式文本、真实活动及有界错误；区分受理与完成 | WI-004 最小切片；WI-009 thinking；WI-010 原受控／Stop 切片；WI-021 retry／compaction 与可靠终态切片按委托接受。WI-032 共用活动与助手文本打码于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。更广泛 session-streaming gate 由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 单独接受；不等于接受整份 PRD。 |
-| REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。三个 gate 已由 ADR 0004 单独接受；更广泛产品需求仍为 Draft。 |
-| REQ-006 | 覆盖范围内审批；受控默认、显式可信配置及仅空闲切换／失败恢复 | WI-010 原受控切片；WI-013 按 ADR 0002 接受有界可信加载、工具覆盖及自有 runtime 恢复目标；WI-027 覆盖双语扩展交互与执行配置界面文案。WI-032 共用审批拒绝于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。限定 WI 范围之外的产品需求仍为 Draft；三个架构 gate 已由 ADR 0004 单独接受。 |
+| REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。WI-035 覆盖下次激活时的遗留交接；WI-036 覆盖该宿主丢失时的精确 child 清理。三个 gate 已由 ADR 0004 单独接受；更广泛产品需求仍为 Draft。 |
+| REQ-006 | 覆盖范围内审批；受控默认、显式可信配置及仅空闲切换／失败恢复 | WI-010 原受控切片；WI-013 按 ADR 0002 接受有界可信加载、工具覆盖及自有 runtime 恢复目标；WI-027 覆盖双语扩展交互与执行配置界面文案。WI-032 共用审批拒绝于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。WI-035／036 覆盖遗留交接与 owner-loss 精确 child 清理，不接受每窗口独立域。限定 WI 范围之外的产品需求仍为 Draft；三个架构 gate 已由 ADR 0004 单独接受。 |
 | REQ-007 | 对可识别受控写入保护脏编辑器，诚实审阅已应用 diff | WI-016限定委托接受；[证据](archive/2026-09-28-wi-016-review-acceptance.zh.md)。WI-032 共用审阅正文不可用于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
 | REQ-008 | 列出当前项目已保存会话，主动恢复、顺序交接及重新授权 | WI-017限定委托接受；[证据](archive/2026-09-28-wi-017-session-acceptance.zh.md) |
 | REQ-009 | 自用已安装VSIX的五类成功／失败与代表性真实扩展 | 平台为 macOS 本机 VS Code（2026-09-30 维护者确认，Windows 已移出验收范围）。[WI-010组合验收](archive/2026-09-28-wi-010-goal-closure.zh.md)在已接受各WI基础上核对五类与实际资源调用、核心闭环及故障恢复；原批准代表范围已按委托接受，不声称全生态／Cursor／其他平台，整份PRD仍Draft。WI-032 共用对话框与反馈拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |

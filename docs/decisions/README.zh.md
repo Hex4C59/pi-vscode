@@ -37,6 +37,8 @@
 | 0004 | 端到端信任与会话生命周期边界（WI-010） | `gate-webview-trust`、`gate-project-trust`、`gate-session-streaming` | [0004-trust-and-lifecycle.zh.md](0004-trust-and-lifecycle.zh.md) |
 | 0006 | 遗留自有运行时启动交接（WI-035） | 不关闭 gate | [0006-owned-runtime-handoff.zh.md](0006-owned-runtime-handoff.zh.md) |
 | 0007 | 跨宿主 endpoint 文件事务（WI-038） | 不关闭 gate | [0007-endpoint-write-transaction.zh.md](0007-endpoint-write-transaction.zh.md) |
+| 0008 | 宿主丢失时清理精确自有子进程（WI-036） | 不关闭 gate | [0008-owner-loss-child-cleanup.zh.md](0008-owner-loss-child-cleanup.zh.md) |
+| 0009 | 每窗口独立恢复域（WI-058） | 不关闭 gate | [0009-per-window-recovery-domains.zh.md](0009-per-window-recovery-domains.zh.md) |
 
 ## Draft ADR
 
@@ -46,9 +48,13 @@
 
 0005 保持 Draft。维护者在检查设置页控件后关闭了 WI-030。真实浏览器登录和真实端点调用仍未记录，因此本 ADR 不接受任何 gate。
 
-0006 于 2026-09-30 由代理按维护者对 WI-035 的明确委托接受，实际 macOS F5／隔离安装交接与完整自动化检查已完成。只取代 ADR 0002 的启动仪式，共享域准入与会话内恢复不变。[证据与限制](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)；不关闭 gate。
+0006 于 2026-09-30 由代理按维护者对 WI-035 的明确委托接受，实际 macOS F5／隔离安装交接与完整自动化检查已完成。只取代 ADR 0002 的启动仪式，会话内恢复不变。共享域准入后来由 ADR 0009 取代。[证据与限制](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)；不关闭 gate。
 
 0007 于 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受，实现、993 项测试与 macOS 开发／隔离安装双窗口证据已齐。不接受 ADR 0005，也不改 gate。[证据与限制](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)。
+
+0008 于 2026-09-30 由代理依据完成剩余任务的 goal 接受，owner-loss 终止的 supervisor 进程测试、compile／lint 与 1016 项自动化测试已齐。只取代 ADR 0002 在宿主丢失时保留 child 存活的规则。[证据与限制](../archive/2026-09-30-wi-036-macos-acceptance.zh.md)；不关闭 gate。
+
+0009 于 2026-09-30 由代理依据完成停车场任务的 goal 接受，双域 reserve 测试、compile／lint 与 1027 项自动化测试已齐。只取代 ADR 0002 的共享域单运行时准入。[证据与限制](../archive/2026-09-30-wi-058-macos-acceptance.zh.md)；不关闭 gate。
 
 ## Agent 流程
 

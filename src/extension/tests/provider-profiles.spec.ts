@@ -93,7 +93,7 @@ test("a live owner in another window never shows End or Recover even after occup
   r.runtime.getOwnershipState = async () => "pending";
   r.runtime.endOwnedRuntime = async () => assert.fail("must not end another live owner");
   r.runtime.recoverOwnedRuntime = async () => assert.fail("must not retire another live owner");
-  r.runtime.start = async () => { starts++; return { ok: false, detail: "Another runtime occupies the shared recovery domain. No replacement was launched." }; };
+  r.runtime.start = async () => { starts++; return { ok: false, detail: "This window's recovery domain is already occupied. No replacement was launched." }; };
   const h = harness([folder()], true, undefined, r.runtime);
   try {
     const v = h.createView(); await tick();
@@ -101,7 +101,7 @@ test("a live owner in another window never shows End or Recover even after occup
     v.action("chooseResources", { choice: "decline" }); await tick();
     assert.equal(starts, 1);
     assert.equal(v.state().runtime, "error");
-    assert.match(v.state().runtimeDetail ?? "", /occupies/);
+    assert.match(v.state().runtimeDetail ?? "", /occupied/);
     assert.equal(profileState(v).phase, "idle");
     assert.equal(profileState(v).canEnd, false);
     assert.equal(profileState(v).canRecover, false);

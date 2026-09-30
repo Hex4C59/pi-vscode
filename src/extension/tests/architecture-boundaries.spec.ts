@@ -99,9 +99,11 @@ test("module type contracts are type-only and reachable through their public ent
 test("activation and packaging reference the persistent runtime supervisor", () => {
   const activation = readFileSync("src/extension.ts", "utf8");
   assert.match(activation, /createRuntimeOwner/);
+  assert.match(activation, /windowRecoveryDirectory/);
+  assert.match(activation, /handoffForeignRecoveryDomains/);
   assert.match(activation, /context\.globalStorageUri\.fsPath/);
-  assert.match(activation, /recovery-v1/);
   assert.match(activation, /runtime-supervisor\.mjs/);
+  assert.match(readFileSync("src/adapter/ownership/recovery-domain.ts", "utf8"), /recovery-v1/);
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));
   assert.ok(pkg.files.includes("dist/runtime-supervisor.mjs"));
   const build = readFileSync("esbuild.mjs", "utf8");

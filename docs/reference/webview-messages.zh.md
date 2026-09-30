@@ -309,9 +309,9 @@ Stop先关闭准入、撤销／取消未答form与covered approval，包括取�
 
 ### 启动交接（WI-035）
 
-**WI-035 启动交接已接受。** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 在所需验证后记录下述启动交接。只取代 ADR 0002 的下一宿主启动仪式；共享域准入与会话内 Stop／协议恢复仍有效。[WI-035 证据](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)区分实际 F5／安装、活所有者安全与未验证分支。
+**WI-035 启动交接已接受。** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 在所需验证后记录下述启动交接。只取代 ADR 0002 的下一宿主启动仪式；会话内 Stop／协议恢复仍有效。共享域准入后来由 [ADR 0009](../decisions/0009-per-window-recovery-domains.zh.md) 取代。[WI-035 证据](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)区分实际 F5／安装、活所有者安全与未验证分支。
 
-宿主在新启动准入前完成一次遗留运行交接；单独 Webview bootstrap／重建不会重做交接。空域或已验证退休显示正常空对话／无文件夹页，无恢复控件。匹配 supervisor 报告 `owned` 表示另一活宿主：此处不提供 End／Recover，也不请求终止；尝试启动仅报告共享存储占用，不创建替代运行。只有 `owner-lost` 自动结束，且退休前须有匹配 run／child 的终态证据。不可达／不确定／损坏时保留既有 `recovery-required` 投影和操作规则。v3 协议、错误码、显式会话内恢复、新工作区／资源核对与不重放规则不变。已 disposal 的宿主或过期工作区不能发布迟到交接结果或从旧文件夹启动。
+宿主在新启动准入前完成一次遗留运行交接；单独 Webview bootstrap／重建不会重做交接。空域或已验证退休显示正常空对话／无文件夹页，无恢复控件。匹配 supervisor 报告 `owned` 表示该域仍有活宿主：此处不对非本窗口域提供 End／Recover，也不请求终止；对本窗口已占用域尝试启动不创建替代运行。只有 `owner-lost` 在启动时自动结束，且退休前须有匹配 run／child 的终态证据。[ADR 0008](../decisions/0008-owner-loss-child-cleanup.zh.md) 之后，丢失宿主的 supervisor 也会当场结束该精确 child；后续交接往往观察到终态回执，而不是仍在运行的遗留进程。不可达／不确定／损坏时保留既有 `recovery-required` 投影和操作规则。v3 协议、错误码、显式会话内恢复、新工作区／资源核对与不重放规则不变。已 disposal 的宿主或过期工作区不能发布迟到交接结果或从旧文件夹启动。
 
 ### 所需验证与架构结论
 

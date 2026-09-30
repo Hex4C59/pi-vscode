@@ -43,7 +43,7 @@ export function createManagedProcess(owner: RuntimeOwner): RuntimeProcess {
         if (blocked || token !== generation) return { ok: false, detail: blockedDetail };
         const launched = await owner.launch(input);
         if (!launched.ok) {
-          return { ok: false, detail: launched.code === "occupied" ? "Another runtime occupies the shared recovery domain. No replacement was launched." : "Runtime ownership startup failed. Recovery evidence must be checked before another launch." };
+          return { ok: false, detail: launched.code === "occupied" ? "This window's recovery domain is already occupied. No replacement was launched." : "Runtime ownership startup failed. Recovery evidence must be checked before another launch." };
         }
         if (token !== generation) {
           blocked = true;
