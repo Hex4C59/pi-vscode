@@ -7,10 +7,10 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-01
 - 类型：讨论
-- 状态：Draft；REQ-001 拒绝提示缺口已由 WI-068 关闭，REQ-002 同名身份已由 WI-069 于 2026-10-01 关闭；REQ-009 证据余项仍在
+- 状态：Draft；REQ-001 拒绝提示缺口已由 WI-068 关闭，REQ-002 同名身份已由 WI-069 关闭，REQ-009 macOS 五类余项已由 WI-070 于 2026-10-01 关闭
 - 创建：2026-09-30
 - 权威：仅源码及证据观察；不是新需求、Build 授权或 Accepted PRD／ADR／gate 决定变更
-- 相关：[PRD](../product-requirements.zh.md)、[ACTIVE](../../ACTIVE.md)、[WI-068](../archive/2026-10-01-wi-068-acceptance.zh.md)、[WI-069](../archive/2026-10-01-wi-069-acceptance.zh.md)
+- 相关：[PRD](../product-requirements.zh.md)、[ACTIVE](../../ACTIVE.md)、[WI-068](../archive/2026-10-01-wi-068-acceptance.zh.md)、[WI-069](../archive/2026-10-01-wi-069-acceptance.zh.md)、[WI-070](../archive/2026-10-01-wi-070-acceptance.zh.md)
 
 ## Question and method
 
@@ -26,9 +26,7 @@
 
 ## Acceptance evidence gap
 
-**REQ-009：所引记录未证明当前 macOS 五类完整验证。** PRD 的平台要求明确规定，在 macOS 本机 VS Code 完成五类成功／失败、核心编程闭环与恢复验证，并包含一个真实扩展。其[组合验收引用](../archive/2026-09-28-wi-010-goal-closure.zh.md)，特别是资源调用补证据，记录的是原 Windows 目标及 Windows 原生／安装宿主；底层[可信扩展](../archive/2026-09-28-wi-013-acceptance.zh.md)、[审阅](../archive/2026-09-28-wi-016-review-acceptance.zh.md)和[会话](../archive/2026-09-28-wi-017-session-acceptance.zh.md)证据也属于较早平台范围。
-
-后续 [macOS 组包评估](../archive/2026-09-30-wi-034-macos-evaluation.zh.md) 明确排除完整 REQ-009 验收。[macOS 验证记录](../archive/2026-09-30-macos-verification-acceptance.zh.md) 补了双窗口所有权、崩溃清理、端点调用与设备码／浏览器 OAuth 交互，但没有记录完整的资源／扩展／表单／审阅／会话代表性成功失败矩阵。对当前文档的针对性搜索也未找到覆盖该余项的独立 macOS 矩阵。这是已查记录的证据缺口，不是这些功能失败或不存在未记录跑次的证明。历史 Windows 通过仍须保留为 Windows 事实。
+**REQ-009：当前 macOS 五类验证（已由 WI-070 关闭，限制见记录）。** 2026-09-30 检查发现所引记录是 Windows 或不完整的 macOS 双窗口／OAuth 证据。WI-070 在 Darwin 27／VS Code 1.139.1 上跑隔离安装包，记录五类表、一次发送／流式／完成回合与自有 child 恢复，含已核对的 `pi-system-prompt-manager` 0.1.1。历史 Windows 通过仍是 Windows。skill 正文调用、附件／审阅与终端顺序交接未在该主机重跑；见 [WI-070 限制](../archive/2026-10-01-wi-070-acceptance.zh.md)。
 
 ## Further requirement checks
 
@@ -40,4 +38,4 @@ REQ-008 已实现恢复、分页及历史工具通用展示；PRD 还要求在�
 
 ## Current leaning and next steps
 
-项目已实现核心工作流，且存在历史受托验收。REQ-001 拒绝资源可见性已由 WI-068 关闭。REQ-002 同名身份已由 WI-069 关闭。“范围内每条需求细节及当前 macOS 验收条件均满足”的更强结论，对 REQ-009 macOS 矩阵余项仍没有充分支持。
+项目已实现核心工作流，且存在历史受托验收。REQ-001 拒绝资源可见性已由 WI-068 关闭。REQ-002 同名身份已由 WI-069 关闭。REQ-009 当前 macOS 安装包五类余项已由 WI-070 在该记录限制内关闭。其余停车场是目录整理，不是该矩阵。

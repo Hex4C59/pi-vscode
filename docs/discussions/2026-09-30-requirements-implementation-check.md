@@ -3,10 +3,10 @@
 English | [中文](2026-09-30-requirements-implementation-check.zh.md)
 
 - Type: Discussion
-- Status: Draft; REQ-001 declined-notice gap closed by WI-068 and REQ-002 duplicate-label identity closed by WI-069 on 2026-10-01; REQ-009 evidence remainder remains
+- Status: Draft; REQ-001 declined-notice gap closed by WI-068, REQ-002 duplicate-label identity closed by WI-069, and REQ-009 macOS five-category remainder closed by WI-070 on 2026-10-01
 - Created: 2026-09-30
 - Authority: source and evidence observations only; not new requirements, Build authorization or a change to Accepted PRD/ADR/gate decisions
-- Related: [PRD](../product-requirements.md), [ACTIVE](../../ACTIVE.md), [WI-068](../archive/2026-10-01-wi-068-acceptance.md), [WI-069](../archive/2026-10-01-wi-069-acceptance.md)
+- Related: [PRD](../product-requirements.md), [ACTIVE](../../ACTIVE.md), [WI-068](../archive/2026-10-01-wi-068-acceptance.md), [WI-069](../archive/2026-10-01-wi-069-acceptance.md), [WI-070](../archive/2026-10-01-wi-070-acceptance.md)
 
 ## Question and method
 
@@ -22,9 +22,7 @@ Project identity is also weakly disclosed: [ProjectResourcesPrompt](../../src/we
 
 ## Acceptance evidence gap
 
-**REQ-009: current macOS five-category verification is not established by the cited records.** The PRD's platform requirement explicitly calls for five-category success/failure fixtures, the coding loop and recovery in macOS local VS Code, including a real extension. Its [combined acceptance reference](../archive/2026-09-28-wi-010-goal-closure.md), especially the resource-invocation supplement, records the original Windows target and Windows native/installed hosts. The underlying [trusted-extension](../archive/2026-09-28-wi-013-acceptance.md), [review](../archive/2026-09-28-wi-016-review-acceptance.md) and [session](../archive/2026-09-28-wi-017-session-acceptance.md) evidence belongs to that earlier platform scope.
-
-Later [macOS packaging evaluation](../archive/2026-09-30-wi-034-macos-evaluation.md) explicitly excludes full REQ-009 acceptance. The [macOS verification record](../archive/2026-09-30-macos-verification-acceptance.md) adds dual-window ownership, crash cleanup, endpoint calls and device-code/browser OAuth interaction, but does not record the complete representative resource/extension/form/review/session success-failure matrix. A focused search of current documentation found no separate macOS matrix covering that remainder. This is missing evidence in the inspected records, not proof that those functions fail or that no unrecorded run exists. Historical Windows passes must remain historical Windows passes.
+**REQ-009: current macOS five-category verification (closed by WI-070, with recorded limits).** The 2026-09-30 inspection found that cited records were Windows or incomplete macOS dual-window/OAuth evidence. WI-070 ran an isolated installed VSIX on Darwin 27 / VS Code 1.139.1 and recorded the five-category table, a send/stream/complete turn and owned-child recovery, including reviewed `pi-system-prompt-manager` 0.1.1. Historical Windows passes stay Windows. Skill-body invocation, attachment/review and terminal sequential handoff were not re-run on that host; see the [WI-070 limits](../archive/2026-10-01-wi-070-acceptance.md).
 
 ## Further requirement checks
 
@@ -36,4 +34,4 @@ Chinese REQ-009 also retains obsolete Prepare/pending-verification wording for t
 
 ## Current leaning and next steps
 
-The project has an implemented core workflow and historical delegated acceptance. REQ-001 declined-resource visibility is closed by WI-068. REQ-002 duplicate-label identity is closed by WI-069. The stronger claim that every in-scope PRD detail and current macOS acceptance condition is fulfilled remains unsupported for the REQ-009 macOS matrix remainder.
+The project has an implemented core workflow and historical delegated acceptance. REQ-001 declined-resource visibility is closed by WI-068. REQ-002 duplicate-label identity is closed by WI-069. REQ-009's current macOS installed five-category remainder is closed by WI-070 within that record's limits. Remaining parking is directory organization, not this matrix.

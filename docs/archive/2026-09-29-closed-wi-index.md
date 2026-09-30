@@ -90,6 +90,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-067 | Composer model-picker and Execution profile mutex | 2026-10-01 agent under complete-ACTIVE `/goal`; one open card at a time | [record](2026-10-01-wi-067-acceptance.md) |
 | WI-068 | Declined project-resource notice | 2026-10-01 agent under complete-ACTIVE `/goal`; `#declined-resources` after Decline | [record](2026-10-01-wi-068-acceptance.md) |
 | WI-069 | Canonical live model identity | 2026-10-01 agent under complete-ACTIVE `/goal`; live model is provider/model-id | [record](2026-10-01-wi-069-acceptance.md) |
+| WI-070 | macOS REQ-009 five-category evidence | 2026-10-01 agent under complete-ACTIVE `/goal`; current installed-VSIX matrix | [record](2026-10-01-wi-070-acceptance.md) |
 
 ## Not in this index
 

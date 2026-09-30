@@ -93,6 +93,7 @@
 | WI-067 | 作曲区模型选择器与执行配置互斥 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；一次只开一张 | [记录](2026-10-01-wi-067-acceptance.zh.md) |
 | WI-068 | 拒绝项目资源后的持续提示 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；拒绝后显示 `#declined-resources` | [记录](2026-10-01-wi-068-acceptance.zh.md) |
 | WI-069 | 规范活跃模型身份 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；活跃模型用供应商／模型 id | [记录](2026-10-01-wi-069-acceptance.zh.md) |
+| WI-070 | macOS REQ-009 五类证据 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；当前安装包矩阵 | [记录](2026-10-01-wi-070-acceptance.zh.md) |
 
 ## 不在本索引
 
