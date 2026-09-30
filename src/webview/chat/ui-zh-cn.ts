@@ -283,6 +283,7 @@ export const chineseUi = {
   "Choose project resource consent. Controlled execution loads only the bundled approval extension; third-party extensions are disabled regardless of this choice. This is not a sandbox or tool authorization.": "请选择是否允许项目资源。受控执行仅加载内置审批扩展；无论如何选择，第三方扩展都被禁用。这不是沙箱或工具授权。",
   "Allow resources": "允许项目资源",
   "Continue without": "不使用资源并继续",
+  "Project-local pi resources are not loaded.": "未加载项目本地 pi 资源。",
   "Allow once": "仅允许一次",
   "Allow this session": "允许本次会话",
   "Deny": "拒绝",

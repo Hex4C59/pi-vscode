@@ -281,6 +281,7 @@ export type UiText =
   | "Choose project resource consent. Controlled execution loads only the bundled approval extension; third-party extensions are disabled regardless of this choice. This is not a sandbox or tool authorization."
   | "Allow resources"
   | "Continue without"
+  | "Project-local pi resources are not loaded."
   | "Allow once"
   | "Allow this session"
   | "Deny"

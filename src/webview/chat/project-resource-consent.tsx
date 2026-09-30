@@ -148,5 +148,8 @@ export function ProjectResourceConsent({
     {workspace && open?.kind === "folder" && <NoFolderPrompt context={open.context} onDismiss={dismiss}
       busy={!!workspace.busy || !!clientError} error={clientError ?? workspace.error}
       onOpenFolder={() => onIntent({ type: "openFolder" })} />}
+    {phase === "settled" && workspace?.choice === "decline" && <p id="declined-resources" className="candidate__notice" role="status">
+      {t("Project-local pi resources are not loaded.")}
+    </p>}
   </>;
 }

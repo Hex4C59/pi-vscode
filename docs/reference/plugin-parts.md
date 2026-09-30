@@ -201,6 +201,7 @@ No screenshot in this set. They show **above the composer** in the task-status r
 | 交互请求 | **Interaction** request | an extension asks for a choice or input |
 | 运行恢复 | **Runtime recovery** | the runtime needs an explicit intervention |
 | 项目资源同意 | **Project-resource consent** | whether to load project-local pi resources |
+| 拒绝资源提示 | **Declined-resource notice** | after Decline, muted status that project-local pi resources are not loaded |
 | 打开文件夹提示 | Open-folder prompt | an action needs a workspace folder |
 
 **Stop** cancels the running task. Dismissing one interaction is not Stop.

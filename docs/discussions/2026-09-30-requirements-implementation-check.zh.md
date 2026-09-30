@@ -5,12 +5,12 @@
 - 翻译状态：Machine Draft
 - 权威原文：[2026-09-30-requirements-implementation-check.md](2026-09-30-requirements-implementation-check.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-30
+- 最近同步：2026-10-01
 - 类型：讨论
-- 状态：Draft
+- 状态：Draft；REQ-001 拒绝提示缺口已由 WI-068 于 2026-10-01 关闭；REQ-002 同名身份与 REQ-009 证据余项仍在
 - 创建：2026-09-30
 - 权威：仅源码及证据观察；不是新需求、Build 授权或 Accepted PRD／ADR／gate 决定变更
-- 相关：[PRD](../product-requirements.zh.md)、[ACTIVE](../../ACTIVE.md)
+- 相关：[PRD](../product-requirements.zh.md)、[ACTIVE](../../ACTIVE.md)、[WI-068](../archive/2026-10-01-wi-068-acceptance.zh.md)
 
 ## Question and method
 
@@ -18,7 +18,7 @@
 
 ## Confirmed implementation gap
 
-**REQ-001：拒绝项目资源后的可见状态缺失。** PRD 要求受信工作区在不加载 pi 项目级资源时继续会话，并显示明确提示。[ProjectResourceConsent](../../src/webview/chat/project-resource-consent.tsx) 将已记录选择的合格工作区归为 settled，既不显示选择的策略，也不显示拒绝资源提示。正式 [Candidate](../../src/webview/chat/candidate.tsx) 挂载该组件，而不是仍保留选择状态文案的旧 [WorkspaceSetup](../../src/webview/components/workspace-setup.tsx)。[MessageComposer](../../src/webview/chat/message-composer.tsx) 的“权限”显示执行配置和授权，这与项目资源同意是两个维度。已检查的正式路径因此在拒绝后遗漏所需状态提示。
+**REQ-001：拒绝项目资源后的可见状态（已由 WI-068 关闭）。** 2026-09-30 检查发现 settled 的 `ProjectResourceConsent` 没有提示。WI-068 在拒绝后增加 `#declined-resources`。任务前的文件夹身份披露仍是独立可见性疑点，不是宿主实际在错误目录执行的证据。
 
 项目身份展示也较弱：[ProjectResourcesPrompt](../../src/webview/chat/project-resources-prompt.tsx) 只在选择前、默认折叠的详情里提供文件夹路径；[SessionNavigation](../../src/webview/chat/session-navigation.tsx) 显示对话名。这是否满足“执行任务前显示当前文件夹”仍需针对条文核对。它是可见性疑点，不是宿主实际在错误目录执行的证据。
 
@@ -40,4 +40,4 @@ REQ-008 已实现恢复、分页及历史工具通用展示；PRD 还要求在�
 
 ## Current leaning and next steps
 
-项目已实现核心工作流，且存在历史受托验收；但“范围内每条需求细节及当前 macOS 验收条件均满足”的更强结论没有充分支持。将已确认 REQ-001／002 缺项及 REQ-009 证据余项写回 ACTIVE。后续限定提案应补资源状态提示和无歧义的活跃模型身份、评估项目／缺失能力可见性，并查找或补跑 macOS 代表性矩阵。本调查不批准新 WI 或实现，不静默改产品需求，也不改写历史通过。
+项目已实现核心工作流，且存在历史受托验收。REQ-001 拒绝资源可见性已由 WI-068 关闭。“范围内每条需求细节及当前 macOS 验收条件均满足”的更强结论，对 REQ-002 同名身份与 REQ-009 macOS 矩阵余项仍没有充分支持。

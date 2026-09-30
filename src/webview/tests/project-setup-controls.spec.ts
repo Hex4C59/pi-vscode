@@ -9,6 +9,7 @@ for (const target of ['button[aria-label="Add context"]', '#model-effort-trigger
       await h.render({ choice: null, runtime: "not-started", chatModel: null, availableModels: [] });
       assert.equal(h.get<HTMLButtonElement>(target).disabled, false);
       assert.equal(h.root.querySelector("#setup-resources") === null, true);
+      assert.equal(h.root.querySelector("#declined-resources") === null, true);
       assert.ok(h.root.querySelector(".candidate__empty"));
       assert.ok(!h.sent.some(m => m.type === "chooseResources"));
     } finally { await h.close(); }
@@ -31,6 +32,11 @@ for (const choice of ["allow", "decline"] as const) {
       await h.render({ choice, runtime: "ready" });
       assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep my draft");
       assert.ok(!h.sent.some(m => ["sendChat", "addFileAttachment", "addSelectionAttachment"].includes(m.type)));
+      assert.equal(h.root.querySelector("#declined-resources") === null, choice !== "decline");
+      if (choice === "decline") {
+        assert.equal(h.get("#declined-resources").textContent, "Project-local pi resources are not loaded.");
+        assert.equal(h.get("#declined-resources").getAttribute("role"), "status");
+      }
     } finally { await h.close(); }
   });
 }
@@ -80,7 +86,18 @@ test("project-resource cancel keeps the draft and never grants consent", async (
     assert.match(h.get(".candidate-folder-prompt").textContent ?? "", /does not grant consent or start a runtime/);
     await h.click('.candidate-dialog__action.is-quiet');
     assert.equal(h.root.querySelector("dialog") === null, true);
+    assert.equal(h.root.querySelector("#declined-resources") === null, true);
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Keep on cancel");
     assert.ok(!h.sent.some(message => message.type === "chooseResources"));
+  } finally { await h.close(); }
+});
+
+test("declined project-resource notice follows the interface language", async () => {
+  const h = await uiHarness();
+  try {
+    await h.render({ choice: "decline", runtime: "ready" });
+    assert.equal(h.get("#declined-resources").textContent, "Project-local pi resources are not loaded.");
+    await h.receive({ version: 3, type: "uiLanguageState", viewId: "view", generation: 1, locale: "zh-CN" });
+    assert.equal(h.get("#declined-resources").textContent, "未加载项目本地 pi 资源。");
   } finally { await h.close(); }
 });

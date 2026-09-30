@@ -3,10 +3,10 @@
 English | [中文](2026-09-30-requirements-implementation-check.zh.md)
 
 - Type: Discussion
-- Status: Draft
+- Status: Draft; REQ-001 declined-notice gap closed by WI-068 on 2026-10-01; REQ-002 duplicate-label identity and REQ-009 evidence remainder remain
 - Created: 2026-09-30
 - Authority: source and evidence observations only; not new requirements, Build authorization or a change to Accepted PRD/ADR/gate decisions
-- Related: [PRD](../product-requirements.md), [ACTIVE](../../ACTIVE.md)
+- Related: [PRD](../product-requirements.md), [ACTIVE](../../ACTIVE.md), [WI-068](../archive/2026-10-01-wi-068-acceptance.md)
 
 ## Question and method
 
@@ -14,7 +14,7 @@ The maintainer asked whether every requested PRD function was implemented, after
 
 ## Confirmed implementation gap
 
-**REQ-001: declined project-resource visibility.** The PRD requires a visible indication when a trusted workspace continues without project-local pi resources. In [ProjectResourceConsent](../../src/webview/chat/project-resource-consent.tsx), an eligible workspace with a recorded choice enters the settled phase; that phase renders neither the chosen policy nor a declined-resource notice. The production [Candidate](../../src/webview/chat/candidate.tsx) mounts this component, not [WorkspaceSetup](../../src/webview/components/workspace-setup.tsx), whose older UI still contains the choice-status text. [MessageComposer](../../src/webview/chat/message-composer.tsx) displays execution profiles and grants in Permissions, which are separate from project-resource consent. The inspected production path therefore omits the required ongoing notice after Decline.
+**REQ-001: declined project-resource visibility (closed by WI-068).** The 2026-09-30 inspection found that settled `ProjectResourceConsent` omitted the notice. WI-068 added `#declined-resources` after Decline. Folder-identity disclosure before a task remains a separate visibility concern, not evidence that the host executes in the wrong folder.
 
 Project identity is also weakly disclosed: [ProjectResourcesPrompt](../../src/webview/chat/project-resources-prompt.tsx) exposes the folder path only inside initially collapsed details before the choice; [SessionNavigation](../../src/webview/chat/session-navigation.tsx) shows the conversation name. Whether that satisfies showing the active folder before a task needs a focused requirement check. This is a visibility concern, not evidence that the host executes in the wrong folder.
 
@@ -36,4 +36,4 @@ Chinese REQ-009 also retains obsolete Prepare/pending-verification wording for t
 
 ## Current leaning and next steps
 
-The project has an implemented core workflow and historical delegated acceptance, but the stronger claim that every in-scope PRD detail and current macOS acceptance condition is fulfilled is unsupported. Record the confirmed REQ-001/002 gaps and REQ-009 evidence remainder in ACTIVE. A later scoped proposal should restore resource-state disclosure and unambiguous live model identity, assess project/missing-capability visibility, and locate or perform the missing macOS representative matrix. No new WI or implementation is authorized by this investigation; do not silently change product requirements or rewrite historical passes.
+The project has an implemented core workflow and historical delegated acceptance. REQ-001 declined-resource visibility is closed by WI-068. The stronger claim that every in-scope PRD detail and current macOS acceptance condition is fulfilled remains unsupported for REQ-002 duplicate-label identity and the REQ-009 macOS matrix remainder.

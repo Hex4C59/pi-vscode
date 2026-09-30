@@ -206,6 +206,7 @@ API key 是在 **VS Code 密码框**里输入的，不在这个页面里。
 | 交互请求 | **Interaction** 请求 | 扩展要你做选择或输入 |
 | 运行恢复 | **Runtime recovery** | 运行时需要你明确处理 |
 | 项目资源同意 | **Project-resource consent** | 是否加载项目本地的 pi 资源 |
+| 拒绝资源提示 | **Declined-resource notice** | 选择「不使用资源并继续」后，静音状态提示未加载项目本地 pi 资源 |
 | 打开文件夹提示 | Open-folder prompt | 当前操作需要一个工作区文件夹 |
 
 **停止（Stop）** 停的是正在跑的任务。关掉一次交互请求不等于 Stop。

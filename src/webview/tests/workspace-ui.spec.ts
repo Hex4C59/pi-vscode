@@ -26,6 +26,8 @@ test("workspace guards expose blocked and untrusted actions", async () => {
     await h.input("need resources");
     await h.click('button[aria-label="Send message"]');
     await h.click("#decline"); assert.equal(h.sent.at(-1)?.type, "chooseResources");
+    await h.render({ status: "eligible", choice: "decline", runtime: "ready" });
+    assert.equal(h.get("#declined-resources").textContent, "Project-local pi resources are not loaded.");
     await h.render({ status: "eligible", choice: null, runtime: "starting", busy: true });
     assert.equal(h.root.querySelector("#allow") === null, true);
     await h.render({ status: "eligible", choice: "allow", runtime: "error", runtimeDetail: "<img> launch failed", error: "Try again" });

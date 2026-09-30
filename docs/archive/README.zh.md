@@ -100,6 +100,7 @@
 | [WI-065 消息编辑区收拢接受](2026-10-01-wi-065-acceptance.zh.md) | 作曲区无文件选择器；空清单可见失败 |
 | [WI-066 模型芯片接受](2026-10-01-wi-066-acceptance.zh.md) | 格式化模型 id、无供应商；保留 WI-042 身份 |
 | [WI-067 选择器互斥接受](2026-10-01-wi-067-acceptance.zh.md) | 模型选择器与执行配置一次一张 |
+| [WI-068 拒绝资源提示](2026-10-01-wi-068-acceptance.zh.md) | 拒绝后持续提示；允许／未选择不显示 |
 | [macOS 验证与自用验收](2026-09-30-macos-verification-acceptance.zh.md) | 双窗口 F5／安装、崩溃清理、ADR 0005 真实 OAuth／端点、自用 PRD |
 | [WI-036 批准提案](2026-09-30-wi-036-approved-proposal.zh.md) | 完整批准 owner-loss 精确 child 范围；历史，不是新的 Build 授权 |
 | [WI-057 批准提案](2026-09-30-wi-057-approved-proposal.zh.md) | 完整批准已保存默认应用顺序封装；历史，不是新的 Build 授权 |
@@ -113,6 +114,7 @@
 | [WI-065 批准提案](2026-10-01-wi-065-approved-proposal.zh.md) | 完整批准消息编辑区执行配置收拢；历史，不是新的 Build 授权 |
 | [WI-066 批准提案](2026-10-01-wi-066-approved-proposal.zh.md) | 完整批准作曲区模型芯片展示；历史，不是新的 Build 授权 |
 | [WI-067 批准提案](2026-10-01-wi-067-approved-proposal.zh.md) | 完整批准作曲区选择器互斥；历史，不是新的 Build 授权 |
+| [WI-068 批准提案](2026-10-01-wi-068-approved-proposal.zh.md) | 完整批准拒绝资源提示；历史，不是新的 Build 授权 |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |
