@@ -12,6 +12,8 @@ English | [中文](sidebar-ui-anatomy.zh.md)
 
 This document provides stable names for Pi's interface. Use region names when introducing the product, identify the component and state when requesting design changes, and consult the implementation mapping when locating code. English names support design documents, issues and technical discussions; the UI does not need to display every name as a label.
 
+When talking with the maintainer, prefer the everyday names and numbered screenshots in [Named parts of the Pi VS Code extension](plugin-parts.md). Say **message composer**, not 作曲区; say **model picker** or **Execution profile**, not 弹出层.
+
 **Overall name: Pi Chat Sidebar.** It appears in VS Code's sidebar, preferably the Secondary Side Bar on the right. VS Code's Activity Bar, editor title bar and window title bar belong to the host. An Open Pi icon there is not part of Pi's session navigation.
 
 A ready-to-use introduction:
