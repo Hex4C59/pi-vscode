@@ -119,21 +119,57 @@ export function isSessionWorkerHistory(value: unknown): value is SavedHistoryPag
 }
 
 export function isSessionWorkerPreview(value: unknown): value is SavedHistoryPreview {
-  return isSessionWorkerRecord(value)
-    && hasExactKeys(value, ["text", "offset", "nextOffset", "done", "totalChars"])
-    && typeof value.text === "string"
-    && value.text.length <= SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH
-    && Number.isSafeInteger(value.offset)
-    && (value.offset as number) >= 0
-    && Number.isSafeInteger(value.nextOffset)
-    && (value.nextOffset as number) >= (value.offset as number)
-    && Number.isSafeInteger(value.totalChars)
-    && (value.totalChars as number) >= (value.nextOffset as number)
-    && typeof value.done === "boolean";
+  if (!isSessionWorkerRecord(value)
+    || !hasExactKeys(value, ["text", "offset", "nextOffset", "done", "totalChars"])
+    || typeof value.text !== "string"
+    || value.text.length > SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH
+    || !Number.isSafeInteger(value.offset)
+    || (value.offset as number) < 0
+    || !Number.isSafeInteger(value.nextOffset)
+    || (value.nextOffset as number) < (value.offset as number)
+    || !Number.isSafeInteger(value.totalChars)
+    || (value.totalChars as number) < (value.nextOffset as number)
+    || typeof value.done !== "boolean") return false;
+  const offset = value.offset as number;
+  const nextOffset = value.nextOffset as number;
+  const totalChars = value.totalChars as number;
+  if (value.done !== (nextOffset === totalChars)) return false;
+  return value.done || nextOffset > offset;
 }
 
 function unavailable(): ParsedSessionWorkerResponse {
   return { ok: false, code: "unavailable" };
+}
+
+function parseInspectSuccess(value: Record<string, unknown>, request: SessionWorkerInspectRequest): ParsedSessionWorkerResponse {
+  const session = value.session;
+  const history = value.history;
+  const anchor = value.anchor;
+  if (!hasExactKeys(value, ["version", "ok", "action", "session", "history", "anchor"])
+    || value.action !== "inspect"
+    || !isSavedSession(session)
+    || session.id !== request.id
+    || !isSessionWorkerHistory(history)
+    || (anchor !== null && !isSessionWorkerId(anchor))) return unavailable();
+  return { ok: true, kind: "inspect", session, history, anchor };
+}
+
+function parseHistorySuccess(value: Record<string, unknown>, request: SessionWorkerHistoryRequest): ParsedSessionWorkerResponse {
+  const history = value.history;
+  if (!hasExactKeys(value, ["version", "ok", "action", "history"])
+    || value.action !== "history"
+    || !isSessionWorkerHistory(history)
+    || history.page !== request.page) return unavailable();
+  return { ok: true, kind: "history", history };
+}
+
+function parsePreviewSuccess(value: Record<string, unknown>, request: SessionWorkerPreviewRequest): ParsedSessionWorkerResponse {
+  const preview = value.preview;
+  if (!hasExactKeys(value, ["version", "ok", "action", "preview"])
+    || value.action !== "preview"
+    || !isSessionWorkerPreview(preview)
+    || preview.offset !== request.offset) return unavailable();
+  return { ok: true, kind: "preview", preview };
 }
 
 export function parseSessionWorkerResponse(value: unknown, request: SessionWorkerRequest): ParsedSessionWorkerResponse {
@@ -159,25 +195,7 @@ export function parseSessionWorkerResponse(value: unknown, request: SessionWorke
     return { ok: true, kind: "list", entries, page: value.page as number, total: value.total as number };
   }
 
-  if (request.action === "inspect") {
-    const session = value.session;
-    const history = value.history;
-    const anchor = value.anchor;
-    if (!hasExactKeys(value, ["version", "ok", "action", "session", "history", "anchor"])
-      || value.action !== "inspect"
-      || !isSavedSession(session)
-      || !isSessionWorkerHistory(history)
-      || (anchor !== null && !isSessionWorkerId(anchor))) return unavailable();
-    return { ok: true, kind: "inspect", session, history, anchor };
-  }
-
-  if (request.action === "history") {
-    const history = value.history;
-    if (!hasExactKeys(value, ["version", "ok", "action", "history"]) || value.action !== "history" || !isSessionWorkerHistory(history)) return unavailable();
-    return { ok: true, kind: "history", history };
-  }
-
-  const preview = value.preview;
-  if (!hasExactKeys(value, ["version", "ok", "action", "preview"]) || value.action !== "preview" || !isSessionWorkerPreview(preview)) return unavailable();
-  return { ok: true, kind: "preview", preview };
+  if (request.action === "inspect") return parseInspectSuccess(value, request);
+  if (request.action === "history") return parseHistorySuccess(value, request);
+  return parsePreviewSuccess(value, request);
 }

@@ -28,8 +28,8 @@ function session(id: string): { id: string; path: string; name: null; firstMessa
   return { id, path: sessionPath, name: null, firstMessage: "hello", modified: "2026-09-29T00:00:00.000Z" };
 }
 
-function history(text = "saved"): { messages: { role: "user"; text: string }[]; page: number; total: number } {
-  return { messages: [{ role: "user", text }], page: 0, total: 1 };
+function history(text = "saved", page = 0): { messages: { role: "user"; text: string }[]; page: number; total: number } {
+  return { messages: [{ role: "user", text }], page, total: 1 };
 }
 
 const requests: SessionWorkerRequest[] = [
@@ -156,6 +156,66 @@ test("session worker protocol rejects malformed frames", () => {
     extra: true,
   }, historyRequest);
   assert.deepEqual(extraField, { ok: false, code: "unavailable" });
+});
+
+test("session worker successes bind request identity and preview cursor", () => {
+  const list = requests[0];
+  const inspect = requests[1];
+  const historyRequest = requests[2];
+  const preview = requests[3];
+  assert.ok(list && inspect && historyRequest && preview && inspect.action === "inspect" && historyRequest.action === "history" && preview.action === "preview");
+
+  const mismatchedListPage = parseSessionWorkerResponse({
+    version: SESSION_WORKER_PROTOCOL_VERSION,
+    ok: true,
+    action: "list",
+    entries: [session("session-1")],
+    page: 4,
+    total: 1,
+  }, list);
+  assert.deepEqual(mismatchedListPage, { ok: false, code: "unavailable" });
+
+  const mismatchedInspect = parseSessionWorkerResponse({
+    version: SESSION_WORKER_PROTOCOL_VERSION,
+    ok: true,
+    action: "inspect",
+    session: session("other-session"),
+    history: history(),
+    anchor: "anchor-1",
+  }, inspect);
+  assert.deepEqual(mismatchedInspect, { ok: false, code: "unavailable" });
+
+  const mismatchedHistoryPage = parseSessionWorkerResponse({
+    version: SESSION_WORKER_PROTOCOL_VERSION,
+    ok: true,
+    action: "history",
+    history: history("saved", 4),
+  }, historyRequest);
+  assert.deepEqual(mismatchedHistoryPage, { ok: false, code: "unavailable" });
+
+  const mismatchedPreviewOffset = parseSessionWorkerResponse({
+    version: SESSION_WORKER_PROTOCOL_VERSION,
+    ok: true,
+    action: "preview",
+    preview: { text: "kept", offset: 10, nextOffset: 14, done: true, totalChars: 14 },
+  }, preview);
+  assert.deepEqual(mismatchedPreviewOffset, { ok: false, code: "unavailable" });
+
+  const zeroProgress = parseSessionWorkerResponse({
+    version: SESSION_WORKER_PROTOCOL_VERSION,
+    ok: true,
+    action: "preview",
+    preview: { text: "", offset: 0, nextOffset: 0, done: false, totalChars: 20 },
+  }, preview);
+  assert.deepEqual(zeroProgress, { ok: false, code: "unavailable" });
+
+  const doneWithRemainder = parseSessionWorkerResponse({
+    version: SESSION_WORKER_PROTOCOL_VERSION,
+    ok: true,
+    action: "preview",
+    preview: { text: "hello", offset: 0, nextOffset: 5, done: true, totalChars: 20 },
+  }, preview);
+  assert.deepEqual(doneWithRemainder, { ok: false, code: "unavailable" });
 });
 
 test("session worker CLI stream output is accepted by the shared response parser", async () => {
