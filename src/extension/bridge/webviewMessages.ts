@@ -24,6 +24,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     openProviderApiKey: ["providerId"], openProviderOAuth: ["providerId"], logoutProvider: ["providerId"],
     addCustomEndpoint: ["displayName", "baseUrl", "modelId"], removeCustomEndpoint: ["providerId"],
     setDefaultModel: ["provider", "modelId"], setDefaultThinkingLevel: ["provider", "modelId", "level"], refreshProviderConfig: [],
+    addPluginInventoryEntry: [],
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { act } from "react";
+import { parseHostMessage } from "../parse-host-message.js";
 import { settingsHarness } from "./react-harness.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
@@ -35,7 +36,7 @@ test("provider detail survives refresh and keeps busy guards and errors visible"
   const h = await settingsHarness();
   try {
     await h.receive(config);
-    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__nav button:nth-of-type(3)");
     await h.click(".settings-page__providers button:last-child");
     await h.receive({ ...config, busy: true });
     assert.equal(h.get("h2").textContent, "Anthropic");
@@ -66,4 +67,31 @@ test("settings rejects obsolete and foreign projections, and handles empty searc
     await h.unmount();
     assert.equal(h.listeners.size, 0);
   } finally { await h.close(); }
+});
+
+const inventory = { ...envelope, type: "pluginInventoryState", busy: false, error: null as null, entries: [] as { displayName: string }[] };
+
+test("plugins category shows an empty inventory and asks the host to add from disk", async () => {
+  const h = await settingsHarness();
+  try {
+    await h.receive(config);
+    await h.receive(inventory);
+    await h.click(".settings-page__nav button:last-child");
+    assert.equal(h.get(".settings-page__nav button[aria-current='page']").textContent, "Plugins");
+    assert.match(h.get('[role="status"]').textContent ?? "", /No plugins in this inventory/);
+    assert.equal(h.root.querySelector('[aria-label="Refresh providers"]'), null);
+    await h.click(".settings-page__actions button");
+    assert.deepEqual(h.sent.at(-1), { ...envelope, type: "addPluginInventoryEntry" });
+    await h.receive({ ...inventory, error: "duplicate-path", entries: [{ displayName: "hello.ts" }] });
+    assert.match(h.get('[role="alert"]').textContent ?? "", /already in the inventory/);
+    assert.match(h.get(".settings-page__plugins").textContent ?? "", /hello\.ts/);
+  } finally { await h.close(); }
+});
+
+test("plugin inventory projections reject paths and extra fields", () => {
+  const valid = { version: 3, generation: 1, viewId: "view", type: "pluginInventoryState", busy: false, error: null, entries: [{ displayName: "a.ts" }] };
+  assert.deepEqual(parseHostMessage(valid), valid);
+  assert.equal(parseHostMessage({ ...valid, path: "/secret.ts" }), undefined);
+  assert.equal(parseHostMessage({ ...valid, entries: [{ displayName: "a.ts", path: "/a.ts" }] }), undefined);
+  assert.equal(parseHostMessage({ ...valid, error: "cancelled" }), undefined);
 });

@@ -16,6 +16,9 @@ export type { GateCall } from "./approvalProtocol.js";
 export { parseGateEnvelope } from "./approvalProtocol.js";
 export type { ExtensionFeedback, ExtensionInteractionProjection, ExecutionProfileProjection, ExtensionInteractionIntent, InteractionAnswer, InteractionFormProjection } from "./extensionInteractions.js";
 export type { ProviderConfigProjection, ProviderConfigEntry, ProviderConfigIntent } from "./providerConfig.js";
+export type {
+  PluginInventoryProjection, PluginInventoryItem, PluginInventoryError, PluginInventoryIntent,
+} from "./pluginInventory.js";
 export {
   findCatalogEntry,
   isValidModelRef,

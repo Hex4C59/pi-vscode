@@ -2,8 +2,15 @@ import type { UiText } from "../components/index.js";
 
 /** UI copy only. Synthetic response bodies and upstream diagnostics are intentionally not translated. */
 export const chineseUi = {
-  "Settings": "设置", "Settings categories": "设置分类", "General": "通用", "Providers": "供应商", "Back to providers": "返回供应商",
+  "Settings": "设置", "Settings categories": "设置分类", "General": "通用", "Providers": "供应商", "Plugins": "插件", "Back to providers": "返回供应商",
   "Search models": "搜索模型", "No matching models": "没有匹配的模型", "Manage providers": "管理供应商", "API key": "API 密钥", "Configured": "已配置", "Not configured": "未配置",
+  "Add from disk": "从磁盘添加", "No plugins in this inventory.": "清单里还没有插件。", "Loading plugins…": "正在加载插件…", "Adding plugin…": "正在添加插件…",
+  "This plugin is already in the inventory.": "该插件已在清单中。",
+  "That file cannot be added as a pi extension.": "该文件不能作为 pi 扩展添加。",
+  "The plugin inventory file is damaged or too large and was left unchanged.": "插件清单文件已损坏或过大，未改写。",
+  "The plugin inventory is full.": "插件清单已满。",
+  "The plugin inventory would exceed its size limit.": "插件清单将超出大小上限。",
+  "The plugin inventory could not be saved.": "无法保存插件清单。",
   "Replay Pi logo animation": "重播 Pi 标志动画",
   "Custom extension tool. This approval covers this call only; extension-internal execution is outside this approval and built-in file safeguards.": "自定义扩展工具：本次审批仅覆盖此调用；扩展内部执行不在该审批及内置文件保护范围内。",
   "Set up this project": "设置此项目",

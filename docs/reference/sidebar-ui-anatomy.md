@@ -150,7 +150,7 @@ A dialog provides a relatively independent task space for configuration, confirm
 
 | Dialog | Contents |
 |---|---|
-| Editor settings | General/language, default model and provider details; execution profile is in the composer permissions disclosure |
+| Editor settings | General/language, default model, provider details and Plugins inventory; execution profile is in the composer permissions disclosure |
 | Project setup | Explicit choice about project-local pi settings and resources, with expandable scope details |
 | Open-folder prompt | Recovery entry when an action needs a folder, preserving the draft |
 

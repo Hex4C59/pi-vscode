@@ -15,7 +15,8 @@ test("settings reuses one editor panel, projects no chat, and closing retains ru
     assert.match(panel.webview.html, /data-pi-surface="settings"/);
     panel.receive.fire({ version: 3, type: "getWorkspaceState" });
     const states = panel.sent.map(parseHostMessage);
-    assert.ok(states.every(state => state?.type === "uiLanguageState" || state?.type === "providerConfigState"));
+    assert.ok(states.every(state => state?.type === "uiLanguageState" || state?.type === "providerConfigState" || state?.type === "pluginInventoryState"));
+    assert.ok(states.some(state => state?.type === "pluginInventoryState"));
     assert.ok(states[0]);
     assert.notEqual(states[0].viewId, v.state().viewId);
     v.action("openSettings"); assert.equal(h.panels.length, 1); assert.equal(panel.reveals, 1);

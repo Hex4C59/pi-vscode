@@ -63,12 +63,12 @@ test("settings page uses categories, icon refresh and separate provider details"
     });
 
     const settings = h.get(".settings-page");
-    assert.deepEqual([...settings.querySelectorAll(".settings-page__nav button")].map(button => button.textContent), ["General", "Default model", "Providers"]);
+    assert.deepEqual([...settings.querySelectorAll(".settings-page__nav button")].map(button => button.textContent), ["General", "Default model", "Providers", "Plugins"]);
     const refresh = settings.querySelector<HTMLButtonElement>('.settings-page__header button[aria-label="Refresh providers"]');
     assert.ok(refresh, "refresh lives in the providers heading as an icon button");
     assert.equal(refresh.textContent, "");
     assert.equal(settings.querySelector(".candidate-settings__secondary, .candidate-settings__panel") === null, true);
-    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__nav button:nth-of-type(3)");
     assert.equal(h.get(".settings-page__nav button[aria-current='page']").textContent, "Providers");
     await h.click(".settings-page__providers button");
     assert.equal(h.get("#settings-page-heading").textContent, "OpenAI");

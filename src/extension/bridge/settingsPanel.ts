@@ -1,10 +1,18 @@
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
-import type { ProviderConfigIntent, ProviderConfigProjection } from "../contracts/index.js";
+import type {
+  PluginInventoryIntent, PluginInventoryProjection, ProviderConfigIntent, ProviderConfigProjection,
+} from "../contracts/index.js";
 import { getWebviewHtml, getWebviewResourceRoot } from "./webviewHtml.js";
 import { parseWebviewMessage } from "./webviewMessages.js";
 
-type SettingsState = { generation: number; locale: "en" | "zh-CN"; config: ProviderConfigProjection };
+type SettingsState = {
+  generation: number;
+  locale: "en" | "zh-CN";
+  config: ProviderConfigProjection;
+  inventory: PluginInventoryProjection;
+};
+type SettingsIntent = ProviderConfigIntent | PluginInventoryIntent;
 
 /** One editor surface with a separate identity and provider-only capabilities. */
 export class SettingsPanel implements vscode.Disposable {
@@ -16,12 +24,13 @@ export class SettingsPanel implements vscode.Disposable {
     private readonly window: Pick<typeof vscode.window, "createWebviewPanel">,
     private readonly extensionUri: vscode.Uri,
     private readonly snapshot: () => SettingsState,
-    private readonly action: (intent: ProviderConfigIntent) => Promise<void>,
+    private readonly action: (intent: SettingsIntent) => Promise<void>,
     private readonly language: (locale: "en" | "zh-CN") => void,
+    private readonly prepare: () => Promise<void> = async () => undefined,
   ) {}
 
   open(): void {
-    if (this.panel) { this.panel.reveal(); this.publish(true); return; }
+    if (this.panel) { this.panel.reveal(); void this.prepare().then(() => this.publish(true)); return; }
     // ViewColumn.One targets the editor, not a new group beside the chat sidebar.
     const panel = this.window.createWebviewPanel("pi-vscode.settings", "Pi · Settings", 1, {
       enableScripts: true, retainContextWhenHidden: true,
@@ -33,6 +42,7 @@ export class SettingsPanel implements vscode.Disposable {
       void this.receive(panel, value).catch(() => { this.publish(true); });
     })];
     panel.webview.html = getWebviewHtml(panel.webview, this.extensionUri, randomBytes(16).toString("base64"), "settings");
+    void this.prepare().then(() => this.publish(true));
   }
 
   publish(force = false): void {
@@ -46,6 +56,7 @@ export class SettingsPanel implements vscode.Disposable {
     panel.title = state.locale === "zh-CN" ? "Pi · 设置" : "Pi · Settings";
     this.post(panel, { ...envelope, type: "uiLanguageState", locale: state.locale });
     this.post(panel, { ...envelope, type: "providerConfigState", ...state.config });
+    this.post(panel, { ...envelope, type: "pluginInventoryState", ...state.inventory });
   }
 
   private async receive(panel: vscode.WebviewPanel, value: unknown): Promise<void> {
@@ -58,7 +69,7 @@ export class SettingsPanel implements vscode.Disposable {
     if (message.type === "setUiLanguage") { this.language(message.locale); return; }
     switch (message.type) {
       case "refreshProviderConfig": case "openProviderApiKey": case "openProviderOAuth": case "addCustomEndpoint": case "removeCustomEndpoint": case "logoutProvider":
-      case "setDefaultModel": case "setDefaultThinkingLevel":
+      case "setDefaultModel": case "setDefaultThinkingLevel": case "addPluginInventoryEntry":
         await this.action(message);
         this.publish(true);
     }

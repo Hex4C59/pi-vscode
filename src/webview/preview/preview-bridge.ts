@@ -10,6 +10,7 @@ import type {
   ExtensionInteractionProjection,
   HostMessage,
   ProviderConfigProjection,
+  PluginInventoryProjection,
   SavedHistoryPreviewMessage,
   SavedHistoryStateMessage,
   SessionStateMessage,
@@ -135,6 +136,7 @@ export class PreviewBridge implements WebviewBridge {
   private interactions: ExtensionInteractionProjection = { active: null, queuedCount: 0, phase: "idle", errorCode: null, feedback: [], omittedFeedback: 0 };
   private executionProfile: ExecutionProfileProjection = { profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false };
   private providerConfig: ProviderConfigProjection;
+  private pluginInventory: PluginInventoryProjection = { busy: false, error: null, entries: [] };
 
   constructor(readonly scenario: PreviewScenario, private readonly confirmHandoff?: (restoring: boolean) => Promise<HandoffOutcome>, private readonly previewOptions?: PreviewBridgeOptions) {
     bridgeNumber += 1;
@@ -251,6 +253,12 @@ export class PreviewBridge implements WebviewBridge {
       case "chooseExecutionProfile":
         this.executionProfile = { ...this.executionProfile, profile: message.profile, phase: "idle", canSwitch: true };
         this.emitProfile();
+        break;
+      case "addPluginInventoryEntry":
+        this.pluginInventory = this.pluginInventory.entries.some(entry => entry.displayName === "preview-extension.ts")
+          ? { ...this.pluginInventory, error: "duplicate-path" }
+          : { busy: false, error: null, entries: [...this.pluginInventory.entries, { displayName: "preview-extension.ts" }] };
+        this.emitSettings();
         break;
       case "setDefaultThinkingLevel":
         if (message.provider === this.providerConfig.defaultProvider && message.modelId === this.providerConfig.defaultModelId
@@ -511,6 +519,7 @@ export class PreviewBridge implements WebviewBridge {
   private emitSettings(): void {
     this.emitProfile();
     this.emit({ version: 3, type: "providerConfigState", viewId: this.viewId, generation: this.workspace.generation, ...this.providerConfig });
+    this.emit({ version: 3, type: "pluginInventoryState", viewId: this.viewId, generation: this.workspace.generation, ...this.pluginInventory });
   }
 
   private emitInteractions(): void {

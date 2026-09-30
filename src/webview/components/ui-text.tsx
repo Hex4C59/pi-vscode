@@ -2,8 +2,15 @@ import { createContext, useContext } from "react";
 
 /** Source-language UI identifiers only; never pass host/user content through this Interface. */
 export type UiText =
-  | "Settings" | "Settings categories" | "General" | "Providers" | "Back to providers"
+  | "Settings" | "Settings categories" | "General" | "Providers" | "Plugins" | "Back to providers"
   | "Search models" | "No matching models" | "Manage providers" | "API key" | "Configured" | "Not configured"
+  | "Add from disk" | "No plugins in this inventory." | "Loading plugins…" | "Adding plugin…"
+  | "This plugin is already in the inventory."
+  | "That file cannot be added as a pi extension."
+  | "The plugin inventory file is damaged or too large and was left unchanged."
+  | "The plugin inventory is full."
+  | "The plugin inventory would exceed its size limit."
+  | "The plugin inventory could not be saved."
   | "Replay Pi logo animation"
   | "Set up this project"
   | "Use this project's pi settings and resources?"

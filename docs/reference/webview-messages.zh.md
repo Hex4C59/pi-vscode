@@ -20,7 +20,7 @@
 
 `openSettings` 无额外字段，仅当前聊天视图可发送，打开／揭示单实例编辑区面板。`setUiLanguage` 只携带 `locale: "en" | "zh-CN"`；宿主仅内存保存，并向各视图投影带标准宿主信封与 locale 的 `uiLanguageState`。
 
-设置面板拥有独立随机 viewId 和共享宿主 generation，白名单更窄：bootstrap `ping/getWorkspaceState`、`setUiLanguage`、`refreshProviderConfig`、`openProviderApiKey`、`openProviderOAuth`、`addCustomEndpoint`、`removeCustomEndpoint`、`logoutProvider`、`setDefaultModel`、`setDefaultThinkingLevel`。Bootstrap 仅返回 `uiLanguageState` 与 `providerConfigState`。它不能启动聊天、改草稿、批准工具、切换执行配置或读取历史。供应商操作前执行原有精确解析与当前身份／generation 检查；过期身份仅重新同步设置投影。关闭重开生成新标识，不关闭聊天／runtime；两个渲染器均拒绝外来及旧投影。API key 与 OAuth 设备码仍在原生宿主提示中收集。自定义端点消息只含显示名称、http(s) Base URL 和模型 id，不接受 API key。
+设置面板拥有独立随机 viewId 和共享宿主 generation，白名单更窄：bootstrap `ping/getWorkspaceState`、`setUiLanguage`、`refreshProviderConfig`、`openProviderApiKey`、`openProviderOAuth`、`addCustomEndpoint`、`removeCustomEndpoint`、`logoutProvider`、`setDefaultModel`、`setDefaultThinkingLevel`、`addPluginInventoryEntry`。Bootstrap 返回 `uiLanguageState`、`providerConfigState` 与 `pluginInventoryState`。它不能启动聊天、改草稿、批准工具、切换执行配置或读取历史。供应商与清单操作前执行原有精确解析与当前身份／generation 检查；过期身份仅重新同步设置投影。关闭重开生成新标识，不关闭聊天／runtime；两个渲染器均拒绝外来及旧投影。API key 与 OAuth 设备码仍在原生宿主提示中收集。自定义端点消息只含显示名称、http(s) Base URL 和模型 id，不接受 API key。添加清单项无额外字段；宿主打开原生文件选择器并存储规范本地路径，投影只有有界 basename。
 
 ## Endpoint 写入事务（WI-038，已接受契约）
 
@@ -57,6 +57,7 @@
 | setDefaultModel | provider＋modelId；经 SettingsManager 持久化 pi 默认；仅在该写入报告已提交时应用实时会话模型 |
 | setDefaultThinkingLevel | provider＋modelId＋level；须匹配当前默认模型身份及支持档位；按模型保存默认值，不启动 runtime |
 | refreshProviderConfig | 无；重载无密钥的供应商状态与默认模型目录 |
+| addPluginInventoryEntry | 无；宿主打开原生文件选择器，把规范本地 pi 扩展路径追加到配置范围清单。投影只有 basename；这不是加载同意 |
 | chooseExecutionProfile | profile: controlled／trusted；trusted仍由原生picker与确认取得entry |
 | answerInteraction／cancelInteraction | id；前者另含与活动表单方法精确匹配的answer |
 | endOwnedRuntime／recoverControlledRuntime | 无；只能清理当前恢复域确切运行，遵循ADR0002回执规则 |
@@ -295,7 +296,7 @@ trusted profile通过host原生picker选择**一个显式本地入口文件**（
 
 新browser intent沿用exact-own-fields envelope并一致升至`version: 3`，携带当前viewId及非负safe-integer generation。新intent为`chooseExecutionProfile { profile: "controlled" | "trusted" }`、`answerInteraction { id, answer }`、`cancelInteraction { id }`、`endOwnedRuntime {}`及`recoverControlledRuntime {}`。ID沿用opaque 1～100字符host-ID规则。browser不传文件路径、remote ID、PID、SDK调用、任意命令或恢复record。answer精确discriminant为`{ method: "select", optionId }`、`{ method: "confirm", value: boolean }`或`{ method: "input" | "editor", text: string }`。host先验method／当前active成员／精确选项归属／UTF-8预算再reserve。空字符串保留，不转换cancel。option用host opaque ID，仅adapter映射原始字符串。
 
-interactionState投影active form或null、queued count、phase（idle／waiting／blocked）、有界固定错误码、有界literal feedback及丢弃数量。form共有opaque id／method／title及可选且明确标记的local cutoff timestamp；select加option ID／label，confirm加message，input加placeholder，editor加prefill。origin明确是“trusted runtime extension；未认证”，不从title推断。不虚构remote-consumed／closed／completed字段。独立executionProfileState投影controlled／trusted display label、phase（idle／selecting／switching／recovery-required／error）、固定错误码和当前named action可用布尔值。独立providerConfigState投影无密钥的供应商就绪状态、可选认证来源标签、默认 provider／model 及有界默认模型目录；API 密钥永不出现在该投影中。host保持权威，Webview不能清fence。
+interactionState投影active form或null、queued count、phase（idle／waiting／blocked）、有界固定错误码、有界literal feedback及丢弃数量。form共有opaque id／method／title及可选且明确标记的local cutoff timestamp；select加option ID／label，confirm加message，input加placeholder，editor加prefill。origin明确是“trusted runtime extension；未认证”，不从title推断。不虚构remote-consumed／closed／completed字段。独立executionProfileState投影controlled／trusted display label、phase（idle／selecting／switching／recovery-required／error）、固定错误码和当前named action可用布尔值。独立providerConfigState投影无密钥的供应商就绪状态、可选认证来源标签、默认 provider／model 及有界默认模型目录；API 密钥永不出现在该投影中。独立pluginInventoryState投影 busy／error 以及最多 64 条 `{ displayName }`（每条 ≤512 UTF-8 字节）；记住的路径留在宿主文件。host保持权威，Webview不能清fence。
 
 标准feedback按literal呈现notify、keyed status及string-array widget；terminal title／editor text请求显示为带标签feedback，不执行title命令或静默替换draft。custom／component TUI、editor readback、任意终端layout不支持，加载前明确披露。最多16条feedback、总65,536 UTF-8字节、每条32,768字节；最多八个status key、四个widget key，每key最多100字节。keyed update替换旧条目，clear删除；容量丢弃最旧feedback并计数，绝不丢弃可操作form／answer。过大或credential-like内容只产生固定安全警告，不投影原文。widget placement只是提示，内容仍可在扩展feedback区访问。feedback不是dialog completion证据。
 

@@ -28,7 +28,7 @@ test("editor settings selects a provider and opens API-key intent without secret
 
     assert.equal(h.root.querySelector('input[type="password"]') === null, true);
     assert.equal(h.root.querySelector(".settings-page__actions") === null, true);
-    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__nav button:nth-of-type(3)");
     await h.click(".settings-page__providers button:last-child");
     assert.match(h.get(".settings-page__actions").textContent ?? "", /Update API key/);
     assert.equal(h.get(".settings-page__actions").querySelectorAll("button").length, 2);
@@ -62,7 +62,7 @@ test("provider detail sends OAuth and endpoint removal without secrets", async (
       }],
       catalog: [],
     });
-    await h.click(".settings-page__nav button:last-child");
+    await h.click(".settings-page__nav button:nth-of-type(3)");
     await h.click(".settings-page__providers button");
     assert.equal(h.root.querySelector('input[type="password"]') === null, true);
     await h.click(".settings-page__actions .settings-page__button");

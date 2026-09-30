@@ -32,7 +32,10 @@ export function activate(context: vscode.ExtensionContext): void {
   }));
   const runtime = createPiRpcRuntime({ process });
   const sessionBackend = createPiSessionBackend(path.join(extensionPath, SESSION_WORKER_BUNDLE));
-  const provider = new PiChatViewProvider(vscode, runtime, context.extensionUri, sessionBackend);
+  const provider = new PiChatViewProvider(
+    vscode, runtime, context.extensionUri, sessionBackend, {},
+    { globalStorage: context.globalStorageUri.fsPath },
+  );
 
   context.subscriptions.push(provider);
   context.subscriptions.push(

@@ -189,7 +189,7 @@ This list is the pi-global default for new chats. It is not the same object as t
 
 API keys are typed in a **VS Code password prompt**, not inside this page.
 
-A Settings **Plugins** category for the local pi-extension inventory is specified in [REQ-010](../product-requirements.md) and is **not in these screenshots**. Current Trusted loading still uses Execution profile.
+A Settings **Plugins** category lists remembered local pi extensions (WI-061: empty list + add from disk) and is **not in these screenshots**. Remove, enable and runtime apply remain later REQ-010 slices. Current Trusted loading still uses Execution profile.
 
 ## Surfaces that appear only when needed
 

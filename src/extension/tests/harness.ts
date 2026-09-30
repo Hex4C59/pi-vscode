@@ -91,6 +91,7 @@ export function harness(
   folders = [folder()], trusted = true, remoteName: string | undefined = undefined,
   runtime?: PiRuntimeLifecycle, sessions?: SessionBackend,
   toolOptions?: ConstructorParameters<typeof PiChatViewProvider>[4],
+  hostPaths?: ConstructorParameters<typeof PiChatViewProvider>[5],
 ) {
   const host = hostFixture(folders, trusted, remoteName);
   const { api } = host;
@@ -101,6 +102,7 @@ export function harness(
     extensionUri as unknown as ConstructorParameters<typeof PiChatViewProvider>[2],
     sessions,
     toolOptions,
+    hostPaths,
   );
   const createView = () => {
     const receive = new Event<unknown>();

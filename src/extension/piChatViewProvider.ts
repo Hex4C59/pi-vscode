@@ -6,11 +6,11 @@ import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel } from "./bridge/
 import { ModelSettings, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
-import type { WorkspaceStateMessage, ProviderConfigIntent } from "./contracts/index.js";
+import type { WorkspaceStateMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
 
 import { SavedHistory } from "./sessions/index.js";
 import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
-import { selectTrustedExtension } from "./extension-loading/index.js";
+import { PluginInventorySettings, selectTrustedExtension } from "./extension-loading/index.js";
 import type { ExtensionExecutionProfile, ExecutionProfileProjection, ExtensionFeedback } from "./contracts/index.js";
 import { createInteractionCoordinator } from "./interactions/index.js";
 import { DraftSubmission } from "./draft/index.js";
@@ -66,7 +66,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private lastProfileProjection = "";
   private lastProviderConfigProjection = "";
   private readonly providerConfig: ProviderConfig;
-  private readonly settingsPanel: SettingsPanel;
+  private readonly pluginInventory: PluginInventorySettings;
+  private readonly settingsPanel!: SettingsPanel;
   private uiLocale: "en" | "zh-CN" = "en";
   private liveConversation: { id: string; path: string } | undefined;
   private untouchedControlledConversation = false;
@@ -94,8 +95,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private readonly api: Pick<typeof vscode, "workspace" | "env" | "window" | "commands" | "Uri" | "RelativePattern" | "EventEmitter">,
     private readonly runtime: PiRuntimeLifecycle,
     private readonly extensionUri: vscode.Uri,
-    private readonly sessionBackend: SessionBackend = unavailableSessionBackend,
+    private readonly     sessionBackend: SessionBackend = unavailableSessionBackend,
     toolOptions: EditorToolOptions = {},
+    hostPaths: { globalStorage?: string } = {},
   ) {
     this.models = new ModelSettings(runtime, () => {
       if (!this.disposed) this.refresh();
@@ -114,10 +116,19 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       providerConfig: this.providerConfig,
       requestRestart: () => this.reconcileRuntime(this.liveConversation, true),
     }, () => ({ ready: this.state.runtime === "ready", disposed: this.disposed }));
+    this.pluginInventory = new PluginInventorySettings(
+      hostPaths.globalStorage ?? "",
+      () => this.pickInventoryEntry(),
+      () => this.settingsPanel.publish(),
+    );
     this.settingsPanel = new SettingsPanel(this.api.window, this.extensionUri, () => {
       if (!this.disposed) this.refresh();
-      return { generation: this.state.generation, locale: this.uiLocale, config: this.providerConfig.snapshot };
-    }, intent => this.configureProvider(intent), locale => this.setUiLanguage(locale));
+      return {
+        generation: this.state.generation, locale: this.uiLocale,
+        config: this.providerConfig.snapshot, inventory: this.pluginInventory.snapshot,
+      };
+    }, intent => this.configureSettings(intent), locale => this.setUiLanguage(locale),
+    () => this.pluginInventory.reload(() => !this.disposed));
     this.savedHistory = new SavedHistory(sessionBackend, () => ({
       cwd: this.state.folder?.path,
       key: this.state.generation + ":" + this.state.viewId,
@@ -761,8 +772,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === "endOwnedRuntime" || message.type === "recoverControlledRuntime") { await this.recoverRuntime(view, message.type); return; }
     if (message.type === "refreshProviderConfig" || message.type === "openProviderApiKey" || message.type === "openProviderOAuth"
       || message.type === "addCustomEndpoint" || message.type === "removeCustomEndpoint" || message.type === "logoutProvider"
-      || message.type === "setDefaultThinkingLevel" || message.type === "setDefaultModel") {
-      await this.configureProvider(message);
+      || message.type === "setDefaultThinkingLevel" || message.type === "setDefaultModel" || message.type === "addPluginInventoryEntry") {
+      await this.configureSettings(message);
       return;
     }
     if (this.profilePhase !== "idle" && message.type !== "stopChat") { this.publish(); return; }
@@ -838,6 +849,24 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.uiLocale = locale;
     if (this.view) this.post(this.view, { ...this.envelope("uiLanguageState"), locale });
     this.settingsPanel.publish(true);
+  }
+
+  private async pickInventoryEntry(): Promise<string | undefined> {
+    const files = await this.api.window.showOpenDialog({
+      canSelectFiles: true, canSelectFolders: false, canSelectMany: false,
+      filters: { "pi extension": ["ts", "js", "mjs", "cjs"] },
+      openLabel: "Add pi extension to inventory",
+    });
+    return files?.length === 1 && files[0]?.scheme === "file" ? files[0].fsPath : undefined;
+  }
+
+  private async configureSettings(message: ProviderConfigIntent | PluginInventoryIntent): Promise<void> {
+    if (this.disposed) return;
+    if (message.type === "addPluginInventoryEntry") {
+      await this.pluginInventory.add(() => !this.disposed);
+      return;
+    }
+    await this.configureProvider(message);
   }
 
   private async configureProvider(message: ProviderConfigIntent): Promise<void> {

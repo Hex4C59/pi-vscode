@@ -1,4 +1,5 @@
 import type { ExtensionInteractionIntent, ExtensionInteractionProjection, ExecutionProfileProjection } from "./extensionInteractions.js";
+import type { PluginInventoryIntent, PluginInventoryProjection } from "./pluginInventory.js";
 import type { ProviderConfigIntent, ProviderConfigProjection } from "./providerConfig.js";
 /** Canonical browser/host DTOs. Type-only: no Node, VS Code or runtime dependencies. */
 export type RuntimePhase = "not-started" | "starting" | "ready" | "stopping" | "error";
@@ -21,6 +22,7 @@ type Action = { version: 3; generation: number; viewId: string };
 export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceState" }
   | Action & ExtensionInteractionIntent
   | Action & ProviderConfigIntent
+  | Action & PluginInventoryIntent
   | Action & (
     | { type: "openSettings" }
     | { type: "setUiLanguage"; locale: "en" | "zh-CN" }
@@ -97,8 +99,9 @@ export type AttachmentPreviewMessage = HostEnvelope & { type: "attachmentPreview
 export type InteractionStateMessage = HostEnvelope & ExtensionInteractionProjection & { type: "interactionState" };
 export type ExecutionProfileStateMessage = HostEnvelope & ExecutionProfileProjection & { type: "executionProfileState" };
 export type ProviderConfigStateMessage = HostEnvelope & ProviderConfigProjection & { type: "providerConfigState" };
+export type PluginInventoryStateMessage = HostEnvelope & PluginInventoryProjection & { type: "pluginInventoryState" };
 export type UiLanguageStateMessage = HostEnvelope & { type: "uiLanguageState"; locale: "en" | "zh-CN" };
-export type HostMessage = UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
+export type HostMessage = UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

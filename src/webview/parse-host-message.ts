@@ -265,6 +265,16 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
         || (message.defaultThinkingLevel !== null && !thinkingLevels.includes(message.defaultThinkingLevel as string))) return;
       return { ...message, providers, catalog, thinkingLevels } as unknown as HostMessage;
     }
+    case "pluginInventoryState": {
+      const errors = ["duplicate-path", "invalid-entry", "existing-unusable", "too-many", "too-large", "write-failed"] as const;
+      if (!hasFields(message, [...envelope, "busy", "error", "entries"]) || typeof message.busy !== "boolean"
+        || !(message.error === null || oneOf(message.error, errors))) return;
+      const entries = list(message.entries, 64, item => {
+        const entry = exactRecord(item, ["displayName"]);
+        return entry && utf8Text(entry.displayName, 512) ? entry : undefined;
+      });
+      return entries ? { ...message, entries } as unknown as HostMessage : undefined;
+    }
     case "pong":
       return hasFields(message, envelope) ? message as unknown as HostMessage : undefined;
 

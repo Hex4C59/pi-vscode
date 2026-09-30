@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { selectTrustedExtension } from "../index.js";
+import { selectTrustedExtension, inspectPickedExtension } from "../index.js";
 
 test("cancelling explicit extension selection does not ask for execution consent", async () => {
   let confirmations = 0;
@@ -10,6 +10,19 @@ test("cancelling explicit extension selection does not ask for execution consent
   }, () => true);
   assert.deepEqual(result, { kind: "cancelled" });
   assert.equal(confirmations, 0);
+});
+
+test("inventory picking validates a local entry without asking for execution consent", async t => {
+  const { mkdir, mkdtemp, writeFile, rm, realpath } = await import("node:fs/promises");
+  const path = await import("node:path");
+  const root = path.resolve("dist/tests-fixtures/extension-loading");
+  await mkdir(root, { recursive: true });
+  const directory = await mkdtemp(path.join(root, "inventory-"));
+  t.after(async () => { assert.equal(path.dirname(directory), root); await rm(directory, { recursive: true, force: true }); });
+  const entry = path.join(directory, "listed.ts");
+  await writeFile(entry, "export default function() {}", "utf8");
+  const result = await inspectPickedExtension(async () => entry, () => true);
+  assert.deepEqual(result, { kind: "selected", entryPath: await realpath(entry), displayName: "listed.ts" });
 });
 
 test("a local regular entry needs explicit canonical-path consent and stale consent cannot authorize loading", async t => {

@@ -89,12 +89,14 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-058 delegated acceptance](2026-09-30-wi-058-macos-acceptance.md) | Per-window recovery domains; ADR 0009 Accepted; dual-window F5/installed recorded 2026-09-30 |
 | [WI-059 docs-only acceptance](2026-10-01-wi-059-acceptance.md) | Local plugin-inventory product boundary; Draft ADR 0010; no store/UI/load |
 | [WI-060 host-store acceptance](2026-10-01-wi-060-acceptance.md) | Profile-scoped inventory file; damaged/too-large left unchanged |
+| [WI-061 Settings add acceptance](2026-10-01-wi-061-acceptance.md) | Settings Plugins empty list and add from disk; no remove/enable/load |
 | [macOS verification and personal-use acceptance](2026-09-30-macos-verification-acceptance.md) | Dual-window F5/installed, crash cleanup, ADR 0005 live OAuth/endpoint, personal-use PRD |
 | [WI-036 approved proposal](2026-09-30-wi-036-approved-proposal.md) | Complete approved owner-loss exact-child scope; historical, no new Build authorization |
 | [WI-057 approved proposal](2026-09-30-wi-057-approved-proposal.md) | Complete approved Saved-default apply encapsulation; historical, no new Build authorization |
 | [WI-058 approved proposal](2026-09-30-wi-058-approved-proposal.md) | Complete approved per-window recovery-domain scope; historical, no new Build authorization |
 | [WI-059 approved proposal](2026-10-01-wi-059-approved-proposal.md) | Complete approved inventory product-boundary scope; historical, no new Build authorization |
 | [WI-060 approved proposal](2026-10-01-wi-060-approved-proposal.md) | Complete approved host inventory-store scope; historical, no new Build authorization |
+| [WI-061 approved proposal](2026-10-01-wi-061-approved-proposal.md) | Complete approved Settings Plugins add-from-disk scope; historical, no new Build authorization |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
 | [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |
