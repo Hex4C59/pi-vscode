@@ -73,6 +73,47 @@ test("mounted React model controls keep applied and pending settings distinct du
   }
 });
 
+test("mounted model list marks only the stable identity when labels collide", async () => {
+  const h = await uiHarness();
+  try {
+    await h.render({
+      chatModel: "provider-a / id-a",
+      availableModels: [
+        { provider: "provider-a", modelId: "id-a", label: "Claude" },
+        { provider: "provider-b", modelId: "id-b", label: "provider-a / id-a" },
+      ],
+    });
+    await h.click("#model-effort-trigger");
+    await h.click("#model-current");
+    const checked = [...h.root.querySelectorAll<HTMLButtonElement>('#model-list button[aria-checked="true"]')];
+    assert.equal(checked.length, 1);
+    assert.match(checked[0]?.textContent ?? "", /Claude/);
+    assert.equal(checked[0]?.querySelector(".sub")?.textContent, "provider-a");
+  } finally {
+    await h.close();
+  }
+});
+
+test("mounted model list keeps one applied radio when display labels are duplicated", async () => {
+  const h = await uiHarness();
+  try {
+    await h.render({
+      chatModel: "provider-a / id-a",
+      availableModels: [
+        { provider: "provider-a", modelId: "id-a", label: "Twin" },
+        { provider: "provider-b", modelId: "id-b", label: "Twin" },
+      ],
+    });
+    await h.click("#model-effort-trigger");
+    await h.click("#model-current");
+    const checked = [...h.root.querySelectorAll<HTMLButtonElement>('#model-list button[aria-checked="true"]')];
+    assert.equal(checked.length, 1);
+    assert.equal(checked[0]?.querySelector(".sub")?.textContent, "provider-a");
+  } finally {
+    await h.close();
+  }
+});
+
 test("mounted React model controls expose a disabled single-level slider and preserve draft state", async () => {
   const h = await uiHarness();
   try {

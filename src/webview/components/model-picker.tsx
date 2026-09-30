@@ -1,7 +1,27 @@
 import { useUiText } from "./ui-text.js";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
-import type { ProviderConfigProjection } from "../../extension/contracts/index.js";
+import type { ModelCatalogEntry, ProviderConfigProjection } from "../../extension/contracts/index.js";
 import type { ModelPickerViewProps } from "./types.js";
+
+function catalogEntryIdentity(entry: ModelCatalogEntry): string {
+  return `${entry.provider}:${entry.modelId}`;
+}
+
+/** Applied radio uses stable provider/model-id, then a unique display label. Duplicate labels do not mark two radios. */
+function appliedCatalogIdentity(chatModel: string | null, catalog: readonly ModelCatalogEntry[]): string | null {
+  if (!chatModel) return null;
+  const canonical = catalog.filter(entry => `${entry.provider} / ${entry.modelId}` === chatModel);
+  if (canonical.length === 1) {
+    const match = canonical[0];
+    return match ? catalogEntryIdentity(match) : null;
+  }
+  const labelled = catalog.filter(entry => (entry.label || entry.modelId) === chatModel);
+  if (labelled.length === 1) {
+    const match = labelled[0];
+    return match ? catalogEntryIdentity(match) : null;
+  }
+  return null;
+}
 
 /** Saved default has no live runtime. Disable conditions stay on the live workspace slice. */
 function savedDefaultPickerState(config: ProviderConfigProjection | null) {
@@ -103,6 +123,7 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
     return () => slider.removeEventListener("change", commit);
   }, [onThinking, state.thinkingLevels, state.chatBusy, selectedLevel, continuousThinkingDrag]);
   const modelLabel = state.chatModel ?? t("Model not configured");
+  const appliedIdentity = appliedCatalogIdentity(state.chatModel, state.availableModels);
   const thinkingLabel = appliedLevel ? thinkingText(appliedLevel) : "—";
   const pendingSettings: string[] = [];
   if (state.pendingModel) pendingSettings.push(`${state.pendingModel.provider} / ${state.pendingModel.label}`);
@@ -198,7 +219,7 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
         <div id="model-list" role="menu" hidden={!modelListOpen}>
           {state.availableModels.map(entry => {
             const entryLabel = entry.label || entry.modelId;
-            const applied = state.chatModel === `${entry.provider} / ${entry.modelId}` || state.chatModel === entryLabel;
+            const applied = appliedIdentity === catalogEntryIdentity(entry);
             return (
               <button
                 key={`${entry.provider}:${entry.modelId}`}
