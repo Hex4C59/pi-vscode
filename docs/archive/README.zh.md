@@ -75,12 +75,14 @@
 | [WI-041 代理受托接受](2026-09-30-wi-041-macos-acceptance.zh.md) | session-worker 请求关联与预览游标不变量（CORE-02） |
 | [WI-042 代理受托接受](2026-09-30-wi-042-macos-acceptance.zh.md) | 模型选择器已应用 radio 使用稳定身份（UI-01） |
 | [WI-043 代理受托接受](2026-09-30-wi-043-macos-acceptance.zh.md) | 模型弹层 Escape 忽略已消费事件（UI-02） |
+| [WI-044 代理受托接受](2026-09-30-wi-044-macos-acceptance.zh.md) | Vite 配置纳入提交检查实现输入（TOOL-01） |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |
 | [WI-041 批准提案](2026-09-30-wi-041-approved-proposal.zh.md) | 完整批准解析器关联范围；历史，不是新的 Build 授权 |
 | [WI-042 批准提案](2026-09-30-wi-042-approved-proposal.zh.md) | 完整批准模型身份范围；历史，不是新的 Build 授权 |
 | [WI-043 批准提案](2026-09-30-wi-043-approved-proposal.zh.md) | 完整批准已消费 Escape 范围；历史，不是新的 Build 授权 |
+| [WI-044 批准提案](2026-09-30-wi-044-approved-proposal.zh.md) | 完整批准 Vite 提交检查范围；历史，不是新的 Build 授权 |
 | [WI-035 批准提案](2026-09-30-wi-035-approved-proposal.zh.md) | 完整批准范围与验收；历史，不是新的 Build 授权 |
 | [WI-034 批准提案](2026-09-30-wi-034-approved-proposal.md) | 关闭后原样保留的 ACTIVE 单语提案；不是新建造授权 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |

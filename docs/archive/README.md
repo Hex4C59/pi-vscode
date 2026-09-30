@@ -71,12 +71,14 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-041 delegated acceptance](2026-09-30-wi-041-macos-acceptance.md) | Session-worker request affinity and preview cursor invariants (CORE-02) |
 | [WI-042 delegated acceptance](2026-09-30-wi-042-macos-acceptance.md) | Model-picker applied radio uses stable identity (UI-01) |
 | [WI-043 delegated acceptance](2026-09-30-wi-043-macos-acceptance.md) | Model-popover Escape ignores consumed events (UI-02) |
+| [WI-044 delegated acceptance](2026-09-30-wi-044-macos-acceptance.md) | Vite config classified as commit-check implementation input (TOOL-01) |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
 | [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |
 | [WI-041 approved proposal](2026-09-30-wi-041-approved-proposal.md) | Complete approved parser-affinity scope; historical, no new Build authorization |
 | [WI-042 approved proposal](2026-09-30-wi-042-approved-proposal.md) | Complete approved model-identity scope; historical, no new Build authorization |
 | [WI-043 approved proposal](2026-09-30-wi-043-approved-proposal.md) | Complete approved consumed-Escape scope; historical, no new Build authorization |
+| [WI-044 approved proposal](2026-09-30-wi-044-approved-proposal.md) | Complete approved Vite commit-check scope; historical, no new Build authorization |
 | [WI-035 approved proposal](2026-09-30-wi-035-approved-proposal.md) | Complete approved scope and acceptance; historical, no new Build authorization |
 | [WI-034 approved proposal](2026-09-30-wi-034-approved-proposal.md) | Original single-language ACTIVE proposal retained after close; no new Build authorization |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |

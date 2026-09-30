@@ -64,7 +64,7 @@ Git 默认 merge/revert 文案可保留；手动改 revert 须用 body 说明原
 | `webview` | 侧栏 webview — `src/webview/` |
 | `adapter` | pi SDK / 子进程 RPC — `src/adapter/` |
 | `contracts` | 共享类型、`docs/reference/` 消息或协议文档 |
-| `build` | esbuild、`tsconfig`、compile/watch 脚本 |
+| `build` | esbuild、`vite.config`、`tsconfig`、compile/watch 脚本 |
 | `deps` | 依赖或 lockfile 专用变更 |
 | `docs` | 文档树（不含 `contracts` 类 reference 规格） |
 | `ci` | GitHub Actions、发布自动化 |

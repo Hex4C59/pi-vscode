@@ -65,7 +65,7 @@ Use a **lowercase** scope for the primary stable area (domain name, not a random
 | `webview` | Sidebar webview presentation — `src/webview/` |
 | `adapter` | pi SDK / subprocess RPC — `src/adapter/` |
 | `contracts` | Shared types, `docs/reference/` message or protocol docs |
-| `build` | esbuild, `tsconfig`, compile/watch scripts |
+| `build` | esbuild, `vite.config`, `tsconfig`, compile/watch scripts |
 | `deps` | Dependency or lockfile-only changes |
 | `docs` | Documentation tree (excluding `contracts` reference specs) |
 | `ci` | GitHub Actions, release automation |
