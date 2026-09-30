@@ -189,6 +189,8 @@ This list is the pi-global default for new chats. It is not the same object as t
 
 API keys are typed in a **VS Code password prompt**, not inside this page.
 
+A Settings **Plugins** category for the local pi-extension inventory is specified in [REQ-010](../product-requirements.md) and is **not in these screenshots**. Current Trusted loading still uses Execution profile.
+
 ## Surfaces that appear only when needed
 
 No screenshot in this set. They show **above the composer** in the task-status region, or as a dialog:

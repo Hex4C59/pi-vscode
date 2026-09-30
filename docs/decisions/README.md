@@ -38,7 +38,11 @@ Initial proposals and unexplained spike failures retain their pending state and 
 
 ## Draft ADRs
 
-None.
+| ID | Title | Gate | File |
+|----|-------|------|------|
+| 0010 | Local pi-extension inventory persistence and load consent (WI-059) | none; later slices verify | [0010-local-plugin-inventory.md](0010-local-plugin-inventory.md) |
+
+0010 was recorded Draft on 2026-10-01 under the maintainer `/goal` to complete every ACTIVE.md task. WI-059 accepted only the product boundary. Store, Settings UI, runtime apply and ADR acceptance remain later slices. [Discussion](../discussions/2026-10-01-local-plugin-inventory.md); [WI-059](../archive/2026-10-01-wi-059-acceptance.md).
 
 0005 was Accepted on 2026-09-30 by the agent under the remaining-verification `/goal`, after an isolated installed VSIX live custom-endpoint completion and a live GitHub Copilot device-code/browser OAuth interaction. Isolated `auth.json` was not populated. No gate closed. [Evidence](../archive/2026-09-30-macos-verification-acceptance.md).
 

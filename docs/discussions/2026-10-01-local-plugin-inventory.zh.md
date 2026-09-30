@@ -8,10 +8,10 @@
 - 最近同步：2026-10-01
 
 - 类型：讨论
-- 状态：停车场方向；不是 Build 授权或 PRD 验收
+- 状态：切片 1 已作为 WI-059 接受；后续切片仍停放
 - 创建：2026-10-01
-- 权威：**仅作上下文**——不覆盖 [`ACTIVE.md`](../../ACTIVE.md)、[PRD](../product-requirements.zh.md) 或架构
-- 相关：[WI-013](../archive/2026-09-28-wi-013-acceptance.zh.md)、[ADR 0002](../decisions/0002-interaction-contract-route.zh.md)、输入区执行配置（WI-026）
+- 权威：**仅作上下文**——现行产品含义见 [REQ-010](../product-requirements.zh.md) 与 [Draft ADR 0010](../decisions/0010-local-plugin-inventory.zh.md)
+- 相关：[WI-013](../archive/2026-09-28-wi-013-acceptance.zh.md)、[ADR 0002](../decisions/0002-interaction-contract-route.zh.md)、[WI-059](../archive/2026-10-01-wi-059-acceptance.zh.md)、输入区执行配置（WI-026）
 
 ## 问题
 
@@ -48,15 +48,17 @@
 
 **以后才考虑（不进本串行队列）：** 下载、市场、远程目录、自动更新、签名包、未经确认就对所有窗口默认启用。
 
-晋升时候选编号从 **WI-059** 起。不要在 ACTIVE 里把这些 ID 预写成当前工作。
+晋升时候选编号从 **WI-059** 起。切片 1 已关闭为 WI-059；不要把后续 ID 预写成当前工作。
 
-## 切片 1 仍待决
+## 切片 1 结论（WI-059）
 
-- 启用是「下次受控启动就加载」，还是「仅受信配置时加载」？
-- 清单按 VS Code 窗口、工作区，还是用户 profile？
-- 清单里已有路径，第一次启用是否仍要现有宿主确认？
-- 从磁盘添加是复制到产品目录，还是只记住所选路径？
+已记入 [REQ-010](../product-requirements.zh.md) 与 [Draft ADR 0010](../decisions/0010-local-plugin-inventory.zh.md)：
+
+- 启用表示有资格进入**下一次空闲受信应用**。受控从不加载清单项。
+- 清单属于本 **VS Code 配置**（`globalStorageUri`），不是按窗口或工作区。
+- 启用不是加载同意。原生确认仍覆盖将要加载的路径。
+- 从磁盘添加只**记住绝对路径**，不拷贝文件。
 
 ## 倾向
 
-先做设置里的**本机清单**，再谈任何下载 UI。工具审批继续询问。持久化与信任在切片 1 按 ADR 处理，不要拖到切片 6 才发现。
+先做设置里的**本机清单**，再谈任何下载 UI。工具审批继续询问。持久化与信任按 ADR 处理；该 ADR 在后续切片验证存储与同意之前保持 Draft。

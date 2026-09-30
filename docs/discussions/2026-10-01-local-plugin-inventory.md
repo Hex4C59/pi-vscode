@@ -3,10 +3,10 @@
 English | [中文](2026-10-01-local-plugin-inventory.zh.md)
 
 - Type: Discussion
-- Status: Parking-lot direction; not Build authorization or PRD acceptance
+- Status: Slice 1 accepted as WI-059; later slices remain parked
 - Created: 2026-10-01
-- Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the [PRD](../product-requirements.md), or architecture
-- Related: [WI-013](../archive/2026-09-28-wi-013-acceptance.md), [ADR 0002](../decisions/0002-interaction-contract-route.md), composer execution profile (WI-026)
+- Authority: **context only** — current product meanings are in [REQ-010](../product-requirements.md) and [Draft ADR 0010](../decisions/0010-local-plugin-inventory.md)
+- Related: [WI-013](../archive/2026-09-28-wi-013-acceptance.md), [ADR 0002](../decisions/0002-interaction-contract-route.md), [WI-059](../archive/2026-10-01-wi-059-acceptance.md), composer execution profile (WI-026)
 
 ## Question
 
@@ -45,13 +45,15 @@ Promote **one** row at a time. Later rows must not start while an earlier requir
 
 Candidate numbering when promoted: start at **WI-059**. Do not pre-assign those IDs in ACTIVE as current work.
 
-## Open questions for slice 1
+## Slice 1 resolutions (WI-059)
 
-- Does enable mean “load on next controlled start” or “only when the profile is trusted”?
-- Is the inventory per VS Code window, per workspace, or per user profile?
-- Must the first enable of an entry still show the existing host confirmation, even if the path is already listed?
-- Does adding from disk copy into a product-owned directory, or only remember the chosen path?
+Recorded in [REQ-010](../product-requirements.md) and [Draft ADR 0010](../decisions/0010-local-plugin-inventory.md):
+
+- Enable means eligible for the **next idle Trusted apply**. Controlled never loads inventory entries.
+- The list is this **VS Code profile** (`globalStorageUri`), not a window or workspace.
+- Enable is not load consent. Native confirmation still covers paths that will load.
+- Adding from disk **remembers the absolute path**; it does not copy files.
 
 ## Leaning
 
-Ship a **local inventory** in Settings before any download UI. Keep tool-approval asking. Treat persistence and trust as ADR-worthy in slice 1 rather than discovering them in slice 6.
+Ship a **local inventory** in Settings before any download UI. Keep tool-approval asking. Persistence and trust are ADR-worthy; that ADR is Draft until later slices verify the store and consent.

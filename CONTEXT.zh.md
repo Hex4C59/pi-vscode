@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[CONTEXT.md](CONTEXT.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-29
+- 最近同步：2026-10-01
 
 本词汇表只定义产品术语，不定义实现或交付状态。行为与验收归 [PRD](docs/product-requirements.zh.md) 管理。
 
@@ -58,3 +58,9 @@ _避免混称_：安全沙箱、已保存会话所有权锁。
 
 **自有运行时终止（Owned-runtime termination）**：明确请求结束owner所持有的runtime进程，不同于任务Stop，也不同于进程已经退出的证据。
 _避免混称_：成功取消、回滚、终止全部后代。
+
+**插件清单（Plugin inventory）**：宿主为本 VS Code 配置持久保存的本地 pi 扩展入口路径与启用标志。列入路径不等于加载。
+_避免混称_：当场加载、市场、这个 VS Code 扩展。
+
+**当场加载（This-session load）**：空闲受信启动或切换并经原生加载确认后，通过公开 pi API 把已启用清单项应用到 runtime。
+_避免混称_：加入清单、开关启用、受控执行。

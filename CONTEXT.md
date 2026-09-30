@@ -53,3 +53,9 @@ _Avoid_: security sandbox, saved-session ownership lock.
 
 **Owned-runtime termination**: An explicit request to end the runtime process retained by its owner, distinct from task Stop and from evidence that the process has exited.
 _Avoid_: successful cancellation, rollback, termination of all descendants.
+
+**Plugin inventory**: The host-persisted list of local pi-extension entry paths and enable flags for this VS Code profile. Listing a path is not loading it.
+_Avoid_: this-session load, marketplace, VS Code extension.
+
+**This-session load**: Applying enabled inventory entries to a runtime through public pi APIs after idle Trusted start or switch and native load confirmation.
+_Avoid_: adding to the inventory, toggling enable, Controlled execution.

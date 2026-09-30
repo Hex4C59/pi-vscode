@@ -91,10 +91,12 @@
 | [WI-056 代理受托接受](2026-09-30-wi-056-macos-acceptance.zh.md) | 模型与 Webview 共享值对象保留；未复制 DTO（ARCH-04） |
 | [WI-057 代理受托接受](2026-09-30-wi-057-macos-acceptance.zh.md) | 已保存默认应用顺序抽出（ARCH-02）；用户可见规则冻结 |
 | [WI-058 代理受托接受](2026-09-30-wi-058-macos-acceptance.zh.md) | 每窗口恢复域；ADR 0009 Accepted；双窗口 F5／安装已于 2026-09-30 记录 |
+| [WI-059 仅文档接受](2026-10-01-wi-059-acceptance.zh.md) | 本机插件清单产品边界；Draft ADR 0010；无存储／UI／加载 |
 | [macOS 验证与自用验收](2026-09-30-macos-verification-acceptance.zh.md) | 双窗口 F5／安装、崩溃清理、ADR 0005 真实 OAuth／端点、自用 PRD |
 | [WI-036 批准提案](2026-09-30-wi-036-approved-proposal.zh.md) | 完整批准 owner-loss 精确 child 范围；历史，不是新的 Build 授权 |
 | [WI-057 批准提案](2026-09-30-wi-057-approved-proposal.zh.md) | 完整批准已保存默认应用顺序封装；历史，不是新的 Build 授权 |
 | [WI-058 批准提案](2026-09-30-wi-058-approved-proposal.zh.md) | 完整批准每窗口恢复域范围；历史，不是新的 Build 授权 |
+| [WI-059 批准提案](2026-10-01-wi-059-approved-proposal.zh.md) | 完整批准清单产品边界范围；历史，不是新的 Build 授权 |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |

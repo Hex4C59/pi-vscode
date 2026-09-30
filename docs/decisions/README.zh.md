@@ -43,7 +43,11 @@
 
 ## Draft ADR
 
-无。
+| ID | 标题 | Gate | 文件 |
+|----|------|------|------|
+| 0010 | 本机 pi 扩展清单的持久化与加载同意（WI-059） | 无；后续切片验证 | [0010-local-plugin-inventory.zh.md](0010-local-plugin-inventory.zh.md) |
+
+0010 于 2026-10-01 由完成 ACTIVE.md 全部任务的 `/goal` 记为 Draft。WI-059 只接受产品边界。存储、设置 UI、运行时应用与 ADR 接受仍属后续切片。[讨论](../discussions/2026-10-01-local-plugin-inventory.zh.md)；[WI-059](../archive/2026-10-01-wi-059-acceptance.zh.md)。
 
 0005 于 2026-09-30 由代理依据剩余验证 `/goal` 接受：隔离安装版真实自定义端点补全，以及 GitHub Copilot 设备码／浏览器 OAuth 交互。隔离 `auth.json` 未写入。不关闭 gate。[证据](../archive/2026-09-30-macos-verification-acceptance.zh.md)。
 
