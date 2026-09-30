@@ -15,29 +15,29 @@
 
 | 字段 | 当前值 |
 |---|---|
-| **ID** | WI-044 |
-| **阶段** | 建造 — TOOL-01 提交检查纳入 Vite 配置 |
+| **ID** | WI-045 |
+| **阶段** | 建造 — UI-03 缺失路径本地化 |
 | **Gate ID** | 无新增 |
 | **Decision** | none |
-| **PRD 判定** | 纯技术：提交检查把实际 Vite 构建配置归入实现／构建输入，不改变用户可见行为 |
+| **PRD 判定** | 用户可见：REQ-007 缺失审阅路径正文与 tooltip 共用翻译入口 |
 
 ### 目标与范围
 
-- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 TOOL-01 的实施授权。证据见[工具链审查](docs/discussions/2026-09-30-tooling-config-audit.zh.md)。
-- **目标／范围**：`isImplementationPath` 把仓库实际 Vite 构建配置归入实现输入。覆盖新增／修改／删除／重命名；与 ACTIVE 混合暂存须拒绝；普通文档配对仍允许。
-- **PRD**：纯技术，无用户可见切片。不替代人工语义审查，不改 TOOL-02 TSX 规格发现。
+- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 UI-03 的实施授权。证据见[UI 组件审查](docs/discussions/2026-09-30-ui-components-audit.zh.md)。
+- **目标／范围**：`ReviewEntry` 缺失路径正文与 tooltip 共用 `t("Path unavailable")`。覆盖英文与中文。
+- **PRD**：已双语同步 WI-045 切片。不是文件访问或授权问题。不合并 RUNTIME-03。
 
 ### 方案与架构核对
 
-所有者仍是 `scripts/testing/commit-check.mjs`。根目录 `vite.config.*` 与 esbuild／tsconfig／eslint 一样视为构建输入。Decision：none。
+所有者仍是 Webview `change-review.tsx`。既有 `Path unavailable` 翻译键已存在。Decision：none。
 
 ### 验收
 
-ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命名记录均计入。ACTIVE 加普通文档仍允许。compile／lint／完整 `npm test`。
+null path 条目的正文与 title 在 en／zh-CN 一致。compile／lint／完整 `npm test`。
 
 ### 范围外与批准边界
 
-- **范围外**：TOOL-02 TSX 规格、人工语义审查替代、gate／ADR、整份 PRD、推送。
+- **范围外**：RUNTIME-03 诊断工具、文件访问／授权语义、gate／ADR、整份 PRD、推送。
 
 ## 验收授权与平台决定
 
@@ -65,6 +65,7 @@ ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命
 | WI-041 | CORE-02 session-worker 请求关联与预览游标 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-042 | UI-01 模型选择器稳定身份 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-043 | UI-02 已消费 Escape | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
+| WI-044 | TOOL-01 Vite 提交路径分类 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 
 授权边界（与 2026-09-27 委托先例一致，且不继承其范围）：
 
@@ -75,7 +76,8 @@ ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命
 
 ## 当前焦点与未决项
 
-- [x] WI-043 代理受托接受并关闭：窗口级模型弹层 Escape 忽略已消费事件；重叠添加上下文菜单 jsdom 用例通过。[记录](docs/archive/2026-09-30-wi-043-macos-acceptance.zh.md)。TOOL-01 为当前 WIP。
+- [x] WI-044 代理受托接受并关闭：提交检查把 Vite 配置归入实现输入；新增／修改／删除／重命名与 ACTIVE 混合均拒绝。[记录](docs/archive/2026-09-30-wi-044-macos-acceptance.zh.md)。UI-03 为当前 WIP。
+- [x] WI-043 代理受托接受并关闭：窗口级模型弹层 Escape 忽略已消费事件；重叠添加上下文菜单 jsdom 用例通过。[记录](docs/archive/2026-09-30-wi-043-macos-acceptance.zh.md)。TOOL-01 已关闭。
 - [x] WI-042 代理受托接受并关闭：模型列表已应用 radio 使用稳定身份；同名标签与 canonical 碰撞挂载用例通过。[记录](docs/archive/2026-09-30-wi-042-macos-acceptance.zh.md)。UI-02 已关闭。
 - [x] WI-041 代理受托接受并关闭：inspect／history／preview 绑定请求身份与预览游标；五条合成反例与 list 错页对照自动化通过。[记录](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md)。UI-01 已关闭。
 - [x] WI-040 代理受托接受并关闭：并发预检查下最多八张待审批卡，写入点重检；九路延迟 custom-tool 预检查自动化通过。[记录](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md)。CORE-02 已关闭。
@@ -111,13 +113,13 @@ ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命
 
 ## 最近交接
 
+### 2026-09-30 — WI-044 受托接受并关闭
+
+维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。`isImplementationPath` 将根目录 `vite.config.*` 视为构建输入。本次关闭重跑 compile／lint／完整 **1000** 项测试。记录见[验收](docs/archive/2026-09-30-wi-044-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-045 UI-03。
+
 ### 2026-09-30 — WI-043 受托接受并关闭
 
 维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。模型弹层窗口 Escape 忽略 `defaultPrevented` 与输入法组合。本次关闭重跑 compile／lint／完整 **999** 项测试。记录见[验收](docs/archive/2026-09-30-wi-043-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-044 TOOL-01。
-
-### 2026-09-30 — WI-042 受托接受并关闭
-
-维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。模型选择器已应用 radio 优先 canonical 身份。本次关闭重跑 compile／lint／完整 **997** 项测试。记录见[验收](docs/archive/2026-09-30-wi-042-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-043 UI-02。
 
 ## 停车场
 
@@ -125,7 +127,7 @@ ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043 已接受关闭，当前唯一活动 WI 为 WI-044 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044 已接受关闭，当前唯一活动 WI 为 WI-045 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -148,8 +150,8 @@ ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命
 | [x] CORE-02 | P2，WI-041 已关闭 | 关联 inspect id、history page、preview offset；拒绝非终态不推进及结束标记矛盾，保留 list 对照；解析器反例与真实 worker 集成分别验证，不宣称已错误切换会话。证据见[验收](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md)。 |
 | [x] UI-01 | P2，WI-042 已关闭 | 稳定模型身份与显示标签分离；同名及标签／canonical 身份碰撞仍唯一选中，不据当前证据认定运行时模型选错。证据见[验收](docs/archive/2026-09-30-wi-042-macos-acceptance.zh.md)。 |
 | [x] UI-02 | P2，WI-043 已关闭 | Escape 尊重已消费事件，回归重叠菜单／模型弹层、输入法与焦点返回；组件探针不代替 macOS 宿主验证。证据见[验收](docs/archive/2026-09-30-wi-043-macos-acceptance.zh.md)。 |
-| [ ] TOOL-01 | P2，WI-044 Build | 把实际 Vite 构建配置归入实现输入，覆盖新增／修改／删除／重命名；与 ACTIVE 混合暂存须拒绝，普通文档配对仍允许，不替代人工语义审查。当前 WIP。 |
-| [ ] UI-03 | P3，本地化 | 缺失路径正文与 tooltip 共用翻译入口，覆盖对应语言；不是文件访问或授权问题。 |
+| [x] TOOL-01 | P2，WI-044 已关闭 | 把实际 Vite 构建配置归入实现输入，覆盖新增／修改／删除／重命名；与 ACTIVE 混合暂存须拒绝，普通文档配对仍允许，不替代人工语义审查。证据见[验收](docs/archive/2026-09-30-wi-044-macos-acceptance.zh.md)。 |
+| [ ] UI-03 | P3，WI-045 Build | 缺失路径正文与 tooltip 共用翻译入口，覆盖对应语言；不是文件访问或授权问题。当前 WIP。 |
 | [ ] RUNTIME-03 | P2，诊断工具独立批次 | 管理 child／pipe 异步错误与单次结算；ENOENT 返回失败结果，清理失败有界，不把隔离进程崩溃说成实际扩展宿主崩溃。 |
 | [ ] RUNTIME-04 | P2，诊断工具独立批次 | 区分 RPC 成功、发出终止与观察退出；kill 被拒且无退出证据时，不报告有界退出成功，不替代生产所有权／恢复规则。 |
 | [ ] RUNTIME-05 | P2，诊断工具独立批次 | 严格要求 success 为 boolean，字符串 false 等畸形值不能产生成功证据；不假定正常 pi 会发这些回复。 |
@@ -199,6 +201,7 @@ ACTIVE 与 `vite.config.mts` 同暂存拒绝。新增、修改、删除、重命
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-044 | Vite 配置纳入提交检查实现输入（TOOL-01） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-044-macos-acceptance.zh.md) |
 | WI-043 | 模型弹层 Escape 忽略已消费事件（UI-02） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-043-macos-acceptance.zh.md) |
 | WI-042 | 模型选择器已应用 radio 使用稳定身份（UI-01） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-042-macos-acceptance.zh.md) |
 | WI-041 | session-worker 请求关联与预览游标不变量（CORE-02） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md) |
