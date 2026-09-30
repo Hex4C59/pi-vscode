@@ -143,3 +143,39 @@ test('a known custom tool never inherits file scope or accepts a session-grant i
     assert.deepEqual(manager.scopes(), []);
   } finally { manager.cancel(true); }
 });
+
+test('concurrent custom-tool preflights cannot admit a ninth approval card', { timeout: 5000 }, async () => {
+  let openInitial = () => {};
+  const initial = new Promise<void>(resolve => { openInitial = resolve; });
+  let waiting = 0;
+  let offered: (() => void) | undefined;
+  const manager = new ToolApprovals(() => { if (manager.cards().length) offered?.(); }, 30_000, async (_call, phase) => {
+    if (phase === 'initial') {
+      waiting += 1;
+      await initial;
+    }
+    return true;
+  });
+  const custom = (id: string): GateCall => ({
+    cwd: '/not-read-for-custom-policy', runtime: 'runtime', request: id, toolCallId: id,
+    tool: 'review_summary', category: 'custom', input: { query: 'safe' },
+  });
+  try {
+    const requests = Array.from({ length: 9 }, (_, i) => manager.request(custom(`c${i}`)));
+    while (waiting < 9) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(waiting, 9);
+    openInitial();
+    assert.equal(await Promise.race(requests), false);
+    for (let i = 0; i < 50 && manager.cards().length < 8; i++) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(manager.cards().length, 8);
+    manager.cancel();
+    assert.equal(manager.cards().length, 0);
+    assert.deepEqual(await Promise.all(requests), Array.from({ length: 9 }, () => false));
+    const ready = new Promise<void>(resolve => { offered = resolve; });
+    const again = manager.request(custom('again'));
+    assert.equal(await Promise.race([ready.then(() => 'offered'), again.then(() => 'settled')]), 'offered');
+    assert.equal(manager.cards().length, 1);
+    manager.decide('again', 'deny');
+    assert.equal(await again, false);
+  } finally { manager.cancel(true); }
+});

@@ -68,7 +68,7 @@ export class ToolApprovals {
       const allowed = await this.canExecute(call, "final");
       return allowed && current() && (policy.auto || (grant !== undefined && this.grants.has(grant.id)));
     }
-    const decision = await new Promise<ApprovalDecision>(resolve=>{const id=call.request;if(this.pending.has(id)){resolve("deny");return;}const card: ApprovalCard={...(call.category === "custom" ? {category: "custom" as const} : {}),id,toolCallId:call.toolCallId,tool:call.tool,input,scope:policy.scope,expiresAt};const timer=setTimeout(()=>this.decide(id,'deny'),Math.max(0, expiresAt - Date.now()));this.pending.set(id,{card,resolve,timer});this.changed();});
+    const decision = await new Promise<ApprovalDecision>(resolve=>{const id=call.request;if(this.pending.has(id)||this.pending.size>=8){resolve("deny");return;}const card: ApprovalCard={...(call.category === "custom" ? {category: "custom" as const} : {}),id,toolCallId:call.toolCallId,tool:call.tool,input,scope:policy.scope,expiresAt};const timer=setTimeout(()=>this.decide(id,'deny'),Math.max(0, expiresAt - Date.now()));this.pending.set(id,{card,resolve,timer});this.changed();});
     if (decision === "deny" || !current() || !await this.canExecute(call, "final") || !current()) return false;
     if (decision === "session" && policy.scope && this.grants.size < 64) {
       const grant = { id: randomUUID(), scope: policy.scope };
