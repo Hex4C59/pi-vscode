@@ -82,6 +82,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-052 delegated acceptance](2026-09-30-wi-052-macos-acceptance.md) | Startup, diagnostic, artifact and test/Git costs need no in-repo budget now |
 | [WI-053 delegated acceptance](2026-09-30-wi-053-macos-acceptance.md) | Streaming publish and history preview costs do not justify optimization now |
 | [WI-054 delegated acceptance](2026-09-30-wi-054-macos-acceptance.md) | Admission owners tabulated; busy flags stay separate (ARCH-01) |
+| [WI-055 delegated acceptance](2026-09-30-wi-055-macos-acceptance.md) | Runtime optionals stay on one lifecycle; not split (ARCH-03) |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
 | [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |
@@ -99,6 +100,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-052 approved proposal](2026-09-30-wi-052-approved-proposal.md) | Complete approved resource/timeout measurement; historical, no new Build authorization |
 | [WI-053 approved proposal](2026-09-30-wi-053-approved-proposal.md) | Complete approved ARCH-08 measurement; historical, no new Build authorization |
 | [WI-054 approved proposal](2026-09-30-wi-054-approved-proposal.md) | Complete approved ARCH-01 inventory; historical, no new Build authorization |
+| [WI-055 approved proposal](2026-09-30-wi-055-approved-proposal.md) | Complete approved ARCH-03 inventory; historical, no new Build authorization |
 | [WI-035 approved proposal](2026-09-30-wi-035-approved-proposal.md) | Complete approved scope and acceptance; historical, no new Build authorization |
 | [WI-034 approved proposal](2026-09-30-wi-034-approved-proposal.md) | Original single-language ACTIVE proposal retained after close; no new Build authorization |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |

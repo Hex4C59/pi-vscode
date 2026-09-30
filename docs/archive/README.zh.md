@@ -86,6 +86,7 @@
 | [WI-052 代理受托接受](2026-09-30-wi-052-macos-acceptance.zh.md) | 启动、诊断、artifact 与 test／Git 成本目前不需要库内预算 |
 | [WI-053 代理受托接受](2026-09-30-wi-053-macos-acceptance.zh.md) | 流式发布与历史预览成本目前不值得优化 |
 | [WI-054 代理受托接受](2026-09-30-wi-054-macos-acceptance.zh.md) | 准入所有者已列表；busy 标志保持分离（ARCH-01） |
+| [WI-055 代理受托接受](2026-09-30-wi-055-macos-acceptance.zh.md) | 运行时可选项留在同一 lifecycle；不拆分（ARCH-03） |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |
@@ -103,6 +104,7 @@
 | [WI-052 批准提案](2026-09-30-wi-052-approved-proposal.zh.md) | 完整批准资源与期限测量；历史，不是新的 Build 授权 |
 | [WI-053 批准提案](2026-09-30-wi-053-approved-proposal.zh.md) | 完整批准 ARCH-08 测量；历史，不是新的 Build 授权 |
 | [WI-054 批准提案](2026-09-30-wi-054-approved-proposal.zh.md) | 完整批准 ARCH-01 盘点；历史，不是新的 Build 授权 |
+| [WI-055 批准提案](2026-09-30-wi-055-approved-proposal.zh.md) | 完整批准 ARCH-03 盘点；历史，不是新的 Build 授权 |
 | [WI-035 批准提案](2026-09-30-wi-035-approved-proposal.zh.md) | 完整批准范围与验收；历史，不是新的 Build 授权 |
 | [WI-034 批准提案](2026-09-30-wi-034-approved-proposal.md) | 关闭后原样保留的 ACTIVE 单语提案；不是新建造授权 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |

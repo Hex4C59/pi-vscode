@@ -77,6 +77,7 @@
 | WI-052 | 启动、诊断、artifact 与 test／Git 成本目前不需要库内预算 | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-052-macos-acceptance.zh.md) |
 | WI-053 | 流式发布与历史预览成本目前不值得优化 | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-053-macos-acceptance.zh.md) |
 | WI-054 | 准入所有者已列表；busy 标志保持分离（ARCH-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-054-macos-acceptance.zh.md) |
+| WI-055 | 运行时可选项留在同一 lifecycle；不拆分（ARCH-03） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-055-macos-acceptance.zh.md) |
 
 ## 不在本索引
 
