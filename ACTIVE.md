@@ -15,29 +15,29 @@
 
 | 字段 | 当前值 |
 |---|---|
-| **ID** | WI-041 |
-| **阶段** | 建造 — CORE-02 session worker 请求关联与游标语义 |
+| **ID** | WI-042 |
+| **阶段** | 建造 — UI-01 模型选择器稳定身份 |
 | **Gate ID** | 无新增 |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：REQ-008 历史 inspect／分页／预览响应必须绑定本次请求的会话 id、页码与预览 offset，并拒绝不推进或结束标记矛盾的预览 |
+| **PRD 判定** | 用户可见：REQ-002 模型选择器已应用状态只用稳定的供应商／模型 id，不用显示标签 |
 
 ### 目标与范围
 
-- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 CORE-02 的实施授权。证据见[核心边界审查](docs/discussions/2026-09-30-core-boundaries-audit.zh.md)。
-- **目标／范围**：`parseSessionWorkerResponse` 将 inspect 会话 id、history 页码、preview offset 绑定到本次请求；拒绝非终态零推进与结束标记和剩余字符矛盾的预览。保留 list 页码对照。解析器反例与真实 worker 集成分别验证。
-- **PRD**：已双语同步 WI-041 切片。不改协议版本、Webview 契约或宣称真实 worker 已发出这些坏响应／已错误切换会话。
+- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 UI-01 的实施授权。证据见[UI 组件审查](docs/discussions/2026-09-30-ui-components-audit.zh.md)。
+- **目标／范围**：`ModelPickerView` 已应用标记只比较稳定的供应商／模型 id 身份，不把显示标签当作身份。同名标签、以及标签与另一模型 canonical 组合碰撞时仍只选中一个 radio。
+- **PRD**：已双语同步 WI-042 切片。不改 Webview 协议、运行时模型选择或宣称运行时已选错模型。
 
 ### 方案与架构核对
 
-所有者仍是 adapter `session-worker-protocol.ts`。list 已对照请求页码；inspect／history／preview 补齐请求关联；预览形状增加推进与结束不变量。不合并 ARCH-08 性能工作，不改 SessionManager 调用。Decision：none。
+所有者仍是 Webview `model-picker.tsx`。已应用谓词只匹配 provider + model id。不合并 UI-02 Escape／焦点。Decision：none。
 
 ### 验收
 
-五条合成反例（inspect 他会话、history 错页、preview 错 offset、空文本非终态零推进、已结束但仍有剩余）解析为 `ok: false`。既有 list 错页对照与合法 round-trip 仍通过。compile／lint／完整 `npm test`。本切片以解析器自动化为主；不要求再跑真实 worker 发出矛盾响应。
+同名标签与 canonical／标签碰撞各只一个 `aria-checked="true"`。compile／lint／完整 `npm test`。本切片以挂载组件自动化为主；不要求 macOS 宿主模型选择实机。
 
 ### 范围外与批准边界
 
-- **范围外**：ARCH-08 历史预览成本、真实 worker 被证明会发出这些坏响应、错误切换会话的产品结论、gate／ADR、整份 PRD、推送。
+- **范围外**：UI-02 Escape／焦点、运行时模型选错结论、协议变更、gate／ADR、整份 PRD、推送。
 
 ## 验收授权与平台决定
 
@@ -62,6 +62,7 @@
 | WI-039 | PACKAGE-01 安装版运行时依赖闭包 + 解包 import／隔离安装供应商加载 | macOS | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-038 | ARCH-05 跨宿主 endpoint 写入互斥 + 双窗口争用／串行提交；ADR 0007 | macOS | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-040 | CORE-01 并发预检查下八张审批卡准入 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
+| WI-041 | CORE-02 session-worker 请求关联与预览游标 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 
 授权边界（与 2026-09-27 委托先例一致，且不继承其范围）：
 
@@ -72,7 +73,8 @@
 
 ## 当前焦点与未决项
 
-- [x] WI-040 代理受托接受并关闭：并发预检查下最多八张待审批卡，写入点重检；九路延迟 custom-tool 预检查自动化通过。[记录](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md)。CORE-02 为当前 WIP。
+- [x] WI-041 代理受托接受并关闭：inspect／history／preview 绑定请求身份与预览游标；五条合成反例与 list 错页对照自动化通过。[记录](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md)。UI-01 为当前 WIP。
+- [x] WI-040 代理受托接受并关闭：并发预检查下最多八张待审批卡，写入点重检；九路延迟 custom-tool 预检查自动化通过。[记录](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md)。CORE-02 已关闭。
 - [x] WI-038 代理受托接受并关闭：跨宿主 `models.json` 写入互斥，ADR 0007 Accepted；开发／隔离安装双窗口争用与串行提交通过。[记录](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)。ARCH-06 仍停车场。
 - [x] WI-039 代理受托接受并关闭：安装版 VSIX 内联 pi-ai、组包拒绝未发布依赖、解包真实 import 红／绿通过；隔离安装版设置页加载供应商配置。[记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。ARCH-07 仍停车场。
 - [x] WI-037 代理受托接受并关闭：thinking 有界上下文与完整引号凭据脱敏；macOS F5／隔离安装合成 SSE 逐帧通过。[记录](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。助手正文逐 delta 与 WI-036 未改。
@@ -105,13 +107,13 @@
 
 ## 最近交接
 
+### 2026-09-30 — WI-041 受托接受并关闭
+
+维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。`parseSessionWorkerResponse` 绑定 inspect id／history 页码／preview offset，并拒绝非终态零推进与结束标记矛盾。本次关闭重跑 compile／lint／完整 **995** 项测试。记录见[验收](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-042 UI-01。
+
 ### 2026-09-30 — WI-040 受托接受并关闭
 
 维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。`ToolApprovals.evaluate` 在插入卡片时重检八张上限。本次关闭重跑 compile／lint／完整 **994** 项测试；九路延迟 custom-tool 预检查先在旧插入路径超时失败，写入点重检后通过。记录见[验收](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-041 CORE-02。
-
-### 2026-09-30 — WI-038 受托接受并关闭
-
-维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。实现已在 `d485cc4`。本次关闭重跑 compile／lint／完整 **993** 项测试，归档提案与验收，并将 ADR 0007 升 Accepted。开发宿主与隔离安装版双窗口争用显示固定占用错误，释放后保留全部已提交条目；`cleanupRemaining: []`。记录见[验收](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)。ADR 0005、ARCH-06、gate、整份 PRD 未改。不推送。下一 WI 为 WI-040 CORE-01。
 
 ## 停车场
 
@@ -119,7 +121,7 @@
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040 已接受关闭，当前唯一活动 WI 为 WI-041 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041 已接受关闭，当前唯一活动 WI 为 WI-042 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -139,8 +141,8 @@
 | [x] RUNTIME-01 | P1，WI-037 已关闭 | 显示文本不再作为原始 delta 缓存；有界保留脱敏上下文，Bearer／私钥跨片段后续内容不泄露。自动化与 macOS F5／隔离安装合成 SSE 证据见[验收](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。 |
 | [x] RUNTIME-02 | P1，WI-037 已关闭 | 整体遮盖含空白及转义引号的凭据值；有效 JSON 与非结构化文本分别回归。自动化与实机 thinking 引号值见同一验收记录。 |
 | [x] CORE-01 | P2，WI-040 已关闭 | await 前预留容量或在原子准入点重检；并发预检查不突破 8 项上限，取消／错误释放槽位。写入点重检与自动化证据见[验收](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md)。 |
-| [ ] CORE-02 | P2，WI-041 Build | 关联 inspect id、history page、preview offset；拒绝非终态不推进及结束标记矛盾，保留 list 对照；解析器反例与真实 worker 集成分别验证，不宣称已错误切换会话。当前 WIP。 |
-| [ ] UI-01 | P2，模型选择 | 稳定模型身份与显示标签分离；同名及标签／canonical 身份碰撞仍唯一选中，不据当前证据认定运行时模型选错。 |
+| [x] CORE-02 | P2，WI-041 已关闭 | 关联 inspect id、history page、preview offset；拒绝非终态不推进及结束标记矛盾，保留 list 对照；解析器反例与真实 worker 集成分别验证，不宣称已错误切换会话。证据见[验收](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md)。 |
+| [ ] UI-01 | P2，WI-042 Build | 稳定模型身份与显示标签分离；同名及标签／canonical 身份碰撞仍唯一选中，不据当前证据认定运行时模型选错。当前 WIP。 |
 | [ ] UI-02 | P2，键盘与焦点 | Escape 尊重已消费事件，回归重叠菜单／模型弹层、输入法与焦点返回；组件探针不代替 macOS 宿主验证。 |
 | [ ] TOOL-01 | P2，提交检查 | 把实际 Vite 构建配置归入实现输入，覆盖新增／修改／删除／重命名；与 ACTIVE 混合暂存须拒绝，普通文档配对仍允许，不替代人工语义审查。 |
 | [ ] UI-03 | P3，本地化 | 缺失路径正文与 tooltip 共用翻译入口，覆盖对应语言；不是文件访问或授权问题。 |
@@ -193,6 +195,7 @@
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-041 | session-worker 请求关联与预览游标不变量（CORE-02） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md) |
 | WI-040 | 并发预检查下八张审批卡准入（CORE-01）；写入点重检 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md) |
 | WI-038 | 跨宿主 endpoint 写入互斥；ADR 0007 Accepted；macOS 开发／隔离安装双窗口争用 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；ADR 0005／ARCH-06 仍范围外 | [记录](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md) |
 | WI-039 | 交付 VSIX 运行时依赖闭包（PACKAGE-01）；解包 import 与隔离安装版供应商加载 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；ARCH-07 仍停车场 | [记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md) |
