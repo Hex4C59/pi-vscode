@@ -89,7 +89,7 @@ npm run verify:webview -- path/to/pi-vscode.vsix
 
 可选 VSIX 参数检查 `extension/dist/webview/webview.js` 与 `extension/dist/webview/webview.css` 是否存在。这些是静态资源检查，不会安装 VSIX、启动开发服务器或运行 pi。生产 Webview 加载打包的本地资源，不依赖开发服务器。
 
-组包前必须先运行 `npm run compile`：编译产物缺失时打包脚本会拒绝执行，而不是产出一个无法激活的包。然后：
+组包前必须先运行 `npm run compile`：缺少宿主 JS、webview JS／CSS 或三份 helper 之一时打包脚本会拒绝执行，而不是产出一个无法激活的包。`npm run verify:package-files` 检查同一清单，不组装归档。然后：
 
 ```bash
 npm run package:vsix

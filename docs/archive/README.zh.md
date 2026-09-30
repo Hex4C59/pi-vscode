@@ -80,6 +80,7 @@
 | [WI-046 代理受托接受](2026-09-30-wi-046-macos-acceptance.zh.md) | 诊断探针结算与成功证据（RUNTIME-03／04／05） |
 | [WI-047 代理受托接受](2026-09-30-wi-047-macos-acceptance.zh.md) | endpoint 写入输出预算（ARCH-06） |
 | [WI-048 代理受托接受](2026-09-30-wi-048-macos-acceptance.zh.md) | 默认保存失败不应用请求中的实时模型（ARCH-02 补充） |
+| [WI-049 代理受托接受](2026-09-30-wi-049-macos-acceptance.zh.md) | 组包入口缺必需 helper 或 CSS 时失败（ARCH-07） |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |
@@ -91,6 +92,7 @@
 | [WI-046 批准提案](2026-09-30-wi-046-approved-proposal.zh.md) | 完整批准诊断探针结算范围；历史，不是新的 Build 授权 |
 | [WI-047 批准提案](2026-09-30-wi-047-approved-proposal.zh.md) | 完整批准 endpoint 输出预算范围；历史，不是新的 Build 授权 |
 | [WI-048 批准提案](2026-09-30-wi-048-approved-proposal.zh.md) | 完整批准默认保存失败范围；历史，不是新的 Build 授权 |
+| [WI-049 批准提案](2026-09-30-wi-049-approved-proposal.zh.md) | 完整批准组包必需资产范围；历史，不是新的 Build 授权 |
 | [WI-035 批准提案](2026-09-30-wi-035-approved-proposal.zh.md) | 完整批准范围与验收；历史，不是新的 Build 授权 |
 | [WI-034 批准提案](2026-09-30-wi-034-approved-proposal.md) | 关闭后原样保留的 ACTIVE 单语提案；不是新建造授权 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |

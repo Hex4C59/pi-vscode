@@ -84,7 +84,7 @@ npm run verify:webview -- path/to/pi-vscode.vsix
 
 The optional VSIX argument checks for `extension/dist/webview/webview.js` and `extension/dist/webview/webview.css`. These are static asset checks; they do not install the VSIX, start a development server or run pi. Production Webviews load the packaged local assets and do not depend on a dev server.
 
-`npm run compile` must run before packaging: the packager refuses to build from a tree whose compiled output is missing rather than producing a package that cannot activate. Then:
+`npm run compile` must run before packaging: the packager refuses a tree that is missing host JS, webview JS/CSS or any of the three helper bundles rather than producing a package that cannot activate. `npm run verify:package-files` checks the same list without assembling an archive. Then:
 
 ```bash
 npm run package:vsix
