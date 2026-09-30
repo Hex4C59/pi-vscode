@@ -34,13 +34,14 @@ export function parseNameStatusZ(input) {
 export function isImplementationPath(file) {
   const name = file.replaceAll('\\', '/');
   // Keep this list deliberately narrow. These are implementation, build, or
-  // automation inputs: src/, scripts/, package manifests, root build/TS/ESLint
+  // automation inputs: src/, scripts/, package manifests, root Vite/esbuild/TS/ESLint
   // configuration, and CI workflows. Other documentation remains docs-only.
   return name.startsWith('src/')
     || name.startsWith('scripts/')
     || name === 'package.json'
     || name === 'package-lock.json'
     || name === 'esbuild.mjs'
+    || /^vite\.config\.[^/]+$/.test(name)
     || /^tsconfig[^/]*\.json$/.test(name)
     || /^eslint\.config\.[^/]+$/.test(name)
     || name.startsWith('.github/workflows/');

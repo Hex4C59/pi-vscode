@@ -85,6 +85,36 @@ test('rejects ACTIVE.md with package.json', (t) => {
   assert.equal(resultFor(root).ok, false);
 });
 
+test('rejects ACTIVE.md mixed with Vite config add, modify, delete and rename', (t) => {
+  const added = createRepo(t);
+  stage(added, { 'ACTIVE.md': 'handoff\n', 'vite.config.mts': 'export default {};\n' });
+  assert.equal(resultFor(added).ok, false);
+
+  const modified = createRepo(t);
+  stage(modified, { 'vite.config.mts': 'export default {};\n' });
+  git(modified, 'commit', '--quiet', '-m', 'vite');
+  write(modified, 'vite.config.mts', 'export default { changed: true };\n');
+  write(modified, 'ACTIVE.md', 'handoff\n');
+  git(modified, 'add', '--', 'vite.config.mts', 'ACTIVE.md');
+  assert.equal(resultFor(modified).ok, false);
+
+  const deleted = createRepo(t);
+  stage(deleted, { 'vite.config.mts': 'export default {};\n' });
+  git(deleted, 'commit', '--quiet', '-m', 'vite');
+  git(deleted, 'rm', '--quiet', '--', 'vite.config.mts');
+  write(deleted, 'ACTIVE.md', 'handoff\n');
+  git(deleted, 'add', '--', 'ACTIVE.md');
+  assert.equal(resultFor(deleted).ok, false);
+
+  const renamed = createRepo(t);
+  stage(renamed, { 'vite.config.mts': 'export default {};\n' });
+  git(renamed, 'commit', '--quiet', '-m', 'vite');
+  git(renamed, 'mv', 'vite.config.mts', 'vite.config.ts');
+  write(renamed, 'ACTIVE.md', 'handoff\n');
+  git(renamed, 'add', '--', 'ACTIVE.md');
+  assert.equal(resultFor(renamed).ok, false);
+});
+
 test('allows implementation changes without ACTIVE.md', (t) => {
   const root = createRepo(t);
   stage(root, { 'scripts/tool.mjs': 'export {};\n', 'tsconfig.test.json': '{}\n' });
