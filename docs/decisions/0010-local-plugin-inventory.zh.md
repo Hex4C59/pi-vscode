@@ -10,7 +10,7 @@
 - 状态：Draft
 - 创建：2026-10-01
 - 决定批准：2026-10-01 维护者 `/goal` 完成 ACTIVE.md 全部任务，自 WI-059 起串行
-- 验证：待后续清单切片（存储、设置 UI、运行时应用）。WI-059 仅文档。
+- 验证：待设置 UI 与运行时应用。WI-060 已实现宿主文件存储及损坏／大小测试；在加载同意仍不能被跳过之前 ADR 保持 Draft。
 - Gate：不关闭。不取代 ADR 0002 的加载同意、覆盖警告、询问或自有 runtime 恢复。
 - 工作项：WI-059 记录产品边界；后续切片实现
 - 相关：[ADR 0002](0002-interaction-contract-route.zh.md)、[REQ-010](../product-requirements.zh.md)、[讨论](../discussions/2026-10-01-local-plugin-inventory.zh.md)

@@ -61,7 +61,7 @@ flowchart TD
 | `src/extension/editor-tools/` | 审批策略、未保存文件保护与修改审阅 |
 | `src/extension/sessions/` | 宿主侧保存历史阅读与预览协调 |
 | `src/extension/interactions/` | 标准交互准入、队列、答复权与视图投影 |
-| `src/extension/extension-loading/` | 原生受信入口选择、规范身份检查、加载同意，以及（计划中）配置范围的插件清单持久化 |
+| `src/extension/extension-loading/` | 原生受信入口选择、规范身份检查、加载同意，以及配置范围的 `plugin-inventory-v1.json` 持久化（仅 load／replace；设置 UI 与运行时应用仍属后续切片） |
 | `src/adapter/runtime/` | 实时 pi RPC 进程、请求应答配对、帧翻译、任务忙闲、模型解析及活动／错误投影 |
 | `src/adapter/sessions/` | 公开 pi 会话 API helper 与历史投影 |
 | `src/adapter/ownership/` | 持久恢复域、supervisor／控制通道、精确子进程回执与遗留运行交接 |

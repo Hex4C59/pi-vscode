@@ -83,6 +83,7 @@
 | WI-057 | 已保存默认应用顺序抽出；用户可见规则冻结（ARCH-02） | 2026-09-30 代理依据完成剩余任务的 goal 接受；无 gate 或 ADR | [记录](2026-09-30-wi-057-macos-acceptance.zh.md) |
 | WI-058 | 每个 VS Code 窗口独立恢复域；ADR 0009 Accepted | 2026-09-30 代理；双窗口 F5／安装已记录 | [记录](2026-09-30-wi-058-macos-acceptance.zh.md) |
 | WI-059 | 本机插件清单产品边界（仅文档）；Draft ADR 0010 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；无存储／UI／加载 | [记录](2026-10-01-wi-059-acceptance.zh.md) |
+| WI-060 | 宿主插件清单文件存储 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；无设置 UI 或运行时加载 | [记录](2026-10-01-wi-060-acceptance.zh.md) |
 
 ## 不在本索引
 

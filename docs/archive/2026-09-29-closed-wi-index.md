@@ -80,6 +80,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-057 | Saved-default apply order extracted; user-visible rules frozen (ARCH-02) | 2026-09-30 agent under the complete-remaining-tasks goal; no gate or ADR | [record](2026-09-30-wi-057-macos-acceptance.md) |
 | WI-058 | Independent recovery domain per VS Code window; ADR 0009 Accepted | 2026-09-30 agent; dual-window F5/installed recorded | [record](2026-09-30-wi-058-macos-acceptance.md) |
 | WI-059 | Local plugin-inventory product boundary (docs only); Draft ADR 0010 | 2026-10-01 agent under complete-ACTIVE `/goal`; no store/UI/load | [record](2026-10-01-wi-059-acceptance.md) |
+| WI-060 | Host plugin-inventory file store | 2026-10-01 agent under complete-ACTIVE `/goal`; no Settings UI or runtime load | [record](2026-10-01-wi-060-acceptance.md) |
 
 ## Not in this index
 
