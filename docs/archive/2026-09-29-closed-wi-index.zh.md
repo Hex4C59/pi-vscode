@@ -67,6 +67,7 @@
 | WI-042 | 模型选择器已应用 radio 使用稳定供应商／模型 id 身份（UI-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-042-macos-acceptance.zh.md) |
 | WI-043 | 模型弹层 Escape 忽略已消费事件（UI-02） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-043-macos-acceptance.zh.md) |
 | WI-044 | Vite 配置纳入提交检查实现输入（TOOL-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-044-macos-acceptance.zh.md) |
+| WI-045 | 缺失审阅路径正文与 tooltip 共用翻译入口（UI-03） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-045-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

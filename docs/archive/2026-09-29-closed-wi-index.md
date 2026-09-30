@@ -64,6 +64,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-042 | Model-picker applied radio uses stable provider/model-id identity (UI-01) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-042-macos-acceptance.md) |
 | WI-043 | Model-popover Escape ignores already-consumed events (UI-02) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-043-macos-acceptance.md) |
 | WI-044 | Vite config classified as a commit-check implementation input (TOOL-01) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-044-macos-acceptance.md) |
+| WI-045 | Missing review-path body and tooltip share one translation entry (UI-03) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-045-macos-acceptance.md) |
 
 ## Not in this index
 

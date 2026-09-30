@@ -267,7 +267,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **WI-032 Build 切片（2026-09-29，维护者已授权）：** 文件正文命中宿主共用凭据文本规则时，审阅快照不可用。敏感路径名仍是另一项拒绝。这不增加回滚或事前审批。批准切片于 2026-09-30 按最终委托接受；见 [WI-032 记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。
 
-**WI-045 Build 切片（维护者通过完成 ACTIVE 剩余任务授权，2026-09-30；REQ-007／UI-03）：** 缺失审阅路径的正文与 tooltip 共用同一翻译入口。英文与中文都覆盖。这是本地化一致性，不是文件访问或授权变更。
+**WI-045 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-007／UI-03）：** 缺失审阅路径的正文与 tooltip 共用同一翻译入口。英文与中文都覆盖。这是本地化一致性，不是文件访问或授权变更。[验收与限制](archive/2026-09-30-wi-045-macos-acceptance.zh.md)。
 
 ### REQ-008 — 会话连续性
 
@@ -383,7 +383,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-041 | REQ-008 session-worker inspect／history／preview 请求关联与预览游标不变量（CORE-02） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解析器反例证据与限制](archive/2026-09-30-wi-041-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-042 | REQ-002 模型选择器已应用状态使用稳定的供应商／模型 id 身份，不用显示标签（UI-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[挂载唯一性证据与限制](archive/2026-09-30-wi-042-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-043 | REQ-002 模型弹层 Escape 在与添加上下文菜单重叠时忽略已消费事件（UI-02） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[jsdom 重叠证据与限制](archive/2026-09-30-wi-043-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
-| WI-045 | REQ-007 缺失审阅路径正文与 tooltip 共用翻译入口（UI-03） | 维护者通过本会话完成 ACTIVE 剩余任务授权。Build 见 [ACTIVE](../ACTIVE.md)。 |
+| WI-045 | REQ-007 缺失审阅路径正文与 tooltip 共用翻译入口（UI-03） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[en／zh-CN 证据与限制](archive/2026-09-30-wi-045-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-039 | REQ-009 交付 VSIX 必须包含自身 bundle 会加载的运行时依赖闭包（安装版供应商配置属 REQ-002） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解包 import 验证、隔离安装版供应商配置加载与限制](archive/2026-09-30-wi-039-macos-acceptance.zh.md)。不新增 gate、ADR 或整份 PRD 接受。 |
 | 剩余范围 | 未由单项已接受 WI 覆盖的 Draft 需求 | 完整产品目标及未分配切片仍未接受；WI-010／Goal 限定收尾见[归档](archive/2026-09-28-wi-010-goal-closure.zh.md)。2026-09-27 委托只覆盖明确记录且有证据的范围，不接受整份 PRD。 |
 

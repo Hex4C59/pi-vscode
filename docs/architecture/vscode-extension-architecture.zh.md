@@ -167,6 +167,8 @@ ownership 拥有观察、原始 run 身份、结束授权与匹配持久回执�
 
 **WI-016 T016-01 补充：** host `writeProtection.ts` 将声明版本的内置 write/edit 目标映射到活跃 VS Code 文档元数据和文件系统身份。`ToolApprovals` 在提供审批及授权放行前检查，异步过程共用到期点和 epoch；重检 grant 撤销，并仅在保护通过后创建 session grant。沿用有界错误投影解释拒绝，不新增 Webview 文件权限、自动保存、持久化或工具替换。公开执行前 hook 不能提供编辑器／写入原子锁，也不能覆盖不透明 shell／扩展绕过。[消息契约](../reference/webview-messages.zh.md) 管理细节，ACTIVE 管理当前证据；T016-02 `ChangeReview` 管理有界的纯内存快照、合并后的工作区观察和只读虚拟文档 diff。Adapter 完成事件独立于 activity 展示限额。Webview 只接收元数据与不透明 ID；最终授权失败丢弃临时快照，runtime 替换使快照／迟到工作失效。
 
+**缺失路径本地化（WI-045，2026-09-30 接受）：** 没有路径的审阅条目正文与 tooltip 共用同一翻译入口。这是展示一致性，不是捕获或授权变更。[验收与限制](../archive/2026-09-30-wi-045-macos-acceptance.zh.md)。
+
 **环境与覆盖：** [`controlledEnvironment.ts`](../../src/adapter/controlledEnvironment.ts)强制 `PI_OFFLINE=1`／`PI_TELEMETRY=0`，保留可信用户 provider 配置及凭证命令；后者在工具审批范围外。Offline 限制启动网络／缺包安装，不隔离推理或工具网络。
 
 **证据与成熟度：** [原WI-010历史](../archive/2026-09-21-closed-wi-history.zh.md#wi-010)保留其版本与限制。[ADR0004](../decisions/0004-trust-and-lifecycle.zh.md)经当前源码审查、公开pi探针、实际原生F5与安装VSIX验证，另行接受剩余信任／生命周期边界。该范围达到Evolvable，不声称全provider／OS／fork支持。最终WI-010收尾及证据由ACTIVE链接。
