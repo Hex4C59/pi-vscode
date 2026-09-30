@@ -414,6 +414,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-063 | REQ-010 启用或关闭清单项 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-063-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-063-acceptance.zh.md)。无运行时加载。ADR 0010 仍为 Draft。 |
 | WI-064 | REQ-010 空闲受信启动时应用已启用清单项 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-064-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-064-acceptance.zh.md)。消息编辑区收拢仍属后续。ADR 0010 仍为 Draft。 |
 | WI-065 | REQ-010 消息编辑区执行配置收拢 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-065-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-065-acceptance.zh.md)。作曲区不再打开文件选择器。ADR 0010 仍为 Draft。 |
+| WI-066 | REQ-002 作曲区模型芯片展示 | 依据完成 ACTIVE 的 `/goal` 进行中。格式化模型 id 且不显示供应商；保留 WI-042 radio 身份。不关闭 REQ-002 同名缺口。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
