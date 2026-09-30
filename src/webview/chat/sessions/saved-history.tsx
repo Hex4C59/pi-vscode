@@ -1,6 +1,6 @@
-import { useUiText } from "./ui-text.js";
+import { useUiText } from "../../i18n/ui-text.js";
 import { useLayoutEffect, useRef } from "react";
-import type { SavedHistoryProps } from "./types.js";
+import type { SavedHistoryProps } from "../../components/index.js";
 
 
 const errors = {

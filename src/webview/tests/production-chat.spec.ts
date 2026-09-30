@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatModelId } from "../components/model-display.js";
+import { formatModelId } from "../chat/composer/model-display.js";
 import { uiHarness } from "./react-harness.js";
 
 test("production mounts the accepted chat design with host recovery and no synthetic instructions", async () => {

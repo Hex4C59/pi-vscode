@@ -20,7 +20,7 @@
 
 **REQ-001：拒绝项目资源后的可见状态（已由 WI-068 关闭）。** 2026-09-30 检查发现 settled 的 `ProjectResourceConsent` 没有提示。WI-068 在拒绝后增加 `#declined-resources`。任务前的文件夹身份披露仍是独立可见性疑点，不是宿主实际在错误目录执行的证据。
 
-项目身份展示也较弱：[ProjectResourcesPrompt](../../src/webview/chat/project-resources-prompt.tsx) 只在选择前、默认折叠的详情里提供文件夹路径；[SessionNavigation](../../src/webview/chat/session-navigation.tsx) 显示对话名。这是否满足“执行任务前显示当前文件夹”仍需针对条文核对。它是可见性疑点，不是宿主实际在错误目录执行的证据。
+项目身份展示也较弱：[ProjectResourcesPrompt](../../src/webview/chat/workspace/project-resources-prompt.tsx) 只在选择前、默认折叠的详情里提供文件夹路径；[SessionNavigation](../../src/webview/chat/sessions/session-navigation.tsx) 显示对话名。这是否满足“执行任务前显示当前文件夹”仍需针对条文核对。它是可见性疑点，不是宿主实际在错误目录执行的证据。
 
 **REQ-002：活跃模型身份歧义（已由 WI-069 关闭）。** 2026-09-30 检查发现运行时解析优先显示名，同名标签可能没有已应用 radio。WI-069 投影 `provider / modelId`。目录标签与作曲区芯片仍只是展示。这不是运行时选错模型的证据。
 
@@ -30,7 +30,7 @@
 
 ## Further requirement checks
 
-REQ-008 已实现恢复、分页及历史工具通用展示；PRD 还要求在能识别时披露缺失能力。[SavedHistory](../../src/webview/components/saved-history.tsx) 提供“历史工具不代表当前已加载”的通用警告；[历史投影](../../src/adapter/sessions/session-history-projection.ts) 显示历史名称／状态，没有与当前工具清单比较。具体缺失能力披露仍需针对性评估，不能先认定该句已完全满足。完整依赖检测明确不是要求。
+REQ-008 已实现恢复、分页及历史工具通用展示；PRD 还要求在能识别时披露缺失能力。[SavedHistory](../../src/webview/chat/sessions/saved-history.tsx) 提供“历史工具不代表当前已加载”的通用警告；[历史投影](../../src/adapter/sessions/session-history-projection.ts) 显示历史名称／状态，没有与当前工具清单比较。具体缺失能力披露仍需针对性评估，不能先认定该句已完全满足。完整依赖检测明确不是要求。
 
 模型／thinking、附件事务、流式执行、Stop／恢复、覆盖范围内审批、只读审阅和保存会话等核心流程，有正式实现路径及限定历史验收。本次未认证每个分支，也未重跑这些记录。可信扩展代表性兼容仅限已记录目标和公开 pi 版本；通用生态兼容、丰富附件、remote／multi-root、跳过审批与公开发布仍是独立非目标。
 

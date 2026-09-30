@@ -11,7 +11,7 @@
 - 状态：WI-066 已交付芯片／列表展示；WI-067 已交付模型选择器与执行配置互斥
 - 创建：2026-10-01
 - 权威：**仅作上下文**——不覆盖 [`ACTIVE.md`](../../ACTIVE.md)、[PRD](../product-requirements.zh.md) 或架构
-- 相关：REQ-002、[WI-042](../archive/2026-09-30-wi-042-macos-acceptance.zh.md)、[WI-066](../archive/2026-10-01-wi-066-acceptance.zh.md)、[WI-067](../archive/2026-10-01-wi-067-acceptance.zh.md)、[`ModelPickerView`](../../src/webview/components/model-picker.tsx)
+- 相关：REQ-002、[WI-042](../archive/2026-09-30-wi-042-macos-acceptance.zh.md)、[WI-066](../archive/2026-10-01-wi-066-acceptance.zh.md)、[WI-067](../archive/2026-10-01-wi-067-acceptance.zh.md)、[`ModelPickerView`](../../src/webview/chat/composer/model-picker.tsx)
 
 ## 问题
 
@@ -32,7 +32,7 @@
 
 ## 当前行为
 
-[`ModelPickerView`](../../src/webview/components/model-picker.tsx) 在 Webview 层格式化模型 id（`displayModelId`／`formatModelId`），英文思考强度 Title Case。宿主投影仍是 `provider / modelId`。中文思考标签仍是关闭／低／中／高／最高。
+[`ModelPickerView`](../../src/webview/chat/composer/model-picker.tsx) 在 Webview 层格式化模型 id（`displayModelId`／`formatModelId`），英文思考强度 Title Case。宿主投影仍是 `provider / modelId`。中文思考标签仍是关闭／低／中／高／最高。
 
 [WI-042](../archive/2026-09-30-wi-042-macos-acceptance.zh.md) 仍用稳定的 `provider:modelId` 标记已应用 **radio**。WI-066 未改该身份规则。
 

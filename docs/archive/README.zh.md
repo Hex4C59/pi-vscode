@@ -103,6 +103,7 @@
 | [WI-068 拒绝资源提示](2026-10-01-wi-068-acceptance.zh.md) | 拒绝后持续提示；允许／未选择不显示 |
 | [WI-069 规范模型身份](2026-10-01-wi-069-acceptance.zh.md) | 活跃模型用供应商／模型 id，不用显示名 |
 | [WI-070 macOS 五类证据](2026-10-01-wi-070-acceptance.zh.md) | 当前安装包 REQ-009 矩阵；Windows 记录仍是 Windows |
+| [WI-071 Webview 目录整理](2026-10-01-wi-071-acceptance.zh.md) | 按 README 树分组展示文件；不改行为 |
 | [macOS 验证与自用验收](2026-09-30-macos-verification-acceptance.zh.md) | 双窗口 F5／安装、崩溃清理、ADR 0005 真实 OAuth／端点、自用 PRD |
 | [WI-036 批准提案](2026-09-30-wi-036-approved-proposal.zh.md) | 完整批准 owner-loss 精确 child 范围；历史，不是新的 Build 授权 |
 | [WI-057 批准提案](2026-09-30-wi-057-approved-proposal.zh.md) | 完整批准已保存默认应用顺序封装；历史，不是新的 Build 授权 |
@@ -119,6 +120,7 @@
 | [WI-068 批准提案](2026-10-01-wi-068-approved-proposal.zh.md) | 完整批准拒绝资源提示；历史，不是新的 Build 授权 |
 | [WI-069 批准提案](2026-10-01-wi-069-approved-proposal.zh.md) | 完整批准规范活跃模型身份；历史，不是新的 Build 授权 |
 | [WI-070 批准提案](2026-10-01-wi-070-approved-proposal.zh.md) | 完整批准 macOS REQ-009 证据余项；历史，不是新的 Build 授权 |
+| [WI-071 批准提案](2026-10-01-wi-071-approved-proposal.zh.md) | 完整批准 Webview 目录分组；历史，不是新的 Build 授权 |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |

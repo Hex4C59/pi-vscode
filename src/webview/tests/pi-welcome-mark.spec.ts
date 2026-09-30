@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { finalPiCells, PI_INTRO_FRAMES, piIntroCells } from "../chat/pi-welcome-mark.js";
+import { finalPiCells, PI_INTRO_FRAMES, piIntroCells } from "../chat/conversation/pi-welcome-mark.js";
 import { candidateHarness } from "./candidate-harness.js";
 
 test("welcome falls base, blue, coral and gold, then clears the base and settles", () => {

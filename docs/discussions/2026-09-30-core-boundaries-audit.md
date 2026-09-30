@@ -65,7 +65,7 @@ The earlier-reviewed caller was not reopened, and no actual wrong pairing was es
 | [ownership types](../../src/adapter/ownership/types.ts) | Full returned capability contracts |
 | [chatBounds](../../src/extension/bridge/chatBounds.ts) | Full returned constant |
 | [webviewProtocol](../../src/extension/contracts/webviewProtocol.ts) | Full returned DTO definitions |
-| [webview bridge](../../src/webview/bridge.ts) | Full returned transport implementation |
+| [webview bridge](../../src/webview/client/bridge.ts) | Full returned transport implementation |
 | [sessionBackend](../../src/extension/contracts/sessionBackend.ts) | Full returned contract and unavailable implementation |
 | [tool-approval tests](../../src/extension/editor-tools/tests/tool-approval.spec.ts) | Partial returned source; not run because they depend on previously reviewed helpers |
 | [file-attachment tests](../../src/extension/draft/tests/file-attachment.spec.ts) | Partial read, lines 1–200; no assertion-by-assertion audit or execution |

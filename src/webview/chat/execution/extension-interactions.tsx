@@ -1,7 +1,7 @@
-import { SessionIcon } from "./session-icon.js";
+import { SessionIcon } from "../sessions/session-icon.js";
 import { useId, useLayoutEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
-import type { ExecutionProfileProjection, ExtensionFeedback, ExtensionInteractionProjection, InteractionAnswer } from "../../extension/contracts/index.js";
-import { useUiText, type UiText, type UiTranslator } from "../components/index.js";
+import type { ExecutionProfileProjection, ExtensionFeedback, ExtensionInteractionProjection, InteractionAnswer } from "../../../extension/contracts/index.js";
+import { useUiText, type UiText, type UiTranslator } from "../../components/index.js";
 
 type ActiveInteraction = NonNullable<ExtensionInteractionProjection["active"]>;
 

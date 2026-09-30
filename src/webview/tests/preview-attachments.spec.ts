@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { PreviewBridge } from "../preview/preview-bridge.js";
 import type { PreviewScenario } from "../preview/scenarios.js";
-import { parseHostMessage } from "../parse-host-message.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
 import { parseWebviewMessage, type HostMessage, type AttachmentStateMessage } from "../../extension/bridge/webviewMessages.js";
 
 function fixture(scenario: PreviewScenario) {

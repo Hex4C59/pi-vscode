@@ -3,7 +3,7 @@ import test from "node:test";
 import { act } from "react";
 import type { ActivityItem } from "../../extension/contracts/runtimeLifecycle.js";
 import type { ApprovalCard } from "../../extension/editor-tools/toolApproval.js";
-import { parseHostMessage } from "../parse-host-message.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
 import { readyState, uiHarness } from "./react-harness.js";
 
 const thinking: ActivityItem = { id: "t1", kind: "thinking", messageId: "m1", text: "Actual upstream text", status: "thinking", truncated: false };

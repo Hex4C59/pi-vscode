@@ -16,8 +16,8 @@ test('shipped Webview imports shared chat but never synthetic or baseline runtim
   });
   const inputs = Object.keys(result.metafile.inputs).map(file => file.replaceAll('\\', '/'));
   assert.ok(inputs.includes('src/webview/chat/candidate.tsx'));
-  assert.ok(inputs.includes('src/webview/webview-client.ts'));
-  assert.ok(inputs.includes('src/webview/bridge.ts'));
+  assert.ok(inputs.includes('src/webview/client/webview-client.ts'));
+  assert.ok(inputs.includes('src/webview/client/bridge.ts'));
   for (const input of inputs) {
     assert.doesNotMatch(input, /src\/webview\/(?:preview|tests)\//, input);
     assert.doesNotMatch(input, /src\/adapter\/|pi-coding-agent|src\/extension\/(?!contracts\/)/, input);

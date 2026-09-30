@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { act } from "react";
 import type { AttachmentStateMessage, WebviewMessage, WorkspaceStateMessage } from "../../extension/contracts/webviewProtocol.js";
 import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
-import type { WebviewBridge } from "../bridge.js";
+import type { WebviewBridge } from "../client/bridge.js";
 
 export const readyState: WorkspaceStateMessage = {
   version: 3, type: "workspaceState", viewId: "view", generation: 1, status: "eligible", folder: { name: "project", path: "/project" },

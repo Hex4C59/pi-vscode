@@ -1,6 +1,12 @@
 import { englishUi, formatUiText, type UiLanguage } from "../components/index.js";
-import type { UiLanguageState } from "./types.js";
 import { chineseUi } from "./ui-zh-cn.js";
+
+/** Presentation language store; production follows the host's shared in-memory locale. */
+export interface UiLanguageState {
+  getSnapshot(): UiLanguage;
+  subscribe(listener: () => void): () => void;
+  select(locale: string): void;
+}
 
 /** Add a complete language pack here; controls do not need language-specific branches. */
 export const uiLanguages = [

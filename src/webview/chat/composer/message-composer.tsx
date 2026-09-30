@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
-import type { AttachmentHistoryEntry, AttachmentStateMessage, ExecutionProfileProjection, ProviderConfigProjection, WorkspaceStateMessage } from "../../extension/contracts/index.js";
-import { ModelPickerView, SessionGrants, useChatPreview, useUiText, type AttachmentPreview } from "../components/index.js";
+import type { AttachmentHistoryEntry, AttachmentStateMessage, ExecutionProfileProjection, ProviderConfigProjection, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
+import { ModelPickerView, SessionGrants, useChatPreview, useUiText, type AttachmentPreview } from "../../components/index.js";
 import { CandidateContext } from "./candidate-context.js";
 import { ComposerIcon } from "./composer-icon.js";
-import { ExecutionProfileControls } from "./extension-interactions.js";
+import { ExecutionProfileControls } from "../execution/extension-interactions.js";
 
 type ComposerProps = {
   text: string;

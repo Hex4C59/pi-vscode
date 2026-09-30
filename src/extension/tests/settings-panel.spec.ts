@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { harness, readySettings, tick } from "./harness.js";
-import { parseHostMessage } from "../../webview/parse-host-message.js";
+import { parseHostMessage } from "../../webview/client/parse-host-message.js";
 import { parseWebviewMessage } from "../bridge/webviewMessages.js";
 
 test("settings reuses one editor panel, projects no chat, and closing retains runtime and draft", async () => {

@@ -4,8 +4,8 @@ import type { SessionBackend, SavedSession } from "../../extension/contracts/ses
 import type { HostMessage, WebviewMessage } from "../../extension/contracts/webviewProtocol.js";
 import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 import { folder, harness, settingsRuntime, tick } from "../../extension/tests/harness.js";
-import { WebviewClient } from "../webview-client.js";
-import { parseHostMessage } from "../parse-host-message.js";
+import { WebviewClient } from "../client/webview-client.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
 
 const saved: SavedSession = { id: "retained-session", path: "/host-only/session.jsonl", name: "Saved work", firstMessage: "Earlier question", modified: "2026-09-23T00:00:00.000Z" };
 function deferred<T>() {

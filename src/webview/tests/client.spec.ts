@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { WebviewClient } from "../webview-client.js";
-import { parseHostMessage } from "../parse-host-message.js";
-import { createWebviewBridge } from "../bridge.js";
-import { availability } from "../client-state.js";
+import { WebviewClient } from "../client/webview-client.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
+import { createWebviewBridge } from "../client/bridge.js";
+import { availability } from "../client/client-state.js";
 import { readySettings } from "../../extension/tests/harness.js";
 import type { HostMessage, WebviewMessage } from "../../extension/bridge/webviewMessages.js";
 

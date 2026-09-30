@@ -1,8 +1,8 @@
-import { useUiText } from "./ui-text.js";
+import { useUiText } from "../../i18n/ui-text.js";
 import { displayModelId, formatModelId, formatThinkingLabel } from "./model-display.js";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
-import type { ModelCatalogEntry, ProviderConfigProjection } from "../../extension/contracts/index.js";
-import type { ModelPickerViewProps } from "./types.js";
+import type { ModelCatalogEntry, ProviderConfigProjection } from "../../../extension/contracts/index.js";
+import type { ModelPickerViewProps } from "../../components/index.js";
 
 function catalogEntryIdentity(entry: ModelCatalogEntry): string {
   return `${entry.provider}:${entry.modelId}`;

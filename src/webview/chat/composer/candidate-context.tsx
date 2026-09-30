@@ -1,8 +1,8 @@
-import { SessionIcon } from "./session-icon.js";
+import { SessionIcon } from "../sessions/session-icon.js";
 import { ComposerIcon } from "./composer-icon.js";
 import { useLayoutEffect, useRef, useState, type ReactNode, type ReactElement } from "react";
-import type { AttachmentDetails } from "../../extension/contracts/index.js";
-import { useUiText, type AttachmentPanelProps, type UiTranslator, type UiText } from "../components/index.js";
+import type { AttachmentDetails } from "../../../extension/contracts/index.js";
+import { useUiText, type AttachmentPanelProps, type UiTranslator, type UiText } from "../../components/index.js";
 
 type ContextProps = Omit<AttachmentPanelProps, "status"> & {
   /** Keep attachment state/focus here while the composer places the two surfaces in reading order. */

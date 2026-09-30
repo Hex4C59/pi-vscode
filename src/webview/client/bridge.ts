@@ -1,4 +1,3 @@
-
 /** A private presentation transport. It exposes no host capabilities beyond named intents. */
 import type { WebviewBridge } from "./types.js";
 export type { WebviewBridge } from "./types.js";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { act } from "react";
-import { parseHostMessage } from "../parse-host-message.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
 import { settingsHarness } from "./react-harness.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };

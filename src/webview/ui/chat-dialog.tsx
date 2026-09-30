@@ -1,4 +1,4 @@
-import { SessionIcon } from "./session-icon.js";
+import { SessionIcon } from "../chat/sessions/session-icon.js";
 import { useLayoutEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
 
 type ChatDialogProps = {

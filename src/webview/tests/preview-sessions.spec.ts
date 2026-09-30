@@ -3,7 +3,7 @@ import test, { type TestContext } from "node:test";
 import { JSDOM } from "jsdom";
 import { act } from "react";
 import type { HostMessage } from "../../extension/contracts/webviewProtocol.js";
-import { parseHostMessage } from "../parse-host-message.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
 import { PreviewBridge } from "../preview/preview-bridge.js";
 
 async function previewHarness(t: TestContext) {

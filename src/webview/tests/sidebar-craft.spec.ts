@@ -3,7 +3,7 @@ import test, { type TestContext } from "node:test";
 import { readFileSync } from "node:fs";
 import { candidateHarness } from "./candidate-harness.js";
 import { readAppStyles, settingsHarness } from "./react-harness.js";
-import { chineseUi } from "../chat/ui-zh-cn.js";
+import { chineseUi } from "../i18n/ui-zh-cn.js";
 
 async function styledEmptySession(t: TestContext) {
   const h = await candidateHarness(t);
@@ -95,7 +95,7 @@ test("narrow composer keeps model, permissions and send in one non-wrapping flow
 });
 
 test("conversation surface keeps the closed spacing, type and radius scale", () => {
-  const css = readFileSync("src/webview/chat/candidate-conversation.css", "utf8");
+  const css = readFileSync("src/webview/chat/conversation/candidate-conversation.css", "utf8");
   const offScale = /(?:padding|margin|gap|font-size|inset):[^;{}]*\b(?:3|5|6|7|10|11)px/.exec(css);
   assert.equal(offScale, null, `off-scale spacing or type literal: ${offScale?.[0] ?? ""}`);
   const radii = [...css.matchAll(/border-radius:\s*([^;]+);/g)].map(match => match[1].trim());
@@ -107,13 +107,13 @@ test("conversation surface keeps the closed spacing, type and radius scale", () 
 
 test("operations area styles keep the closed spacing scale and token-only colors", () => {
   const files = [
-    "src/webview/chat/task-status.css",
-    "src/webview/chat/candidate-approvals.css",
-    "src/webview/chat/candidate-review.css",
-    "src/webview/chat/extension-interactions.css",
-    "src/webview/chat/chat-dialog.css",
+    "src/webview/chat/execution/task-status.css",
+    "src/webview/chat/execution/candidate-approvals.css",
+    "src/webview/chat/execution/candidate-review.css",
+    "src/webview/chat/execution/extension-interactions.css",
+    "src/webview/ui/chat-dialog.css",
     "src/webview/chat/interface-settings.css",
-    "src/webview/components/change-review.css",
+    "src/webview/chat/execution/change-review.css",
   ];
   for (const file of files) {
     const css = readFileSync(file, "utf8");
@@ -124,14 +124,14 @@ test("operations area styles keep the closed spacing scale and token-only colors
 });
 
 test("task status motion serves real state changes and yields to reduced motion", () => {
-  const css = readFileSync("src/webview/chat/task-status.css", "utf8");
+  const css = readFileSync("src/webview/chat/execution/task-status.css", "utf8");
   assert.match(css, /@keyframes task-status-pulse/, "the pulse is the only status animation");
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate__pulse \{ animation: none; \}\s*\}/s, "reduced motion stills the pulse");
   assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "no entrance or layout animation on status updates");
 });
 
 test("shared dialog motion is open-only and yields to reduced motion", () => {
-  const css = readFileSync("src/webview/chat/chat-dialog.css", "utf8");
+  const css = readFileSync("src/webview/ui/chat-dialog.css", "utf8");
   assert.match(css, /@keyframes candidate-dialog-in/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.candidate-dialog\[open\] \{ animation: none; \}\s*\}/s);
   assert.equal((css.match(/@keyframes/g) ?? []).length, 1, "dialog content updates must not replay a second entrance");

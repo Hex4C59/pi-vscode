@@ -1,4 +1,3 @@
-
 export const SAVED_HISTORY_PAGE_SIZE = 32;
 const SAVED_PREVIEW_BACK_LIMIT = 128;
 import type { SavedHistorySnapshot, HistoryMessage, HistoryIntent } from "./types.js";

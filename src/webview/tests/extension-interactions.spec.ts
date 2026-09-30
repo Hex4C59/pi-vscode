@@ -4,9 +4,9 @@ import { act, createElement, Fragment, type ReactElement } from "react";
 import type { Root } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import type { ExecutionProfileProjection, ExtensionInteractionProjection, InteractionAnswer } from "../../extension/contracts/index.js";
-import { ExecutionProfileControls, ExtensionInteractions } from "../chat/extension-interactions.js";
-import { UiTextProvider, englishUi, formatUiText, type UiLanguage } from "../components/ui-text.js";
-import { chineseUi } from "../chat/ui-zh-cn.js";
+import { ExecutionProfileControls, ExtensionInteractions } from "../chat/execution/extension-interactions.js";
+import { UiTextProvider, englishUi, formatUiText, type UiLanguage } from "../i18n/ui-text.js";
+import { chineseUi } from "../i18n/ui-zh-cn.js";
 
 const chineseLanguage: UiLanguage = { locale: "zh-CN", text: (message, values) => formatUiText(chineseUi[message], values) };
 function localized(element: ReactElement, locale: "en" | "zh-CN" = "en"): ReactElement {

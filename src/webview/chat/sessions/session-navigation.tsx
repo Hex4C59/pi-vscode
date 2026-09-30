@@ -1,6 +1,6 @@
 import { SessionIcon } from "./session-icon.js";
 import type { ReactElement, RefObject } from "react";
-import { useUiText } from "../components/index.js";
+import { useUiText } from "../../components/index.js";
 
 type NavigationProps = {
   conversationName: string | undefined;

@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { useUiText, type UiText } from "../components/index.js";
-import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
+import { useUiText, type UiText } from "../../components/index.js";
+import type { WorkspaceStateMessage } from "../../../extension/contracts/index.js";
 
 type Execution = WorkspaceStateMessage["execution"];
 

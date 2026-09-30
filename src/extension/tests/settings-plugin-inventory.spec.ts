@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test, type TestContext } from "node:test";
-import { parseHostMessage } from "../../webview/parse-host-message.js";
+import { parseHostMessage } from "../../webview/client/parse-host-message.js";
 import { PLUGIN_INVENTORY_FILE, inventoryEntryId } from "../extension-loading/index.js";
 import { folder, harness, settingsRuntime, tick } from "./harness.js";
 

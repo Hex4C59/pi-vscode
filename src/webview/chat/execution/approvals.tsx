@@ -1,8 +1,8 @@
-import { useUiText, type UiText, type UiTranslator } from "./ui-text.js";
+import { useUiText, type UiText, type UiTranslator } from "../../i18n/ui-text.js";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
-import type { ApprovalDecision, ApprovalCard, SessionGrant } from "../../extension/contracts/index.js";
-import type { ApprovalsProps } from "./types.js";
-export type { ApprovalsProps } from "./types.js";
+import type { ApprovalDecision, ApprovalCard, SessionGrant } from "../../../extension/contracts/index.js";
+import type { ApprovalsProps } from "../../components/index.js";
+export type { ApprovalsProps } from "../../components/index.js";
 
 
 const decisions: readonly [ApprovalDecision, UiText][] = [

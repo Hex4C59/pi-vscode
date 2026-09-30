@@ -1,4 +1,3 @@
-
 import type { ClientSnapshot } from "./types.js";
 export type { ClientSnapshot, Intent, Preview } from "./types.js";
 export const ATTACHMENT_HISTORY_PAGE_SIZE = 16;

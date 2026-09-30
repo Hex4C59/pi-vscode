@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseHostMessage } from "../parse-host-message.js";
-import { WebviewClient } from "../webview-client.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
+import { WebviewClient } from "../client/webview-client.js";
 const envelope = { version: 3, generation: 1, viewId: "view" };
 const interaction = { ...envelope, type: "interactionState", active: { id: "dialog-1", method: "input", title: "Literal", origin: "trusted runtime extension; not authenticated", placeholder: "Value" }, queuedCount: 0, phase: "waiting", errorCode: null, feedback: [], omittedFeedback: 0 };
 
@@ -29,7 +29,7 @@ test("client retains extension projections and clears their authority on a new g
 
 test("active extension forms and recovery barriers disable competing settings", async () => {
   const { readySettings } = await import("../../extension/tests/harness.js");
-  const { availability } = await import("../client-state.js");
+  const { availability } = await import("../client/client-state.js");
   const { h, v } = await readySettings();
   const client = new WebviewClient({ postMessage() {}, subscribe() { return () => {}; } });
   try {

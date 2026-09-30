@@ -69,7 +69,7 @@
 | [ownership types](../../src/adapter/ownership/types.ts) | 完整返回能力契约 |
 | [chatBounds](../../src/extension/bridge/chatBounds.ts) | 完整返回常量 |
 | [webviewProtocol](../../src/extension/contracts/webviewProtocol.ts) | 完整返回 DTO 定义 |
-| [webview bridge](../../src/webview/bridge.ts) | 完整返回传输实现 |
+| [webview bridge](../../src/webview/client/bridge.ts) | 完整返回传输实现 |
 | [sessionBackend](../../src/extension/contracts/sessionBackend.ts) | 完整返回契约及 unavailable 实现 |
 | [tool-approval 测试](../../src/extension/editor-tools/tests/tool-approval.spec.ts) | 部分返回源码；依赖此前检查过的 helper，本轮不运行 |
 | [file-attachment 测试](../../src/extension/draft/tests/file-attachment.spec.ts) | 部分阅读第 1–200 行；不进行逐断言审计或执行 |

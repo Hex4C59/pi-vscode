@@ -1,4 +1,4 @@
-import { createWebviewBridge } from "./bridge.js";
+import { createWebviewBridge } from "./client/bridge.js";
 import { mountChat } from "./chat/index.js";
 import { mountSettings } from "./settings/index.js";
 import type { WebviewMessage } from "../extension/contracts/index.js";

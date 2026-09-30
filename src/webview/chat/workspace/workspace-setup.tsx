@@ -1,8 +1,8 @@
-import { useUiText, type UiText } from "./ui-text.js";
+import { useUiText, type UiText } from "../../i18n/ui-text.js";
 import type { ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
-import type { WorkspaceSetupProps } from "./types.js";
-export type { WorkspaceSetupAction, WorkspaceSetupProps } from "./types.js";
+import type { WorkspaceStateMessage } from "../../../extension/contracts/index.js";
+import type { WorkspaceSetupProps } from "../../components/index.js";
+export type { WorkspaceSetupAction, WorkspaceSetupProps } from "../../components/index.js";
 
 
 

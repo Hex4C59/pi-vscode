@@ -1,9 +1,9 @@
-import { useChatPreview } from "./chat-preview.js";
-import { useUiText, type UiText, type UiTranslator } from "./ui-text.js";
+import { useChatPreview } from "../../ui/chat-preview.js";
+import { useUiText, type UiText, type UiTranslator } from "../../i18n/ui-text.js";
 import type { ReactElement } from "react";
-import type { ChangeReviewEntry, ReviewReason } from "../../extension/contracts/index.js";
-import type { ChangeReviewProps } from "./types.js";
-export type { ChangeReviewProps } from "./types.js";
+import type { ChangeReviewEntry, ReviewReason } from "../../../extension/contracts/index.js";
+import type { ChangeReviewProps } from "../../components/index.js";
+export type { ChangeReviewProps } from "../../components/index.js";
 
 
 const reasonLabels: Record<ReviewReason, UiText> = {

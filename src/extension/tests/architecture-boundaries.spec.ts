@@ -12,8 +12,8 @@ test("selected host and browser entry files avoid forbidden capability reference
     "src/extension/bridge/webviewHtml.ts",
     "src/extension/bridge/webviewMessages.ts",
     "src/webview/main.tsx",
-    "src/webview/bridge.ts",
-    "src/webview/webview-client.ts",
+    "src/webview/client/bridge.ts",
+    "src/webview/client/webview-client.ts",
   ]) {
     assert.doesNotMatch(readFileSync(path, "utf8"), forbidden);
   }
@@ -45,7 +45,7 @@ test("public-entry checks allow legal imports and reject presentation imports by
   assert.deepEqual(moduleEntryViolations(file, `
     import type { SavedHistoryPreview } from "../index.js";
     import type { SessionsProps } from "./types.js";
-    import type { SessionStateMessage } from "../../extension/contracts/index.js";
+    import type { SessionStateMessage } from "../contracts/index.js";
     import { useState } from "react";
     const shared = await import("../index.js");
     void shared;

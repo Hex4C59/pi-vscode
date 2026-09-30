@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { SavedHistoryStateMessage, SessionStateMessage, WebviewMessage } from "../../extension/contracts/webviewProtocol.js";
-import { WebviewClient } from "../webview-client.js";
+import { WebviewClient } from "../client/webview-client.js";
 import { readyState, attachmentState, uiHarness } from "./react-harness.js";
-import { parseHostMessage } from "../parse-host-message.js";
+import { parseHostMessage } from "../client/parse-host-message.js";
 import { readySettings, tick } from "../../extension/tests/harness.js";
 import { parseWebviewMessage } from "../../extension/bridge/webviewMessages.js";
 

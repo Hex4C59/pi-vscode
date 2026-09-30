@@ -33,7 +33,7 @@ npm run compile
 
 ### Browser frontend preview
 
-Use the chat header gear → **Interface settings → Language** to switch between **English** and **简体中文** in both the formal sidebar and browser preview. English is the default; language is mount-local and not persisted or sent to the host. Preview scenario changes and Reset retain the page language; reloading resets it. Drafts, streaming, model settings and expanded activity stay in place. Messages, code, tool/approval input, saved content and upstream error details remain literal. Add complete `UiText` packs beside `src/webview/chat/ui-zh-cn.ts` and register them in `ui-language.ts`.
+Use the chat header gear → **Interface settings → Language** to switch between **English** and **简体中文** in both the formal sidebar and browser preview. English is the default; language is mount-local and not persisted or sent to the host. Preview scenario changes and Reset retain the page language; reloading resets it. Drafts, streaming, model settings and expanded activity stay in place. Messages, code, tool/approval input, saved content and upstream error details remain literal. Add complete `UiText` packs beside `src/webview/i18n/ui-zh-cn.ts` and register them in `ui-language.ts`.
 
 In the **No folder** fixture, the candidate shows the normal welcome page and accepts a draft instead of an upfront setup card. Send/Enter opens a localized “Unable to send message” prompt; OK, Close or Escape preserves the draft. Open folder remains available in that prompt, followed by the existing resource choice. Nothing is sent automatically, and no-folder still cannot start a task.
 

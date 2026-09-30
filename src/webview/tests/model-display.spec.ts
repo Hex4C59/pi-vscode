@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { displayModelId, formatModelId, formatThinkingLabel } from "../components/model-display.js";
+import { displayModelId, formatModelId, formatThinkingLabel } from "../chat/composer/model-display.js";
 
 test("composer chips drop the provider and format hyphenated model ids", () => {
   assert.equal(displayModelId("hellocode / gpt-6-sol"), "GPT-6-Sol");

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { act } from "react";
 import { candidateHarness } from "./candidate-harness.js";
-import { chineseUi } from "../chat/ui-zh-cn.js";
+import { chineseUi } from "../i18n/ui-zh-cn.js";
 
 
 const send = 'button[aria-label="Send message"]';

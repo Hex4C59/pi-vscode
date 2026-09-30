@@ -6,7 +6,7 @@ English | [中文](2026-10-01-model-chip-label.zh.md)
 - Status: WI-066 delivered chip/list presentation; WI-067 delivered model-picker vs Execution-profile mutex
 - Created: 2026-10-01
 - Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the [PRD](../product-requirements.md), or architecture
-- Related: REQ-002, [WI-042](../archive/2026-09-30-wi-042-macos-acceptance.md), [WI-066](../archive/2026-10-01-wi-066-acceptance.md), [WI-067](../archive/2026-10-01-wi-067-acceptance.md), [`ModelPickerView`](../../src/webview/components/model-picker.tsx)
+- Related: REQ-002, [WI-042](../archive/2026-09-30-wi-042-macos-acceptance.md), [WI-066](../archive/2026-10-01-wi-066-acceptance.md), [WI-067](../archive/2026-10-01-wi-067-acceptance.md), [`ModelPickerView`](../../src/webview/chat/composer/model-picker.tsx)
 
 ## Question
 
@@ -27,7 +27,7 @@ Recording this is not Build. Promotion still needs a Prepare proposal and mainta
 
 ## Current behavior
 
-[`ModelPickerView`](../../src/webview/components/model-picker.tsx) formats the model id at the Webview layer (`displayModelId` / `formatModelId`) and Title-Cases English thinking labels. Host projections remain `provider / modelId`. Chinese thinking labels stay 关闭／低／中／高／最高.
+[`ModelPickerView`](../../src/webview/chat/composer/model-picker.tsx) formats the model id at the Webview layer (`displayModelId` / `formatModelId`) and Title-Cases English thinking labels. Host projections remain `provider / modelId`. Chinese thinking labels stay 关闭／低／中／高／最高.
 
 [WI-042](../archive/2026-09-30-wi-042-macos-acceptance.md) still marks the applied **radio** by stable `provider:modelId`. WI-066 did not change that identity rule.
 

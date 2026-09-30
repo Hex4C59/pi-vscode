@@ -1,8 +1,8 @@
-import { useUiText } from "../components/index.js";
+import { useUiText } from "../../components/index.js";
 import type { ReactElement } from "react";
-import type { ActivityItem, WorkspaceStateMessage } from "../../extension/contracts/index.js";
+import type { ActivityItem, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
 import { ReplyMarkdown } from "./reply-markdown.js";
-import { SessionIcon } from "./session-icon.js";
+import { SessionIcon } from "../sessions/session-icon.js";
 
 const liveStatuses = new Set<ActivityItem["status"]>(["thinking", "preparing", "executing"]);
 

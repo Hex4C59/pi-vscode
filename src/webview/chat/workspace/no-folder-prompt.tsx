@@ -1,6 +1,6 @@
-import { ChatDialog } from "./chat-dialog.js";
+import { ChatDialog } from "../../ui/chat-dialog.js";
 import { useId, useRef, type ReactElement } from "react";
-import { useUiText } from "../components/index.js";
+import { useUiText } from "../../components/index.js";
 
 /** Presentation-only refusal. Never admits a task or chooses a workspace. */
 export function NoFolderPrompt({ onDismiss, onOpenFolder, busy, error, context = false }: { context?: boolean; onDismiss: () => void; onOpenFolder: () => void; busy: boolean; error: string | null }): ReactElement {

@@ -1,5 +1,5 @@
-import { useChatPreview } from "../components/index.js";
-import { useUiText, type UiText } from "../components/index.js";
+import { useChatPreview } from "../../components/index.js";
+import { useUiText, type UiText } from "../../components/index.js";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Lexer, type Token, type MarkedToken } from "marked";
 

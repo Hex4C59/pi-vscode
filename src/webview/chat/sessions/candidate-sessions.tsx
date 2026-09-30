@@ -1,7 +1,7 @@
 import type { ReactElement, RefObject } from "react";
 import { SessionIcon } from "./session-icon.js";
-import { useUiText } from "../components/index.js";
-import type { SessionsProps } from "../components/index.js";
+import { useUiText } from "../../components/index.js";
+import type { SessionsProps } from "../../components/index.js";
 
 type HistoryProps = Pick<SessionsProps, "state" | "pageSize" | "onPage" | "onRefresh" | "onResume"> & {
   open: boolean;

@@ -1,7 +1,7 @@
-import { ChatDialog } from "./chat-dialog.js";
+import { ChatDialog } from "../../ui/chat-dialog.js";
 import { useRef, type ReactElement } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
-import { useUiText } from "../components/index.js";
+import type { WorkspaceStateMessage } from "../../../extension/contracts/index.js";
+import { useUiText } from "../../components/index.js";
 
 /** Defers the existing resource choice until an action needs a live project session. */
 export function ProjectResourcesPrompt({ state, onDismiss, onChoose }: {

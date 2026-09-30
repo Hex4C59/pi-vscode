@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
-import type { WorkspaceStateMessage } from "../../extension/contracts/index.js";
-import { useUiText, type UiText } from "../components/index.js";
+import type { WorkspaceStateMessage } from "../../../extension/contracts/index.js";
+import { useUiText, type UiText } from "../../components/index.js";
 import { NoFolderPrompt } from "./no-folder-prompt.js";
 import { ProjectResourcesPrompt } from "./project-resources-prompt.js";
 
