@@ -122,6 +122,8 @@ RPC 仍拥有就绪、会话身份及共享五秒 Stop 观察预算。连接失�
 
 WI-033 补强现有所有者：帧翻译先使用纯 `rpc-events.ts` 解码器，再进入 `ActivityProjection`；请求配对核对预期命令及布尔结果，区分本地传输故障与远端响应。编排器把协议故障送入既有不确定释放流程。解码类型仅在适配层内部使用，不是宿主／Webview 契约。[消息契约](../reference/webview-messages.zh.md#运行时协议失败wi-033) 负责失败与兼容行为。不改变进程所有权或 ADR0002 恢复规则。
 
+**诊断探针结算（WI-046，2026-09-30 接受）：** `pi-rpc-probe.ts` 拥有 child／pipe 错误、单次结算、boolean `success`，以及在 `ok: true` 之前观察到的进程退出。不是生产所有权或恢复。[验收与限制](../archive/2026-09-30-wi-046-macos-acceptance.zh.md)。
+
 ### 启动遗留运行时交接（WI-035）
 
 **已接受的启动限定替代：** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 在所需验证及本次明确委托的代理接受后采用 WI-035，只取代 ADR 0002 的下一宿主启动仪式。ADR 0002 的共享域准入与会话内 Stop／协议恢复仍保持 Accepted。[WI-035 证据](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 区分实际 F5／安装、活所有者安全与未验证分支；不接受 gate 或整份 PRD。

@@ -70,7 +70,7 @@
 
 | 任务 | 证据入口与限制 |
 |------|----------------|
-| 最小启动／RPC／关闭 | [运行时探针](../../../src/adapter/runtime/pi-rpc-probe.ts)、`npm run spike:runtime`；历史结论见 ADR 0001。探针继承当前环境，不是隔离信任夹具。 |
+| 最小启动／RPC／关闭 | [运行时探针](../../../src/adapter/runtime/pi-rpc-probe.ts)、`npm run spike:runtime`；历史结论见 ADR 0001。WI-046 要求拥有 child／pipe 错误、boolean success，以及在 `ok: true` 之前观察到退出。探针继承当前环境，不是隔离信任夹具，也不是生产所有权／恢复。 |
 | 项目资源信任 | [信任验证程序](../../../scripts/spikes/spike-project-trust.mjs)和[辅助测试](../../../scripts/spikes/project-trust.spec.mjs)。程序严格核对已重审的当前发行版；标准入口回归覆盖六组批准／拒绝、cwd 切换及可观察的思考默认值。升级前核对 pin 并重审公开 API；隔离探针不代表受控产品的第三方扩展加载接受。 |
 | 早期 UI／启动／聊天 | [WI-006／WI-007／WI-004 历史](../../archive/2026-09-21-closed-wi-history.zh.md)及 [0.85.1 RPC 调研](../../discussions/2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)。历史的无运行时／无聊天／无工具边界不描述当前整个产品。 |
 | 当前活动／审批／Stop | [`pi-rpc-runtime.ts`](../../../src/adapter/runtime/pi-rpc-runtime.ts)、[审批探针](../../../scripts/spikes/spike-approval.mjs)、[离线推理探针](../../../scripts/spikes/spike-offline-inference.mjs)。按任务读取并核对脚本版本和隔离方式后执行；既有结果见 [WI-010](../../archive/2026-09-21-closed-wi-history.zh.md#wi-010)。 |

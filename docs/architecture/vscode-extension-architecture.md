@@ -116,6 +116,8 @@ Production composition selects `createManagedProcess(createRuntimeOwner(...))`. 
 
 WI-033 strengthens these existing owners: frame translation uses the pure `rpc-events.ts` decoder before `ActivityProjection`; request pairing validates the expected command and boolean result and separates local transport failures from remote responses. The orchestrator routes protocol faults through existing uncertain release. Decoder types are adapter-internal, not host/Webview contracts. The [message contract](../reference/webview-messages.md#runtime-protocol-failures-wi-033) owns failure and compatibility behavior. This changes neither process ownership nor ADR0002 recovery policy.
 
+**Diagnostic probe settlement (WI-046, accepted 2026-09-30):** `pi-rpc-probe.ts` owns child and pipe errors, one settlement, boolean `success`, and observed process exit before `ok: true`. It is not production ownership or recovery. [Acceptance and limits](../archive/2026-09-30-wi-046-macos-acceptance.md).
+
 ### Startup retained-runtime handoff (WI-035)
 
 **Accepted startup-only replacement:** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.md) adopts WI-035 after required verification and agent acceptance under the explicit delegation. It supersedes only ADR 0002's next-host startup ceremony; ADR 0002 remains Accepted for shared-domain admission and in-session Stop/protocol recovery. [WI-035 evidence](../archive/2026-09-30-wi-035-macos-acceptance.md) separates actual F5/installed, live-owner safety and unverified branches. No gate or whole PRD is accepted here.
