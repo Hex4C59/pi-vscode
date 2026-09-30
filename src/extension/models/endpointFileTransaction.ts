@@ -9,7 +9,7 @@ const OWNER_FILE = "owner.json";
 
 export type EndpointFileSystem = Pick<typeof nativeFs,
   "mkdir" | "realpath" | "lstat" | "open" | "writeFile" | "readFile" | "chmod" | "rename" | "unlink" | "rmdir">;
-export type EndpointWriteFailure = "invalid" | "rejected" | "exists" | "native" | "write" | "missing" | "occupied" | "conflict";
+export type EndpointWriteFailure = "invalid" | "rejected" | "exists" | "native" | "write" | "missing" | "occupied" | "conflict" | "too-large";
 export type EndpointWriteResult =
   | { kind: "committed" }
   | { kind: "committed-cleanup-failed" }
@@ -152,7 +152,9 @@ async function changeUnderLock(
   const snapshot = await readSnapshot(target.file, fs);
   if (snapshot.kind === "invalid") return endpointWriteRefusal("invalid");
   const next = change(snapshot);
-  return next.kind === "refused" ? endpointWriteRefusal(next.reason) : commitReplacement(target, snapshot, next.text, fs);
+  if (next.kind === "refused") return endpointWriteRefusal(next.reason);
+  if (Buffer.byteLength(next.text, "utf8") > MAX_MODELS_FILE_BYTES) return endpointWriteRefusal("too-large");
+  return commitReplacement(target, snapshot, next.text, fs);
 }
 
 /** Single-attempt host transaction; only cooperating writers are mutually exclusive. */

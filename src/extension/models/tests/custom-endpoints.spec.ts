@@ -6,6 +6,7 @@ import { test, type TestContext } from "node:test";
 import { parseWebviewMessage } from "../../bridge/webviewMessages.js";
 import { endpointProviderId, isPublicHttpUrl } from "../../contracts/index.js";
 import { addOpenAiEndpoint, removeOpenAiEndpoint } from "../customEndpoints.js";
+import { writeEndpointDocument } from "../endpointFileTransaction.js";
 import { ProviderConfig, type ProviderConfigDeps } from "../providerConfig.js";
 
 const envelope = { version: 3, generation: 1, viewId: "view" };
@@ -69,6 +70,56 @@ test("removing an endpoint deletes only that provider", async t => {
   const saved = JSON.parse(readFileSync(target, "utf8")) as { providers: Record<string, unknown> };
   assert.equal(saved.providers.local, undefined);
   assert.deepEqual(saved.providers.kept, { api: "openai-completions" });
+});
+
+const MODELS_FILE_BUDGET_BYTES = 1024 * 1024;
+const overBudgetDraft = {
+  providerId: "local",
+  displayName: "local",
+  baseUrl: "http://127.0.0.1:11434/v1",
+  modelId: "llama3.1:8b",
+};
+
+function compactJustUnderBudget(): string {
+  const prefix = '{"providers":{"kept":{"api":"openai-completions"},"extra":{"api":"openai-completions"}},"note":"';
+  const suffix = '"}';
+  const pad = MODELS_FILE_BUDGET_BYTES - Buffer.byteLength(prefix + suffix, "utf8") - 1;
+  return `${prefix}${"x".repeat(pad)}${suffix}`;
+}
+
+test("serialized output over the read budget is not committed", async t => {
+  const target = file(t);
+  const original = JSON.stringify({ providers: { kept: { api: "openai-completions" } } });
+  writeFileSync(target, original);
+  const result = await writeEndpointDocument(target, () => ({
+    kind: "replace",
+    text: "x".repeat(MODELS_FILE_BUDGET_BYTES + 1),
+  }));
+  assert.deepEqual(result, { kind: "not-committed", reason: "too-large", cleanupFailed: false });
+  assert.equal(readFileSync(target, "utf8"), original);
+});
+
+test("pretty-printed add that exceeds the read budget leaves the original file", async t => {
+  const target = file(t);
+  const compact = compactJustUnderBudget();
+  assert.equal(Buffer.byteLength(compact, "utf8"), MODELS_FILE_BUDGET_BYTES - 1);
+  writeFileSync(target, compact);
+  const result = await addOpenAiEndpoint(target, overBudgetDraft, () => false);
+  assert.deepEqual(result, { kind: "not-committed", reason: "too-large", cleanupFailed: false });
+  assert.equal(readFileSync(target, "utf8"), compact);
+});
+
+test("an over-budget pretty-print save reports the size limit without login", async t => {
+  const target = file(t);
+  const compact = compactJustUnderBudget();
+  writeFileSync(target, compact);
+  let login = 0;
+  const config = new ProviderConfig(cancelledEndpointDependencies(target, "sk-unused", () => { login += 1; }), () => {});
+  const saved = await config.addCustomEndpoint({ displayName: "Local vLLM", baseUrl: "http://127.0.0.1:8000/v1", modelId: "qwen2.5" });
+  assert.deepEqual(saved, { write: { kind: "not-committed", reason: "too-large", cleanupFailed: false } });
+  assert.equal(readFileSync(target, "utf8"), compact);
+  assert.equal(login, 0);
+  assert.match(config.snapshot.error ?? "", /1 MiB/);
 });
 
 test("custom endpoint messages reject secrets, userinfo and unknown fields", () => {

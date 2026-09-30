@@ -172,6 +172,7 @@ function endpointWriteError(result: EndpointWriteResult, action: "save" | "remov
     if (result.reason === "occupied") return "The endpoint file is locked. Try again after the other write finishes. If this persists, close writing windows and verify the leftover lock before clearing it.";
     if (result.reason === "conflict") return "The endpoint file changed during the operation, so it was not overwritten. Refresh and try again.";
     if (result.reason === "invalid") return "The endpoint file is invalid, so it was not changed.";
+    if (result.reason === "too-large") return "The endpoint file would exceed the 1 MiB size limit, so it was not changed.";
     if (result.reason === "exists") return "An endpoint with this name already exists. Refresh or choose another name.";
     if (result.reason === "missing") return "The endpoint no longer exists in the file. Refresh before continuing.";
   }
