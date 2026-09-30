@@ -173,3 +173,24 @@ test("runtime-disconnected review reset is shown on the review panel", async () 
     await h.close();
   }
 });
+
+test("missing review path body uses the same translation as its tooltip", async () => {
+  const h = await uiHarness(false);
+  try {
+    await h.receive(attachmentState());
+    await h.render();
+    await h.receive(reviewState({
+      entries: [entry(2, { path: null, source: "observed", tool: null, status: "observed", diff: "unchanged" })],
+    }));
+    await h.click("#change-review-toggle");
+    const path = h.get('[data-review-entry-id="review-2"] .change-review__path');
+    assert.equal(path.textContent, "Path unavailable");
+    assert.equal(path.getAttribute("title"), "Path unavailable");
+    await h.receive({ version: 3, type: "uiLanguageState", viewId: "view", generation: 1, locale: "zh-CN" });
+    const translated = h.get('[data-review-entry-id="review-2"] .change-review__path');
+    assert.equal(translated.textContent, "路径不可用");
+    assert.equal(translated.getAttribute("title"), "路径不可用");
+  } finally {
+    await h.close();
+  }
+});

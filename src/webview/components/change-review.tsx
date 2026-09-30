@@ -46,7 +46,7 @@ function ReviewEntry({ entry, onDiff, onSource }: Pick<ChangeReviewProps, "onDif
   return (
     <article className="change-review__entry" data-review-entry-id={entry.id}>
       <div className="change-review__entry-heading">
-        <strong className="change-review__path" title={entry.path ?? t("Path unavailable")}>{entry.path ?? "Path unavailable"}</strong>
+        <strong className="change-review__path" title={entry.path ?? t("Path unavailable")}>{entry.path ?? t("Path unavailable")}</strong>
         <span className="change-review__source">{sourceLabel(entry, t)}</span>
       </div>
       <p className="change-review__meta">
