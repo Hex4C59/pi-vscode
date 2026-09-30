@@ -173,6 +173,8 @@ The Webview presents applied/pending state and sends allowlisted intents; the ad
 
 Scoped model and thinking acceptance, layered evidence and closure are recorded separately in [WI-008 acceptance](../archive/2026-09-28-wi-008-model-acceptance.md) and [WI-009 acceptance](../archive/2026-09-28-wi-009-thinking-acceptance.md). They do not accept the whole PRD or every environment; [ACTIVE](../../ACTIVE.md) owns current work and limits.
 
+**Stable model identity (WI-042, accepted 2026-09-30):** `ModelPickerView` marks at most one applied radio using provider/model-id, then a unique display label. Duplicate labels and a label that collides with another model's canonical pair do not mark two radios. This is presentation uniqueness, not a runtime-selection claim. [Acceptance and limits](../archive/2026-09-30-wi-042-macos-acceptance.md).
+
 ### Provider configuration and saved defaults
 
 `ProviderConfig` in `src/extension/models/` imports public `ModelRuntime` and `SettingsManager` from the declared pi coding-agent release, plus pi-ai capability functions. It owns provider readiness, native API-key/OAuth interaction, the default model and per-model thinking settings. pi auth storage and settings remain authoritative; this is not a new provider stack, agent loop or product SecretStorage copy. Webviews receive bounded secret-free projections and send named intents, not SDK calls. Saved defaults and applied/pending live-session settings are distinct; the coordinator owns their cross-module application order.

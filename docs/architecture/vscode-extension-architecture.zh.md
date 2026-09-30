@@ -179,6 +179,8 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 模型与 thinking 切片的范围、分层证据及关闭分别见 [WI-008 验收](../archive/2026-09-28-wi-008-model-acceptance.zh.md)与 [WI-009 验收](../archive/2026-09-28-wi-009-thinking-acceptance.zh.md)。它们不表示整份 PRD 或全部环境已接受；当前工作与限制归 [ACTIVE](../../ACTIVE.md)。
 
+**稳定模型身份（WI-042，2026-09-30 接受）：** `ModelPickerView` 先用供应商／模型 id、再用唯一显示标签，最多标记一个已应用 radio。同名标签、以及标签与另一模型 canonical 组合碰撞时不会选中两个。这是展示唯一性，不是运行时选错结论。[验收与限制](../archive/2026-09-30-wi-042-macos-acceptance.zh.md)。
+
 ### 供应商配置与已保存默认
 
 `src/extension/models/` 中的 `ProviderConfig` 从声明的 pi coding-agent 发行版导入公开 `ModelRuntime`、`SettingsManager`，并使用 pi-ai 能力函数。它拥有供应商就绪状态、原生 API-key／OAuth 交互、默认模型及逐模型 thinking 设置。pi 认证存储与设置仍为权威，不新增 provider 栈、agent 循环或产品 SecretStorage 副本。Webview 接收有界无密钥投影并发送具名意图，不调用 SDK。已保存默认与已应用／待应用实时会话设置不同，跨模块应用顺序仍归协调者。

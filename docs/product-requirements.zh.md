@@ -176,7 +176,9 @@ WI-006 当时仅记录选择，不启动 pi；随后 WI-007 接入根据选择�
 
 维护者已确认空闲选择、基础 UI，以及 2026-09-21 19:44 的延后选择主路径：当前回复不变，结束后应用，下一条使用新配置。WI-008已于9月28日按委托限定接受，具有分层当前回归及实际宿主证据；WI-009 thinking已于9月28日独立按委托接受，见[验收及版本限制](archive/2026-09-28-wi-009-thinking-acceptance.zh.md)。失败readback竞态为确定性注入，不冒称实际provider故障。当前交接见 [`ACTIVE.md`](../ACTIVE.md)。
 
-**WI-042 Build 切片（维护者通过完成 ACTIVE 剩余任务授权，2026-09-30；REQ-002／UI-01）：** 模型选择器仅用稳定的供应商与模型 id 身份标记已应用项，不用显示标签。同名标签、以及标签与另一模型 canonical 组合碰撞时仍只选中一个 radio。这是展示唯一性，不宣称运行时收到了错误模型。不改协议。
+**WI-042 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／UI-01）：** 模型选择器仅用稳定的供应商与模型 id 身份标记已应用项，不用显示标签。同名标签、以及标签与另一模型 canonical 组合碰撞时仍只选中一个 radio。这是展示唯一性，不宣称运行时收到了错误模型。不改协议。[验收与限制](archive/2026-09-30-wi-042-macos-acceptance.zh.md)。
+
+**WI-043 Build 切片（维护者通过完成 ACTIVE 剩余任务授权，2026-09-30；REQ-002／UI-02）：** 窗口级模型弹层 Escape 必须忽略已被消费的事件（`defaultPrevented` 或输入法组合）。重叠的添加上下文菜单与模型弹层：在上下文菜单上按 Escape 只关闭该菜单并恢复其触发器，模型弹层保持打开。这是 jsdom 组件证据，不是 macOS 宿主键盘验收。
 
 ### REQ-003 — 显式编辑器上下文
 
@@ -377,7 +379,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-041 | REQ-008 session-worker inspect／history／preview 请求关联与预览游标不变量（CORE-02） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解析器反例证据与限制](archive/2026-09-30-wi-041-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
-| WI-042 | REQ-002 模型选择器已应用状态使用稳定的供应商／模型 id 身份，不用显示标签（UI-01） | 维护者通过本会话完成 ACTIVE 剩余任务授权。Build 见 [ACTIVE](../ACTIVE.md)。 |
+| WI-042 | REQ-002 模型选择器已应用状态使用稳定的供应商／模型 id 身份，不用显示标签（UI-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[挂载唯一性证据与限制](archive/2026-09-30-wi-042-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
+| WI-043 | REQ-002 模型弹层 Escape 在与添加上下文菜单重叠时忽略已消费事件（UI-02） | 维护者通过本会话完成 ACTIVE 剩余任务授权。Build 见 [ACTIVE](../ACTIVE.md)。 |
 | WI-039 | REQ-009 交付 VSIX 必须包含自身 bundle 会加载的运行时依赖闭包（安装版供应商配置属 REQ-002） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解包 import 验证、隔离安装版供应商配置加载与限制](archive/2026-09-30-wi-039-macos-acceptance.zh.md)。不新增 gate、ADR 或整份 PRD 接受。 |
 | 剩余范围 | 未由单项已接受 WI 覆盖的 Draft 需求 | 完整产品目标及未分配切片仍未接受；WI-010／Goal 限定收尾见[归档](archive/2026-09-28-wi-010-goal-closure.zh.md)。2026-09-27 委托只覆盖明确记录且有证据的范围，不接受整份 PRD。 |
 
