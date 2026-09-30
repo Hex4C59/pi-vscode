@@ -13,7 +13,11 @@
 
 ## 当前无活动 WI（WIP=0）
 
-WI-032／WI-033／WI-034 均已由代理按维护者最终委托接受并关闭。当前没有已批准在建 WI，不自动开启停车场事项。WI-034 完整批准提案保留为[历史](docs/archive/2026-09-30-wi-034-approved-proposal.md)。
+当前无进行中的 WI。WI-037 已于 2026-09-30 由代理按维护者明确的实机取证并完结要求接受并关闭，见[验收归档](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。停车场 WI-036 及其他审查后续任务仍待维护者另开 Prepare，不自动转 Build。本次维护者明确授权在核对验收后提交 WI-037，其他未提交工作保留；无推送授权。
+
+### 已关闭基线：WI-037
+
+WI-037 已于 2026-09-30 接受并关闭。范围是 REQ-004 内 RUNTIME-01／02：thinking 有界原始上下文与完整引号凭据值展示脱敏。自动化 927 项（新增 32 项）在 Build 时通过；本次关闭另取 macOS F5 与隔离安装版合成 SSE 逐帧证据。助手正文逐 delta、WI-036、gate／ADR 与整份 Draft PRD 均未改。未提交或推送。
 
 ## 验收授权与平台决定
 
@@ -33,6 +37,7 @@ WI-032／WI-033／WI-034 均已由代理按维护者最终委托接受并关闭�
 | WI-032 | 六处宿主入口共用凭据文本规则的自动化复核 + macOS 宿主证据 | macOS | 代理受托接受（后续授权） |
 | WI-033 | 运行时报文校验 + 真实 pi 坏报文故障注入 + macOS 宿主证据 | macOS | 代理受托接受（后续授权） |
 | WI-034 | VSIX 组包能力 + macOS F5 与隔离安装版证据 | macOS | 代理受托接受（后续授权） |
+| WI-037 | RUNTIME-01／02 thinking 有界上下文与完整引号凭据脱敏 + macOS F5／隔离安装 | macOS | 代理依据本次明确的实机取证并完结要求接受 |
 
 授权边界（与 2026-09-27 委托先例一致，且不继承其范围）：
 
@@ -42,6 +47,8 @@ WI-032／WI-033／WI-034 均已由代理按维护者最终委托接受并关闭�
 - **PRD 同步**：另一轮已把 Windows → macOS 平台决定双语同步到 PRD；本轮按“全部当前改动”提交授权一并保存，并同步 WI-032／033 的限定接受状态，PRD 仍为 Draft。
 
 ## 当前焦点与未决项
+
+- [x] WI-037 代理受托接受并关闭：thinking 有界上下文与完整引号凭据脱敏；macOS F5／隔离安装合成 SSE 逐帧通过。[记录](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。助手正文逐 delta 与 WI-036 未改。
 
 - [x] WI-034 代理受托接受并关闭：组包、解包真实 RPC／gate、macOS F5／隔离安装激活渲染通过。[记录](docs/archive/2026-09-30-wi-034-macos-evaluation.zh.md)；不等于完整聊天或 REQ-009 验收。
 - [x] [`src/extension.ts`](src/extension.ts) 入口整理（命名常量、拆开嵌套构造、导入分组）：仅可读性改动，注册顺序、参数与行为不变。维护者 2026-09-30 在会话中批准；属已授权范围内的小改，按协作指南不单独开 WI，当时 WI-034 为 WIP=1，现已按最终委托关闭。实跑 compile／lint／`npm test`（865 通过、0 失败／跳过）、`git diff --check` 与 [`architecture-boundaries.spec.ts`](src/extension/tests/architecture-boundaries.spec.ts)（5／5）通过；未提交 Git；本轮 macOS 激活渲染证据见 WI-034；Windows 范围外。
@@ -67,6 +74,12 @@ WI-032／WI-033／WI-034 均已由代理按维护者最终委托接受并关闭�
 
 ## 最近交接
 
+### 2026-09-30 — WI-037 受托接受并关闭
+
+维护者要求完成 macOS F5／隔离安装实机取证并完结 WI-037。隔离 HOME 曾弹出 Keychain Not Found／Code Key，已放弃该路径（只应 Cancel，未点 Reset To Defaults）。接受运行保留登录 HOME，使用规范 `/private/tmp` 工作区。F5 与隔离安装版均对合成 loopback SSE 逐帧看到 `use Bearer [redacted]` 与完整 `password="[redacted]"`，正文 `synthetic-complete`，无 `SYNTHETIC_` 泄露。VSIX SHA-256 `a317981a706d1754208f099e4a5e5139fbb502dd6ade10ff4a78b068b960056f`；自有进程已停。记录见[验收归档](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。助手正文逐 delta、WI-036、gate／ADR、整份 PRD 未改；未提交或推送。本次关闭跑 `docs:verify`／`docs:health` 与相关路径 `git diff --check`，未重跑 compile／lint／npm test。
+
+本次提交核对：验收报告、截图、VSIX 哈希及 7 个安装版产物已复核；仅含 WI-037 的独立提交快照 compile／lint／完整 899 项测试通过（HEAD 基线 867 + 本 WI 新增 32，排除尚未提交的 WI-035 用例），不替换 Build 混合工作树 927 项的历史结果。本 WI 实现／双语验收已提交为 `105b7eb`；入口记录独立提交，其他关注点保留；不推送。
+
 ### 2026-09-30 — WI-034 VSIX 组包能力
 
 Decision：none。新增 `scripts/packaging/package-vsix.mjs` 与同目录 `package-vsix.spec.mjs`，并加入 `npm run package:vsix`。组包范围是声明的 `files` 产物加 `node_modules/@earendil-works/pi-coding-agent` 子树（该子树自带嵌套 `node_modules`）；归档用系统 `zip -X`，不再自写 ZIP writer。手写 `extension.vsixmanifest` 与改写后的 `extension/package.json`（`main` 指 `./dist/extension.js`，版本取锁定 pi 版本 0.86.1）。显式排除 `.git`、`.local-env`、`skills-lock.json` 与 `*.vsix`；编译产物缺失时拒绝组包。
@@ -77,11 +90,11 @@ Decision：none。新增 `scripts/packaging/package-vsix.mjs` 与同目录 `pack
 
 检查：`npm run compile`、`npm run lint`、`npm test`（**867 通过、0 失败／跳过**）、`npm run docs:verify`（0 错误，4 条既有 Draft ADR 提示）、`docs:i18n:check`（0 错误 0 警告）、`git diff --check` 均通过。未提交 Git。**本机隔离安装不等于 macOS 宿主验收**（F5 与安装版实机证据见下方验收授权范围）；Windows 实机已由维护者 2026-09-30 移出验收范围，不再计为缺口。已知限制：组包依赖 `zip` 命令，Windows 默认 shell 无此命令，会在那里明确报错而非写出半成品，已在 README 双语记录。
 
-### 2026-09-30 — 顺序代理受托接受
+**同日顺序代理受托接受（WI-032／033／034，历史）：**
 
 依授权顺序完成 WI-034 实机 F5／隔离安装、WI-033 真实 pi 原始字节回放、WI-032 六入口复核，各项先落证据再继续。三个双语接受记录见当前焦点；维护者已授权代理作最终判断，不再要求独立接受。compile／lint／完整 867 项测试及六入口定向 139 项测试通过；安装版 7 个生产产物与当前构建一致。截断 JSON 保留忽略规则，原生坏帧路径与六入口原生敏感交互未验证；初次仅评估；本轮最终授权后由代理接受并关闭三个限定切片，不伪称维护者测试、不改 PRD／gate／ADR、不提交。docs:verify／docs:health 零错误，仅四条既有 Draft ADR 提示；`git diff --check` 通过；两个自有 GUI job 均退出 0，进程查询确认无本轮自有 GUI。一次性 profile 与包／截图留存；VS Code 应用级 shared storage 不随 user-data 隔离，详见 WI-034 记录。
 
-提交授权：维护者要求 Git commit，并明确选择“全部当前改动”。按关注点分别提交实现／测试维护／组包／Draft ADR／PRD 状态／接受记录，ACTIVE 单独提交，不推送。提交前重跑完整测试与 lint；文档结构／健康、暂存隔离与差异检查通过后提交。
+历史提交授权（已消费，仅指 WI-032／033／034）：维护者要求 Git commit，并明确选择“全部当前改动”。按关注点分别提交实现／测试维护／组包／Draft ADR／PRD 状态／接受记录，ACTIVE 单独提交，不推送。提交前重跑完整测试与 lint；文档结构／健康、暂存隔离与差异检查通过后提交。
 
 旧 WI-033 实现与逐轮审查交接已原样保留为[历史](docs/archive/2026-09-30-wi-033-audit-handoffs.md)；审查停止决定与当前关闭状态仍在本页，不因归档重启审查。
 
@@ -101,4 +114,5 @@ Decision：none。新增 `scripts/packaging/package-vsix.mjs` 与同目录 `pack
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-037 | 有界 thinking 流式与完整引号凭据脱敏；实际 macOS F5／隔离安装合成 SSE | 2026-09-30 代理按本次明确的实机取证并完结委托接受；助手正文逐 delta 仍范围外 | [记录](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md) |
 | WI-034 | 确定性组包、macOS F5／隔离安装与真实解包 RPC／gate；批准切片接受并关闭 | 2026-09-30 代理按维护者最终委托接受；不接受整份 PRD | [记录](docs/archive/2026-09-30-wi-034-macos-evaluation.zh.md) |
