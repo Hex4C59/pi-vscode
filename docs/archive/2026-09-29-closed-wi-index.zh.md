@@ -65,6 +65,7 @@
 | WI-040 | 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-040-macos-acceptance.zh.md) |
 | WI-041 | session-worker inspect／history／preview 请求关联与预览游标不变量（CORE-02） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-041-macos-acceptance.zh.md) |
 | WI-042 | 模型选择器已应用 radio 使用稳定供应商／模型 id 身份（UI-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-042-macos-acceptance.zh.md) |
+| WI-043 | 模型弹层 Escape 忽略已消费事件（UI-02） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-043-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

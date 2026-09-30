@@ -175,6 +175,8 @@ Scoped model and thinking acceptance, layered evidence and closure are recorded 
 
 **Stable model identity (WI-042, accepted 2026-09-30):** `ModelPickerView` marks at most one applied radio using provider/model-id, then a unique display label. Duplicate labels and a label that collides with another model's canonical pair do not mark two radios. This is presentation uniqueness, not a runtime-selection claim. [Acceptance and limits](../archive/2026-09-30-wi-042-macos-acceptance.md).
 
+**Consumed Escape (WI-043, accepted 2026-09-30):** the window-level model-popover Escape listener ignores composing events and events already marked `defaultPrevented`. An overlapping Add-context menu can consume Escape without closing the popover. jsdom evidence, not macOS host keyboard acceptance. [Acceptance and limits](../archive/2026-09-30-wi-043-macos-acceptance.md).
+
 ### Provider configuration and saved defaults
 
 `ProviderConfig` in `src/extension/models/` imports public `ModelRuntime` and `SettingsManager` from the declared pi coding-agent release, plus pi-ai capability functions. It owns provider readiness, native API-key/OAuth interaction, the default model and per-model thinking settings. pi auth storage and settings remain authoritative; this is not a new provider stack, agent loop or product SecretStorage copy. Webviews receive bounded secret-free projections and send named intents, not SDK calls. Saved defaults and applied/pending live-session settings are distinct; the coordinator owns their cross-module application order.
