@@ -56,7 +56,7 @@ Directories group existing responsibilities within each layer; they are not sepa
 | `src/extension/editor-tools/` | Approval policy, dirty-editor protection and change review |
 | `src/extension/sessions/` | Host-side saved-history reading and preview coordination |
 | `src/extension/interactions/` | Standard interaction admission, queue, answer authority and view projection |
-| `src/extension/extension-loading/` | Native trusted-entry selection, canonical identity checks, loading consent, profile-scoped `plugin-inventory-v1.json` persistence, and Settings add/remove/enable (runtime apply remains a later slice) |
+| `src/extension/extension-loading/` | Native trusted-entry selection, canonical identity checks, loading consent, profile-scoped `plugin-inventory-v1.json` persistence, Settings add/remove/enable, and idle Trusted apply of at most one enabled extra `-e` |
 | `src/adapter/runtime/` | Live pi RPC process, request pairing, frame translation, task occupancy, model parsing and activity/error projection |
 | `src/adapter/sessions/` | Public pi session API helper and history projection |
 | `src/adapter/ownership/` | Persistent recovery domain, supervisor/control channel, exact-child receipts and retained-run handoff |

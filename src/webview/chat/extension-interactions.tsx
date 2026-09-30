@@ -18,14 +18,22 @@ const feedbackKinds: Readonly<Record<ExtensionFeedback["kind"], UiText>> = {
 const feedbackLevels: Readonly<Record<ExtensionFeedback["level"], UiText>> = { info: "Info", warning: "Warning", error: "Error" };
 const profilePhases: Readonly<Record<ExecutionProfileProjection["phase"], UiText>> = {
   idle: "Runtime is idle.",
-  selecting: "Waiting for the VS Code file picker and host confirmation.",
+  selecting: "Waiting for host confirmation before loading a trusted extension.",
   switching: "Changing execution profile. Controls are temporarily disabled.",
   "recovery-required": "Runtime outcome is uncertain. Reloading or seeing no process does not clear recovery.",
   error: "Execution profile is not ready.",
 };
+const profileErrors = {
+  "too-many-enabled": "Too many plugins are enabled. Disable extras in Settings so only one loads.",
+  "inventory-unusable": "The plugin inventory cannot be read. Trusted apply did not start.",
+} satisfies Readonly<Record<string, UiText>>;
 
 function interactionError(code: string, t: UiTranslator): string {
   return Object.hasOwn(interactionErrors, code) ? t(interactionErrors[code as keyof typeof interactionErrors]) : t("The host reported an interaction error. Remote completion is unknown.");
+}
+
+function profileError(code: string, t: UiTranslator): string {
+  return Object.hasOwn(profileErrors, code) ? t(profileErrors[code as keyof typeof profileErrors]) : t("The host reported an execution-profile error. No profile change or recovery is implied.");
 }
 
 interface InteractionFormProps {
@@ -337,7 +345,7 @@ export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, de
     <>
       <p className="execution-profile-controls__coverage">{t("Trusted extension code is not a security sandbox. Its internal code and external effects are outside covered approval; covered tools still ask for approval.")}</p>
       <p className="execution-profile-controls__domain">{t("Each VS Code window admits its own runtime. Two windows on the same folder can change the same files at once.")}</p>
-      <p className="execution-profile-controls__chooser-note">{t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}</p>
+      <p className="execution-profile-controls__chooser-note">{t("Choosing trusted confirms the enabled Settings plugin, or opens the file picker when none is enabled, then asks the host to load it.")}</p>
     </>
   );
   const choices = (
@@ -348,16 +356,16 @@ export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, de
           {state.profile === "controlled" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
           <span className="execution-profile-controls__choice-note">{t("Covered tools ask for approval. This is not a sandbox.")}</span>
         </button>
-        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}>
+        <button type="button" className="execution-profile-controls__choice" data-profile-choice="trusted" aria-pressed={state.profile === "trusted"} disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted confirms the enabled Settings plugin, or opens the file picker when none is enabled, then asks the host to load it.")}>
           <span className="execution-profile-controls__choice-title">{t("Trusted execution")}</span>
           {state.profile === "trusted" && <span className="execution-profile-controls__choice-mark" aria-hidden="true"><SessionIcon name="check" /></span>}
-          <span className="execution-profile-controls__choice-note">{t("Loads an extension after the VS Code file picker and host confirmation. Not a sandbox.")}</span>
+          <span className="execution-profile-controls__choice-note">{t("Loads the enabled Settings plugin after host confirmation, or uses the file picker when none is enabled. Not a sandbox.")}</span>
         </button>
       </> : <>
         <button type="button" data-profile-choice="controlled" disabled={disabledSwitch} onClick={() => onChoose("controlled")}>
           {t("Use controlled execution")}
         </button>
-        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted opens the native VS Code file picker and host confirmation before loading an extension.")}>
+        <button type="button" data-profile-choice="trusted" disabled={disabledSwitch} onClick={() => onChoose("trusted")} title={t("Choosing trusted confirms the enabled Settings plugin, or opens the file picker when none is enabled, then asks the host to load it.")}>
           {t("Load a trusted extension…")}
         </button>
       </>}
@@ -370,7 +378,7 @@ export function ExecutionProfileControls({ state, onChoose, onEnd, onRecover, de
       {(!compact || state.phase !== "idle") && <p className="execution-profile-controls__phase" role={state.phase === "error" || state.phase === "recovery-required" ? "alert" : "status"}>
         {t(profilePhases[state.phase])}
       </p>}
-      {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{t("The host reported an execution-profile error. No profile change or recovery is implied.")}</p>}
+      {state.errorCode !== null && <p className="execution-profile-controls__error" role="alert">{profileError(state.errorCode, t)}</p>}
       {choices}
       {(!compact || showLifecycle) && <div className="execution-profile-controls__actions">
         <button type="button" data-action="end-owned-runtime" disabled={!state.canEnd || disabledLifecycleAction} onClick={onEnd}>

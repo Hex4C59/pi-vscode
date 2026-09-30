@@ -60,7 +60,7 @@
 | addPluginInventoryEntry | 无；宿主打开原生文件选择器，把规范本地 pi 扩展路径追加到配置范围清单。投影为不透明 id 加 basename；这不是加载同意 |
 | removePluginInventoryEntry | 当前投影清单行的 id；宿主删除该清单项，不删除磁盘文件 |
 | setPluginInventoryEnabled | id 加布尔 enabled；持久化下一次空闲受信资格，不加载、不改写活 runtime |
-| chooseExecutionProfile | profile: controlled／trusted；trusted仍由原生picker与确认取得entry |
+| chooseExecutionProfile | profile: controlled／trusted；trusted 经原生确认应用一条已启用清单路径，没有启用项时才打开文件选择器；多余已启用项可见失败 |
 | answerInteraction／cancelInteraction | id；前者另含与活动表单方法精确匹配的answer |
 | endOwnedRuntime／recoverControlledRuntime | 无；只能清理当前恢复域确切运行，遵循ADR0002回执规则 |
 

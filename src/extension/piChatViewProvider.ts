@@ -10,7 +10,7 @@ import type { WorkspaceStateMessage, ProviderConfigIntent, PluginInventoryIntent
 
 import { SavedHistory } from "./sessions/index.js";
 import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
-import { PluginInventorySettings, selectTrustedExtension } from "./extension-loading/index.js";
+import { PluginInventorySettings, selectTrustedExtension, trustedInventoryApply } from "./extension-loading/index.js";
 import type { ExtensionExecutionProfile, ExecutionProfileProjection, ExtensionFeedback } from "./contracts/index.js";
 import { createInteractionCoordinator } from "./interactions/index.js";
 import { DraftSubmission } from "./draft/index.js";
@@ -67,6 +67,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private lastProviderConfigProjection = "";
   private readonly providerConfig: ProviderConfig;
   private readonly pluginInventory: PluginInventorySettings;
+  private readonly inventoryStorage: string;
   private readonly settingsPanel!: SettingsPanel;
   private uiLocale: "en" | "zh-CN" = "en";
   private liveConversation: { id: string; path: string } | undefined;
@@ -116,8 +117,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       providerConfig: this.providerConfig,
       requestRestart: () => this.reconcileRuntime(this.liveConversation, true),
     }, () => ({ ready: this.state.runtime === "ready", disposed: this.disposed }));
+    this.inventoryStorage = hostPaths.globalStorage ?? "";
     this.pluginInventory = new PluginInventorySettings(
-      hostPaths.globalStorage ?? "",
+      this.inventoryStorage,
       () => this.pickInventoryEntry(),
       () => this.settingsPanel.publish(),
     );
@@ -520,24 +522,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const current = () => !this.disposed && this.view === view && this.profileOperation === operation && this.state.generation === generation;
     this.profilePhase = profile === "trusted" ? "selecting" : "switching"; this.profileError = null; this.publish();
     try {
-      let selected: ExtensionExecutionProfile = { kind: "controlled" };
-      let displayName: string | null = null;
-      if (profile === "trusted") {
-        const result = await selectTrustedExtension({
-          pick: async () => {
-            const files = await this.api.window.showOpenDialog({ canSelectFiles: true, canSelectFolders: false, canSelectMany: false, filters: { "pi extension": ["ts", "js", "mjs", "cjs"] }, openLabel: "Select trusted pi extension" });
-            return files?.length === 1 && files[0]?.scheme === "file" ? files[0].fsPath : undefined;
-          },
-          confirm: async entryPath => await this.api.window.showWarningMessage(
-            "Run this pi extension as trusted local code?\n\n" + entryPath + "\n\nIt can access files, network and processes outside tool approvals. Switching restarts the runtime, clears grants and captured review/attachments, retains unsent text and resumes the current conversation. This is not a sandbox. Another VS Code window may run a second pi at the same time; they can change the same files.",
-            { modal: true }, "Load trusted extension") === "Load trusted extension",
-        }, current);
-        if (!current()) return;
-        if (result.kind !== "selected") { if (result.kind === "invalid-entry") this.profileError = "invalid-entry"; return; }
-        selected = { kind: "trusted", entryPath: result.entryPath }; displayName = result.displayName;
+      const selected = await this.selectExecutionProfile(profile, current);
+      if (!selected || !current()) return;
+      if (this.state.runtime !== "ready" || session !== this.runtimeSession || this.state.chatBusy || this.interactions.snapshot().phase !== "idle") {
+        this.profileError = "state-changed"; return;
       }
-      if (!current()) return;
-      if (this.state.runtime !== "ready" || session !== this.runtimeSession || this.state.chatBusy || this.interactions.snapshot().phase !== "idle") { this.profileError = "state-changed"; return; }
       this.profilePhase = "switching"; this.publish();
       checkpointRejected = true;
       const checkpoint = this.liveConversation && this.runtime.checkpointRestart
@@ -547,8 +536,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         this.profileError = "state-changed"; return;
       }
       checkpointRejected = false;
-      this.executionProfile = selected; this.profileDisplayName = displayName;
-      this.state = { ...this.state, controlledExecution: selected.kind === "controlled" };
+      this.executionProfile = selected.profile; this.profileDisplayName = selected.displayName;
+      this.state = { ...this.state, controlledExecution: selected.profile.kind === "controlled" };
       this.tools.reset(); this.draft.runtimeLost(); this.models.reset(); this.savedHistory.reset();
       this.interactionReset = this.interactions.reset({ generation: this.state.generation, viewId: this.state.viewId });
       await this.reconcileRuntime(checkpoint.kind === "resume" ? checkpoint.conversation : undefined, true);
@@ -563,6 +552,47 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         this.publish();
       }
     }
+  }
+
+  private async selectExecutionProfile(
+    profile: "controlled" | "trusted",
+    current: () => boolean,
+  ): Promise<{ profile: ExtensionExecutionProfile; displayName: string | null } | undefined> {
+    if (profile !== "trusted") return { profile: { kind: "controlled" }, displayName: null };
+    const result = await this.selectTrustedApply(current);
+    if (!result || !current()) return;
+    return { profile: { kind: "trusted", entryPath: result.entryPath }, displayName: result.displayName };
+  }
+
+  private async selectTrustedApply(current: () => boolean) {
+    const apply = await trustedInventoryApply(this.inventoryStorage);
+    if (!current()) return;
+    if (apply.kind === "too-many") { this.profileError = "too-many-enabled"; return; }
+    if (apply.kind === "unusable") { this.profileError = "inventory-unusable"; return; }
+    const result = await selectTrustedExtension({
+      pick: apply.kind === "single" ? async () => apply.entryPath : () => this.pickTrustedFile(),
+      confirm: entryPath => this.confirmTrustedLoad(entryPath),
+    }, current);
+    if (!current()) return;
+    if (result.kind !== "selected") {
+      if (result.kind === "invalid-entry") this.profileError = "invalid-entry";
+      return;
+    }
+    return result;
+  }
+
+  private async pickTrustedFile(): Promise<string | undefined> {
+    const files = await this.api.window.showOpenDialog({
+      canSelectFiles: true, canSelectFolders: false, canSelectMany: false,
+      filters: { "pi extension": ["ts", "js", "mjs", "cjs"] }, openLabel: "Select trusted pi extension",
+    });
+    return files?.length === 1 && files[0]?.scheme === "file" ? files[0].fsPath : undefined;
+  }
+
+  private async confirmTrustedLoad(entryPath: string): Promise<boolean> {
+    return await this.api.window.showWarningMessage(
+      "Run this pi extension as trusted local code?\n\n" + entryPath + "\n\nIt can access files, network and processes outside tool approvals. Switching restarts the runtime, clears grants and captured review/attachments, retains unsent text and resumes the current conversation. This is not a sandbox. Another VS Code window may run a second pi at the same time; they can change the same files.",
+      { modal: true }, "Load trusted extension") === "Load trusted extension";
   }
 
   private sessionTransitionBusy(): boolean { return this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching"; }

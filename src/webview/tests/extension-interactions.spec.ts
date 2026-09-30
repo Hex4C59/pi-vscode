@@ -255,6 +255,28 @@ test("execution profile shows trusted identity and only dispatches host-approved
 });
 
 
+test("too many enabled plugins explain the host error without implying a switch", async () => {
+  const state: ExecutionProfileProjection = {
+    profile: "controlled",
+    displayName: null,
+    phase: "error",
+    errorCode: "too-many-enabled",
+    canSwitch: true,
+    canEnd: false,
+    canRecover: false,
+  };
+  const view = await mount(createElement(ExecutionProfileControls, {
+    state,
+    onChoose: () => undefined,
+    onEnd: () => undefined,
+    onRecover: () => undefined,
+  }));
+  try {
+    assert.match(view.get(".execution-profile-controls__error").textContent ?? "", /too many plugins are enabled/i);
+    assert.equal(view.get('[data-profile-badge="controlled"]').textContent, "Controlled execution");
+  } finally { await view.close(); }
+});
+
 test("a host-enabled profile switch can be retried after a non-pending error", async () => {
   const chosen: Array<"controlled" | "trusted"> = [];
   const state: ExecutionProfileProjection = {

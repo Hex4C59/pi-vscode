@@ -84,6 +84,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-061 | Settings Plugins empty list and add from disk | 2026-10-01 agent under complete-ACTIVE `/goal`; no remove, enable or runtime load | [record](2026-10-01-wi-061-acceptance.md) |
 | WI-062 | Remove from plugin inventory | 2026-10-01 agent under complete-ACTIVE `/goal`; disk files stay; no enable or runtime load | [record](2026-10-01-wi-062-acceptance.md) |
 | WI-063 | Enable or disable inventory entries | 2026-10-01 agent under complete-ACTIVE `/goal`; live runtime unchanged; no `-e` apply | [record](2026-10-01-wi-063-acceptance.md) |
+| WI-064 | Idle Trusted apply of enabled inventory entries | 2026-10-01 agent under complete-ACTIVE `/goal`; at most one extra `-e`; load consent kept | [record](2026-10-01-wi-064-acceptance.md) |
 
 ## Not in this index
 
