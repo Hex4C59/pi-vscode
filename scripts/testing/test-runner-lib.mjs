@@ -4,6 +4,8 @@ import { spawnSync } from 'node:child_process';
 import { build } from 'esbuild';
 
 const excludedDirectories = new Set(['fixtures', 'expected']);
+const APP_SPEC = /^(?:extension|adapter|webview)\/(?:[^/]+\/)*tests\/(?:[^/]+\/)*[^/]+\.spec\.ts$/;
+const APP_TSX_SPEC = /^(?:extension|adapter|webview)\/(?:[^/]+\/)*tests\/(?:[^/]+\/)*[^/]+\.spec\.tsx$/;
 
 function statIfPresent(file) {
   try {
@@ -29,8 +31,13 @@ function walk(directory, relative = '') {
 
 export function discoverTests(rootDir) {
   const root = path.resolve(rootDir);
-  const app = walk(path.join(root, 'src'))
-    .filter((name) => /^(?:extension|adapter|webview)\/(?:[^/]+\/)*tests\/(?:[^/]+\/)*[^/]+\.spec\.ts$/.test(name))
+  const srcNames = walk(path.join(root, 'src'));
+  const tsxSpecs = srcNames.filter((name) => APP_TSX_SPEC.test(name)).sort();
+  if (tsxSpecs.length > 0) {
+    throw new Error(`Application specs must use .spec.ts; uncollected .spec.tsx: ${tsxSpecs.join(', ')}`);
+  }
+  const app = srcNames
+    .filter((name) => APP_SPEC.test(name))
     .sort().map((name) => path.join(root, 'src', name));
   const scripts = walk(path.join(root, 'scripts'))
     .filter((name) => name.endsWith('.spec.mjs'))

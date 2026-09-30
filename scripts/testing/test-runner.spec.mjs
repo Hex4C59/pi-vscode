@@ -68,6 +68,23 @@ test('runner ignores linked directories including linked owners and script roots
   assert.deepEqual(discoverTests(other).scripts, []);
 });
 
+test('runner rejects application specs named .spec.tsx instead of collecting them', (t) => {
+  const root = fixture(t, {
+    ...minimal,
+    'src/webview/chat/tests/jsx.spec.tsx': passing,
+    'src/webview/jsx.spec.tsx': passing,
+  });
+  assert.throws(
+    () => discoverTests(root),
+    (error) => {
+      assert.match(error.message, /Application specs must use \.spec\.ts/);
+      assert.match(error.message, /webview\/chat\/tests\/jsx\.spec\.tsx/);
+      assert.equal(error.message.includes('webview/jsx.spec.tsx'), false);
+      return true;
+    },
+  );
+});
+
 test('runner library import has no discovery, cleanup or execution side effects', (t) => {
   const root = fixture(t, { 'dist/tests/sentinel': 'keep' });
   const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `await import(${JSON.stringify(libraryUrl)});`], { windowsHide: true, cwd: root, encoding: 'utf8' });
