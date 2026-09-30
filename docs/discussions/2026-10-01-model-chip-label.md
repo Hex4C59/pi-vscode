@@ -3,10 +3,10 @@
 English | [中文](2026-10-01-model-chip-label.zh.md)
 
 - Type: Discussion
-- Status: WI-066 delivered the chip/list presentation; mutex of model picker vs Execution profile remains parking-lot direction
+- Status: WI-066 delivered chip/list presentation; WI-067 delivered model-picker vs Execution-profile mutex
 - Created: 2026-10-01
 - Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the [PRD](../product-requirements.md), or architecture
-- Related: REQ-002, [WI-042](../archive/2026-09-30-wi-042-macos-acceptance.md), [WI-066](../archive/2026-10-01-wi-066-acceptance.md), [`ModelPickerView`](../../src/webview/components/model-picker.tsx)
+- Related: REQ-002, [WI-042](../archive/2026-09-30-wi-042-macos-acceptance.md), [WI-066](../archive/2026-10-01-wi-066-acceptance.md), [WI-067](../archive/2026-10-01-wi-067-acceptance.md), [`ModelPickerView`](../../src/webview/components/model-picker.tsx)
 
 ## Question
 
@@ -39,8 +39,8 @@ Slice 1 (composer model control) is implemented: formatted id, no provider, Engl
 
 ## Remaining parking
 
-**Mutex:** opening the model picker or Execution profile should show only one card at a time. That is independent of this presentation slice.
+None from this discussion. REQ-002 duplicate-label identity stays a separate ACTIVE parking item.
 
 ## Leaning
 
-Format at the Webview presentation layer from `provider / modelId` (or catalog `modelId`) rather than changing host `chatModel` identity strings. Keep WI-042 radio identity. Treat mutex as an independent later WI.
+Format at the Webview presentation layer from `provider / modelId` (or catalog `modelId`) rather than changing host `chatModel` identity strings. Keep WI-042 radio identity. Mutex is a later composer-local WI (delivered as WI-067).

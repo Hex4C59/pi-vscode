@@ -1,4 +1,4 @@
-import { useLayoutEffect, type ReactElement, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
 import type { AttachmentHistoryEntry, AttachmentStateMessage, ExecutionProfileProjection, ProviderConfigProjection, WorkspaceStateMessage } from "../../extension/contracts/index.js";
 import { ModelPickerView, SessionGrants, useChatPreview, useUiText, type AttachmentPreview } from "../components/index.js";
 import { CandidateContext } from "./candidate-context.js";
@@ -50,6 +50,33 @@ type ComposerProps = {
   onSettings: () => void;
 };
 
+type ComposerChrome = {
+  modelOpen: boolean;
+  setModelOpen: (next: boolean) => void;
+  permissions: { readonly current: HTMLDetailsElement | null };
+  onPermissionsToggle: (event: { currentTarget: HTMLDetailsElement }) => void;
+};
+
+function useComposerChrome(identity: string | null): ComposerChrome {
+  const permissions = useRef<HTMLDetailsElement>(null);
+  const [modelOpen, setModelOpenState] = useState(false);
+  useEffect(() => {
+    setModelOpenState(false);
+    if (permissions.current) permissions.current.open = false;
+  }, [identity]);
+  return {
+    modelOpen,
+    permissions,
+    setModelOpen: (next: boolean) => {
+      if (next && permissions.current) permissions.current.open = false;
+      setModelOpenState(next);
+    },
+    onPermissionsToggle: event => {
+      if (event.currentTarget.open) setModelOpenState(false);
+    },
+  };
+}
+
 /** Layout and input behavior; send, stop, draft and attachment intents are bound by the page. */
 export function MessageComposer({
   text, error, workspace, attachments, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
@@ -62,6 +89,7 @@ export function MessageComposer({
   const { text: t } = useUiText();
   const previewMode = useChatPreview();
   const identity = workspace ? workspace.viewId + ":" + workspace.generation : null;
+  const chrome = useComposerChrome(identity);
   useLayoutEffect(() => {
     const node = input.current;
     if (node) { node.style.height = "auto"; node.style.height = `${Math.min(node.scrollHeight, 140)}px`; }
@@ -82,6 +110,7 @@ export function MessageComposer({
         {canPrepare
           ? <ModelPickerView savedDefault={providerConfig} disabled={!!error || !!workspace?.busy}
               continuousThinkingDrag animatePopover
+              open={chrome.modelOpen} onOpenChange={chrome.setModelOpen}
               onModel={onSetDefaultModel}
               onThinking={level => {
                 if (providerConfig?.defaultProvider && providerConfig.defaultModelId) onSetDefaultThinking(providerConfig.defaultProvider, providerConfig.defaultModelId, level);
@@ -89,6 +118,7 @@ export function MessageComposer({
               onSettings={onSettings} />
           : workspace
           ? <ModelPickerView key={`${workspace.viewId}-${workspace.generation}`} state={workspace} disabled={settingsDisabled} continuousThinkingDrag animatePopover
+              open={chrome.modelOpen} onOpenChange={chrome.setModelOpen}
               onModel={onSetChatModel}
               onThinking={onSetThinking} />
           : <button id="model-effort-trigger" className="chip" type="button" disabled
@@ -98,7 +128,7 @@ export function MessageComposer({
               <span className="model-effort-trigger__thinking"> · —</span>
             </button>}
       </div>
-      {(executionProfile || canBrowse) && <details className="candidate-permissions" key={`permissions-${identity}`} onKeyDown={event => {
+      {(executionProfile || canBrowse) && <details ref={chrome.permissions} className="candidate-permissions" key={`permissions-${identity}`} onToggle={chrome.onPermissionsToggle} onKeyDown={event => {
         if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
       }}>
         <summary aria-label={t("Permissions ({count})", { count: workspace?.grants.length ?? 0 })} title={t("Permissions ({count})", { count: workspace?.grants.length ?? 0 })}>

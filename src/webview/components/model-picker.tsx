@@ -43,7 +43,7 @@ function savedDefaultPickerState(config: ProviderConfigProjection | null) {
 }
 
 /** Shared presentation only: the caller owns live-session or saved-default semantics. */
-export function ModelPickerView({ state: liveState, savedDefault, disabled: callerDisabled, onModel, onThinking, onSettings, loading: callerLoading = false, continuousThinkingDrag = false, animatePopover = false }: ModelPickerViewProps): ReactElement {
+export function ModelPickerView({ state: liveState, savedDefault, disabled: callerDisabled, onModel, onThinking, onSettings, loading: callerLoading = false, continuousThinkingDrag = false, animatePopover = false, open: controlledOpen, onOpenChange }: ModelPickerViewProps): ReactElement {
   const state = savedDefault !== undefined ? savedDefaultPickerState(savedDefault) : liveState;
   const loading = savedDefault !== undefined ? !savedDefault || savedDefault.busy : callerLoading;
   const disabled = callerDisabled || state.busy || state.runtime !== "ready" || state.execution === "stopping";
@@ -56,7 +56,13 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sliderRef = useRef<HTMLInputElement>(null);
   const selectionFocus = useRef<{ phase: "awaiting-busy" | "busy"; target: HTMLElement } | null>(null);
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const popoverOpen = onOpenChange && controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setPopoverOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const resolved = typeof next === "function" ? next(popoverOpen) : next;
+    if (onOpenChange) onOpenChange(resolved);
+    else setInternalOpen(resolved);
+  };
   const [modelListOpen, setModelListOpen] = useState(false);
   const appliedLevel = state.thinkingLevel;
   const selectedLevel = state.pendingThinkingLevel ?? appliedLevel;
@@ -68,6 +74,10 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
   useEffect(() => {
     setSliderIndex(selectedLevelIndex);
   }, [levelsKey, selectedLevel, selectedLevelIndex]);
+
+  useEffect(() => {
+    if (!popoverOpen && !animatePopover) setModelListOpen(false);
+  }, [popoverOpen, animatePopover]);
 
   useEffect(() => {
     if (!popoverOpen) return undefined;

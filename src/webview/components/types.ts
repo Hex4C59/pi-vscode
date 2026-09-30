@@ -67,7 +67,10 @@ export type ModelPickerViewProps = {
 } & (
   | { state: LiveModelControlState; savedDefault?: undefined }
   | { savedDefault: ProviderConfigProjection | null; state?: undefined }
-);
+) & {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
 
 export interface SessionsProps {
   pageSize: number;

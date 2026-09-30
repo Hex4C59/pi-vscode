@@ -180,6 +180,8 @@ WI-006 当时仅记录选择，不启动 pi；随后 WI-007 接入根据选择�
 
 **WI-066 已接受切片（代理依据完成 ACTIVE 的 `/goal`，2026-10-01；REQ-002 作曲区展示）：** 作曲区与设置里的模型选择器显示格式化模型 id、不显示供应商。英文思考强度 Title Case。打开的选择器没有 Model／Thinking level／Open provider settings；居中的名称＋强度打开列表；滑条只改思考。宿主 `chatModel` 身份与 WI-042 radio 不变。不关闭跨供应商同名缺口。[验收与限制](archive/2026-10-01-wi-066-acceptance.zh.md)。
 
+**WI-067 已接受切片（代理依据完成 ACTIVE 的 `/goal`，2026-10-01；REQ-002／REQ-006）：** 打开作曲区模型选择器会关闭执行配置，打开执行配置会关闭模型选择器。添加上下文、历史与设置保持独立。[验收与限制](archive/2026-10-01-wi-067-acceptance.zh.md)。
+
 **WI-042 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／UI-01）：** 模型选择器仅用稳定的供应商与模型 id 身份标记已应用项，不用显示标签。同名标签、以及标签与另一模型 canonical 组合碰撞时仍只选中一个 radio。这是展示唯一性，不宣称运行时收到了错误模型。不改协议。[验收与限制](archive/2026-09-30-wi-042-macos-acceptance.zh.md)。
 
 **WI-043 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／UI-02）：** 窗口级模型弹层 Escape 必须忽略已被消费的事件（`defaultPrevented` 或输入法组合）。重叠的添加上下文菜单与模型弹层：在上下文菜单上按 Escape 只关闭该菜单并恢复其触发器，模型弹层保持打开。这是 jsdom 组件证据，不是 macOS 宿主键盘验收。[验收与限制](archive/2026-09-30-wi-043-macos-acceptance.zh.md)。
@@ -417,7 +419,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-064 | REQ-010 空闲受信启动时应用已启用清单项 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-064-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-064-acceptance.zh.md)。消息编辑区收拢仍属后续。ADR 0010 仍为 Draft。 |
 | WI-065 | REQ-010 消息编辑区执行配置收拢 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-065-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-065-acceptance.zh.md)。作曲区不再打开文件选择器。ADR 0010 仍为 Draft。 |
 | WI-066 | REQ-002 作曲区模型芯片展示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-066-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-066-acceptance.zh.md)。不关闭 REQ-002 同名缺口。 |
-| WI-067 | REQ-002／REQ-006 作曲区模型选择器与执行配置互斥 | 依据完成 ACTIVE 的 `/goal` 进行中。一次只开一张卡片。 |
+| WI-067 | REQ-002／REQ-006 作曲区模型选择器与执行配置互斥 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-067-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-067-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |

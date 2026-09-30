@@ -26,7 +26,9 @@ test("Escape inside permissions does not also dismiss attachment preview", async
   await h.click('[aria-label="Draft context"] button[aria-label="Preview complete snapshot"]');
   await h.advance(80);
   const permissions = h.get<HTMLDetailsElement>('.candidate-permissions');
-  await act(async () => { permissions.open = true; permissions.querySelector('summary')?.focus(); });
+  await h.click('.candidate-permissions > summary');
+  assert.equal(permissions.open, true);
+  permissions.querySelector('summary')?.focus();
   await act(async () => permissions.dispatchEvent(new h.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })));
   assert.equal(permissions.open, false);
   assert.ok(h.root.querySelector('[aria-label="Attachment preview"]'));

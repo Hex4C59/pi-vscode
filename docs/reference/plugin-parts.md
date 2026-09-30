@@ -129,7 +129,7 @@ Opened from the shield. Call this **Execution profile**, not a second settings p
 
 **Notes** and **Session grants** fold out inside the same card. Grants are this session’s tool allowances, not VS Code workspace trust.
 
-Parked direction: opening the model picker or Execution profile should show only one card at a time.
+Opening the model picker or Execution profile shows only one card at a time.
 
 ## Add-context menu
 

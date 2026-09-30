@@ -8,10 +8,10 @@
 - 最近同步：2026-10-01
 
 - 类型：讨论
-- 状态：WI-066 已交付芯片／列表展示；模型选择器与执行配置互斥仍停放
+- 状态：WI-066 已交付芯片／列表展示；WI-067 已交付模型选择器与执行配置互斥
 - 创建：2026-10-01
 - 权威：**仅作上下文**——不覆盖 [`ACTIVE.md`](../../ACTIVE.md)、[PRD](../product-requirements.zh.md) 或架构
-- 相关：REQ-002、[WI-042](../archive/2026-09-30-wi-042-macos-acceptance.zh.md)、[WI-066](../archive/2026-10-01-wi-066-acceptance.zh.md)、[`ModelPickerView`](../../src/webview/components/model-picker.tsx)
+- 相关：REQ-002、[WI-042](../archive/2026-09-30-wi-042-macos-acceptance.zh.md)、[WI-066](../archive/2026-10-01-wi-066-acceptance.zh.md)、[WI-067](../archive/2026-10-01-wi-067-acceptance.zh.md)、[`ModelPickerView`](../../src/webview/components/model-picker.tsx)
 
 ## 问题
 
@@ -44,8 +44,8 @@ REQ-002 仍要求用户能分辨当前选中的已配置模型。芯片和列表
 
 ## 仍停放
 
-**互斥：** 模型选择器与执行配置一次只开一张。与本展示切片独立。
+本讨论无剩余项。REQ-002 同名身份仍是 ACTIVE 里的独立停车场项。
 
 ## 倾向
 
-在 Webview 展示层从 `provider / modelId`（或目录 `modelId`）格式化，不改宿主 `chatModel` 身份字符串。保持 WI-042 radio 身份。互斥作为独立后续 WI。
+在 Webview 展示层从 `provider / modelId`（或目录 `modelId`）格式化，不改宿主 `chatModel` 身份字符串。保持 WI-042 radio 身份。互斥是后续作曲区本地 WI（已由 WI-067 交付）。

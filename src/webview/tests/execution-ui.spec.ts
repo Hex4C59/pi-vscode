@@ -166,6 +166,27 @@ test("Stop stays visible while stopping, locks approvals, and preserves draft an
   }
 });
 
+test("composer keeps the model picker and Execution profile from staying open together", async () => {
+  const h = await uiHarness();
+  try {
+    const permissions = h.get<HTMLDetailsElement>(".candidate-permissions");
+    await act(async () => {
+      permissions.open = true;
+      permissions.dispatchEvent(new h.dom.window.Event("toggle", { bubbles: true }));
+    });
+    assert.equal(permissions.open, true);
+    await h.click("#model-effort-trigger");
+    assert.equal(h.get("#model-popover").hidden, false);
+    assert.equal(permissions.open, false, "opening the model picker closes Execution profile");
+    await act(async () => {
+      permissions.open = true;
+      permissions.dispatchEvent(new h.dom.window.Event("toggle", { bubbles: true }));
+    });
+    assert.equal(permissions.open, true);
+    assert.equal(h.get("#model-popover").hidden, true, "opening Execution profile closes the model picker");
+  } finally { await h.close(); }
+});
+
 test("generation changes clear old activity and approval nodes without reviving stale projections", async () => {
   const h = await uiHarness();
   try {

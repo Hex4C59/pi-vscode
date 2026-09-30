@@ -87,6 +87,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-064 | Idle Trusted apply of enabled inventory entries | 2026-10-01 agent under complete-ACTIVE `/goal`; at most one extra `-e`; load consent kept | [record](2026-10-01-wi-064-acceptance.md) |
 | WI-065 | Composer execution-profile fold | 2026-10-01 agent under complete-ACTIVE `/goal`; no composer picker; add stays in Settings | [record](2026-10-01-wi-065-acceptance.md) |
 | WI-066 | Composer model-chip presentation | 2026-10-01 agent under complete-ACTIVE `/goal`; formatted id, no provider; WI-042 identity kept | [record](2026-10-01-wi-066-acceptance.md) |
+| WI-067 | Composer model-picker and Execution profile mutex | 2026-10-01 agent under complete-ACTIVE `/goal`; one open card at a time | [record](2026-10-01-wi-067-acceptance.md) |
 
 ## Not in this index
 
