@@ -8,7 +8,7 @@
 - 最近同步：2026-09-29
 
 - 类型：讨论
-- 状态：维护者确认先结束遗留的自有运行时，再进入下一次对话。记录为 Draft [ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md)。不做 Build。
+- 状态：WI-035 于 2026-09-30 依据明确代理委托接受并关闭，[ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 已 Accepted。[实际 macOS F5／隔离安装证据与限制](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)。
 - 创建：2026-09-29
 - 权威：**仅作上下文**——不覆盖 [`ACTIVE.md`](../../ACTIVE.md)、PRD 或 ADR 0002
 - 相关：[ADR 0002](../decisions/0002-interaction-contract-route.zh.md)
@@ -33,8 +33,10 @@ ADR 0002 接受这份 fence。重新加载和「看不到进程」都不能清�
 
 2026-09-29 维护者选择候选 2：先结束遗留的自有子进程，再进入对话。候选 1 和 3 关闭。Draft ADR 0006 记录该选择。在它标为 Accepted 之前，不取代 ADR 0002。
 
-## 未决
+## 后续解决与 Codex 对照
 
-- 没有工作项。取证时 WI-032 为当前项，现已关闭；未授权替代方案建造。
-- 结束遗留子进程后没有观察到退出时显示什么，尚未规定。
-- ADR 0002 的恢复规则仍是已接受规则时，不实现。
+前述约束和确认保留 2026-09-29 决定时点。2026-09-30 维护者批准 WI-035 并委托依据证据验收。[ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 补齐活所有者安全与失败诚实：只自动结束失去所有者的运行，退休仍需精确回执，无法确认清理时保留既有显式恢复页。[验收记录](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 区分自动化分支与实际 F5／安装证据，并披露初始原生／工具失败。ADR 0002 的共享域、直接子进程证据与会话内不确定性规则仍保留；只有启动仪式在 ADR 0006 Accepted 时被替代。
+
+Codex 只读取证使用本地源码 commit `58ac2a8773da0ac6eb21471e6d3da5744d9e9e0c`（2026-03-18）、已安装 CLI 0.156.1 与 VS Code 扩展 26.917.62051。这是三个版本事实，不是同一构建。[spawn.rs](https://github.com/openai/codex/blob/58ac2a8773da0ac6eb21471e6d3da5744d9e9e0c/codex-rs/core/src/spawn.rs#L81-L124) 使用 `kill_on_drop(true)`，且**仅 Linux** 请求父进程死亡 SIGTERM；该条件不能证明 macOS 崩溃清理或所有后代终止。已安装扩展拥有内存中的子进程，并执行 teardown／kill 检查，被中断请求仍按 outcome-unknown 处理。app-server EOF／ConnectionClosed 单独不能证明完整进程树停止。不能据此声称 Codex 普遍无遗留、跨窗口协调保证，或 Claude Code 实现事实。
+
+维护者后续 Codex 型方向作为 WI-036 留在 ACTIVE：owner-loss 当场清理和可能的每窗口独立域属于未来问题，不是 WI-035 改动。其准入、失败和旧记录迁移取舍仍须明确批准。本讨论或对照不授权这些实施或任意删除记录。

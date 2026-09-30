@@ -12,6 +12,10 @@ English | [中文](0002-interaction-contract-route.zh.md)
 
 > Subsequent disposition,2026-09-28: references below to Open gates retain this slice’s original decision date. [ADR0004](0004-trust-and-lifecycle.md) separately accepts the three broad boundaries; acceptance is not inferred from this ADR.
 
+## WI-035 Partial Supersession
+
+On 2026-09-30 [Accepted ADR 0006](0006-owned-runtime-handoff.md) replaced only the next-host startup ceremony with observe-first, receipt-backed automatic handoff. The explicit startup End/Recover requirement below is historical for a later host's lost-owner run; in-session Stop/protocol uncertainty, shared-domain admission, exact-child evidence, no replay and no clear-unknown bypass remain current. A live owner's run in another window is not a leftover and must not be ended. [WI-035 delegated acceptance](../archive/2026-09-30-wi-035-macos-acceptance.md) records native F5/installed evidence and limits. This ADR remains Accepted for its retained boundaries; no gate status changes.
+
 ## Context and scope
 
 REQ-006/009 require explicit trusted extension loading and standard interaction presentation on unmodified released pi, retaining tool approval and honest Stop/recovery boundaries. Public RPC does not provide generic remote consumption, closure or origin authentication; local generations, single reply attempts and owned-child exit must not be exaggerated into those facts. Retain [ADR 0001](0001-build-baseline.md)'s subprocess RPC rather than replacing the agent loop, providers or compaction.

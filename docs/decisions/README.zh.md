@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-22
+- 最近同步：2026-09-30
 
 - 类型：参考
 - 状态：Accepted
@@ -35,17 +35,17 @@
 | 0002 | 受信扩展交互与自有runtime恢复（WI-013） | 关联三项广泛gates另由ADR0004接受 | [0002-interaction-contract-route.zh.md](0002-interaction-contract-route.zh.md) |
 | 0003 | React／TypeScript／Vite Webview 前端（WI-015） | 关联gates另由ADR0004接受 | [0003-react-webview.zh.md](0003-react-webview.zh.md) |
 | 0004 | 端到端信任与会话生命周期边界（WI-010） | `gate-webview-trust`、`gate-project-trust`、`gate-session-streaming` | [0004-trust-and-lifecycle.zh.md](0004-trust-and-lifecycle.zh.md) |
+| 0006 | 遗留自有运行时启动交接（WI-035） | 不关闭 gate | [0006-owned-runtime-handoff.zh.md](0006-owned-runtime-handoff.zh.md) |
 
 ## Draft ADR
 
 | ID | 标题 | Gate | 文件 |
 |----|------|------|------|
 | 0005 | 在 models.json 中保存自定义 OpenAI 兼容端点（WI-030） | 无 | [0005-custom-endpoint-file.zh.md](0005-custom-endpoint-file.zh.md) |
-| 0006 | 进入下一次对话前结束遗留的自有运行时 | 不关闭 gate | [0006-owned-runtime-handoff.zh.md](0006-owned-runtime-handoff.zh.md) |
 
 0005 保持 Draft。维护者在检查设置页控件后关闭了 WI-030。真实浏览器登录和真实端点调用仍未记录，因此本 ADR 不接受任何 gate。
 
-0006 保持 Draft。维护者于 2026-09-29 确认遗留运行时规则。尚无实现或宿主验证，因此它不取代 ADR 0002，也不接受任何 gate。
+0006 于 2026-09-30 由代理按维护者对 WI-035 的明确委托接受，实际 macOS F5／隔离安装交接与完整自动化检查已完成。只取代 ADR 0002 的启动仪式，共享域准入与会话内恢复不变。[证据与限制](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)；不关闭 gate。
 
 ## Agent 流程
 

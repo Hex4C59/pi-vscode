@@ -67,7 +67,9 @@
 | [WI-032 代理受托接受](2026-09-30-wi-032-macos-evaluation.zh.md) | 六入口规则、定向 139 项测试与 macOS smoke；最终委托后关闭，原生敏感交互未验证 |
 | [WI-033 代理受托接受](2026-09-30-wi-033-macos-evaluation.zh.md) | 真实 pi 捕获字节经生产 reader／runtime；最终委托后关闭，保留非 JSON 忽略与原生故障路径限制 |
 | [WI-034 代理受托接受](2026-09-30-wi-034-macos-evaluation.zh.md) | 组包、解包真实 RPC／gate、原生 F5 与隔离安装渲染；限定关闭，不是完整产品验收 |
+| [WI-035 代理受托接受](2026-09-30-wi-035-macos-acceptance.zh.md) | 精确回执交接、实际 F5／隔离安装与活所有者证据；ADR 0006 Accepted，保留失败与范围限制 |
 | [WI-037 代理受托接受](2026-09-30-wi-037-macos-acceptance.zh.md) | 有界 thinking 流式与完整引号凭据脱敏；实际 macOS F5／隔离安装 SSE 证据 |
+| [WI-035 批准提案](2026-09-30-wi-035-approved-proposal.zh.md) | 完整批准范围与验收；历史，不是新的 Build 授权 |
 | [WI-034 批准提案](2026-09-30-wi-034-approved-proposal.md) | 关闭后原样保留的 ACTIVE 单语提案；不是新建造授权 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |
 

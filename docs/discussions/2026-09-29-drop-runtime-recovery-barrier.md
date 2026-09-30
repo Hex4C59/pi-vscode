@@ -3,7 +3,7 @@
 English | [中文](2026-09-29-drop-runtime-recovery-barrier.zh.md)
 
 - Type: Discussion
-- Status: Maintainer confirmed ending a leftover owned runtime before the next conversation. Recorded as Draft [ADR 0006](../decisions/0006-owned-runtime-handoff.md). No Build.
+- Status: WI-035 accepted and closed on 2026-09-30 under the explicit agent delegation; [ADR 0006](../decisions/0006-owned-runtime-handoff.md) is Accepted. [Actual macOS F5/isolated installed evidence and limits](../archive/2026-09-30-wi-035-macos-acceptance.md).
 - Created: 2026-09-29
 - Authority: **context only** — does not override [`ACTIVE.md`](../../ACTIVE.md), the PRD, or ADR 0002
 - Related: [ADR 0002](../decisions/0002-interaction-contract-route.md)
@@ -28,8 +28,10 @@ ADR 0002 accepts the fence. Reload and “no process is visible” do not clear 
 
 On 2026-09-29 the maintainer chose option 2: end the leftover owned child, then enter the conversation. Options 1 and 3 are closed. Draft ADR 0006 records the choice. It does not replace ADR 0002 until it is Accepted.
 
-## Open
+## Subsequent Resolution and Codex Comparison
 
-- No work item. WI-032 was current at capture and is now closed; no replacement Build is authorized.
-- The page shown when ending the leftover child produces no observed exit is not specified.
-- Do not implement while ADR 0002’s recovery rule is the accepted rule.
+The preceding constraints and confirmation preserve the 2026-09-29 decision point. On 2026-09-30 the maintainer approved WI-035 and delegated evidence-based acceptance. [ADR 0006](../decisions/0006-owned-runtime-handoff.md) now specifies both live-owner safety and honest failure: only a lost owner is automatically ended, retirement needs exact receipts, and unconfirmed cleanup retains the existing explicit recovery page. The [acceptance record](../archive/2026-09-30-wi-035-macos-acceptance.md) separates automated branches from actual F5/installed evidence and documents initial native/tool failures. ADR 0002 retains its shared domain, direct-child evidence and in-session uncertainty rules; only its startup ceremony is replaced when ADR 0006 is Accepted.
+
+Read-only Codex comparison used local source commit `58ac2a8773da0ac6eb21471e6d3da5744d9e9e0c` (2026-03-18), the installed CLI 0.156.1 and VS Code extension 26.917.62051. These are different version facts, not one matching build. [spawn.rs](https://github.com/openai/codex/blob/58ac2a8773da0ac6eb21471e6d3da5744d9e9e0c/codex-rs/core/src/spawn.rs#L81-L124) uses `kill_on_drop(true)` and requests a parent-death SIGTERM **only on Linux**; that conditional does not prove macOS crash cleanup or termination of every descendant. The installed extension owns an in-memory subprocess and performs teardown/kill checks while treating interrupted requests as outcome-unknown. App-server EOF/ConnectionClosed alone is not proof that the full process tree stopped. No universal Codex no-leftovers guarantee, cross-window coordination guarantee or Claude Code implementation claim follows from this evidence.
+
+The maintainer's later Codex-type direction is recorded as WI-036 in ACTIVE: cleanup on owner loss and possible per-window domains are future questions, not WI-035 changes. Required approval includes their admission, failure and old-record migration tradeoffs. Neither this discussion nor the comparison authorizes those changes or arbitrary record deletion.

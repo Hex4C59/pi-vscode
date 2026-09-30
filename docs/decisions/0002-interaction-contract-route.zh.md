@@ -17,6 +17,10 @@
 
 > 2026-09-28 后续处置：下列早期「gates Open」描述保留原切片决定时点；三个广泛边界现已另由 [ADR0004](0004-trust-and-lifecycle.zh.md) 接受，不由本 ADR 自动推出。
 
+## WI-035 局部替代
+
+2026-09-30，[Accepted ADR 0006](0006-owned-runtime-handoff.zh.md) 只用先观察、精确回执保障的自动交接取代下一宿主的启动仪式。下文启动时显式 End／Recover 的要求，对后来宿主遇到失去所有者的运行而言是历史；会话内 Stop／协议不确定性、共享域准入、精确子进程证据、不重放与无清除未知旁路仍有效。另一窗口活宿主的运行不是遗留运行，不能结束。[WI-035 代理受托接受](../archive/2026-09-30-wi-035-macos-acceptance.zh.md) 记录原生 F5／安装证据与限制。本 ADR 的其余边界保持 Accepted，不改变 gate。
+
 ## 背景与范围
 
 REQ-006／009要求在未修改的发行版pi上显式加载受信扩展、呈现标准交互，并保留工具审批和诚实Stop／恢复边界。公开RPC没有通用远端消费、关闭或来源认证事实；本地generation、一次答复尝试与owned-child exit不能被夸大成那些事实。仍沿用[ADR0001](0001-build-baseline.zh.md)的subprocess RPC，不替换agent loop／provider／compaction。

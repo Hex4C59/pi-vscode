@@ -299,6 +299,12 @@ host coordinator拥有一个active加七个FIFO queue及当前view投影；adapt
 
 Stop先关闭准入、撤销／取消未答form与covered approval，包括取消引出的下一form，再clear公开queue并abort。五秒观察独立handler／agent／dialog义务；到期未证实则stop-unconfirmed／recovery-required，禁止send／profile／session／model transition及answer，保留可用draft，显示terminal／manual-end指引。不自动replay或kill。不宣称detached extension work已settled；可靠识别的不兼容操作排除，无法分离则排除扩展。显式End owned runtime与controlled recovery遵循ADR0002持久exact-child契约，不接受任意PID。pending startup／error／stream loss／host loss／observed child exit／never-spawned失败／receipt成功退休仍区分。工作区无执行资格（受限／无文件夹／多根）时仍可清理确切已保留运行；不授予信任／资源同意、不绕过启动资格。见ADR0002的WI-010清理修正。
 
+### 启动交接（WI-035）
+
+**WI-035 启动交接已接受。** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.zh.md) 在所需验证后记录下述启动交接。只取代 ADR 0002 的下一宿主启动仪式；共享域准入与会话内 Stop／协议恢复仍有效。[WI-035 证据](../archive/2026-09-30-wi-035-macos-acceptance.zh.md)区分实际 F5／安装、活所有者安全与未验证分支。
+
+宿主在新启动准入前完成一次遗留运行交接；单独 Webview bootstrap／重建不会重做交接。空域或已验证退休显示正常空对话／无文件夹页，无恢复控件。匹配 supervisor 报告 `owned` 表示另一活宿主：此处不提供 End／Recover，也不请求终止；尝试启动仅报告共享存储占用，不创建替代运行。只有 `owner-lost` 自动结束，且退休前须有匹配 run／child 的终态证据。不可达／不确定／损坏时保留既有 `recovery-required` 投影和操作规则。v3 协议、错误码、显式会话内恢复、新工作区／资源核对与不重放规则不变。已 disposal 的宿主或过期工作区不能发布迟到交接结果或从旧文件夹启动。
+
 ### 所需验证与架构结论
 
 治理维度1～19已通过WI-013限定实现与分层证据核对：owner／公共seam／v3 DTO、需求与状态并发、故障cleanup、安全／数据／隐私／背压、构建／兼容／UX。确定性测试与实际runtime／原生F5／安装／多窗口各自证据及限制见[委托验收](../archive/2026-09-28-wi-013-acceptance.zh.md)。限定设计成熟度为Implemented／Accepted，ADR0002 Accepted；三项广泛gates后来另由ADR0004接受，其他WI完整接受不由本节推断。

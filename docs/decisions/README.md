@@ -30,17 +30,17 @@ Initial proposals and unexplained spike failures retain their pending state and 
 | 0002 | Trusted extension interactions and owned-runtime recovery (WI-013) | Related broad gates: separately Accepted by ADR0004 | [0002-interaction-contract-route.md](0002-interaction-contract-route.md) |
 | 0003 | React/TypeScript/Vite Webview frontend (WI-015) | Related gates: separately Accepted by ADR0004 | [0003-react-webview.md](0003-react-webview.md) |
 | 0004 | End-to-end trust and session lifecycle boundaries (WI-010) | `gate-webview-trust`, `gate-project-trust`, `gate-session-streaming` | [0004-trust-and-lifecycle.md](0004-trust-and-lifecycle.md) |
+| 0006 | Startup handoff of a leftover owned runtime (WI-035) | none closed | [0006-owned-runtime-handoff.md](0006-owned-runtime-handoff.md) |
 
 ## Draft ADRs
 
 | ID | Title | Gate | File |
 |----|-------|------|------|
 | 0005 | Custom OpenAI-compatible endpoints in models.json (WI-030) | none | [0005-custom-endpoint-file.md](0005-custom-endpoint-file.md) |
-| 0006 | End a leftover owned runtime before the next conversation | none closed | [0006-owned-runtime-handoff.md](0006-owned-runtime-handoff.md) |
 
 0005 stays Draft. The maintainer closed WI-030 after checking the settings controls. A live browser sign-in and a live endpoint call are still unrecorded, so this ADR does not accept a gate.
 
-0006 stays Draft. The maintainer confirmed the leftover-runtime rule on 2026-09-29. It has no implementation or host verification, so it does not supersede ADR 0002 and does not accept a gate.
+0006 was Accepted on 2026-09-30 by the agent under the maintainer's explicit WI-035 delegation, after actual macOS F5/isolated installed handoff and full automated checks. It supersedes only ADR 0002's startup ceremony; shared-domain admission and in-session recovery remain unchanged. [Evidence and limits](../archive/2026-09-30-wi-035-macos-acceptance.md); no gate closed.
 
 ## Agent workflow
 

@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-27
+- 最近同步：2026-09-30
 
 面向 [pi](https://github.com/earendil-works/pi) coding agent 的 VS Code 扩展：边写代码边在侧栏聊天。左侧保留 Explorer，Pi 优先使用右侧辅助侧栏。
 
@@ -17,10 +17,9 @@
 
 - 浏览器、实际 F5 与已安装 VSIX 证据分别记录；真实 pi 配本机合成 provider 不是真实模型证据或维护者验收。
 - 活跃附件历史已实现有界分页和按需完整预览；已有路径不自动接受整份 PRD、架构 gate 或发布。
-- WI-010 经维护者四项 F5 确认后关闭；隔离已安装 VSIX 激活现已有 Goal 验证证据，完整审批／生命周期矩阵及维护者接受仍未完成。
-- WI-008／WI-009 的空闲选择及下一轮生效主路径已确认，最终收尾仍待完成。
+- 模型／thinking 切片接受及独立信任／生命周期边界接受分别记录在[关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)与 [gate 表](docs/reference/architecture-gates.zh.md)。限定证据不认证完整产品闭环或全部环境。
 - 已覆盖的内置 write/edit 在审批前及最终授权前检查未保存编辑；被阻止时须明确恢复，绝不自动保存。不保证拦截 shell 写入或最终检查之后的编辑。
-- 修改后审查现将可靠的 write/edit before/after 文本保存在 host 内存，提供原生只读 diff 和当前源导航。可展开面板区分工具报告目标与观察到的工作区变化、解释捕获／归因限制，历史差异保留到 runtime／项目替换；它不是补丁审批或回滚。保存会话现通过 pi 公开 API 提供当前项目目录、确认后的顺序新建／恢复，以及有界的不可变历史／附件文本预览；不会自动加载历史工具，确认也不是所有权锁。其余产品闭环和维护者验收仍待完成，当前证据见 ACTIVE。[PRD](docs/product-requirements.zh.md) 保持 Draft，`ACTIVE.md` 列出的架构 Gate 保持 Open。
+- 修改后审查现将可靠的 write/edit before/after 文本保存在 host 内存，提供原生只读 diff 和当前源导航。可展开面板区分工具报告目标与观察到的工作区变化、解释捕获／归因限制，历史差异保留到 runtime／项目替换；它不是补丁审批或回滚。保存会话现通过 pi 公开 API 提供当前项目目录、确认后的顺序新建／恢复，以及有界的不可变历史／附件文本预览；不会自动加载历史工具，确认也不是所有权锁。其余产品闭环和维护者验收仍待完成，当前证据见 ACTIVE。[PRD](docs/product-requirements.zh.md) 保持 Draft；当前架构接受状态及限制归 [gate 表](docs/reference/architecture-gates.zh.md)。
 
 仓库尚无 Marketplace 或 Open VSX 发布验收记录。[历史](docs/archive/2026-09-21-closed-wi-history.zh.md)中的验证 VSIX 仅通过解压包检查，不等于已安装包验收。
 

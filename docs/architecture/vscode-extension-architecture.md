@@ -23,7 +23,7 @@ The extension is a **presentation and orchestration layer**. It does not reimple
 | Layer | Responsibility | Owner (this repo) |
 |-------|----------------|-------------------|
 | **UI (Webview)** | Chat layout, streaming display, local UI state only | `src/webview/` |
-| **Extension host** | Activation, commands, configuration, `SecretStorage`, workspace trust policy, webview lifecycle, validated `postMessage` bridge | `src/extension/` |
+| **Extension host** | Activation, commands, provider authentication and saved defaults through public pi SDKs, workspace trust policy, webview lifecycle, validated `postMessage` bridge | `src/extension/` |
 | **Adapter** | pi SDK or RPC subprocess → internal domain events consumed by host + webview | `src/adapter/` |
 | **Runtime (upstream)** | Models, tools, sessions, project resources | pi packages / subprocess |
 
@@ -36,8 +36,12 @@ flowchart TD
     W <-->|"Versioned intents and host projections"| H["Extension host<br/>src/extension/"]
     H <-->|"Runtime lifecycle and domain events"| A["Adapter<br/>src/adapter/"]
     A <-->|"Subprocess JSONL RPC"| P["Upstream pi runtime<br/>npm dependency, outside this repo's src/"]
+    H <-->|"Provider authentication and saved defaults"| S["Public pi SDKs<br/>ModelRuntime, SettingsManager, pi-ai"]
+    A -->|"Bounded session-worker protocol"| J["Short-lived session worker<br/>Public SessionManager"]
     E["Extension entry point<br/>src/extension.ts"] -->|"Registers view and command"| H
 ```
+
+These are three distinct integration paths: agent execution uses subprocess RPC; saved-session reads use the adapter's isolated worker; provider configuration uses public SDKs inside the privileged host. Host SDK use does not embed an agent loop or expose SDK capabilities to the Webview. The ownership sections below define persistence and lifecycle responsibilities.
 
 ### Source directories
 
@@ -47,12 +51,15 @@ Directories group existing responsibilities within each layer; they are not sepa
 |-----------|----------------|
 | `src/extension/bridge/` | Webview resource shell, inbound message validation and input limits |
 | `src/extension/contracts/` | Host-owned Webview DTOs, runtime/session interfaces and approval envelope contract |
-| `src/extension/models/` | Model catalogue validation and applied/pending settings |
+| `src/extension/models/` | Model catalogue validation, applied/pending live settings, provider authentication, saved defaults and custom endpoint configuration |
 | `src/extension/draft/` | Draft submission and editor attachment capture |
 | `src/extension/editor-tools/` | Approval policy, dirty-editor protection and change review |
 | `src/extension/sessions/` | Host-side saved-history reading and preview coordination |
+| `src/extension/interactions/` | Standard interaction admission, queue, answer authority and view projection |
+| `src/extension/extension-loading/` | Native trusted-entry selection, canonical identity checks and loading consent |
 | `src/adapter/runtime/` | Live pi RPC process, request pairing, frame translation, task occupancy, model parsing and activity/error projection |
 | `src/adapter/sessions/` | Public pi session API helper and history projection |
+| `src/adapter/ownership/` | Persistent recovery domain, supervisor/control channel, exact-child receipts and retained-run handoff |
 
 Directory `index.ts` files expose operations and type-only contracts consumed across module directories. Module-owned types live in local `types.ts` files, while cross-layer Webview DTOs, runtime lifecycle and session interfaces retain their single host-owned source in `src/extension/contracts/`. Imports within a module can still target its implementation files. `src/extension.ts` assembles host and adapter entries. Browser code imports host-owned contracts only as types; standalone session-worker and approval-gate build entries remain explicit implementation files.
 
@@ -71,7 +78,7 @@ The `pi-vscode.focusChat` command reveals the existing container and focuses cha
 
 ## 4. Trust boundaries
 
-- **Secrets** (API keys, tokens): extension host only (`SecretStorage` / env policy). **Never** pass to webview HTML/JS or webview `localStorage`.
+- **Secrets**: privileged host/runtime integration only, **never** in Webview messages, HTML or storage. Provider login uses native host prompts and public `ModelRuntime.login` with pi auth storage; no parallel product credential store is introduced. The renderer receives bounded readiness metadata, not credentials or OAuth codes/authorization URLs.
 - **Webview**: no `require`, no direct pi SDK, no filesystem or shell. Only structured messages in the [message contract](../reference/webview-messages.md).
 - **Workspace access**: host reads/writes files per user action and VS Code workspace trust; webview requests capabilities via messages, host validates.
 - **Sessions**: do not read/write pi session files for product session features unless an Accepted ADR explicitly allows; prefer SDK/RPC session APIs.
@@ -109,6 +116,16 @@ Production composition selects `createManagedProcess(createRuntimeOwner(...))`. 
 
 WI-033 strengthens these existing owners: frame translation uses the pure `rpc-events.ts` decoder before `ActivityProjection`; request pairing validates the expected command and boolean result and separates local transport failures from remote responses. The orchestrator routes protocol faults through existing uncertain release. Decoder types are adapter-internal, not host/Webview contracts. The [message contract](../reference/webview-messages.md#runtime-protocol-failures-wi-033) owns failure and compatibility behavior. This changes neither process ownership nor ADR0002 recovery policy.
 
+### Startup retained-runtime handoff (WI-035)
+
+**Accepted startup-only replacement:** [Accepted ADR 0006](../decisions/0006-owned-runtime-handoff.md) adopts WI-035 after required verification and agent acceptance under the explicit delegation. It supersedes only ADR 0002's next-host startup ceremony; ADR 0002 remains Accepted for shared-domain admission and in-session Stop/protocol recovery. [WI-035 evidence](../archive/2026-09-30-wi-035-macos-acceptance.md) separates actual F5/installed, live-owner safety and unverified branches. No gate or whole PRD is accepted here.
+
+Activation through `onView:pi-vscode.chat` constructs the provider and begins one host-only `handoffRetainedRuntime()` operation, not an unconditional VS Code application-start hook. A new runtime waits for it and rechecks disposal, workspace identity, eligibility and resource choice. Webview bootstrap/recreation alone does not repeat it. The optional host lifecycle capability supports injected implementations; production delegates to the process strategy's required handoff. No renderer intent or DTO is added.
+
+Ownership observes the exact supervisor and owns end authorization and matching durable receipt retirement. Only `owner-lost` permits automatic termination. A live `owned` run in another window is neither ended nor retired; this window exposes no End/Recover controls for it, and a launch attempt reports the occupied shared domain without creating a replacement. Empty or successfully retired domains clear obsolete startup recovery state and show the normal empty/no-folder page. Observation, exit, storage or retirement failure retains the barrier and existing explicit recovery path. Control acknowledgment or `exited`/`never-spawned` status cannot substitute for a matching terminal receipt.
+
+Managed-process handoff is serialized with cleanup, refuses active/in-flight launches and checks generation before clearing blocked state; launch waits for queued cleanup/handoff. Acquiring its own runtime clears the elsewhere-owner marker so later in-session uncertainty still exposes recovery. Shared `globalStorageUri/recovery-v1`, exact-child records, in-session recovery and direct-spike cleanup remain unchanged. Concurrent retirement does not guarantee every caller succeeds; a crashed retirement writer remains a barrier. Child exit proves neither descendant termination nor file rollback. Exact budgets and v3 projection behavior belong to [ADR 0006](../decisions/0006-owned-runtime-handoff.md) and the [message contract](../reference/webview-messages.md#startup-handoff-wi-035).
+
 ### Internal host capability modules
 
 The host remains one bundled extension. `PiChatViewProvider` owns workspace/view identity, runtime readiness, the live execution projection, Stop and sequential session handoff. It composes concrete internal modules; there is no dynamic loader, third-party host API or general command bus.
@@ -118,6 +135,7 @@ The host remains one bundled extension. `PiChatViewProvider` owns workspace/view
 | `DraftSubmission` | Acknowledged text, attachment capture/confirmation, bounded immutable submission history, preview chunks, document subscriptions and preparation cancellation | Validated draft intents, publication, reset/view lifecycle, preparation cancellation, settlement and readonly revision/ACK status |
 | `EditorTools` | Approval policy composition, dirty-editor checks and optional `ChangeReview` resources | pi approval callback, validated tool/review intents, task notifications, cancellation/reset/disposal |
 | `ModelSettings` | Applied/pending model settings and stale-operation invalidation | Selection, load/apply, reset/cancel and readonly projection |
+| `ProviderConfig` | Public SDK provider authentication, model catalogue, saved defaults and custom endpoint configuration | Validated provider/default intents, native prompts and bounded secret-free projection |
 | `SavedHistory` | Restored-session history window, correlated text previews and cancellation | Restore, page/preview, publish/reset and helper-settlement barrier |
 
 Modules receive narrow capabilities and readonly context, never the Provider or its mutable state. Draft admission notifies the coordinator synchronously before the one-attempt runtime send; delivery acknowledgement and task settlement remain distinct. A draft reset invalidates admitted late replies with a module-owned epoch. View loss only cancels uncommitted preparation/preview; acknowledged drafts and admitted submissions remain host-owned. The coordinator still owns native session confirmation and the cross-module handoff order.
@@ -135,7 +153,7 @@ The [gate table](../reference/architecture-gates.md) owns status and acceptance 
 - **Host policy:** `src/extension/editor-tools/toolApproval.ts` owns pending approval cards and session grants. Only canonical in-workspace regular-file `read` auto-allows. Search/list ask; nonexistent/unresolvable targets are once-only. Existing file grants bind tool + canonical path; shell grants bind tool + canonical cwd + complete input. No persistent grants or Unrestricted mode. Canonicalization is not protection against all check/use races.
 - **Contract ownership:** `src/extension/contracts/approvalProtocol.ts` owns the pure bundled-gate envelope type and validator; the adapter consumes this host-owned contract without importing approval policy. `src/adapter/runtime/runtime-errors.ts` owns normalization and bounds for runtime errors. `toolApproval.ts` retains authorization decisions and filesystem scope inspection.
 - **Execution boundary:** `src/adapter/approvalGate.ts` is bundled as `dist/approval-gate.mjs` (build and package declarations include it). Its public asynchronous `tool_call` hook waits on `ctx.ui.confirm`; product protocol v1 binds runtime/cwd, request/tool-call IDs and complete input. `src/adapter/runtime/pi-rpc-runtime.ts` owns dialog replies and validates hello/readiness. There is no generic approval RPC or title-based authority. Missing bundle refuses startup; failed hello/get_state stops startup, not a usable no-tools fallback.
-- **Exclusive profile:** CLI uses `--tools read,write,edit,bash,powershell,grep,find,ls --no-extensions -e <bundled gate>` with the existing resource flag. Third-party extension discovery is disabled even when resources are approved. Other context/resource categories are not thereby all excluded. The bundled extension runs as user code; this is not a sandbox and cannot promise complete shell/network containment.
+- **Controlled profile:** CLI uses `--tools read,write,edit,bash,powershell,grep,find,ls --no-extensions -e <bundled gate>` with the existing resource flag. Third-party extension discovery is disabled even when resources are approved. Other context/resource categories are not thereby all excluded. The bundled extension runs as user code; this is not a sandbox and cannot promise complete shell/network containment.
 - **Projection and lifecycle:** `runtimeLifecycle.ts` defines activity/final-message/runtime-error events and narrow `abortTask` / approval-handler injection. `activityProjection.ts` correlates actual thinking by message/content index and tools by tool-call ID, replaces cumulative outputs, and bounds display fields. `PiChatViewProvider` owns the projected timeline and execution state; `EditorTools` owns approval lifetime and is reset/cancelled by the coordinator. Stop cancels pending approvals before adapter `clear_queue` + `abort`; failure or unconfirmed settlement revokes transport/answer admission with an explicit error while retaining exact-child observation under ADR0002; it does not automatically kill uncertain work. Successful Stop retains same-live-session grants; replacement/disconnect clears them. Deferred settings wait for settlement and completion of stopping. No side-effect rollback or automatic task retry.
 - **Contract/security:** [contract-webview-messages](../reference/webview-messages.md) records exact inbound actions and bounded DTOs. No generic commands or raw runtime/stderr forwarding; credential-pattern filtering is best-effort, not complete secret removal from arbitrary outputs. Incremental UI, per-item and reserved aggregate overflow notices, stable expansion/focus/scroll, full approval input, grant revocation and draft-preserving Stop are implemented and covered by UI tests. Four development F5 checks were confirmed by the maintainer: thinking/state, read/tool cards, denied write without side effects then allowed writes, and Stop during a long harmless command. The scoped WI is closed; installed-VSIX and exhaustive manual matrix acceptance are not implied.
 
@@ -151,8 +169,14 @@ The [gate table](../reference/architecture-gates.md) owns status and acceptance 
 
 The Webview presents applied/pending state and sends allowlisted intents; the adapter maps public RPC. The [message contract](../reference/webview-messages.md) owns detailed errors, Stop ordering and cleanup semantics; [REQ-002](../product-requirements.md#req-002--model-readiness) owns the visible controls.
 
-The maintainer confirmed the deferred-selection main path at 19:44 on 2026-09-21: the current reply stays unchanged, settings apply after settlement, and the next message uses them. Idle selection and baseline UI were also confirmed. Failed readback, restart cleanup and approval/Stop interleavings lack complete independent manual coverage; WI-008/WI-009 still await consolidation and explicit closure. [ACTIVE](../../ACTIVE.md) owns the latest acceptance record.
+Scoped model and thinking acceptance, layered evidence and closure are recorded separately in [WI-008 acceptance](../archive/2026-09-28-wi-008-model-acceptance.md) and [WI-009 acceptance](../archive/2026-09-28-wi-009-thinking-acceptance.md). They do not accept the whole PRD or every environment; [ACTIVE](../../ACTIVE.md) owns current work and limits.
+
+### Provider configuration and saved defaults
+
+`ProviderConfig` in `src/extension/models/` imports public `ModelRuntime` and `SettingsManager` from the declared pi coding-agent release, plus pi-ai capability functions. It owns provider readiness, native API-key/OAuth interaction, the default model and per-model thinking settings. pi auth storage and settings remain authoritative; this is not a new provider stack, agent loop or product SecretStorage copy. Webviews receive bounded secret-free projections and send named intents, not SDK calls. Saved defaults and applied/pending live-session settings are distinct; the coordinator owns their cross-module application order.
+
+The host's `customEndpoints.ts` writes bounded non-secret entries in the documented pi `models.json`; credentials still use public login. [Draft ADR 0005](../decisions/0005-custom-endpoint-file.md) records that approved slice and outstanding verification, not Accepted architecture or live endpoint certification. [The message contract](../reference/webview-messages.md) owns exact provider/default DTOs and failure semantics.
 
 ### Saved-session helper (WI-017)
 
-Agent execution remains subprocess RPC. A separate, short-lived adapter helper imports the declared release's public SessionManager for current-project catalogue, identity checks and active-branch history; the extension host does not load the pi SDK or parse session files. Production packaging includes dist/session-worker.mjs and the declared release dependency. The helper protocol version, size limits and request/response validation have one source in `session-worker-protocol.ts`. The host owns process lifecycle; the worker owns SessionManager calls and stream IO. The helper has bounded input/output, deadline/cancellation and observed-close handling. Host owns native handoff confirmation, Stop/settlement, current resource policy, fresh grants and opaque UI capabilities. Runtime readiness verifies the requested public session ID and path; a mismatch stays unready. UI history windows and immutable retained-text chunks do not define model context or restore current workspace files. See the [message contract](../reference/webview-messages.md#wi-017-t017-03--bounded-restored-history-and-retained-text-contract) and ACTIVE for implementation/verification status; [delegated WI-017 acceptance](../archive/2026-09-28-wi-017-session-acceptance.md) does not automatically accept broader gates/ADRs.
+Agent execution remains subprocess RPC. A separate, short-lived adapter helper imports the declared release's public SessionManager for current-project catalogue, identity checks and active-branch history; the extension host does not load SessionManager for saved-session reads or parse session files. This worker isolation does not prohibit the separate host provider/settings SDK path described above. Production packaging includes dist/session-worker.mjs and the declared release dependency. The helper protocol version, size limits and request/response validation have one source in `session-worker-protocol.ts`. The host owns process lifecycle; the worker owns SessionManager calls and stream IO. The helper has bounded input/output, deadline/cancellation and observed-close handling. Host owns native handoff confirmation, Stop/settlement, current resource policy, fresh grants and opaque UI capabilities. Runtime readiness verifies the requested public session ID and path; a mismatch stays unready. UI history windows and immutable retained-text chunks do not define model context or restore current workspace files. See the [message contract](../reference/webview-messages.md#wi-017-t017-03--bounded-restored-history-and-retained-text-contract) and ACTIVE for implementation/verification status; [delegated WI-017 acceptance](../archive/2026-09-28-wi-017-session-acceptance.md) does not automatically accept broader gates/ADRs.
