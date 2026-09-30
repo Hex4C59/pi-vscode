@@ -75,6 +75,7 @@
 | WI-050 | 未收集的 `.spec.tsx` 使发现失败而不是被跳过（TOOL-02） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-050-macos-acceptance.zh.md) |
 | WI-051 | Composer 标志与 FileSnapshot 校验器未确认生产错误配对 | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-051-macos-acceptance.zh.md) |
 | WI-052 | 启动、诊断、artifact 与 test／Git 成本目前不需要库内预算 | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-052-macos-acceptance.zh.md) |
+| WI-053 | 流式发布与历史预览成本目前不值得优化 | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-053-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

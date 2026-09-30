@@ -80,6 +80,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-050 delegated acceptance](2026-09-30-wi-050-macos-acceptance.md) | Uncollected `.spec.tsx` fails discovery (TOOL-02) |
 | [WI-051 delegated acceptance](2026-09-30-wi-051-macos-acceptance.md) | Composer flags and FileSnapshot validators have no confirmed production mis-pair |
 | [WI-052 delegated acceptance](2026-09-30-wi-052-macos-acceptance.md) | Startup, diagnostic, artifact and test/Git costs need no in-repo budget now |
+| [WI-053 delegated acceptance](2026-09-30-wi-053-macos-acceptance.md) | Streaming publish and history preview costs do not justify optimization now |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
 | [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |
@@ -95,6 +96,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-050 approved proposal](2026-09-30-wi-050-approved-proposal.md) | Complete approved spec-naming constraint; historical, no new Build authorization |
 | [WI-051 approved proposal](2026-09-30-wi-051-approved-proposal.md) | Complete approved interface-risk verification; historical, no new Build authorization |
 | [WI-052 approved proposal](2026-09-30-wi-052-approved-proposal.md) | Complete approved resource/timeout measurement; historical, no new Build authorization |
+| [WI-053 approved proposal](2026-09-30-wi-053-approved-proposal.md) | Complete approved ARCH-08 measurement; historical, no new Build authorization |
 | [WI-035 approved proposal](2026-09-30-wi-035-approved-proposal.md) | Complete approved scope and acceptance; historical, no new Build authorization |
 | [WI-034 approved proposal](2026-09-30-wi-034-approved-proposal.md) | Original single-language ACTIVE proposal retained after close; no new Build authorization |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
