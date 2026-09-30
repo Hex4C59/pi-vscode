@@ -97,6 +97,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-066 model-chip acceptance](2026-10-01-wi-066-acceptance.md) | Formatted model id, no provider; WI-042 identity kept |
 | [WI-067 picker mutex acceptance](2026-10-01-wi-067-acceptance.md) | Model picker and Execution profile one card at a time |
 | [WI-068 declined-resource notice](2026-10-01-wi-068-acceptance.md) | Persistent notice after Decline; allow/unchosen omit it |
+| [WI-069 canonical model identity](2026-10-01-wi-069-acceptance.md) | Live model is provider/model-id, not display name |
 | [macOS verification and personal-use acceptance](2026-09-30-macos-verification-acceptance.md) | Dual-window F5/installed, crash cleanup, ADR 0005 live OAuth/endpoint, personal-use PRD |
 | [WI-036 approved proposal](2026-09-30-wi-036-approved-proposal.md) | Complete approved owner-loss exact-child scope; historical, no new Build authorization |
 | [WI-057 approved proposal](2026-09-30-wi-057-approved-proposal.md) | Complete approved Saved-default apply encapsulation; historical, no new Build authorization |
@@ -111,6 +112,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-066 approved proposal](2026-10-01-wi-066-approved-proposal.md) | Complete approved composer model-chip presentation; historical, no new Build authorization |
 | [WI-067 approved proposal](2026-10-01-wi-067-approved-proposal.md) | Complete approved composer picker mutex; historical, no new Build authorization |
 | [WI-068 approved proposal](2026-10-01-wi-068-approved-proposal.md) | Complete approved declined-resource notice; historical, no new Build authorization |
+| [WI-069 approved proposal](2026-10-01-wi-069-approved-proposal.md) | Complete approved canonical live-model identity; historical, no new Build authorization |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
 | [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |

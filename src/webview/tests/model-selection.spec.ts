@@ -127,6 +127,25 @@ test("mounted model list keeps one applied radio when display labels are duplica
   }
 });
 
+test("mounted model list does not mark two radios when the live string is a duplicated display name", async () => {
+  const h = await uiHarness();
+  try {
+    await h.render({
+      chatModel: "Twin",
+      availableModels: [
+        { provider: "provider-a", modelId: "id-a", label: "Twin" },
+        { provider: "provider-b", modelId: "id-b", label: "Twin" },
+      ],
+    });
+    await h.click("#model-effort-trigger");
+    await h.click("#model-current");
+    const checked = [...h.root.querySelectorAll<HTMLButtonElement>('#model-list button[aria-checked="true"]')];
+    assert.equal(checked.length, 0);
+  } finally {
+    await h.close();
+  }
+});
+
 test("mounted React model controls expose a disabled single-level slider and preserve draft state", async () => {
   const h = await uiHarness();
   try {

@@ -18,10 +18,8 @@ export function formatModelLabel(data: unknown): string | null {
     && entry.contextWindow === 0 && entry.maxTokens === 0) return null;
   const id = typeof entry.id === "string" ? entry.id : typeof entry.modelId === "string" ? entry.modelId : null;
   const provider = typeof entry.provider === "string" ? entry.provider : null;
-  const name = typeof entry.name === "string" ? entry.name.trim() : null;
-  if (name && name.length <= MAX_MODEL_LABEL_CHARS) return name;
-  const fallback = id && provider ? `${provider} / ${id}` : id ?? provider;
-  return fallback?.slice(0, MAX_MODEL_LABEL_CHARS) ?? null;
+  const identity = id && provider ? `${provider} / ${id}` : id ?? provider;
+  return identity?.slice(0, MAX_MODEL_LABEL_CHARS) ?? null;
 }
 
 export function readThinkingLevel(data: unknown): string | null {

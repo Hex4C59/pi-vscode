@@ -7,10 +7,10 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-01
 - 类型：讨论
-- 状态：Draft；REQ-001 拒绝提示缺口已由 WI-068 于 2026-10-01 关闭；REQ-002 同名身份与 REQ-009 证据余项仍在
+- 状态：Draft；REQ-001 拒绝提示缺口已由 WI-068 关闭，REQ-002 同名身份已由 WI-069 于 2026-10-01 关闭；REQ-009 证据余项仍在
 - 创建：2026-09-30
 - 权威：仅源码及证据观察；不是新需求、Build 授权或 Accepted PRD／ADR／gate 决定变更
-- 相关：[PRD](../product-requirements.zh.md)、[ACTIVE](../../ACTIVE.md)、[WI-068](../archive/2026-10-01-wi-068-acceptance.zh.md)
+- 相关：[PRD](../product-requirements.zh.md)、[ACTIVE](../../ACTIVE.md)、[WI-068](../archive/2026-10-01-wi-068-acceptance.zh.md)、[WI-069](../archive/2026-10-01-wi-069-acceptance.zh.md)
 
 ## Question and method
 
@@ -22,7 +22,7 @@
 
 项目身份展示也较弱：[ProjectResourcesPrompt](../../src/webview/chat/project-resources-prompt.tsx) 只在选择前、默认折叠的详情里提供文件夹路径；[SessionNavigation](../../src/webview/chat/session-navigation.tsx) 显示对话名。这是否满足“执行任务前显示当前文件夹”仍需针对条文核对。它是可见性疑点，不是宿主实际在错误目录执行的证据。
 
-**REQ-002：活跃模型身份歧义。** [运行时模型解析](../../src/adapter/runtime/pi-rpc-model-parse.ts) 优先取显示名称，丢掉 provider／id 身份。[ModelPickerView](../../src/webview/components/model-picker.tsx) 再从该字符串恢复身份；若两个已配置供应商使用同一显示名，没有唯一匹配，所有菜单项都不会标为已应用，当前 chip 也没有供应商身份可显示。该场景不满足当前 provider／模型可见性及 PRD 同名选择表述；它不是运行时选错模型的证据。[WI-042 记录](../archive/2026-09-30-wi-042-macos-acceptance.zh.md)与[已有挂载用例](../../src/webview/tests/model-selection.spec.ts)验证的是当前模型字符串已为规范身份时的同名情形，同时明确宿主仍投影显示标签。本次未运行新的复现测试。
+**REQ-002：活跃模型身份歧义（已由 WI-069 关闭）。** 2026-09-30 检查发现运行时解析优先显示名，同名标签可能没有已应用 radio。WI-069 投影 `provider / modelId`。目录标签与作曲区芯片仍只是展示。这不是运行时选错模型的证据。
 
 ## Acceptance evidence gap
 
@@ -40,4 +40,4 @@ REQ-008 已实现恢复、分页及历史工具通用展示；PRD 还要求在�
 
 ## Current leaning and next steps
 
-项目已实现核心工作流，且存在历史受托验收。REQ-001 拒绝资源可见性已由 WI-068 关闭。“范围内每条需求细节及当前 macOS 验收条件均满足”的更强结论，对 REQ-002 同名身份与 REQ-009 macOS 矩阵余项仍没有充分支持。
+项目已实现核心工作流，且存在历史受托验收。REQ-001 拒绝资源可见性已由 WI-068 关闭。REQ-002 同名身份已由 WI-069 关闭。“范围内每条需求细节及当前 macOS 验收条件均满足”的更强结论，对 REQ-009 macOS 矩阵余项仍没有充分支持。

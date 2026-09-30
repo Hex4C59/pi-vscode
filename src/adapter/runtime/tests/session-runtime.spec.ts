@@ -154,7 +154,7 @@ test("all provider failure event paths suppress untrusted authentication respons
 
 test("pi's empty-model sentinel is not projected as a configured model", async () => {
  const sentinel={id:"unknown",name:"unknown",api:"unknown",provider:"unknown",baseUrl:"",reasoning:false,input:[],contextWindow:0,maxTokens:0};
- for(const [model, expected] of [[sentinel,null],[{...sentinel,api:"openai-completions",provider:"local",contextWindow:1024,maxTokens:128},"unknown"]] as const){
+ for(const [model, expected] of [[sentinel,null],[{...sentinel,api:"openai-completions",provider:"local",contextWindow:1024,maxTokens:128},"local / unknown"]] as const){
   const f=fixture({...identity,model});
   try {
    const result=await f.runtime.start({cwd:"/project",projectTrust:"no-approve"});

@@ -3,10 +3,10 @@
 English | [中文](2026-09-30-requirements-implementation-check.zh.md)
 
 - Type: Discussion
-- Status: Draft; REQ-001 declined-notice gap closed by WI-068 on 2026-10-01; REQ-002 duplicate-label identity and REQ-009 evidence remainder remain
+- Status: Draft; REQ-001 declined-notice gap closed by WI-068 and REQ-002 duplicate-label identity closed by WI-069 on 2026-10-01; REQ-009 evidence remainder remains
 - Created: 2026-09-30
 - Authority: source and evidence observations only; not new requirements, Build authorization or a change to Accepted PRD/ADR/gate decisions
-- Related: [PRD](../product-requirements.md), [ACTIVE](../../ACTIVE.md), [WI-068](../archive/2026-10-01-wi-068-acceptance.md)
+- Related: [PRD](../product-requirements.md), [ACTIVE](../../ACTIVE.md), [WI-068](../archive/2026-10-01-wi-068-acceptance.md), [WI-069](../archive/2026-10-01-wi-069-acceptance.md)
 
 ## Question and method
 
@@ -18,7 +18,7 @@ The maintainer asked whether every requested PRD function was implemented, after
 
 Project identity is also weakly disclosed: [ProjectResourcesPrompt](../../src/webview/chat/project-resources-prompt.tsx) exposes the folder path only inside initially collapsed details before the choice; [SessionNavigation](../../src/webview/chat/session-navigation.tsx) shows the conversation name. Whether that satisfies showing the active folder before a task needs a focused requirement check. This is a visibility concern, not evidence that the host executes in the wrong folder.
 
-**REQ-002: ambiguous live model identity.** [Runtime model parsing](../../src/adapter/runtime/pi-rpc-model-parse.ts) prefers a model's display name over its provider/id pair. [ModelPickerView](../../src/webview/components/model-picker.tsx) then tries to recover identity from that string; if two configured providers use the same display name, there is no unique match and no radio is marked applied. The current chip also has no provider identity to display. This violates selected provider/model visibility and the PRD's duplicate-label statement in that scenario; it is not evidence that the runtime chose the wrong model. The [WI-042 record](../archive/2026-09-30-wi-042-macos-acceptance.md) and [existing mounted cases](../../src/webview/tests/model-selection.spec.ts) cover duplicate labels with a canonical current-model string, while explicitly retaining a host display-label projection. No new reproduction test was run in this assessment.
+**REQ-002: ambiguous live model identity (closed by WI-069).** The 2026-09-30 inspection found that runtime parsing preferred display names, so duplicate labels could leave no applied radio. WI-069 projects `provider / modelId`. Catalog labels and the composer chip stay presentation-only. This is not evidence that the runtime chose the wrong model.
 
 ## Acceptance evidence gap
 
@@ -36,4 +36,4 @@ Chinese REQ-009 also retains obsolete Prepare/pending-verification wording for t
 
 ## Current leaning and next steps
 
-The project has an implemented core workflow and historical delegated acceptance. REQ-001 declined-resource visibility is closed by WI-068. The stronger claim that every in-scope PRD detail and current macOS acceptance condition is fulfilled remains unsupported for REQ-002 duplicate-label identity and the REQ-009 macOS matrix remainder.
+The project has an implemented core workflow and historical delegated acceptance. REQ-001 declined-resource visibility is closed by WI-068. REQ-002 duplicate-label identity is closed by WI-069. The stronger claim that every in-scope PRD detail and current macOS acceptance condition is fulfilled remains unsupported for the REQ-009 macOS matrix remainder.
