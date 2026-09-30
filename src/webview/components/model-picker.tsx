@@ -1,4 +1,5 @@
 import { useUiText } from "./ui-text.js";
+import { displayModelId, formatModelId, formatThinkingLabel } from "./model-display.js";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from "react";
 import type { ModelCatalogEntry, ProviderConfigProjection } from "../../extension/contracts/index.js";
 import type { ModelPickerViewProps } from "./types.js";
@@ -46,12 +47,11 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
   const state = savedDefault !== undefined ? savedDefaultPickerState(savedDefault) : liveState;
   const loading = savedDefault !== undefined ? !savedDefault || savedDefault.busy : callerLoading;
   const disabled = callerDisabled || state.busy || state.runtime !== "ready" || state.execution === "stopping";
-  const { text: t } = useUiText();
+  const { text: t, locale } = useUiText();
   const thinkingText = (level: string) => {
-    switch (level) {
-      case "off": case "minimal": case "low": case "medium": case "high": case "xhigh": return t(level);
-      default: return level; // Preserve future runtime-supported levels literally.
-    }
+    const known = ["off", "minimal", "low", "medium", "high", "xhigh"] as const;
+    const match = known.find(item => item === level);
+    return formatThinkingLabel(level, match ? t(match) : level, locale);
   };
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sliderRef = useRef<HTMLInputElement>(null);
@@ -121,11 +121,12 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
     slider.addEventListener("change", commit);
     return () => slider.removeEventListener("change", commit);
   }, [onThinking, state.thinkingLevels, state.chatBusy, selectedLevel, continuousThinkingDrag]);
-  const modelLabel = state.chatModel ?? t("Model not configured");
+  const modelLabel = displayModelId(state.chatModel) ?? t("Model not configured");
   const appliedIdentity = appliedCatalogIdentity(state.chatModel, state.availableModels);
   const thinkingLabel = appliedLevel ? thinkingText(appliedLevel) : "—";
+  const chipLabel = `${modelLabel} · ${thinkingLabel}`;
   const pendingSettings: string[] = [];
-  if (state.pendingModel) pendingSettings.push(`${state.pendingModel.provider} / ${state.pendingModel.label}`);
+  if (state.pendingModel) pendingSettings.push(formatModelId(state.pendingModel.modelId));
   if (state.pendingThinkingLevel) pendingSettings.push(t("thinking: {thinking}", { thinking: thinkingText(state.pendingThinkingLevel) }));
   const max = Math.max(state.thinkingLevels.length - 1, 0);
   const value = Math.min(Math.max(sliderIndex, 0), max);
@@ -201,23 +202,21 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
       </button>
       <div id="model-popover" className="popover" role="dialog" aria-label={t("Model and thinking level")} hidden={!popoverOpen}
         data-animated={animatePopover ? "true" : undefined} aria-hidden={!popoverOpen} inert={!popoverOpen}>
-        <p className="popover-title">{t("Model")}</p>
         {loading && <p role="status">{t("Loading model settings…")}</p>}
         <button
           id="model-current"
-          className="menu-item"
+          className="menu-item model-current"
           type="button"
           aria-expanded={modelListOpen}
           aria-controls="model-list"
           disabled={settingsDisabled || state.availableModels.length === 0}
           onClick={() => setModelListOpen(open => !open)}
         >
-          <span id="model-current-label">{modelLabel}</span>
-          <span className="chevron" aria-hidden="true">⌄</span>
+          <span id="model-current-label">{chipLabel}</span>
         </button>
         <div id="model-list" role="menu" hidden={!modelListOpen}>
           {state.availableModels.map(entry => {
-            const entryLabel = entry.label || entry.modelId;
+            const entryLabel = formatModelId(entry.modelId);
             const applied = appliedIdentity === catalogEntryIdentity(entry);
             return (
               <button
@@ -234,12 +233,10 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
                 }}
               >
                 <span>{entryLabel}</span>
-                <span className="sub">{entry.provider}</span>
               </button>
             );
           })}
         </div>
-        <p className="popover-title" id="thinking-heading">{t("Thinking level")}</p>
         {continuousThinkingDrag && <strong className="thinking-current">{previewLevel ? thinkingText(previewLevel) : "—"}</strong>}
         <div className={continuousThinkingDrag ? "thinking-control" : undefined} style={effortStyle}
           data-dragging={dragging} data-maximum={max > 0 && value >= max - 0.001}
@@ -261,7 +258,7 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
           max={max}
           step={continuousThinkingDrag ? "any" : 1}
           value={value}
-          aria-labelledby="thinking-heading"
+          aria-label={t("Thinking level")}
           aria-valuetext={continuousThinkingDrag && previewLevel ? thinkingText(previewLevel) : undefined}
           data-maximum={continuousThinkingDrag && max > 0 && previewIndex === max ? "true" : undefined}
           disabled={settingsDisabled || state.thinkingLevels.length <= 1}
@@ -278,7 +275,6 @@ export function ModelPickerView({ state: liveState, savedDefault, disabled: call
         <p id="thinking-level-label" className="sr-only" aria-live="polite">
           {t("Applied: {thinking}", { thinking: thinkingLabel })}{state.pendingThinkingLevel ? t(" · Next turn (pending): {thinking}", { thinking: thinkingText(state.pendingThinkingLevel) }) : ""}
         </p>
-        {onSettings && <button className="menu-item" type="button" data-provider-settings onClick={() => { closePopover(); onSettings(); }}>{t("Open provider settings")}</button>}
         <div id="model-error" className="banner" role="alert">{state.modelError ?? ""}</div>
       </div>
       <p id="pending-settings" className={pendingSettings.length > 0 ? "sr-only" : "muted"} role="status" hidden={pendingSettings.length === 0 && !state.modelBusy}>

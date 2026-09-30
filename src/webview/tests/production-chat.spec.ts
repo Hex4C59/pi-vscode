@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { formatModelId } from "../components/model-display.js";
 import { uiHarness } from "./react-harness.js";
 
 test("production mounts the accepted chat design with host recovery and no synthetic instructions", async () => {
@@ -113,13 +114,14 @@ test("long applied model labels retain complete accessible text and separate thi
   const h = await uiHarness();
   try {
     const label = "Long model " + "x".repeat(189);
+    const formatted = formatModelId(label);
     await h.render({ chatModel: label, thinkingLevel: "medium" });
     const trigger = h.get<HTMLButtonElement>("#model-effort-trigger");
-    assert.equal(trigger.textContent, label + " · medium");
-    assert.equal(trigger.title, "Applied: " + label + " · medium");
-    assert.equal(h.get(".model-effort-trigger__model").textContent, label);
-    assert.equal(h.get(".model-effort-trigger__thinking").textContent, " · medium");
+    assert.equal(trigger.textContent, formatted + " · Medium");
+    assert.equal(trigger.title, "Applied: " + formatted + " · Medium");
+    assert.equal(h.get(".model-effort-trigger__model").textContent, formatted);
+    assert.equal(h.get(".model-effort-trigger__thinking").textContent, " · Medium");
     await h.click("#model-effort-trigger");
-    assert.equal(h.get("#model-current-label").textContent, label);
+    assert.equal(h.get("#model-current-label").textContent, formatted + " · Medium");
   } finally { await h.close(); }
 });

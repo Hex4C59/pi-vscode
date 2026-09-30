@@ -113,6 +113,8 @@
   border-radius: 50%;
 }
 
-#model-current .chevron { margin-left: auto; color: var(--ui-muted); }
-#model-current[aria-expanded="true"] .chevron { transform: rotate(180deg); }
-#model-current .chevron svg { display: block; width: 10px; height: 10px; fill: currentColor; }
+#model-current.model-current {
+  justify-content: center;
+  text-align: center;
+}
+#model-current.model-current #model-current-label { flex: 1; }

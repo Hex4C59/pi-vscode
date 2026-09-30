@@ -119,7 +119,7 @@ Pi 聊天侧栏
 | 消息输入框 | Message Input | 编辑多行任务描述或问题 |
 | 输入工具栏 | Composer Toolbar | 输入框下方的紧凑操作行 |
 | 添加上下文按钮 | Add Context Button | 工具栏里的「＋」，打开添加文件／选区等操作菜单 |
-| 模型与推理设置入口 | Model and Reasoning Settings Trigger | 显示模型相关信息，并打开相应设置弹层 |
+| 模型与推理设置入口 | Model and Reasoning Settings Trigger | 显示格式化后的模型 id 与思考强度，并打开模型选择器 |
 | 权限入口 | Permissions Control | 查看当前权限说明及已有会话授权，按支持的操作撤销授权 |
 | 发送／停止按钮 | Send / Stop Button | 在同一位置根据任务状态切换主要操作 |
 

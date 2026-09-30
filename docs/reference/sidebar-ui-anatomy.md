@@ -115,7 +115,7 @@ Message activity and task actions serve different needs: **activity explains wha
 | Message Input | 消息输入框 | Edit a multiline task description or question |
 | Composer Toolbar | 输入工具栏 | Compact action row below the input |
 | Add Context Button | 添加上下文按钮 | The + button opening actions such as adding files/selections |
-| Model and Reasoning Settings Trigger | 模型与推理设置入口 | Show model-related information and open the appropriate settings popover |
+| Model and Reasoning Settings Trigger | 模型与推理设置入口 | Show the formatted model id and thinking strength; open the model picker |
 | Permissions Control | 权限入口 | Inspect permission explanations and existing session grants, with supported revocation actions |
 | Send / Stop Button | 发送／停止按钮 | Switch the primary action in the same location according to task state |
 

@@ -89,7 +89,7 @@ test("attachment draft and pending model survive Stop and view recreation withou
       version: 3, generation: 1, viewId: "view", type: "setChatModel", provider: "B", modelId: "two",
     });
     await first.render({ chatBusy: true, execution: "awaiting-approval", approvals: [approval], pendingModel });
-    assert.ok(first.get("#pending-settings").textContent?.includes("Next turn (pending): B / Two"));
+    assert.ok(first.get("#pending-settings").textContent?.includes("Next turn (pending): Two"));
 
     await first.click(stop);
     assert.deepEqual(first.sent.at(-1), { version: 3, generation: 1, viewId: "view", type: "stopChat" });
@@ -110,7 +110,7 @@ test("attachment draft and pending model survive Stop and view recreation withou
     await recreated.receive(attachmentState({ draft: { revision: 2, text: "Review this file", acceptedEditSequence: 1, attachments: [attachment] } }));
     assert.equal(recreated.get<HTMLTextAreaElement>(message).value, "Review this file");
     assert.ok(recreated.get(".candidate-context__draft").textContent?.includes("src/example.ts"));
-    assert.ok(recreated.get("#pending-settings").textContent?.includes("Next turn (pending): B / Two"));
+    assert.ok(recreated.get("#pending-settings").textContent?.includes("Next turn (pending): Two"));
     assert.equal(recreated.get<HTMLButtonElement>(stop).disabled, true);
     assert.match(recreated.get(".candidate__progress").textContent ?? "", /Stopping/);
     assert.deepEqual(recreated.sent, [

@@ -109,11 +109,10 @@ Clicking the name row opens the **model list**:
 
 | # | Everyday name | English |
 |---|---|---|
-| 1 | 模型列表 | **Model list** (display names) |
-| 2 | 供应商名 | **Provider** on the right of a row (`anthropic`, `openai`, …) |
-| 3 | 推理强度滑条 | Thinking slider |
+| 1 | 模型列表 | **Model list** (formatted model ids) |
+| 2 | 推理强度滑条 | Thinking slider |
 
-A parked presentation change will hide the provider on the chip and in this list. The screenshot is current behavior.
+The closed chip, the centered name+strength row, and each list row show a formatted **model id** with no provider (`gpt-6-sol` → `GPT-6-Sol`). English thinking labels start with a capital (`Low`). Numbered screenshots 04/05 may still show the previous chrome until recaptured.
 
 ## Execution profile
 

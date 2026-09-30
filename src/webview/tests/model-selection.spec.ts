@@ -15,9 +15,9 @@ test("mounted React model controls keep applied and pending settings distinct du
     assert.equal(h.get<HTMLInputElement>("#thinking-slider").disabled, false);
     assert.equal(h.root.querySelector('button[aria-label="Send message"]') === null, true);
     assert.ok(h.root.querySelector('button[aria-label="Stop current task"]'));
-    assert.equal(h.get("#model-effort-trigger").textContent, "A / one · medium");
-    assert.match(h.get("#pending-settings").textContent ?? "", /Next turn \(pending\): B \/ Two · thinking: high/);
-    assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium.*pending.*high/);
+    assert.equal(h.get("#model-effort-trigger").textContent, "One · Medium");
+    assert.match(h.get("#pending-settings").textContent ?? "", /Next turn \(pending\): Two · thinking: High/);
+    assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: Medium.*pending.*High/);
 
     await h.click("#model-effort-trigger");
     await h.click("#model-current");
@@ -73,6 +73,18 @@ test("mounted React model controls keep applied and pending settings distinct du
   }
 });
 
+test("composer chip formats gpt ids without a provider", async () => {
+  const h = await uiHarness();
+  try {
+    await h.render({ chatModel: "hellocode / gpt-6-sol", thinkingLevel: "low" });
+    assert.equal(h.get("#model-effort-trigger").textContent, "GPT-6-Sol · Low");
+    await h.click("#model-effort-trigger");
+    assert.equal(h.get("#model-current-label").textContent, "GPT-6-Sol · Low");
+    assert.equal(h.root.querySelector(".popover-title"), null);
+    assert.equal(h.root.querySelector("[data-provider-settings]"), null);
+  } finally { await h.close(); }
+});
+
 test("mounted model list marks only the stable identity when labels collide", async () => {
   const h = await uiHarness();
   try {
@@ -87,8 +99,8 @@ test("mounted model list marks only the stable identity when labels collide", as
     await h.click("#model-current");
     const checked = [...h.root.querySelectorAll<HTMLButtonElement>('#model-list button[aria-checked="true"]')];
     assert.equal(checked.length, 1);
-    assert.match(checked[0]?.textContent ?? "", /Claude/);
-    assert.equal(checked[0]?.querySelector(".sub")?.textContent, "provider-a");
+    assert.match(checked[0]?.textContent ?? "", /Id-A/);
+    assert.equal(checked[0]?.querySelector(".sub"), null);
   } finally {
     await h.close();
   }
@@ -108,7 +120,8 @@ test("mounted model list keeps one applied radio when display labels are duplica
     await h.click("#model-current");
     const checked = [...h.root.querySelectorAll<HTMLButtonElement>('#model-list button[aria-checked="true"]')];
     assert.equal(checked.length, 1);
-    assert.equal(checked[0]?.querySelector(".sub")?.textContent, "provider-a");
+    assert.equal(checked[0]?.textContent?.includes("provider-a"), false);
+    assert.equal(checked[0]?.querySelector(".sub"), null);
   } finally {
     await h.close();
   }

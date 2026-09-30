@@ -44,7 +44,7 @@ test("candidate distinguishes applied and pending settings until stream settleme
     slider.dispatchEvent(new h.dom.window.Event("input", { bubbles: true }));
     slider.dispatchEvent(new h.dom.window.Event("change", { bubbles: true }));
   });
-  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium.*pending.*high/);
+  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: Medium.*pending.*High/);
   await act(async () => h.dom.window.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   assert.equal(h.dom.window.document.activeElement === h.get("#model-effort-trigger"), true);
   await h.input("Draft for later"); h.get("textarea").focus();
@@ -53,7 +53,7 @@ test("candidate distinguishes applied and pending settings until stream settleme
   assert.match(h.get("#pending-settings").textContent ?? "", /Applying/);
   assert.equal(h.get<HTMLButtonElement>(send).disabled, true);
   await h.advance(520);
-  assert.match(h.get("#model-effort-trigger").textContent ?? "", /GPT-5.*high/);
+  assert.match(h.get("#model-effort-trigger").textContent ?? "", /GPT-5.*High/);
   assert.equal(h.get("#pending-settings").hidden, true);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "Draft for later");
   assert.equal(h.dom.window.document.activeElement === h.get("textarea"), true);
@@ -156,12 +156,12 @@ test("candidate thinking drag previews continuous positions and commits only a c
   assert.equal(h.get(".thinking-control").getAttribute("data-maximum"), "false", "leaving maximum stops flow");
   assert.equal(slider.value, "1.4", "preview follows the pointer between supported levels");
   assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, false, "dragging does not apply settings");
-  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium/);
+  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: Medium/);
   await act(async () => slider.dispatchEvent(new h.dom.window.Event("change", { bubbles: true })));
   assert.equal(slider.value, "1", "release snaps to the nearest supported level");
   assert.equal(h.get<HTMLButtonElement>("#model-effort-trigger").disabled, true);
   await h.advance(420);
-  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: low/);
+  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: Low/);
   await act(async () => {
     slider.value = "1.2";
     slider.dispatchEvent(new h.dom.window.Event("input", { bubbles: true }));
@@ -179,11 +179,11 @@ test("candidate thinking keyboard selects supported levels while keeping applied
   const key = (value: string) => act(async () => slider.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true })));
   await key("ArrowLeft");
   assert.equal(slider.value, "1");
-  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium.*pending.*low/);
+  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: Medium.*pending.*Low/);
   await key("Home"); assert.equal(slider.value, "0");
-  assert.match(h.get("#thinking-level-label").textContent ?? "", /pending.*off/);
+  assert.match(h.get("#thinking-level-label").textContent ?? "", /pending.*Off/);
   await key("End"); await key("ArrowRight"); assert.equal(slider.value, "3");
-  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: medium.*pending.*high/);
+  assert.match(h.get("#thinking-level-label").textContent ?? "", /Applied: Medium.*pending.*High/);
   await h.click(stop);
   assert.equal(slider.disabled, true);
   await key("ArrowLeft"); assert.equal(slider.value, "3", "stopping cannot change the selection");
@@ -834,7 +834,8 @@ test("candidate language switch preserves a live reply and model settings while 
   assert.match(h.root.textContent ?? "", /剪贴板不可用/);
   await h.click("#model-effort-trigger");
   assert.equal(h.get("#model-popover").getAttribute("aria-label"), "模型与思考强度");
-  assert.match(h.get("#model-popover").textContent ?? "", /思考强度/);
+  assert.match(h.get("#model-current-label").textContent ?? "", /Claude Sonnet · 中/);
+  assert.equal(h.get("#thinking-slider").getAttribute("aria-label"), "思考强度");
   await h.advance(4000);
   assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "newer draft");
   assert.match(reply.textContent ?? "", /Formatted reply/);

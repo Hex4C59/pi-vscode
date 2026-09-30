@@ -178,6 +178,8 @@ WI-006 当时仅记录选择，不启动 pi；随后 WI-007 接入根据选择�
 
 维护者已确认空闲选择、基础 UI，以及 2026-09-21 19:44 的延后选择主路径：当前回复不变，结束后应用，下一条使用新配置。WI-008已于9月28日按委托限定接受，具有分层当前回归及实际宿主证据；WI-009 thinking已于9月28日独立按委托接受，见[验收及版本限制](archive/2026-09-28-wi-009-thinking-acceptance.zh.md)。失败readback竞态为确定性注入，不冒称实际provider故障。当前交接见 [`ACTIVE.md`](../ACTIVE.md)。
 
+**WI-066 已接受切片（代理依据完成 ACTIVE 的 `/goal`，2026-10-01；REQ-002 作曲区展示）：** 作曲区与设置里的模型选择器显示格式化模型 id、不显示供应商。英文思考强度 Title Case。打开的选择器没有 Model／Thinking level／Open provider settings；居中的名称＋强度打开列表；滑条只改思考。宿主 `chatModel` 身份与 WI-042 radio 不变。不关闭跨供应商同名缺口。[验收与限制](archive/2026-10-01-wi-066-acceptance.zh.md)。
+
 **WI-042 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／UI-01）：** 模型选择器仅用稳定的供应商与模型 id 身份标记已应用项，不用显示标签。同名标签、以及标签与另一模型 canonical 组合碰撞时仍只选中一个 radio。这是展示唯一性，不宣称运行时收到了错误模型。不改协议。[验收与限制](archive/2026-09-30-wi-042-macos-acceptance.zh.md)。
 
 **WI-043 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-002／UI-02）：** 窗口级模型弹层 Escape 必须忽略已被消费的事件（`defaultPrevented` 或输入法组合）。重叠的添加上下文菜单与模型弹层：在上下文菜单上按 Escape 只关闭该菜单并恢复其触发器，模型弹层保持打开。这是 jsdom 组件证据，不是 macOS 宿主键盘验收。[验收与限制](archive/2026-09-30-wi-043-macos-acceptance.zh.md)。
@@ -414,7 +416,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-063 | REQ-010 启用或关闭清单项 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-063-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-063-acceptance.zh.md)。无运行时加载。ADR 0010 仍为 Draft。 |
 | WI-064 | REQ-010 空闲受信启动时应用已启用清单项 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-064-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-064-acceptance.zh.md)。消息编辑区收拢仍属后续。ADR 0010 仍为 Draft。 |
 | WI-065 | REQ-010 消息编辑区执行配置收拢 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-065-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-065-acceptance.zh.md)。作曲区不再打开文件选择器。ADR 0010 仍为 Draft。 |
-| WI-066 | REQ-002 作曲区模型芯片展示 | 依据完成 ACTIVE 的 `/goal` 进行中。格式化模型 id 且不显示供应商；保留 WI-042 radio 身份。不关闭 REQ-002 同名缺口。 |
+| WI-066 | REQ-002 作曲区模型芯片展示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-066-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-066-acceptance.zh.md)。不关闭 REQ-002 同名缺口。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
@@ -428,7 +430,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | REQ ID | 可观察的验收目标 | 范围 |
 |--------|------------------|------|
 | REQ-001 | 执行前显示项目和信任状态；阻断不合格工作区 | 工作区／启动切片已单独验收 |
-| REQ-002 | 显示并选择可用模型／thinking；忙碌时明确下一轮意图 | WI-008／WI-009；WI-030／ADR 0005 真实 OAuth 交互与自定义端点；自用已 Accepted；额外供应商／生态仍排除 |
+| REQ-002 | 显示并选择可用模型／thinking；忙碌时明确下一轮意图 | WI-008／WI-009；WI-030／ADR 0005 真实 OAuth 交互与自定义端点；WI-066 作曲区芯片展示；自用已 Accepted；额外供应商／生态与同名缺口仍排除 |
 | REQ-003 | 显式附加、预览及移除工作区文本／选区 | WI-014 已按委托接受批准范围 T014-01～05；WI-027 覆盖双语预览失败句，不合并不同表面的措辞。WI-032 共用凭据文本拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。旧的 T014-02 Build／待办文字现为历史状态。范围及限制见[归档](archive/2026-09-28-wi-014-attachment-acceptance.zh.md)。自用已 Accepted；额外附件类型仍排除。 |
 | REQ-004 | 展示流式文本、真实活动及有界错误；区分受理与完成 | WI-004 最小切片；WI-009 thinking；WI-010 原受控／Stop 切片；WI-021 retry／compaction 与可靠终态切片按委托接受。WI-032 共用活动与助手文本打码于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。更广泛 session-streaming gate 由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 单独接受。自用已 Accepted。 |
 | REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。WI-035 覆盖下次激活时的遗留交接；WI-036 覆盖该宿主丢失时的精确 child 清理。三个 gate 已由 ADR 0004 单独接受。自用 macOS 已 Accepted；跳过审批与额外 OS 仍排除。 |
