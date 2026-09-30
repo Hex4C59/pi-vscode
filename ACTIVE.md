@@ -11,9 +11,43 @@
 | 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证，不虚报接受。 |
 | 收尾 | 对照批准、记录代理或维护者的实际验收身份；正常ADR／gate、双语归档、检查与资源清理。 |
 
-## 当前无活动 WI（WIP=0）
+## 正在做（WIP=1）
 
-当前无进行中的 WI。WI-037 已于 2026-09-30 由代理按维护者明确的实机取证并完结要求接受并关闭，见[验收归档](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。停车场 WI-036 及其他审查后续任务仍待维护者另开 Prepare，不自动转 Build。本次「全部改动」提交授权已按关注点消费，不推送。
+| 字段 | 当前值 |
+|---|---|
+| **ID** | WI-039 |
+| **阶段** | Build — 安装版 VSIX 运行时依赖闭包修复（PACKAGE-01，解除 WI-038 安装版取证阻断） |
+| **Gate ID** | 无新增；相关 `gate-runtime-host` 与 `gate-webview-trust` 保持 Accepted |
+| **Decision** | 无新增 ADR；按 WI-034 已接受的组包能力修复，交付规则见主架构；[ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md) 保持 Draft |
+| **PRD 判定** | 用户可见：REQ-009／WI-034 安装版交付能力修复——交付 VSIX 必须包含运行时加载的依赖闭包；设置页与 endpoint 路径沿用 REQ-002。已双语同步 PRD |
+
+### 目标与范围
+
+- **阶段／批准**：Build，WIP=1。维护者在本会话 WI-038 取证受阻后选择「批准另开 WI 修组包并补安装版取证」，批准修复 PACKAGE-01、加入组包回归并用解包后的真实扩展宿主验证，随后补做 WI-038 的隔离安装版争用取证。最终 WI 接受与 WI-038 接受均未委托，Git 提交授权未新增。
+- **目标／范围**：让隔离安装版能创建运行时并加载供应商配置，并让组包在交付前拒绝「交付 bundle 加载了未随包发布的运行时依赖」。只覆盖构建外部依赖、组包校验、独立解包验证与安装版取证，不重启全面组包重构。
+- **PRD 判定**：用户可见，追溯 REQ-009 的安装版交付能力与 WI-034 已接受的组包范围；用户可见行为条款不变，只是让已声明的设置页／endpoint 路径在安装版真正可用。已在编码前双语同步 PRD。
+- **问题与实现证据**：WI-038 取证确认安装版两窗设置页一致报「Could not load provider configuration.」；一次性诊断构建记录到 `Cannot find package '@earendil-works/pi-ai' imported from <扩展目录>/dist/extension.js`（`ProviderConfig.ensureRuntime` → `createRuntime`），而解包目录只有 `node_modules/@earendil-works/pi-coding-agent`。原[组包脚本](scripts/packaging/package-vsix.mjs)按设计只装入 pinned pi-coding-agent 子树，[esbuild](esbuild.mjs)却把同为声明依赖的 pi-ai 标为 external，交付产物因此缺少该包。实测该 external 的完整解析闭包在开发树上约 824 MB 未压缩／229 个包，而把 pi-ai 内联进宿主 bundle 只增加约 0.7 MB（982 KB 对 307 KB），因此选择内联并加上组包拒绝校验。
+
+### 方案与架构核对（维护者已批准）
+
+1. **宿主 bundle 自包含**：`esbuild` 只保留真实运行时外部依赖——`vscode`（宿主提供）与 `@earendil-works/pi-coding-agent`（其 CLI 由 supervisor 以子进程启动，必须保持真实目录）；`@earendil-works/pi-ai` 改为打进 `dist/extension.js`，仍使用 `package.json` 声明的 0.86.1 发行版，供应商能力函数的语义与依赖方向不变。
+2. **组包拒绝未发布依赖**：组包扫描四个交付 bundle 的 `require`／动态 `import` 裸标识符，除宿主提供的 `vscode` 与 Node 内置模块外，每个标识符都必须对应已装入的 `node_modules/<包名>`，否则以固定信息失败。该检查在每次 `package:vsix` 生效，不依赖验证脚本是否被串联。
+3. **解包真实性验证**：`verify-vsix.mjs` 在解包后的扩展根目录真实 `import()` 每个交付 bundle 的裸标识符，复现扩展宿主的解析位置；旧包失败、新包通过（红／绿各实跑一次）。把验证串接进 `package:vsix`／CI 仍属停车场 ARCH-07，本 WI 不实施。
+4. **边界不变**：不新增 gate，不提升 ADR 0005／0007；这是既有组包能力的缺陷修复，不改变并发事务决定、模块责任、信任边界或用户可见行为条款。
+
+### 验收
+
+- **自动化验收**：组包单测覆盖裸标识符扫描（`require`／动态 `import`，忽略相对路径与 Node 内置模块）、未装入依赖时拒绝并给出固定信息、装入 pinned 子树时通过；真实仓库重新组包后由解包验证器核对条目、pinned CLI／RPC／gate 以及在解包扩展根目录真实 `import()` 每个裸标识符。compile／lint／完整 `npm test` 通过。
+- **macOS 验收**：隔离安装版两窗口在真实持锁方存在时对同一 `models.json` 添加／删除均显示固定占用错误，释放后各自干净提交并保留全部条目；同一轮重跑 WI-038 的开发宿主证据。合成 endpoint，无真实登录、模型或付费调用。自动化、开发宿主与安装版证据分别记录；WI-039 与 WI-038 的最终接受均未委托。
+- **检查计划**：Build 后 compile／lint／完整 npm test、组包与解包验证、docs:verify 与差异检查；关闭时 docs:health。
+- **Gate ID／Decision**：无新增 gate；相关 gate 保持 Accepted。无新增 ADR：这是既有组包能力的缺陷修复，交付规则写入主架构，PACKAGE-01 与实跑证据留在本入口。最终接受未委托。
+- **架构核对**：变更只影响构建输入与交付产物内容；模块责任、依赖方向、信任边界与运行时所有权不变，`dist/extension.js` 增大约 0.7 MB，不新增网络、凭据、文件访问或 Webview 能力。
+
+### 范围外与批准边界
+
+- **范围外**：把 `verify-vsix` 串接进 `package:vsix`／CI（ARCH-07）、组包整体重构与依赖树精简策略、ARCH-06 输出预算、ARCH-02、WI-036、pi 升级、公开发布、WI-038／ADR 0007 的最终接受、整份 PRD／gate 接受及 Git 提交／推送。
+
+- **本轮 Build 进展**：compile／lint／完整 **993** 项测试通过（新增 3 项组包回归，0 失败／跳过）。修复前 `dist/extension.js` 为 307 KB 且 external 加载 `@earendil-works/pi-ai`；内联后 982 KB，组包校验在旧配置下会以固定信息失败。全新 VSIX（149,921,300 字节、15,535 条目、pi 0.86.1）组包通过，解包验证器在**修复前的旧包上失败、修复后的新包上通过**（红／绿各一次），并真实解析出安装版 bundle 的运行时 import。全新安装版实机取证：两窗设置页正常加载供应商配置（`provider-loaded: true`），添加／删除争用均显示固定占用错误、文件未变，释放后各自干净提交；自有进程已清理（`cleanupRemaining: []`）。WI-038 的安装版取证由此解除阻断并已补做，两 WI 最终接受仍待维护者。
 
 ### 已关闭基线：WI-037
 
@@ -85,15 +119,21 @@ WI-035 已于 2026-09-30 由代理按维护者本次明确授权接受并关闭�
 
 ## 最近交接
 
+### 2026-09-30 — WI-038 实机取证与 WI-039 组包修复（两条 WI 均未最终接受）
+
+**WI-038（已批准 Build，实现与实机取证完成）**：完整 990 项测试通过（新增 63 项，0 失败／跳过）、compile／lint 通过，新改函数体均少于 50 行。独立只读复核发现的原生 FIFO 阻塞与过严并发断言已修复；其后一次针对 ProviderConfig 结果接口的只读复核报告因该子代理已不可寻址而未能回收，其关注点（返回契约、仅干净提交才继续凭据动作、取消／过期／忙语义）由 Lead 直接读取代码与定向测试复核。隔离 macOS F5 取证（隔离 `PI_CODING_AGENT_DIR`、逐窗口 user-data／extensions／shared-data，合成 endpoint，无真实登录／模型／付费调用）：父窗口原生 F5 启动开发宿主，两个开发宿主窗口在真实独立进程持锁期间对同一 `models.json` 添加均显示固定占用错误且文件未变，释放后两窗经原生密码提示 Escape（取消登录）各自干净提交并保留全部条目；删除争用同样报占用，释放后单窗删除成功。当时隔离安装版阶段被组包缺陷阻断（见下），已由 WI-039 修复后补齐。观察记录见 `dist/wi038-native/report-pi-w038-4cmFzI.json`（忽略目录内的临时证据）。
+
+**PACKAGE-01 根因**：安装版设置页两窗一致显示「Could not load provider configuration.」，三次显式刷新与关闭全部开发宿主后重试均不变；一次性诊断构建（临时副本，已删除）记录到 `Cannot find package '@earendil-works/pi-ai' imported from <扩展目录>/dist/extension.js`（`ProviderConfig.ensureRuntime` → `createRuntime`）。原组包只装入 pinned `pi-coding-agent` 子树，而 esbuild 把同为声明依赖的 `pi-ai` 标为 external，交付 VSIX 因此缺少运行时会加载的包。缺陷来自既有组包提交 `2cbbe6e`，不是 WI-038 代码回归。维护者随后选择「批准另开 WI 修组包并补安装版取证」。
+
+**WI-039（本会话新开、维护者批准，已实现并验证，接受未委托）**：实测 external 的完整解析闭包在开发树上约 824 MB 未压缩／229 个包，而把它内联进宿主 bundle 只增加约 0.7 MB，因此 `esbuild` 只保留 `vscode` 与 `@earendil-works/pi-coding-agent` 两个真实运行时外部依赖，`@earendil-works/pi-ai` 内联进 `dist/extension.js`；组包在 `packageVsix` 入口新增固定拒绝校验「交付 bundle 的每个裸标识符必须已随包发布或由宿主提供」，`verify-vsix` 在解包扩展根目录真实 `import()` 每个标识符。修复前 VSIX（149,815,375 字节）解包验证失败、修复后 VSIX（149,921,300 字节、15,535 条目、pi 0.86.1、SHA-256 `1a70dd777a92fbcf5205d3f927e87482e347835b23130e3caa123b93ab22f6c9`）通过；重新组包结果与该哈希逐字节一致。完整 993 项测试通过（新增 3 项组包回归）。用修复后的 VSIX 重跑隔离安装版两窗口取证：设置页正常加载供应商配置（`provider-loaded: true`），添加／删除争用均显示固定占用错误且文件未变，释放后各自干净提交并保留全部条目；自有进程已清理（`cleanupRemaining: []`）。该轮隔离 agent 目录只留下合成 endpoint，`auth.json` 为空对象 `{}`，没有写入任何 API key 或凭据字段。WI-038 的安装版取证随之补齐。改动的组包脚本只在小于 50 行的 `packageVsix` 内增加一行调用，`collectPackageFiles` 与既有长 fixture 函数未改，新增函数均少于 50 行。独立只读复核结论为「无阻塞项」，并指出四点可加固事项，已按其中低风险项落实：扫描补齐静态 ESM `import … from`／`export … from` 形式、`verify-vsix` 改为复用同一 `bareRuntimeSpecifiers`（避免两份正则漂移）、被扫 bundle 名单改由实际入包文件推导（新增 `dist/*.mjs`／`*.cjs` 也会被扫，不再静默跳过）、accept 用例改为断言归档内 pinned CLI 相关条目；另在 `esbuild.mjs` 内加入「宿主 bundle 内联了读取 `import.meta` 的模块即构建失败」的告警断言（红／绿各实跑一次）。复核同时提示的「改读 esbuild metafile 的 external 清单替代文本扫描」属后续改进，未在本 WI 实施。组包产物字节除被重建 `dist` 文件的 ZIP mtime 元数据外与实机取证版本逐条目一致（15,535 条目 CRC32 与大小全部相同），实机证据所用归档仍为 `pi-vscode-final.vsix`。
+
+两条 WI 均未关闭：WI-038 的最终接受与 ADR 0007 提升、WI-039 的最终接受都由维护者决定。未提交／暂存／推送；WI-036 与其他停车场项未启动。
+
 ### 2026-09-30 — WI-037 受托接受并关闭
 
 维护者要求完成 macOS F5／隔离安装实机取证并完结 WI-037。隔离 HOME 曾弹出 Keychain Not Found／Code Key，已放弃该路径（只应 Cancel，未点 Reset To Defaults）。接受运行保留登录 HOME，使用规范 `/private/tmp` 工作区。F5 与隔离安装版均对合成 loopback SSE 逐帧看到 `use Bearer [redacted]` 与完整 `password="[redacted]"`，正文 `synthetic-complete`，无 `SYNTHETIC_` 泄露。VSIX SHA-256 `a317981a706d1754208f099e4a5e5139fbb502dd6ade10ff4a78b068b960056f`；自有进程已停。记录见[验收归档](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。助手正文逐 delta、WI-036、gate／ADR、整份 PRD 未改；未提交或推送。本次关闭跑 `docs:verify`／`docs:health` 与相关路径 `git diff --check`，未重跑 compile／lint／npm test。
 
 本次提交核对：验收报告、截图、VSIX 哈希及 7 个安装版产物已复核；仅含 WI-037 的独立提交快照 compile／lint／完整 899 项测试通过（HEAD 基线 867 + 本 WI 新增 32，排除尚未提交的 WI-035 用例），不替换 Build 混合工作树 927 项的历史结果。本 WI 实现／双语验收已提交为 `105b7eb`；入口记录独立提交，其他关注点保留；不推送。
-
-### 2026-09-30 — WI-035 启动交接受托接受
-
-按当时明确委托完成交接实现与 macOS F5／隔离安装证据，ADR 0006 Accepted；细节见[双语验收](docs/archive/2026-09-30-wi-035-macos-acceptance.zh.md)。维护者随后要求提交全部剩余改动：实现、ADR／验收文档、quality-code skill 与审查记录已按关注点分别提交；本入口单独记录。授权已消费，不推送。WI-036 未实施。
 
 ## 停车场
 
@@ -101,7 +141,7 @@ WI-035 已于 2026-09-30 由代理按维护者本次明确授权接受并关闭�
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在本轮讨论中要求改为 Codex 型机制并记录 WI。本次仅批准记录方向，不批准应用代码实施；WI-035／WI-037 已接受关闭，WIP=0；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037 已接受关闭，当前唯一活动 WI 为 WI-038 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -113,7 +153,7 @@ WI-035 已于 2026-09-30 由代理按维护者本次明确授权接受并关闭�
 ### 代码审查后续任务（2026-09-30，记录授权）
 
 维护者确认前轮审查已足够，要求把现有问题整理为后续任务；停止继续逐文件审查。RUNTIME-01／02 已由 WI-037 接受关闭；其余任务仍在停车场。技术 spike 不再续查，既有诊断缺陷仍保留并与生产任务分开安排；不改变 WI-036、PRD／ADR／gate 或 Git 提交授权。
-**执行顺序建议与去重：** 先处理下表两项 P1 脱敏及已有 ARCH-05／P1，再处理正确性与交付校验，最后处理小型 UI 问题和诊断工具。已有 ARCH-02 补充／P2、ARCH-06／P2、ARCH-07／P2 沿用下方原任务，共 15 项确认缺陷，不把 ARCH-01～04 的设计观察或 ARCH-08 未测量性能风险计入缺陷数量；进入修复前需明确单个切片与批准范围。
+**执行顺序建议与去重：** 先处理下表两项 P1 脱敏及已有 ARCH-05／P1，再处理正确性与交付校验，最后处理小型 UI 问题和诊断工具。已有 ARCH-02 补充／P2、ARCH-06／P2、ARCH-07／P2 沿用下方原任务，另有 WI-038 取证确认、已由 WI-039 修复的组包缺陷 PACKAGE-01／P1（见下方 ARCH-08 之后的条目，计入后共 16 项确认缺陷），不把 ARCH-01～04 的设计观察或 ARCH-08 未测量性能风险计入缺陷数量；进入修复前需明确单个切片与批准范围。
 **证据入口：** [运行时与凭据](docs/discussions/2026-09-30-runtime-helpers-audit.zh.md)、[核心边界](docs/discussions/2026-09-30-core-boundaries-audit.zh.md)、[UI](docs/discussions/2026-09-30-ui-components-audit.zh.md)、[工具链](docs/discussions/2026-09-30-tooling-config-audit.zh.md)；详细反例与验证限制留在报告，不复制为实机验收结论。
 
 | 后续任务 | 优先级／范围 | 修复目标与候选完成标准 |
@@ -147,11 +187,13 @@ WI-035 已于 2026-09-30 由代理按维护者本次明确授权接受并关闭�
 
 **扩大审查补充（维护者要求继续检查，未批准修复）：**
 
-- [ ] **ARCH-05／P1：共享 endpoint 文件丢失并发更新。** [endpoint 写入](src/extension/models/customEndpoints.ts#L94)先读取合并，再以 [rename](src/extension/models/customEndpoints.ts#L65)原子替换；原子替换不保证读改写事务，[saving](src/extension/models/providerConfig.ts#L380)仅约束本实例。两个窗口或外部编辑可互相覆盖。隔离文件上并发添加两项，20/20 次两方均报告成功而最终仅保留一项。候选完成标准：并发修改不静默丢失；冲突显式失败或经共享写入协调保留双方合法修改，不把再次读取当成可靠锁。
+- [ ] **ARCH-05／P1：共享 endpoint 文件丢失并发更新（WI-038 Build，实现与实机取证均已完成，最终接受待维护者）。** 历史 writer 先读取合并再原子 rename，实例内 `saving` 没有跨宿主互斥；隔离添加两项的 20/20 次复现均报告成功却只保留一项。WI-038 已通过[共享事务](src/extension/models/endpointFileTransaction.ts)修复并新增独立进程／故障回归；批准提案的行为条款保存在 [PRD REQ-002 切片](docs/product-requirements.md)、[消息契约](docs/reference/webview-messages.md#endpoint-写入事务wi-038已批准-build-契约)、[主架构](docs/architecture/vscode-extension-architecture.md)与 [ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md)（Draft）。开发宿主与隔离安装版双窗口争用／串行提交证据见最近交接；完整 990 项自动化验收当时通过（新增 63 项）。完成标准：并发修改不静默丢失，争用／冲突显式失败或合法修改经串行提交保留。WI-038 未关闭，ADR 0007 未提升。
 - [ ] **ARCH-06／P2：endpoint 写入越过自身读取预算。** [读取](src/extension/models/customEndpoints.ts#L36)限制 1 MiB，但[序列化写入](src/extension/models/customEndpoints.ts#L106)不检查输出大小。隔离合法 JSON 从 1,048,529 字节增加到 1,048,743 字节，添加报告成功，随后删除返回 invalid。候选完成标准：输出预算在提交前验证，超限保留原文件并报告错误；同时覆盖格式化扩大文件的情况。
 - [ ] **ARCH-02 补充／P2：默认保存失败仍修改实时模型。** [保存方法](src/extension/models/providerConfig.ts#L473)失败后只更新 error 并返回 void；[宿主](src/extension/piChatViewProvider.ts#L873)仍将请求参数交给实时模型同步。在内存中使用真实 ProviderConfig 方法和宿主 configure／sync 方法、替代 settings flush 与模型边界，注入写入失败：默认投影保留 old-model 并报告失败，但实时 applyConfiguredModel 收到 new-model。候选完成标准：操作接口区分已提交、失败、未执行及过期结果，后续动作只基于明确提交结果；这是新增故障证据，不仅是首轮的顺序封装建议。
 - [ ] **ARCH-07／P2：组包入口未强制完整产物验证。** [collectPackageFiles](scripts/packaging/package-vsix.mjs#L265)仅要求宿主与 Webview JS；隔离文件集合缺少三份 helper 与 CSS 仍通过。独立 [verify-vsix](scripts/packaging/verify-vsix.mjs#L21)可发现 helper 缺失，资源验证器可查 CSS，但 [package:vsix](package.json#L108)与 [CI](.github/workflows/ci.yml#L21)未串联完整产物验证。不是已交付 VSIX 被证明损坏。候选完成标准：交付入口缺必需资产时失败，并保留实际解包运行验证与构建测试的证据区分。
 - [ ] **ARCH-08／性能风险，未测量：流式展示与历史预览的重复工作。** [宿主](src/extension/piChatViewProvider.ts#L234)每个 delta 更新并发布全量 workspace，浏览器更新全局快照，[会话组件](src/webview/chat/candidate-conversation.tsx#L41)重新遍历消息，[Markdown](src/webview/chat/reply-markdown.tsx#L104)每次调用重新 lex 文本；[历史 worker](src/adapter/sessions/sessionWorker.ts#L112)每次预览重新定位、列出并校验所有 session，再 open 目标，[预览投影](src/adapter/sessions/session-history-projection.ts#L106)为 totalChars 遍历全文。有回复／响应预算不等于有处理成本预算；不声称已复现卡顿。候选下一步：确定代表性长对话／大量 session 负载，测量发布字节、解析次数及延迟后再决定是否优化；保留公共 SDK 与身份／anchor 校验，不自行解析 session 文件。
+
+- [x] **PACKAGE-01／P1（已由 WI-039 修复，最终接受待维护者）：隔离安装版 VSIX 缺少已声明依赖 `@earendil-works/pi-ai`。** WI-038 取证确认：安装版（`pi-vscode-prepackage01.vsix`，149,815,375 字节、15,535 条目）的两个隔离窗口设置页一致显示「Could not load provider configuration.」，三次显式刷新与关闭开发宿主后重试均不变；解包后的扩展目录只有 `node_modules/@earendil-works/pi-coding-agent`，没有 `pi-ai`；一次性诊断构建记录到 `Cannot find package '@earendil-works/pi-ai' imported from <扩展目录>/dist/extension.js`，调用栈为 `ProviderConfig.ensureRuntime` → `createRuntime`。[组包脚本](scripts/packaging/package-vsix.mjs#L21)按注释只装入 `pi-coding-agent` 子树，而 [esbuild](esbuild.mjs#L11)把 `@earendil-works/pi-ai` 标为 external，`package.json` 也把它列为依赖，因此交付产物缺少运行时会用到的包。影响：安装版的供应商设置页、endpoint 添加／删除与模型目录都无法加载配置（开发宿主正常）。**WI-039 修复**：pi-ai 内联进宿主 bundle（完整 external 解析闭包在开发树上约 824 MB／229 个包，内联只增加约 0.7 MB），组包新增「交付 bundle 的每个裸标识符必须已装入或由宿主提供」的拒绝校验，解包验证器在解包扩展根目录真实 `import()` 每个标识符。旧包验证失败、新包通过，隔离安装版设置页恢复加载（`provider-loaded: true`）并完成两窗口争用取证。与 ARCH-07 的入口校验缺口相关但不同：这里是已交付产物被证明缺少依赖，现已修复；把验证串接进 `package:vsix`／CI 仍属 ARCH-07。
 
 **扩大审查覆盖与验证：** 新增读取生产 Webview client／历史 client／设置入口、聊天组合／Markdown／交互输入、两侧桥接与解析、endpoint 持久化、session backend／worker／历史投影、恢复记录／退休清理／observer、写保护／修改审阅、审批 gate／受控环境、esbuild、组包／独立 VSIX 验证器和 CI。长文件仍有区段抽查；未逐文件穷尽全仓，未重启逐断言审查。上述探针无网络／付费调用、未访问真实 pi 配置；临时样本已清理，应用代码未修改。当前生产依赖边界测试实际运行 2 项，全部通过；未重跑完整 npm test、实机或性能测试。本轮 `npm run docs:verify` 结构／双语均为 0 错误；3 条提示分别为 ACTIVE 超过 180 行指导值及 ADR 0005 的两条 Draft 提示。`git diff --check -- ACTIVE.md` 通过。
 
