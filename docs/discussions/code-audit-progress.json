@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "phase": "stopped-by-maintainer",
+  "complete": false,
+  "goalId": null,
+  "rules": {
+    "excludeHtmlAndCss": true,
+    "doNotReopenPreviouslyInspectedCode": true,
+    "excludePreviouslyPartiallyInspectedCode": true,
+    "noApplicationEditsOrFixes": true,
+    "noAssertionByAssertionTestAudit": true,
+    "useNewRelatedTestsOnlyWhenNeeded": true,
+    "reviewRecordDoesNotMeanFullContentOrBranchCoverage": true,
+    "inventoryIsBasedOnConversationRecordsAndFilenameDiscovery": true,
+    "excludeTechnicalSpikes": true
+  },
+  "excludeGeneratedOrDependencyPaths": [
+    "dist",
+    "node_modules",
+    "package-lock.json"
+  ],
+  "previouslyInspectedRootOrScriptPaths": [
+    "esbuild.mjs",
+    "package.json",
+    ".github/workflows/ci.yml",
+    "scripts/packaging/package-vsix.mjs",
+    "scripts/packaging/verify-vsix.mjs",
+    "scripts/docs/docs-i18n-check.mjs",
+    "scripts/docs/docs-i18n-check-lib.mjs",
+    "scripts/docs/docs-i18n-config.mjs"
+  ],
+  "remainingImplementationPaths": [
+    "src/webview/chat/ui-zh-cn.ts",
+    "src/webview/preview/candidate-preview.ts",
+    "src/webview/preview/candidate.tsx",
+    "src/webview/preview/consistency-review.ts",
+    "src/webview/preview/handoff-confirmation.ts",
+    "src/webview/preview/main.tsx",
+    "src/webview/preview/navigation-review.ts",
+    "src/webview/preview/preview-bridge.ts",
+    "src/webview/preview/scenarios.ts",
+    "src/webview/preview/settings-review.ts",
+    "src/webview/preview/ui-language.ts"
+  ],
+  "remainingToolScriptPaths": [],
+  "remainingConfigurationPaths": [],
+  "remainingCounts": {
+    "implementation": 11,
+    "toolScripts": 0,
+    "configuration": 0
+  },
+  "completedPasses": [
+    {
+      "report": "docs/discussions/2026-09-30-core-boundaries-audit.zh.md",
+      "implementationPaths": [
+        "src/extension/draft/fileAttachment.ts",
+        "src/extension/editor-tools/toolApproval.ts",
+        "src/adapter/ownership/control-client.ts",
+        "src/adapter/ownership/control-protocol.ts",
+        "src/adapter/ownership/launch-supervisor.ts",
+        "src/adapter/runtime/process/direct-process.ts",
+        "src/adapter/pathIdentity.ts",
+        "src/adapter/sessions/session-worker-protocol.ts",
+        "src/extension/contracts/approvalProtocol.ts",
+        "src/adapter/ownership/types.ts",
+        "src/extension/bridge/chatBounds.ts",
+        "src/extension/contracts/webviewProtocol.ts",
+        "src/webview/bridge.ts",
+        "src/extension/contracts/sessionBackend.ts"
+      ],
+      "testPaths": [
+        "src/extension/editor-tools/tests/tool-approval.spec.ts",
+        "src/extension/draft/tests/file-attachment.spec.ts",
+        "src/adapter/sessions/tests/session-worker-protocol.spec.ts"
+      ],
+      "confirmedFindings": [
+        "CORE-01",
+        "CORE-02"
+      ],
+      "testsRun": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 1
+      }
+    },
+    {
+      "report": "docs/discussions/2026-09-30-core-boundaries-audit.zh.md",
+      "implementationPaths": [
+        "src/extension/contracts/extensionInteractions.ts",
+        "src/extension/contracts/providerConfig.ts",
+        "src/adapter/runtime/types.ts",
+        "src/extension/editor-tools/types.ts",
+        "src/extension/extension-loading/types.ts",
+        "src/extension/sessions/types.ts",
+        "src/adapter/index.ts",
+        "src/adapter/ownership/index.ts",
+        "src/adapter/runtime/index.ts",
+        "src/adapter/sessions/index.ts",
+        "src/extension/index.ts",
+        "src/extension/contracts/index.ts",
+        "src/extension/bridge/index.ts",
+        "src/extension/draft/index.ts",
+        "src/extension/editor-tools/index.ts",
+        "src/extension/extension-loading/index.ts",
+        "src/extension/interactions/index.ts",
+        "src/extension/models/index.ts",
+        "src/extension/sessions/index.ts",
+        "src/webview/chat/index.ts",
+        "src/webview/components/index.ts",
+        "src/webview/index.ts",
+        "src/webview/chat/types.ts",
+        "src/webview/components/types.ts",
+        "src/webview/types.ts",
+        "src/webview/main.tsx"
+      ],
+      "testPaths": [],
+      "confirmedFindings": [],
+      "inspectionNotes": "Supplementary same-pass contracts, export entries, presentation props and Webview boot; complete returned sources, no extra independently confirmed defect, no prior imports followed."
+    },
+    {
+      "report": "docs/discussions/2026-09-30-tooling-config-audit.zh.md",
+      "implementationPaths": [],
+      "toolScriptPaths": [
+        "scripts/testing/run-tests.mjs",
+        "scripts/testing/test-runner-lib.mjs",
+        "scripts/testing/commit-check.mjs",
+        "scripts/packaging/verify-webview-assets-lib.mjs",
+        "scripts/packaging/verify-webview-assets.mjs",
+        "scripts/docs/docs-verify.mjs"
+      ],
+      "configurationPaths": [
+        "eslint.config.mjs",
+        "vite.config.mts",
+        "tsconfig.json",
+        "tsconfig.tests.json",
+        "tsconfig.webview.json",
+        ".vscode/launch.json",
+        ".vscode/tasks.json"
+      ],
+      "testPaths": [],
+      "confirmedFindings": [
+        "TOOL-01"
+      ],
+      "conditionalRisks": [
+        "TOOL-02"
+      ],
+      "inspectionNotes": "Full returned source. Isolated mock Git and mock inventory/execution probes; no actual Git, tests, cleanup, build or pi. No HTML/CSS source opened."
+    },
+    {
+      "implementationPaths": [],
+      "toolScriptPaths": [
+        "scripts/docs/docs-health-lib.mjs",
+        "scripts/docs/docs-health.mjs"
+      ],
+      "configurationPaths": [],
+      "testPaths": [],
+      "confirmedFindings": [],
+      "inspectionNotes": "Complete returned sources: docs-health-lib 74 lines, docs-health CLI 29 lines. Source inspection only, older i18n implementation not reopened; no isolated behavioral probes."
+    }
+  ],
+  "earlierReportPaths": [
+    "ACTIVE.md",
+    "docs/discussions/2026-09-30-ui-components-audit.zh.md",
+    "docs/discussions/2026-09-30-runtime-helpers-audit.zh.md"
+  ],
+  "knownPartialInspections": [
+    "src/adapter/ownership/supervisor.ts",
+    "src/webview/chat/extension-interactions.tsx",
+    "src/webview/components/model-picker.tsx",
+    "src/webview/chat/message-composer.tsx",
+    "src/webview/chat/candidate-context.tsx",
+    "src/webview/components/approvals.tsx",
+    "src/webview/components/change-review.tsx",
+    "src/webview/components/ui-text.tsx",
+    "src/extension/draft/tests/file-attachment.spec.ts",
+    "scripts/packaging/package-vsix.spec.mjs",
+    "scripts/docs/docs-i18n-check-lib.mjs",
+    "scripts/docs/docs-i18n-config.mjs",
+    "src/extension/editor-tools/tests/tool-approval.spec.ts",
+    "src/adapter/sessions/tests/session-worker-protocol.spec.ts",
+    "scripts/docs/docs-verify-lib.mjs"
+  ],
+  "knownPartialListIsNotExhaustive": true,
+  "nextScope": "Future focused repair tasks are recorded in ACTIVE.md. No automatic review continuation, application edits or fixes are authorized by this record. Choose and approve one implementation slice before repairs; preserve unresolved and partial coverage.",
+  "excludedTechnicalSpikePaths": [
+    "scripts/spikes/attachment-provider.mjs",
+    "scripts/spikes/compatibility-extension.mjs",
+    "scripts/spikes/compatibility-worker.mjs",
+    "scripts/spikes/spike-approval.mjs",
+    "scripts/spikes/spike-compatibility.mjs",
+    "scripts/spikes/spike-offline-inference.mjs",
+    "scripts/spikes/spike-runtime.mjs",
+    "scripts/spikes/compatibility-lib.mjs",
+    "scripts/spikes/spike-project-trust.mjs",
+    "scripts/spikes/project-trust-lib.mjs",
+    "scripts/spikes/spike-attachment.mjs"
+  ],
+  "scopeChangeNotes": [
+    "User excluded technical spikes and asked what remains. Spike source returned in this pass before the correction; no spike probes, pi or model calls were run. Excluded paths are not audit acceptance."
+  ],
+  "partialInspectionDetails": [
+    {
+      "path": "scripts/docs/docs-verify-lib.mjs",
+      "inspectedRanges": [
+        [
+          1,
+          275
+        ]
+      ],
+      "totalLines": 289,
+      "uninspectedRanges": [
+        [
+          276,
+          289
+        ]
+      ],
+      "note": "Source inspection interrupted by scope clarification. Exclude from subsequent reopening; no complete-file acceptance or behavioral probes."
+    }
+  ],
+  "lastGoalId": "goal-e93f6ce2-3c08-42eb-8262-ac5735bbe199",
+  "goalStatusNote": "Session get_goal returned null during the scope clarification; the historical goal id is retained as lastGoalId.",
+  "reviewStopped": true,
+  "stopReason": "Maintainer considers the existing review sufficient and requested consolidation into ACTIVE.md for future tasks. No further audit is queued; coverage gaps remain.",
+  "backlogPath": "ACTIVE.md",
+  "backlogFindingIds": {
+    "previouslyRecordedConfirmed": [
+      "ARCH-05",
+      "ARCH-06",
+      "ARCH-02-supplement",
+      "ARCH-07"
+    ],
+    "newlyConsolidatedConfirmed": [
+      "RUNTIME-01",
+      "RUNTIME-02",
+      "CORE-01",
+      "CORE-02",
+      "UI-01",
+      "UI-02",
+      "TOOL-01",
+      "UI-03",
+      "RUNTIME-03",
+      "RUNTIME-04",
+      "RUNTIME-05"
+    ],
+    "conditionalOrUnconfirmed": [
+      "TOOL-02",
+      "ARCH-01",
+      "ARCH-02-design",
+      "ARCH-03",
+      "ARCH-04",
+      "ARCH-08",
+      "composer-derived-state",
+      "file-snapshot-validator-pairing",
+      "resource-and-timeout-budgets"
+    ]
+  }
+}
