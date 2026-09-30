@@ -15,31 +15,29 @@
 
 | 字段 | 当前值 |
 |---|---|
-| **ID** | WI-038 |
-| **阶段** | Close — 收尾文档与 [ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md) |
-| **Gate ID** | 无新增；相关 `gate-webview-trust` 保持 Accepted |
-| **Decision** | [ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md) 仍为 Draft，本 WI 关闭时提升为 Accepted |
-| **PRD 判定** | 用户可见：REQ-002／ARCH-05 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果 |
+| **ID** | WI-040 |
+| **阶段** | 建造 — CORE-01 待审批并发准入上限 |
+| **Gate ID** | 无新增 |
+| **Decision** | none |
+| **PRD 判定** | 用户可见：REQ-006 同时最多八张待审批卡；并发预检查不得突破上限 |
 
 ### 目标与范围
 
-- **阶段／批准**：Close，WIP=1。实现已提交 `d485cc4`；开发宿主与（经 WI-039 修复后的）隔离安装版双窗口争用／串行提交证据已取。维护者本会话要求完成 ACTIVE 剩余任务、写收尾并在每项后提交 Git，即本次关闭授权。
-- **目标／范围**：归档批准提案与验收、将 ADR 0007 升 Accepted、同步 PRD／架构／消息契约状态。不重做实现，不重跑安装版取证（与 WI-039 共用 `report-pi-w038-4cmFzI`）。不接受 ADR 0005、gate 或整份 Draft PRD。
-- **实现摘要**：宿主 `models` 模块以 `.models.json.pi-vscode.lock` 互斥添加／删除；争用立即失败；仅干净提交继续凭据动作；遗留锁不按年龄／PID 自动清除。
+- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 CORE-01 的实施授权。证据见[核心边界审查](docs/discussions/2026-09-30-core-boundaries-audit.zh.md)。
+- **目标／范围**：`ToolApprovals.evaluate` 在 await 安全／范围检查之前预留容量，或在写入 `pending` 的原子点重检；并发预检查不得出现第九张卡；取消／错误释放槽位。已复现容量失效，不是审批绕过。
+- **PRD**：已双语同步 WI-040 切片。不改 Webview 协议、授权范围规则或 session grant 上限。
 
 ### 方案与架构核对
 
-关闭不改实现。既有方案：`customEndpoints.ts` 拥有文档校验／合并，`endpointFileTransaction.ts` 拥有路径身份、跨宿主互斥、替换与自有资源清理；`ProviderConfig` 只在干净提交后继续重载／登录／注销。信任边界、Webview 契约字段与凭据所有权不变。Decision 为已有 Draft ADR 0007，关闭时提升为 Accepted；无新 gate。
+所有者仍是宿主 `toolApproval.ts`。在 `pending.size + reservations >= 8` 时立即拒绝；await 前 `reservations++`，`finally` 释放。插入卡片后占用 `pending`，预留下降，总数仍 ≤ 8。不合并 ARCH-01 状态表，不改审批 UI。Decision：none。
 
 ### 验收
 
-- 关闭时重跑 compile／lint／完整 `npm test`、`docs:verify`／`docs:health` 与差异检查。
-- 归档双语批准提案与验收；ADR 0007 记录批准、验证与限制后转 Accepted。
-- 不宣称外部非参与 writer 已被排除，也不修复 ARCH-06 输出预算。
+并发九个 custom-tool 预检查最多八张卡；第九个返回 false。取消／错误后槽位可再准入。compile／lint／完整 `npm test`。本切片以自动化为主；macOS 宿主九路并发审批不作为本 WI 必需要求。
 
 ### 范围外与批准边界
 
-- **范围外**：ARCH-06、ARCH-02、WI-036、pi 升级、公开发布、ADR 0005／gate／整份 PRD 接受、推送。
+- **范围外**：ARCH-01 状态表重构、CORE-02、审批绕过、非法投影／断连／内存耗尽、gate／ADR、整份 PRD、推送。
 
 ## 验收授权与平台决定
 
@@ -62,6 +60,7 @@
 | WI-035 | 遗留运行时启动交接、活所有者保护 + macOS F5／隔离安装 | macOS | 代理依据本次明确授权接受并提升 ADR 0006 |
 | WI-037 | RUNTIME-01／02 thinking 有界上下文与完整引号凭据脱敏 + macOS F5／隔离安装 | macOS | 代理依据本次明确的实机取证并完结要求接受 |
 | WI-039 | PACKAGE-01 安装版运行时依赖闭包 + 解包 import／隔离安装供应商加载 | macOS | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
+| WI-038 | ARCH-05 跨宿主 endpoint 写入互斥 + 双窗口争用／串行提交；ADR 0007 | macOS | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 
 授权边界（与 2026-09-27 委托先例一致，且不继承其范围）：
 
@@ -72,7 +71,8 @@
 
 ## 当前焦点与未决项
 
-- [x] WI-039 代理受托接受并关闭：安装版 VSIX 内联 pi-ai、组包拒绝未发布依赖、解包真实 import 红／绿通过；隔离安装版设置页加载供应商配置。[记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。ARCH-07 与 WI-038 仍分开。
+- [x] WI-038 代理受托接受并关闭：跨宿主 `models.json` 写入互斥，ADR 0007 Accepted；开发／隔离安装双窗口争用与串行提交通过。[记录](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)。ARCH-06 仍停车场。
+- [x] WI-039 代理受托接受并关闭：安装版 VSIX 内联 pi-ai、组包拒绝未发布依赖、解包真实 import 红／绿通过；隔离安装版设置页加载供应商配置。[记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。ARCH-07 仍停车场。
 - [x] WI-037 代理受托接受并关闭：thinking 有界上下文与完整引号凭据脱敏；macOS F5／隔离安装合成 SSE 逐帧通过。[记录](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。助手正文逐 delta 与 WI-036 未改。
 
 - [x] 本轮按维护者要求同步架构文档（仅文档，不改应用代码／提交 Git）：[主架构](docs/architecture/vscode-extension-architecture.zh.md)补清宿主供应商／默认 SDK、RPC agent 与 session-worker 三条路径及现有模块责任；WI-035 章节与[消息契约](docs/reference/webview-messages.zh.md#启动交接wi-035)、[ADR 索引](docs/decisions/README.zh.md)明确已批准 Build／验收待完成的过渡关系；入口与模型段落改链既有验收记录，保留已有 ADR 0006 取证文本与 Draft 状态。本轮 `npm run docs:verify`、`npm run docs:health`（0 错误、4 条既有 Draft ADR 提示；双语 0 错误）及 `git diff --check` 通过。未重跑 compile／lint／行为测试／F5／安装验证，不新增验收结论，不关闭 WI-035，不实施 WI-036。
@@ -103,13 +103,13 @@
 
 ## 最近交接
 
+### 2026-09-30 — WI-038 受托接受并关闭
+
+维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。实现已在 `d485cc4`。本次关闭重跑 compile／lint／完整 **993** 项测试，归档提案与验收，并将 ADR 0007 升 Accepted。开发宿主与隔离安装版双窗口争用显示固定占用错误，释放后保留全部已提交条目；`cleanupRemaining: []`。记录见[验收](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)。ADR 0005、ARCH-06、gate、整份 PRD 未改。不推送。下一 WI 为 WI-040 CORE-01。
+
 ### 2026-09-30 — WI-039 受托接受并关闭
 
-维护者本会话要求完成 ACTIVE 剩余任务、每项测试、写收尾并提交 Git。WI-039 实现已在 `9d9259d`。本次关闭重跑 compile／lint／完整 **993** 项测试（0 失败／跳过），归档批准提案与验收，并同步 PRD／架构／索引。修复前归档 149,815,375 字节解包 import 失败；修复后 `pi-vscode-final.vsix`（149,921,300 字节、15,535 条目、SHA-256 `1a70dd777a92fbcf5205d3f927e87482e347835b23130e3caa123b93ab22f6c9`）通过。隔离安装版 `provider-loaded: true`，争用显示固定占用错误，释放后干净提交；`cleanupRemaining: []`。记录见[验收](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)与[提案](docs/archive/2026-09-30-wi-039-approved-proposal.zh.md)。ARCH-07、WI-038、ADR 0007、整份 PRD 未改。不推送。
-
-### 2026-09-30 — WI-038 实现与实机取证（关闭待本入口当前 WI）
-
-实现已提交 `d485cc4`。990 项测试当时通过（新增 63 项）。开发宿主与 WI-039 修复后的隔离安装版双窗口争用／串行提交见 `dist/wi038-native/report-pi-w038-4cmFzI.json`。ADR 0007 仍为 Draft。当前 WIP 即本 WI 的收尾与 ADR 提升。
+组包修复已提交 `9d9259d` 并已关闭。解包 import 红／绿与隔离安装版 `provider-loaded: true` 见[验收](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。ARCH-07 仍停车场。
 
 ## 停车场
 
@@ -117,7 +117,7 @@
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-039 已接受关闭，当前唯一活动 WI 为 WI-038 Close；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039 已接受关闭，当前唯一活动 WI 为 WI-040 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -136,7 +136,7 @@
 |---|---|---|
 | [x] RUNTIME-01 | P1，WI-037 已关闭 | 显示文本不再作为原始 delta 缓存；有界保留脱敏上下文，Bearer／私钥跨片段后续内容不泄露。自动化与 macOS F5／隔离安装合成 SSE 证据见[验收](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。 |
 | [x] RUNTIME-02 | P1，WI-037 已关闭 | 整体遮盖含空白及转义引号的凭据值；有效 JSON 与非结构化文本分别回归。自动化与实机 thinking 引号值见同一验收记录。 |
-| [ ] CORE-01 | P2，审批准入 | await 前预留容量或在原子准入点重检；并发预检查不突破 8 项上限，取消／错误释放槽位。已复现容量失效，不是审批绕过。 |
+| [ ] CORE-01 | P2，WI-040 Build | await 前预留容量或在原子准入点重检；并发预检查不突破 8 项上限，取消／错误释放槽位。当前 WIP。 |
 | [ ] CORE-02 | P2，session worker 协议 | 关联 inspect id、history page、preview offset；拒绝非终态不推进及结束标记矛盾，保留 list 对照；解析器反例与真实 worker 集成分别验证，不宣称已错误切换会话。 |
 | [ ] UI-01 | P2，模型选择 | 稳定模型身份与显示标签分离；同名及标签／canonical 身份碰撞仍唯一选中，不据当前证据认定运行时模型选错。 |
 | [ ] UI-02 | P2，键盘与焦点 | Escape 尊重已消费事件，回归重叠菜单／模型弹层、输入法与焦点返回；组件探针不代替 macOS 宿主验证。 |
@@ -163,7 +163,7 @@
 
 **扩大审查补充（维护者要求继续检查，未批准修复）：**
 
-- [ ] **ARCH-05／P1：共享 endpoint 文件丢失并发更新（WI-038 Close，实现与实机取证已完成）。** 历史 writer 先读取合并再原子 rename，实例内 `saving` 没有跨宿主互斥；隔离添加两项的 20/20 次复现均报告成功却只保留一项。WI-038 已通过[共享事务](src/extension/models/endpointFileTransaction.ts)修复并新增独立进程／故障回归；批准提案的行为条款保存在 [PRD REQ-002 切片](docs/product-requirements.md)、[消息契约](docs/reference/webview-messages.md#endpoint-写入事务wi-038已批准-build-契约)、[主架构](docs/architecture/vscode-extension-architecture.md)与 [ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md)（Draft）。开发宿主与隔离安装版双窗口争用／串行提交证据见 WI-039 关闭记录所复用的 `report-pi-w038-4cmFzI`；完整 990 项自动化验收当时通过（新增 63 项）。完成标准：并发修改不静默丢失，争用／冲突显式失败或合法修改经串行提交保留。当前 WIP 即关闭本项并提升 ADR 0007。
+- [x] **ARCH-05／P1：共享 endpoint 文件丢失并发更新（WI-038 已接受关闭）。** 完成标准见[验收](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)；[ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md) Accepted。ARCH-06 输出预算仍分开。
 - [ ] **ARCH-06／P2：endpoint 写入越过自身读取预算。** [读取](src/extension/models/customEndpoints.ts#L36)限制 1 MiB，但[序列化写入](src/extension/models/customEndpoints.ts#L106)不检查输出大小。隔离合法 JSON 从 1,048,529 字节增加到 1,048,743 字节，添加报告成功，随后删除返回 invalid。候选完成标准：输出预算在提交前验证，超限保留原文件并报告错误；同时覆盖格式化扩大文件的情况。
 - [ ] **ARCH-02 补充／P2：默认保存失败仍修改实时模型。** [保存方法](src/extension/models/providerConfig.ts#L473)失败后只更新 error 并返回 void；[宿主](src/extension/piChatViewProvider.ts#L873)仍将请求参数交给实时模型同步。在内存中使用真实 ProviderConfig 方法和宿主 configure／sync 方法、替代 settings flush 与模型边界，注入写入失败：默认投影保留 old-model 并报告失败，但实时 applyConfiguredModel 收到 new-model。候选完成标准：操作接口区分已提交、失败、未执行及过期结果，后续动作只基于明确提交结果；这是新增故障证据，不仅是首轮的顺序封装建议。
 - [ ] **ARCH-07／P2：组包入口未强制完整产物验证。** [collectPackageFiles](scripts/packaging/package-vsix.mjs#L265)仅要求宿主与 Webview JS；隔离文件集合缺少三份 helper 与 CSS 仍通过。独立 [verify-vsix](scripts/packaging/verify-vsix.mjs#L21)可发现 helper 缺失，资源验证器可查 CSS，但 [package:vsix](package.json#L108)与 [CI](.github/workflows/ci.yml#L21)未串联完整产物验证。不是已交付 VSIX 被证明损坏。候选完成标准：交付入口缺必需资产时失败，并保留实际解包运行验证与构建测试的证据区分。
@@ -191,6 +191,7 @@
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-038 | 跨宿主 endpoint 写入互斥；ADR 0007 Accepted；macOS 开发／隔离安装双窗口争用 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；ADR 0005／ARCH-06 仍范围外 | [记录](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md) |
 | WI-039 | 交付 VSIX 运行时依赖闭包（PACKAGE-01）；解包 import 与隔离安装版供应商加载 | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；ARCH-07 仍停车场 | [记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md) |
 | WI-037 | 有界 thinking 流式与完整引号凭据脱敏；实际 macOS F5／隔离安装合成 SSE | 2026-09-30 代理按本次明确的实机取证并完结委托接受；助手正文逐 delta 仍范围外 | [记录](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md) |
 | WI-035 | 精确回执启动交接、活所有者安全与实际 macOS F5／隔离安装；ADR 0006 Accepted | 2026-09-30 代理按本次明确委托接受；不改共享域或会话内恢复 | [记录](docs/archive/2026-09-30-wi-035-macos-acceptance.zh.md) |
