@@ -156,7 +156,8 @@ ownership 拥有观察、原始 run 身份、结束授权与匹配持久回执�
 
 ## 7. 受控执行所有权（WI-010 已关闭，2026-09-21）
 
-- **宿主策略：** `src/extension/editor-tools/toolApproval.ts` 拥有待审批卡与会话授权。仅工作区内 canonical 普通文件 `read` 自动允许。搜索／列目录询问；不存在／无法解析目标仅允许一次。既有文件授权绑定工具 + canonical 路径；shell 绑定工具 + canonical cwd + 完整输入。不持久化授权，不提供自由执行模式。规范化不能防止所有检查／使用竞态。
+- **宿主策略：** `src/extension/editor-tools/toolApproval.ts` 拥有待审批卡与会话授权。仅工作区内 canonical 普通文件 `read` 自动允许。搜索／列目录询问；不存在／无法解析目标仅允许一次。既有文件授权绑定工具 + canonical 路径；shell 绑定工具 + canonical cwd + 完整输入。插入待审批卡时在写入点重检八张上限，并发预检查不能放出第九张。不持久化授权，不提供自由执行模式。规范化不能防止所有检查／使用竞态。
+- **八张卡准入（WI-040，2026-09-30 接受）：** `ToolApprovals.evaluate` 在异步安全／范围检查之后、写入卡片的位点重检 `pending.size >= 8`，因此九个并发 custom-tool 预检查不能放出第九张卡。取消与错误仍释放已占用槽位。这是本地准入不变量；不宣称已修非法投影、断连或内存耗尽。[验收与限制](../archive/2026-09-30-wi-040-macos-acceptance.zh.md)。
 - **契约所有权：** `src/extension/contracts/approvalProtocol.ts` 拥有纯捆绑 gate envelope 类型与校验器；adapter 消费这一宿主契约，不导入审批策略。`src/adapter/runtime/runtime-errors.ts` 拥有运行时错误归一化与长度限制。`toolApproval.ts` 保留授权决策及文件系统范围检查。
 - **执行边界：** `src/adapter/approvalGate.ts` 打包为 `dist/approval-gate.mjs`（构建与 package 声明已包含）。公开异步 `tool_call` hook 通过 `ctx.ui.confirm` 等待；产品 v1 协议绑定 runtime／cwd、request／tool-call ID 与完整输入。`src/adapter/runtime/pi-rpc-runtime.ts` 拥有对话回复并校验 hello／就绪。不存在通用审批 RPC 或按标题授权。文件缺失拒绝启动；hello/get_state 失败停止启动，不是可用的无工具回退。
 - **交付运行时闭包（WI-039，2026-09-30 接受）：** 交付 bundle 只允许把扩展宿主模块 `vscode` 与由 supervisor 以子进程启动 CLI 的 pinned `@earendil-works/pi-coding-agent` 留在自身之外。它加载的其他每个裸标识符都必须内联进该 bundle 或随包装入 `node_modules/`；组包拒绝「交付 bundle 加载未随包发布的依赖」，解包验证器则在解包扩展根目录真实 `import()` 每个这样的标识符。`@earendil-works/pi-ai` 因此内联进 `dist/extension.js`；声明的 pi 版本、供应商／SDK 路径与模块责任不变。[验收与限制](../archive/2026-09-30-wi-039-macos-acceptance.zh.md)。

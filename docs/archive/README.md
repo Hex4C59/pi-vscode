@@ -67,8 +67,10 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-037 delegated acceptance](2026-09-30-wi-037-macos-acceptance.md) | Bounded thinking streaming and complete quoted credential redaction; actual macOS F5/isolated installed SSE evidence |
 | [WI-039 delegated acceptance](2026-09-30-wi-039-macos-acceptance.md) | Installed VSIX runtime dependency closure (PACKAGE-01); unpacked import verification and isolated installed provider loading |
 | [WI-038 delegated acceptance](2026-09-30-wi-038-macos-acceptance.md) | Cross-host endpoint write exclusion; two-window contention/serial-commit evidence; ADR 0007 Accepted |
+| [WI-040 delegated acceptance](2026-09-30-wi-040-macos-acceptance.md) | Eight-card approval admission under concurrent preflight (CORE-01); insert-time recheck |
 | [WI-038 approved proposal](2026-09-30-wi-038-approved-proposal.md) | Complete approved concurrency scope; historical, no new Build authorization |
 | [WI-039 approved proposal](2026-09-30-wi-039-approved-proposal.md) | Complete approved packaging scope; historical, no new Build authorization |
+| [WI-040 approved proposal](2026-09-30-wi-040-approved-proposal.md) | Complete approved eight-card admission scope; historical, no new Build authorization |
 | [WI-035 approved proposal](2026-09-30-wi-035-approved-proposal.md) | Complete approved scope and acceptance; historical, no new Build authorization |
 | [WI-034 approved proposal](2026-09-30-wi-034-approved-proposal.md) | Original single-language ACTIVE proposal retained after close; no new Build authorization |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
