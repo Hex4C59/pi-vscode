@@ -96,6 +96,7 @@ The History column keeps the original acceptance/closure link and adds standalon
 | WI-071 | Webview directory organization | 2026-10-01 agent under complete-ACTIVE `/goal`; README grouping, no behavior change | [record](2026-10-01-wi-071-acceptance.md); [proposal: 2026-10-01-wi-071-approved-proposal](2026-10-01-wi-071-approved-proposal.md) |
 | WI-072 | Internal RPC helper grouping; root coordinators retained | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-072-acceptance.md); [proposal: 2026-10-01-wi-072-approved-proposal](2026-10-01-wi-072-approved-proposal.md) |
 | WI-073 | DOC-NAV-01 documentation maintenance | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-073-acceptance.md); [proposal](2026-10-01-wi-073-approved-proposal.md) |
+| WI-074 | DOC-NAV-02 documentation maintenance | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-074-acceptance.md); [proposal](2026-10-01-wi-074-approved-proposal.md) |
 
 
 ## Not in this index

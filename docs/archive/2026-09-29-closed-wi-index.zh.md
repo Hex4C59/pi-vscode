@@ -99,6 +99,7 @@
 | WI-071 | Webview 目录整理 | 2026-10-01 代理依据完成 ACTIVE 的 `/goal`；按 README 分组，不改行为 | [记录](2026-10-01-wi-071-acceptance.zh.md); [方案: 2026-10-01-wi-071-approved-proposal](2026-10-01-wi-071-approved-proposal.zh.md) |
 | WI-072 | RPC 内部 helper 分组；根协调文件保留 | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-072-acceptance.zh.md); [方案: 2026-10-01-wi-072-approved-proposal](2026-10-01-wi-072-approved-proposal.zh.md) |
 | WI-073 | DOC-NAV-01 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-073-acceptance.zh.md); [方案](2026-10-01-wi-073-approved-proposal.zh.md) |
+| WI-074 | DOC-NAV-02 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-074-acceptance.zh.md); [方案](2026-10-01-wi-074-approved-proposal.zh.md) |
 
 
 ## 不在本索引
