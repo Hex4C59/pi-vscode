@@ -159,6 +159,7 @@ ownership 拥有观察、原始 run 身份、结束授权与匹配持久回执�
 - **宿主策略：** `src/extension/editor-tools/toolApproval.ts` 拥有待审批卡与会话授权。仅工作区内 canonical 普通文件 `read` 自动允许。搜索／列目录询问；不存在／无法解析目标仅允许一次。既有文件授权绑定工具 + canonical 路径；shell 绑定工具 + canonical cwd + 完整输入。不持久化授权，不提供自由执行模式。规范化不能防止所有检查／使用竞态。
 - **契约所有权：** `src/extension/contracts/approvalProtocol.ts` 拥有纯捆绑 gate envelope 类型与校验器；adapter 消费这一宿主契约，不导入审批策略。`src/adapter/runtime/runtime-errors.ts` 拥有运行时错误归一化与长度限制。`toolApproval.ts` 保留授权决策及文件系统范围检查。
 - **执行边界：** `src/adapter/approvalGate.ts` 打包为 `dist/approval-gate.mjs`（构建与 package 声明已包含）。公开异步 `tool_call` hook 通过 `ctx.ui.confirm` 等待；产品 v1 协议绑定 runtime／cwd、request／tool-call ID 与完整输入。`src/adapter/runtime/pi-rpc-runtime.ts` 拥有对话回复并校验 hello／就绪。不存在通用审批 RPC 或按标题授权。文件缺失拒绝启动；hello/get_state 失败停止启动，不是可用的无工具回退。
+- **交付运行时闭包（WI-039，维护者 2026-09-30 批准）：** 交付 bundle 只允许把扩展宿主模块 `vscode` 与由 supervisor 以子进程启动 CLI 的 pinned `@earendil-works/pi-coding-agent` 留在自身之外。它加载的其他每个裸标识符都必须内联进该 bundle 或随包装入 `node_modules/`；组包拒绝「交付 bundle 加载未随包发布的依赖」，解包验证器则在解包扩展根目录真实 `import()` 每个这样的标识符。`@earendil-works/pi-ai` 因此内联进 `dist/extension.js`；声明的 pi 版本、供应商／SDK 路径与模块责任不变。
 - **受控配置：** CLI 使用 `--tools read,write,edit,bash,powershell,grep,find,ls --no-extensions -e <bundled gate>`，并保留资源 flag。即使同意资源，也禁用第三方扩展发现。其他上下文／资源类别不因此全部排除。自带扩展以用户代码权限运行；不是沙箱，不承诺完整约束 shell／网络。
 - **投影与生命周期：** `runtimeLifecycle.ts` 定义活动／最终消息／运行时错误事件及窄 `abortTask`／审批 handler 注入。`activityProjection.ts` 按消息／内容索引关联真实 thinking，按 tool-call ID 关联工具，替换累计输出并限制展示字段。`PiChatViewProvider` 拥有投影时间线及执行状态；`EditorTools` 拥有审批生命周期，由协调者通知重置／取消。Stop 在 adapter `clear_queue` + `abort` 前取消待审批；未 settled／失败则明确报错并撤销 transport／answer 接纳，按 ADR0002 保留 exact-child 观察；不自动杀死不确定工作。成功 Stop 保留同一运行会话授权；替换／断开清除。延后设置等待 settled 及停止完成。不回滚副作用、不自动重试任务。
 - **契约／安全：** [contract-webview-messages](../reference/webview-messages.zh.md) 记录精确入站动作与有界 DTO。不开放通用命令，不转发原始 runtime／stderr；凭证模式过滤尽力而为，不保证任意输出完全无密钥。增量 UI、逐项及预留总量超限提示、稳定展开／焦点／滚动、完整审批输入、授权撤销与保留草稿的 Stop 已实现并有 UI 测试覆盖。维护者已确认四项开发态 F5：thinking／状态、读取／工具卡、拒绝写入无副作用后允许写入、长时间无害命令 Stop。限定 WI 已关闭；不推断已安装 VSIX 或完整手动矩阵验收。
@@ -182,6 +183,8 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 `src/extension/models/` 中的 `ProviderConfig` 从声明的 pi coding-agent 发行版导入公开 `ModelRuntime`、`SettingsManager`，并使用 pi-ai 能力函数。它拥有供应商就绪状态、原生 API-key／OAuth 交互、默认模型及逐模型 thinking 设置。pi 认证存储与设置仍为权威，不新增 provider 栈、agent 循环或产品 SecretStorage 副本。Webview 接收有界无密钥投影并发送具名意图，不调用 SDK。已保存默认与已应用／待应用实时会话设置不同，跨模块应用顺序仍归协调者。
 
 宿主 `customEndpoints.ts` 向公开文档定义的 pi `models.json` 写入有界无密钥条目，凭据仍经公开 login 保存。[Draft ADR 0005](../decisions/0005-custom-endpoint-file.zh.md) 记录该批准切片与剩余验证，不代表架构已接受或真实端点认证。精确供应商／默认 DTO 与失败语义归[消息契约](../reference/webview-messages.zh.md)。
+
+已批准 WI-038 中，`customEndpoints.ts` 拥有文档校验／合并，`endpointFileTransaction.ts` 拥有规范化路径身份、跨宿主互斥、替换与自有资源清理；`ProviderConfig` 只在干净提交后继续重载／登录／注销。[Draft ADR 0007](../decisions/0007-endpoint-write-transaction.zh.md) 记录立即拒绝争用、保守遗留锁与外部编辑尽力检测，验证与接受完成前保持 Draft；精确结果语义归消息契约。
 
 ### 保存会话 helper（WI-017）
 
