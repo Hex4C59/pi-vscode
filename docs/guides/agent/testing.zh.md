@@ -29,7 +29,7 @@
 
 ## 命名与收集是一份约定
 
-当前自动化 runner 是 `node:test`，不是 Vitest。应用测试使用 `*.spec.ts`，脚本测试使用 `*.spec.mjs`。后缀只有结合 runner 的实际收集规则才有意义；仅重命名文件不会创建测试层级。
+当前自动化 runner 是 `node:test`，不是 Vitest。应用测试使用 `*.spec.ts`，脚本测试使用 `*.spec.mjs`。后缀只有结合 runner 的实际收集规则才有意义；仅重命名文件不会创建测试层级。已收集 `tests/` 目录下的 `.spec.tsx` 会使发现失败，而不是被静默跳过；它不是收集后缀。
 
 `npm test` 调用 `scripts/testing/run-tests.mjs`，由可安全导入的 `scripts/testing/test-runner-lib.mjs` 提供支持。它从上述层级及模块内位置递归发现并排序确切的应用与脚本测试清单，跳过符号链接及名为 `fixtures` 或 `expected` 的目录，任一清单为空即失败。辅助文件与其他测试层级后缀不作为入口。
 

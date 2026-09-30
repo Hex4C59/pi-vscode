@@ -24,7 +24,7 @@ Scripts are grouped by purpose: `scripts/docs/` owns documentation checks and th
 
 ## Naming and collection are one contract
 
-The current automated runner is `node:test`, not Vitest. Use `*.spec.ts` for application tests and `*.spec.mjs` for scripts. The suffix has meaning only together with the runner's actual collection rules; renaming a file alone does not create a test tier.
+The current automated runner is `node:test`, not Vitest. Use `*.spec.ts` for application tests and `*.spec.mjs` for scripts. The suffix has meaning only together with the runner's actual collection rules; renaming a file alone does not create a test tier. A `.spec.tsx` file under a collected `tests/` directory fails discovery instead of being silently skipped; it is not a collected suffix.
 
 `npm test` invokes `scripts/testing/run-tests.mjs`, backed by the import-safe `scripts/testing/test-runner-lib.mjs`. It recursively discovers and sorts the exact application and script inventories from the layer-level and module-local paths above, skips symbolic links and directories named `fixtures` or `expected`, and fails if either inventory is empty. Helpers and other test-tier suffixes are not entries.
 
