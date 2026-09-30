@@ -2,6 +2,10 @@
 
 English | [中文](AGENTS.zh.md)
 
+- 永远不要在编写代码后编写单元测试。
+- 强烈优先使用端到端测试作为唯一的测试机制。使用它们来验证复杂功能是否正常工作。在端到端测试结束时，生成一个可验证且可重复的工件。
+- 如果你必须鼓励的测试一个系统，首先写下它可能失败的所有方式，然后再编写代码。
+
 Project-specific agent working rules for **pi VS Code**. **Universal rules** are in [`AGENTS.kernel.md`](AGENTS.kernel.md) ([中文](AGENTS.kernel.zh.md))—copy that pair from engineering-template and keep it in sync when the kernel upgrades.
 
 Detailed playbooks live under `docs/guides/agent/` (see **Load map**).

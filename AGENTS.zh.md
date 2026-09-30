@@ -7,6 +7,10 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-09-22
 
+- 永远不要在编写代码后编写单元测试。
+- 强烈优先使用端到端测试作为唯一的测试机制。使用它们来验证复杂功能是否正常工作。在端到端测试结束时，生成一个可验证且可重复的工件。
+- 如果你必须鼓励的测试一个系统，首先写下它可能失败的所有方式，然后再编写代码。
+
 **pi VS Code** 的项目专用 Agent 工作规则。通用规则见 [`AGENTS.kernel.zh.md`](AGENTS.kernel.zh.md)（英文：[`AGENTS.kernel.md`](AGENTS.kernel.md)）——从 engineering-template 复制该对，内核升级时保持同步。
 
 详细 playbook 在 `docs/guides/agent/`（见 **加载地图**）。
