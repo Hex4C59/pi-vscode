@@ -73,6 +73,7 @@
 | WI-048 | 默认保存失败不把请求中的模型应用到实时会话（ARCH-02 补充） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-048-macos-acceptance.zh.md) |
 | WI-049 | 组包入口缺必需 helper 或 CSS 时失败（ARCH-07） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-049-macos-acceptance.zh.md) |
 | WI-050 | 未收集的 `.spec.tsx` 使发现失败而不是被跳过（TOOL-02） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-050-macos-acceptance.zh.md) |
+| WI-051 | Composer 标志与 FileSnapshot 校验器未确认生产错误配对 | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-051-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

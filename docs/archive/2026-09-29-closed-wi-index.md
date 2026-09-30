@@ -70,6 +70,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-048 | Failed default save does not apply the requested live session model (ARCH-02 supplement) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-048-macos-acceptance.md) |
 | WI-049 | Packaging entry fails when required helpers or CSS are missing (ARCH-07) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-049-macos-acceptance.md) |
 | WI-050 | Uncollected `.spec.tsx` fails discovery instead of being skipped (TOOL-02) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-050-macos-acceptance.md) |
+| WI-051 | Composer flags and FileSnapshot validators have no confirmed production mis-pair | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-051-macos-acceptance.md) |
 
 ## Not in this index
 
