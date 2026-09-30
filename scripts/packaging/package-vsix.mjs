@@ -6,6 +6,9 @@
 // under node_modules/@earendil-works/pi-coding-agent. The subtree carries its
 // own nested node_modules, and `verify-vsix.mjs` runs the packaged CLI from the
 // extracted tree, so these files are the runtime closure the extension starts.
+// Every other bare specifier a shipped bundle loads must already be inlined in
+// that bundle; `assertRuntimeSpecifiersPackaged` fails the package otherwise,
+// because a missing runtime dependency only surfaces on an installed host.
 //
 // The archive is built with the system `zip` run with `-X`. That flag drops the
 // extra file attributes, but directory entries still carry the staging
@@ -14,11 +17,14 @@
 import { spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { isBuiltin } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DEPENDENCY_ENTRY = 'node_modules/@earendil-works/pi-coding-agent';
+/** Bare specifiers the extension host itself provides at runtime. */
+const HOST_PROVIDED_MODULES = new Set(['vscode']);
 const DEFAULT_OUT = 'dist/pi-vscode-validation.vsix';
 const STAGE_PREFIX = '.vsix-stage-';
 /** Fixed staging timestamp: the earliest instant the ZIP format can record. */
@@ -171,6 +177,65 @@ function isExcludedPackageFile(file) {
   const segments = file.split('/');
   return segments.includes('.git') || segments.includes('.local-env')
     || segments.at(-1) === 'skills-lock.json' || file.toLowerCase().endsWith('.vsix');
+}
+
+/** Bundled forms that load another module at runtime. */
+const SPECIFIER_PATTERNS = [
+  /\brequire\s*\(\s*["']([^"']+)["']/g,
+  /\bimport\s*\(\s*["']([^"']+)["']/g,
+  /\bimport\s+[^;"']*?from\s*["']([^"']+)["']/g,
+  /\bimport\s*["']([^"']+)["']/g,
+  /\bexport\s+[^;"']*?from\s*["']([^"']+)["']/g,
+];
+
+/**
+ * Bare specifiers a shipped bundle loads at runtime, ignoring relative paths
+ * and Node built-ins. The patterns cover `require`, dynamic `import`, static
+ * ESM `import ... from` and `export ... from`. This is still a text scan:
+ * computed specifiers, `require.resolve` targets and `createRequire` are
+ * outside it and need a targeted check.
+ */
+export function bareRuntimeSpecifiers(source) {
+  const found = new Set();
+  for (const pattern of SPECIFIER_PATTERNS) {
+    for (const match of source.matchAll(pattern)) {
+      const specifier = match[1];
+      if (specifier.startsWith('.') || specifier.startsWith('/') || specifier.startsWith('node:')) continue;
+      if (isBuiltin(specifier)) continue;
+      found.add(specifier);
+    }
+  }
+  return [...found].sort();
+}
+
+/** The package directory a bare specifier belongs to (`@scope/name` aware). */
+export function packageRootOf(specifier) {
+  const segments = specifier.split('/');
+  return segments[0].startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
+}
+
+/** Every packaged JavaScript bundle the extension host loads from dist/. */
+function shippedBundlePaths(found) {
+  return [...found].filter((file) => /^dist\/[^/]+\.(?:js|mjs|cjs)$/.test(file)).sort();
+}
+
+/**
+ * Refuse a package whose shipped bundles load a runtime dependency that is not
+ * staged in the archive. A missing dependency only fails on a real installed
+ * extension host (PACKAGE-01), so the packager checks it here instead. The
+ * bundle list comes from what is packaged, so a new dist bundle is covered too.
+ */
+async function assertRuntimeSpecifiersPackaged(root, found) {
+  for (const bundle of shippedBundlePaths(found)) {
+    const source = await readFile(resolveInsideRepo(root, bundle), 'utf8');
+    for (const specifier of bareRuntimeSpecifiers(source)) {
+      if (HOST_PROVIDED_MODULES.has(specifier)) continue;
+      const staged = `node_modules/${packageRootOf(specifier)}/package.json`;
+      if (!found.has(staged)) {
+        fail(`${bundle} loads "${specifier}" at runtime, but node_modules/${packageRootOf(specifier)} is not packaged; stage it or inline it in the bundle`);
+      }
+    }
+  }
 }
 
 /** Walk an absolute directory, returning repo-relative paths of regular files. */
@@ -389,6 +454,7 @@ export async function packageVsix({ root = repoRoot, out } = {}) {
   await assertArchiveTool();
   const collected = await collectPackageFiles(root);
   if (collected.files.length === 0) fail('no package files were selected');
+  await assertRuntimeSpecifiersPackaged(root, new Set(collected.files));
 
   await mkdir(path.dirname(outputPath), { recursive: true });
   await mkdir(path.join(root, 'dist'), { recursive: true });

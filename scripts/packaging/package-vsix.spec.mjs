@@ -13,9 +13,11 @@ import path from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 
 import {
+  bareRuntimeSpecifiers,
   buildExtensionManifest,
   buildVsixManifest,
   expandFilePatterns,
+  packageRootOf,
   packageVsix,
   parseArgs,
   PackagingError,
@@ -363,4 +365,53 @@ test('packageVsix rejects a missing pinned runtime subtree', { skip: !ZIP_AVAILA
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }
+});
+
+test('bareRuntimeSpecifiers reports runtime specifiers and drops builtins', () => {
+  const source = [
+    'const vscode = require("vscode");',
+    'const cli = require("@earendil-works/pi-coding-agent");',
+    'const ai = require("@earendil-works/pi-ai/dist/models.js");',
+    'const cfg = require("./local.js");',
+    'const fs = require("node:fs");',
+    'const http = require("http");',
+    'const gate = await import("@earendil-works/pi-agent-core");',
+    'import { createRequire } from "node:module";',
+    'import helper from "left-pad";',
+    'import "side-effect-pkg";',
+    'export { value } from "re-exported-pkg";',
+  ].join('\n');
+  assert.deepEqual(bareRuntimeSpecifiers(source), [
+    '@earendil-works/pi-agent-core',
+    '@earendil-works/pi-ai/dist/models.js',
+    '@earendil-works/pi-coding-agent',
+    'left-pad',
+    're-exported-pkg',
+    'side-effect-pkg',
+    'vscode',
+  ]);
+  assert.equal(packageRootOf('@earendil-works/pi-ai/dist/models.js'), '@earendil-works/pi-ai');
+  assert.equal(packageRootOf('typebox/build/index.mjs'), 'typebox');
+});
+
+test('packageVsix rejects a bundle that loads an unpackaged runtime dependency', { skip: !ZIP_AVAILABLE }, async () => {
+  await withFixture({}, async ({ root, run }) => {
+    await writeFile(path.join(root, 'dist/extension.js'), 'const ai = require("@earendil-works/pi-ai");\n');
+    await assert.rejects(run(), (error) => {
+      assert.ok(error instanceof PackagingError);
+      assert.match(error.message, /dist\/extension\.js loads "@earendil-works\/pi-ai" at runtime/);
+      assert.match(error.message, /node_modules\/@earendil-works\/pi-ai is not packaged/);
+      return true;
+    });
+  });
+});
+
+test('packageVsix accepts a bundle whose external is the staged pinned runtime', { skip: !ZIP_AVAILABLE }, async () => {
+  await withFixture({}, async ({ root, run }) => {
+    await writeFile(path.join(root, 'dist/extension.js'), 'const cli = require("@earendil-works/pi-coding-agent");\nconst vscode = require("vscode");\n');
+    const summary = await run();
+    const entries = readArchiveEntries(await readFile(summary.outputPath));
+    assert.ok(entries.includes('extension/node_modules/@earendil-works/pi-coding-agent/package.json'));
+    assert.ok(entries.includes('extension/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js'));
+  });
 });

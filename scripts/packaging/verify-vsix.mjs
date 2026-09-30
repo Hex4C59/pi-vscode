@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
+import { promisify } from 'node:util';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { isolatedFixture, withProcess } from '../spikes/project-trust-lib.mjs';
+import { bareRuntimeSpecifiers } from './package-vsix.mjs';
+const runNode=promisify(execFile);
+let resolvedRuntimeImports=[];
 // VSIX is a ZIP. Inspect central directory and extract to an owned temporary tree.
 const archive=await readFile(process.argv[2]??'dist/pi-vscode-validation.vsix');
 let end=archive.length-22;
@@ -31,10 +36,23 @@ await isolatedFixture(async({root,env})=>{
     await mkdir(path.dirname(target),{recursive:true});await writeFile(target,e.method===8?inflateRawSync(compressed):compressed);
   }
   const pkg=JSON.parse(await readFile(path.join(extracted,'extension/node_modules/@earendil-works/pi-coding-agent/package.json'),'utf8'));assert.equal(pkg.version,'0.86.1');
+  // Every bare specifier the shipped bundles load must resolve from the
+  // extracted extension root, exactly as the extension host would load it.
+  const extensionRoot=path.join(extracted,'extension');
+  const bundles=['dist/extension.js','dist/session-worker.mjs','dist/runtime-supervisor.mjs','dist/approval-gate.mjs'];
+  const specifiers=new Set();
+  for(const bundle of bundles){
+    const source=await readFile(path.join(extensionRoot,bundle),'utf8');
+    for(const specifier of bareRuntimeSpecifiers(source)) if(specifier!=='vscode')specifiers.add(specifier);
+  }
+  await runNode(process.execPath,['--input-type=module','-e',
+    `for (const specifier of ${JSON.stringify([...specifiers])}) await import(specifier);`],
+    {cwd:path.join(extensionRoot,'dist'),env,windowsHide:true,timeout:60000});
+  resolvedRuntimeImports=[...specifiers];
   let handshake=false;
   await withProcess([path.join(extracted,cliRelative),'--mode','rpc','--offline','--no-session','--no-tools','--no-extensions','--no-approve','-e',path.join(extracted,'extension/dist/approval-gate.mjs')],{cwd:path.join(root,'a'),env:{...env,PI_VSCODE_GATE_ID:'vsix-validation'},timeoutMs:20000},async({child,request})=>{
     const reader=createInterface({input:child.stdout});reader.on('line',line=>{const m=JSON.parse(line);if(m.type==='extension_ui_request'&&m.method==='notify'){try{const e=JSON.parse(m.message);handshake=e.protocol==='pi-vscode-approval'&&e.kind==='hello'&&e.runtime==='vsix-validation';}catch{}}});
     try{await request('get_state');assert.equal(handshake,true);}finally{reader.close();}
   });
 });
-console.log(`PASS VSIX: ${count} entries, pinned pi 0.86.1 CLI and production dependencies; extracted RPC readiness and gate handshake`);
+console.log(`PASS VSIX: ${count} entries, pinned pi 0.86.1 CLI and production dependencies; extracted RPC readiness and gate handshake; unpacked runtime imports resolved (${resolvedRuntimeImports.join(', ')||'none'})`);
