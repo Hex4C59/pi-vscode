@@ -55,6 +55,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-032 | Shared host credential rules across six entries; scoped technical acceptance | 2026-09-30 agent under final maintainer delegation; native sensitive interactions remain unverified | [record](2026-09-30-wi-032-macos-evaluation.md) |
 | WI-033 | Runtime-frame validation and captured-real-pi byte injection; non-JSON ignore rule retained | 2026-09-30 agent under final maintainer delegation; not live native malformed-frame injection | [record](2026-09-30-wi-033-macos-evaluation.md) |
 | WI-034 | Deterministic VSIX packaging, extracted RPC/gate and native macOS F5/isolated installed activation | 2026-09-30 agent under final maintainer delegation; not full REQ-009 or whole PRD acceptance | [record](2026-09-30-wi-034-macos-evaluation.md) |
+| WI-037 | Bounded thinking streaming and complete quoted credential-value redaction (RUNTIME-01/02) | 2026-09-30 agent under this explicit native-evidence-and-close delegation; assistant-body per-delta remains out of scope | [record](2026-09-30-wi-037-macos-acceptance.md) |
 
 ## Not in this index
 

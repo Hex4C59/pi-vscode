@@ -99,6 +99,8 @@ ID 非空且最多 100 字符。沿用精确自身字段校验、活动视图、
 - `grants`：最多 64 个 `{ id, scope }`。既有普通文件范围编码为 `[tool, canonicalPath]`；shell 为 `[tool, canonicalCwd, completeInput]`。精确匹配，不隐式授权目录／命令前缀。不存在／无法解析目标的 scope 为 null。查看／撤销影响后续调用，不撤销过去副作用。
 - `execution`：`idle`、`waiting`、`thinking`、`awaiting-approval`、`executing`、`replying`、`retrying`、`compacting`、`completed`、`stopped`、`stopping` 或 `failed`；这是展示状态，不是沙箱证据。`controlledExecution` 表示所选配置，不证明运行时就绪或 gate 已关闭。
 
+**凭据展示修复（WI-037）：** 共用展示脱敏隐藏完整引号值，包含空白／转义引号；未闭合值隐藏其剩余文本。有效 JSON 使用解析器确认结构，只替换凭据值，不重写无关原文。Thinking 原始上下文与 `ActivityItem.text` 分离，每个已准入条目最多 16,384 个 UTF-16 单元，最多 63 个准入条目。即使脱敏缩短了显示文本，原始预算耗尽后也省略后续 delta 并设置 `truncated`；脱敏后仍应用既有展示上限。完成、最终消息、新消息与 reset 释放原始缓冲；overflow 省略条目不分配缓冲。最终内容可校正投影，但迟到 thinking 更新不能覆盖 `message_end`。原始缓冲不进入 Webview。助手正文逐 delta 流式及尽力识别限制不变。批准切片于 2026-09-30 按实机取证并完结委托接受；见 [WI-037 记录](../archive/2026-09-30-wi-037-macos-acceptance.zh.md)。
+
 `toolApproval.ts` 仅自动允许 canonical 路径位于工作区内的普通文件 `read`。搜索／列目录、编辑／写入、shell、外部路径仍询问；未知工具失败关闭。Windows 歧义路径不自动授权；realpath 检查覆盖符号链接／junction 越界，但不能消除检查与使用之间的竞态。同一运行会话的授权跨视图重建、普通 settled 与成功 Stop 保留；工作区／资格变化、运行时替换／断开、provider 释放取消请求并清空授权。
 
 宿主在 `abortTask` 前取消待审批；adapter 取消未完成的对话等待，以有界超时先 `clear_queue` 后 `abort`。成功要求settled；失败或未证实结算时拒绝继续准入，撤销transport／answer权限并按ADR0002保留确切child观察，不自动kill未知工作。宿主在取消完成前保持 `stopping`，之后才应用待选设置。运行时丢失将未完成活动标为 interrupted，不自动重放任务。Stop 不撤销副作用，也不保证所有后代进程取消。

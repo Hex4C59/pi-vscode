@@ -63,6 +63,7 @@ Gate/pending wording below retains each record's historical scope; final current
 | [WI-032 delegated acceptance](2026-09-30-wi-032-macos-evaluation.md) | Six-entry rules, 139 focused tests and macOS smoke; closed under final delegation, native sensitive interactions unverified |
 | [WI-033 delegated acceptance](2026-09-30-wi-033-macos-evaluation.md) | Captured real pi bytes through production reader/runtime; closed under final delegation, non-JSON ignore and native fault-path limits retained |
 | [WI-034 delegated acceptance](2026-09-30-wi-034-macos-evaluation.md) | Packaging, real extracted RPC/gate, native F5 and isolated installed rendering; scoped close, not full product acceptance |
+| [WI-037 delegated acceptance](2026-09-30-wi-037-macos-acceptance.md) | Bounded thinking streaming and complete quoted credential redaction; actual macOS F5/isolated installed SSE evidence |
 | [WI-034 approved proposal](2026-09-30-wi-034-approved-proposal.md) | Original single-language ACTIVE proposal retained after close; no new Build authorization |
 | [Frontend investigation and candidate proposals](2026-09-22-webview-framework.md) | Archived after WI-015/019 and ADR 0003 acceptance; retains interview, sources and candidate slices |
 
