@@ -3,13 +3,13 @@
 English | [中文](0007-endpoint-write-transaction.zh.md)
 
 - Type: ADR
-- Status: Draft
+- Status: Accepted
 - Created: 2026-09-30
-- Decision approval: maintainer confirmed entry into WI-038 Build in this session, approving the complete ACTIVE proposal including external-write limits and conservative stale-lock recovery.
-- Verification: implementation, compile/lint and 990 tests passed (63 new cases), including independent-process failure/cleanup, native FIFO rejection, the host call-chain result gate and initialization-failure projection. A fresh VSIX (149,815,375 bytes, 15,535 entries, pi 0.86.1) passed extraction/RPC/gate verification. macOS development F5 and, after WI-039 fixed the pre-existing packaging defect that omitted `@earendil-works/pi-ai` from the VSIX (ACTIVE parking PACKAGE-01), the isolated installed VSIX both showed real two-window contention errors and post-release serial commits that retained every committed entry. Final WI acceptance is not delegated and this ADR stays Draft.
+- Decision approval: maintainer confirmed entry into WI-038 Build, approving the complete ACTIVE proposal including external-write limits and conservative stale-lock recovery
+- Verification: 2026-09-30, agent acceptance under this session's complete-ACTIVE wrap-up-and-commit request; implementation `d485cc4`, compile/lint and 993 tests (63 new WI-038 cases plus later packaging regressions), independent-process failure/cleanup, native FIFO rejection, host call-chain result gate, and macOS development plus isolated installed two-window contention/serial-commit evidence after WI-039 unblocked provider loading; [layered evidence and limits](../archive/2026-09-30-wi-038-macos-acceptance.md)
 - Gates: no new gate; existing `gate-webview-trust` remains Accepted within ADR 0004.
-- Work item: WI-038 / ARCH-05 / REQ-002
-- Related: [ADR 0005](0005-custom-endpoint-file.md), [contract](../reference/webview-messages.md#endpoint-write-transaction-wi-038-approved-build-contract), [ACTIVE](../../ACTIVE.md)
+- Work item: WI-038 accepted and closed within the approved ARCH-05 / REQ-002 scope
+- Related: [ADR 0005](0005-custom-endpoint-file.md), [contract](../reference/webview-messages.md#endpoint-write-transaction-wi-038-accepted-contract), [acceptance](../archive/2026-09-30-wi-038-macos-acceptance.md)
 
 ## Context
 
@@ -31,4 +31,4 @@ A process-local mutex cannot protect separate VS Code hosts. Re-reading alone ca
 
 A crashed writer or failed release can require manual recovery. External manual edits should happen while extension writers are closed. File replacement does not promise crash-durable directory fsync or protection against hostile lock manipulation. Output-size budgeting (ARCH-06), provider credential storage, pi version, session files, runtime lifecycle and ADR 0005 acceptance remain outside WI-038.
 
-Acceptance requires deterministic same-process and independent-process add/add, add/remove and remove/remove coverage; explicit contention/conflict and cleanup outcomes; failure side-effect suppression; path identity and leftover-lock tests; compile/lint/full tests/docs checks; and separately recorded macOS development/isolated installed host verification. Approval establishes the decision, not those unrun results. Keep this ADR Draft until verification and explicit acceptance are recorded.
+Acceptance requires deterministic same-process and independent-process add/add, add/remove and remove/remove coverage; explicit contention/conflict and cleanup outcomes; failure side-effect suppression; path identity and leftover-lock tests; compile/lint/full tests/docs checks; and separately recorded macOS development/isolated installed host verification. Those conditions are recorded in the [acceptance archive](../archive/2026-09-30-wi-038-macos-acceptance.md). This ADR does not accept ADR 0005 or close a gate.

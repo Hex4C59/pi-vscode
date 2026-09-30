@@ -7,13 +7,13 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-09-30
 - 类型：ADR
-- 状态：Draft
+- 状态：Accepted
 - 创建：2026-09-30
-- 决定批准：维护者本次会话确认 WI-038 进入 Build，批准 ACTIVE 完整提案，包括外部写入限制与遗留锁保守恢复。
-- 验证：实施、compile／lint 与 990 项测试已通过（新增 63 项），包括独立进程故障／清理、原生 FIFO 拒绝、宿主调用链结果门与初始化失败投影。全新 VSIX（149,815,375 字节、15,535 条目，pi 0.86.1）解包／RPC／gate 验证通过。macOS 开发宿主 F5 与（WI-039 修复既有组包缺陷、即 VSIX 缺 `@earendil-works/pi-ai`，见 ACTIVE 停车场 PACKAGE-01 之后）隔离安装版都取得两窗口真实占用错误与释放后串行提交并保留全部已提交条目的证据。最终 WI 接受未委托，本 ADR 保持 Draft。
+- 决定批准：维护者确认 WI-038 进入 Build，批准 ACTIVE 完整提案，包括外部写入限制与遗留锁保守恢复
+- 验证：2026-09-30，代理依据本会话完成 ACTIVE 收尾并提交的要求接受；实现 `d485cc4`，compile／lint 与 993 项测试（WI-038 新增 63 项及后续组包回归），独立进程故障／清理、原生 FIFO 拒绝、宿主调用链结果门，以及 WI-039 解除供应商加载阻断后的 macOS 开发宿主与隔离安装版双窗口争用／串行提交证据；[分层证据与限制](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)
 - Gate：无新增；既有 `gate-webview-trust` 保持 ADR 0004 限定范围内的 Accepted。
-- 工作项：WI-038／ARCH-05／REQ-002
-- 相关：[ADR 0005](0005-custom-endpoint-file.zh.md)、[契约](../reference/webview-messages.zh.md#endpoint-写入事务wi-038已批准-build-契约)、[ACTIVE](../../ACTIVE.md)
+- 工作项：WI-038 已在批准的 ARCH-05／REQ-002 范围内接受并关闭
+- 相关：[ADR 0005](0005-custom-endpoint-file.zh.md)、[契约](../reference/webview-messages.zh.md#endpoint-写入事务wi-038已接受契约)、[验收](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)
 
 ## 背景
 
@@ -35,4 +35,4 @@
 
 崩溃 writer 或释放失败可能需要手工恢复；外部手工编辑应在扩展 writer 关闭时进行。替换不承诺目录 fsync 崩溃耐久性，也不防止恶意操纵锁。输出大小预算（ARCH-06）、供应商凭据存储、pi 版本、会话文件、运行时生命周期与 ADR 0005 接受均不在 WI-038 范围。
 
-接受要求确定性的同进程及独立进程 add/add、add/remove、remove/remove；明确争用／冲突与清理结果；故障后续动作抑制；路径身份与遗留锁测试；compile／lint／完整测试／文档检查；以及分开记录的 macOS 开发／隔离安装宿主验证。批准确立决定，不代表尚未执行的检查结果；验证和明确接受记录齐备前，本 ADR 保持 Draft。
+接受要求确定性的同进程及独立进程 add/add、add/remove、remove/remove；明确争用／冲突与清理结果；故障后续动作抑制；路径身份与遗留锁测试；compile／lint／完整测试／文档检查；以及分开记录的 macOS 开发／隔离安装宿主验证。这些条件见[验收归档](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)。本 ADR 不接受 ADR 0005，也不关闭 gate。

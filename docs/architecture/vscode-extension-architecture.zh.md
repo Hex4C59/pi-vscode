@@ -184,7 +184,7 @@ Webview 仅展示已应用／待应用状态并发送允许列表意图；adapte
 
 宿主 `customEndpoints.ts` 向公开文档定义的 pi `models.json` 写入有界无密钥条目，凭据仍经公开 login 保存。[Draft ADR 0005](../decisions/0005-custom-endpoint-file.zh.md) 记录该批准切片与剩余验证，不代表架构已接受或真实端点认证。精确供应商／默认 DTO 与失败语义归[消息契约](../reference/webview-messages.zh.md)。
 
-已批准 WI-038 中，`customEndpoints.ts` 拥有文档校验／合并，`endpointFileTransaction.ts` 拥有规范化路径身份、跨宿主互斥、替换与自有资源清理；`ProviderConfig` 只在干净提交后继续重载／登录／注销。[Draft ADR 0007](../decisions/0007-endpoint-write-transaction.zh.md) 记录立即拒绝争用、保守遗留锁与外部编辑尽力检测，验证与接受完成前保持 Draft；精确结果语义归消息契约。
+已接受 WI-038 中，`customEndpoints.ts` 拥有文档校验／合并，`endpointFileTransaction.ts` 拥有规范化路径身份、跨宿主互斥、替换与自有资源清理；`ProviderConfig` 只在干净提交后继续重载／登录／注销。[Accepted ADR 0007](../decisions/0007-endpoint-write-transaction.zh.md) 记录立即拒绝争用、保守遗留锁与外部编辑尽力检测。精确结果语义归消息契约。[验收与限制](../archive/2026-09-30-wi-038-macos-acceptance.zh.md)。
 
 ### 保存会话 helper（WI-017）
 

@@ -178,7 +178,7 @@ Scoped model and thinking acceptance, layered evidence and closure are recorded 
 
 The host's `customEndpoints.ts` writes bounded non-secret entries in the documented pi `models.json`; credentials still use public login. [Draft ADR 0005](../decisions/0005-custom-endpoint-file.md) records that approved slice and outstanding verification, not Accepted architecture or live endpoint certification. [The message contract](../reference/webview-messages.md) owns exact provider/default DTOs and failure semantics.
 
-For approved WI-038, `customEndpoints.ts` owns document validation/merge while `endpointFileTransaction.ts` owns canonical path identity, cross-host exclusion, replacement and owned-resource cleanup. `ProviderConfig` continues reload/login/logout only after a clean commit. [Draft ADR 0007](../decisions/0007-endpoint-write-transaction.md) records immediate contention refusal, conservative leftover locks and best-effort external-edit detection; it remains Draft pending verification and acceptance. Exact outcomes belong to the message contract.
+For accepted WI-038, `customEndpoints.ts` owns document validation/merge while `endpointFileTransaction.ts` owns canonical path identity, cross-host exclusion, replacement and owned-resource cleanup. `ProviderConfig` continues reload/login/logout only after a clean commit. [Accepted ADR 0007](../decisions/0007-endpoint-write-transaction.md) records immediate contention refusal, conservative leftover locks and best-effort external-edit detection. Exact outcomes belong to the message contract. [Acceptance and limits](../archive/2026-09-30-wi-038-macos-acceptance.md).
 
 ### Saved-session helper (WI-017)
 
