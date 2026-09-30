@@ -15,29 +15,29 @@
 
 | 字段 | 当前值 |
 |---|---|
-| **ID** | WI-048 |
-| **阶段** | 建造 — ARCH-02 补充 默认保存失败不修改实时模型 |
+| **ID** | WI-049 |
+| **阶段** | 建造 — ARCH-07 组包入口缺必需资产须失败 |
 | **Gate ID** | 无新增 |
 | **Decision** | none |
-| **PRD 判定** | 纯技术：后续实时模型动作只基于明确提交结果，不把失败保存的请求参数应用到会话 |
+| **PRD 判定** | 纯技术：交付入口在缺必需 helper／CSS 时失败，与解包运行验证及构建测试分开取证 |
 
 ### 目标与范围
 
-- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 ARCH-02 补充的实施授权。证据见下方架构质量待办 ARCH-02 补充项。
-- **目标／范围**：默认保存失败时不得把请求中的新模型交给实时会话。操作结果须区分已提交、失败、未执行；后续动作只根据明确提交结果。
-- **PRD**：纯技术。不合并默认应用顺序封装的原 ARCH-02，不接受 ADR 0005。
+- **阶段／批准**：Build，WIP=1。维护者本会话要求完成 ACTIVE 剩余任务并在每项后提交 Git，即本停车场 ARCH-07 的实施授权。证据见下方架构质量待办 ARCH-07 项。
+- **目标／范围**：`package:vsix` 收集与 CI 交付路径在缺少 runtime helper 或 Webview CSS 等必需资产时失败。保留独立 `verify-vsix` 解包运行验证与构建测试的证据区分。
+- **PRD**：纯技术。不合并原 ARCH-02 顺序封装，不接受 ADR 0005。
 
 ### 方案与架构核对
 
-所有者仍是宿主 `configureProvider` 与 `ProviderConfig.setDefaultModel` 的结果边界。Decision：none。无 gate。
+所有者仍是组包收集入口与仓库脚本／CI 串联。Decision：none。无 gate。
 
 ### 验收
 
-注入写入失败：默认投影保留旧模型并报告失败，实时 applyConfiguredModel 不得收到新模型。compile／lint／完整 `npm test`。
+隔离文件集合缺少三份 helper 与 CSS 时，交付入口失败。compile／lint／完整 `npm test`，含组包脚本规格。
 
 ### 范围外与批准边界
 
-- **范围外**：ARCH-02 顺序封装、ARCH-07、ADR 0005、gate／ADR、整份 PRD、推送。
+- **范围外**：原 ARCH-02 顺序封装、ADR 0005、gate／ADR、整份 PRD、推送、解包后真实启动 pi。
 
 ## 验收授权与平台决定
 
@@ -70,6 +70,7 @@
 | WI-046 | RUNTIME-03／04／05 诊断 helper 结算与成功证据 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-047 | ARCH-06 endpoint 写入输出预算 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 | WI-048 | ARCH-02 补充 默认保存失败不修改实时模型 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
+| WI-049 | ARCH-07 组包入口缺必需资产须失败 | 自动化 | 代理依据本会话完成 ACTIVE 任务并收尾提交的要求接受 |
 
 授权边界（与 2026-09-27 委托先例一致，且不继承其范围）：
 
@@ -80,14 +81,15 @@
 
 ## 当前焦点与未决项
 
-- [x] WI-047 代理受托接受并关闭：endpoint 写入输出须落入 1 MiB 读取预算；pretty-print 超限保留原文件且不登录。[记录](docs/archive/2026-09-30-wi-047-macos-acceptance.zh.md)。ARCH-02 补充为当前 WIP。
+- [x] WI-048 代理受托接受并关闭：默认保存失败保留旧投影；实时 applyConfiguredModel 收不到新模型。[记录](docs/archive/2026-09-30-wi-048-macos-acceptance.zh.md)。ARCH-07 为当前 WIP。
+- [x] WI-047 代理受托接受并关闭：endpoint 写入输出须落入 1 MiB 读取预算；pretty-print 超限保留原文件且不登录。[记录](docs/archive/2026-09-30-wi-047-macos-acceptance.zh.md)。ARCH-02 补充已关闭。
 - [x] WI-046 代理受托接受并关闭：诊断探针拥有 child／pipe 错误、boolean success 与观察退出；五项合成用例通过。[记录](docs/archive/2026-09-30-wi-046-macos-acceptance.zh.md)。ARCH-06 已关闭。
 - [x] WI-043 代理受托接受并关闭：窗口级模型弹层 Escape 忽略已消费事件；重叠添加上下文菜单 jsdom 用例通过。[记录](docs/archive/2026-09-30-wi-043-macos-acceptance.zh.md)。TOOL-01 已关闭。
 - [x] WI-042 代理受托接受并关闭：模型列表已应用 radio 使用稳定身份；同名标签与 canonical 碰撞挂载用例通过。[记录](docs/archive/2026-09-30-wi-042-macos-acceptance.zh.md)。UI-02 已关闭。
 - [x] WI-041 代理受托接受并关闭：inspect／history／preview 绑定请求身份与预览游标；五条合成反例与 list 错页对照自动化通过。[记录](docs/archive/2026-09-30-wi-041-macos-acceptance.zh.md)。UI-01 已关闭。
 - [x] WI-040 代理受托接受并关闭：并发预检查下最多八张待审批卡，写入点重检；九路延迟 custom-tool 预检查自动化通过。[记录](docs/archive/2026-09-30-wi-040-macos-acceptance.zh.md)。CORE-02 已关闭。
 - [x] WI-038 代理受托接受并关闭：跨宿主 `models.json` 写入互斥，ADR 0007 Accepted；开发／隔离安装双窗口争用与串行提交通过。[记录](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)。ARCH-06 仍停车场。
-- [x] WI-039 代理受托接受并关闭：安装版 VSIX 内联 pi-ai、组包拒绝未发布依赖、解包真实 import 红／绿通过；隔离安装版设置页加载供应商配置。[记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。ARCH-07 仍停车场。
+- [x] WI-039 代理受托接受并关闭：安装版 VSIX 内联 pi-ai、组包拒绝未发布依赖、解包真实 import 红／绿通过；隔离安装版设置页加载供应商配置。[记录](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。ARCH-07 现为 WI-049。
 - [x] WI-037 代理受托接受并关闭：thinking 有界上下文与完整引号凭据脱敏；macOS F5／隔离安装合成 SSE 逐帧通过。[记录](docs/archive/2026-09-30-wi-037-macos-acceptance.zh.md)。助手正文逐 delta 与 WI-036 未改。
 
 - [x] 本轮按维护者要求同步架构文档（仅文档，不改应用代码／提交 Git）：[主架构](docs/architecture/vscode-extension-architecture.zh.md)补清宿主供应商／默认 SDK、RPC agent 与 session-worker 三条路径及现有模块责任；WI-035 章节与[消息契约](docs/reference/webview-messages.zh.md#启动交接wi-035)、[ADR 索引](docs/decisions/README.zh.md)明确已批准 Build／验收待完成的过渡关系；入口与模型段落改链既有验收记录，保留已有 ADR 0006 取证文本与 Draft 状态。本轮 `npm run docs:verify`、`npm run docs:health`（0 错误、4 条既有 Draft ADR 提示；双语 0 错误）及 `git diff --check` 通过。未重跑 compile／lint／行为测试／F5／安装验证，不新增验收结论，不关闭 WI-035，不实施 WI-036。
@@ -118,13 +120,13 @@
 
 ## 最近交接
 
+### 2026-09-30 — WI-048 受托接受并关闭
+
+维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。默认保存失败不得把请求中的新模型应用到实时会话。本次关闭重跑 compile／lint／完整 **1012** 项测试。记录见[验收](docs/archive/2026-09-30-wi-048-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-049 ARCH-07。
+
 ### 2026-09-30 — WI-047 受托接受并关闭
 
 维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。endpoint 序列化输出在提交前受 1 MiB 读取预算约束。本次关闭重跑 compile／lint／完整 **1009** 项测试。记录见[验收](docs/archive/2026-09-30-wi-047-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-048 ARCH-02 补充。
-
-### 2026-09-30 — WI-046 受托接受并关闭
-
-维护者本会话要求完成 ACTIVE 剩余任务、写收尾并提交。诊断探针拥有 child／pipe 错误、boolean success 与观察退出。本次关闭重跑 compile／lint／完整 **1006** 项测试。记录见[验收](docs/archive/2026-09-30-wi-046-macos-acceptance.zh.md)。无 gate／ADR。不推送。下一 WI 为 WI-047 ARCH-06。
 
 ## 停车场
 
@@ -132,7 +134,7 @@
 
 ### WI-036 候选：Codex 型运行时生命周期与遗留执行清理
 
-- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044／WI-045／WI-046／WI-047 已接受关闭，当前唯一活动 WI 为 WI-048 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
+- **状态／批准**：停车场，待 Prepare；维护者在原讨论中要求改为 Codex 型机制并记录 WI，当时仅批准记录方向，不批准应用代码实施；WI-035／WI-037／WI-038／WI-039／WI-040／WI-041／WI-042／WI-043／WI-044／WI-045／WI-046／WI-047／WI-048 已接受关闭，当前唯一活动 WI 为 WI-049 Build；是否进入 WI-036 Prepare 须维护者另行决定，Build 未批准。
 - **目标／PRD 判定**：用户可见，追溯 REQ-005／REQ-006。从「宿主丢失后保留 pi，下一次启动再交接」转向「宿主正常退出或异常断开时，主动清理其自有 pi 与工具执行进程」，减少窗口关闭后仍继续执行的风险；正常重新打开不要求结束／恢复仪式。
 - **候选范围**：调查并设计宿主、supervisor、pi、工具进程之间的生命周期联动，覆盖正常释放、宿主崩溃、通信 EOF／断连、运行时替换和有界终止升级；只清理能证明属于本运行的进程，不终止其他窗口、终端或外部运行。先核验 pi 的公开能力与 macOS 进程树清理边界，不直接照搬 Codex 实现，也不以 pi 退出推断全部后代停止。
 - **Decision／Gate**：`pending-adr`，适用 gate 待 Prepare 核对。该方向涉及 ADR 0002 的 owner-loss／退出证据规则及 ADR 0006 的启动交接责任；实施前须明确替代关系并同步 PRD、架构与生命周期契约。当前 Accepted 约束在新决策接受前仍有效，不因停车场记录自动废止。
@@ -180,8 +182,8 @@
 
 - [x] **ARCH-05／P1：共享 endpoint 文件丢失并发更新（WI-038 已接受关闭）。** 完成标准见[验收](docs/archive/2026-09-30-wi-038-macos-acceptance.zh.md)；[ADR 0007](docs/decisions/0007-endpoint-write-transaction.zh.md) Accepted。ARCH-06 输出预算已由 WI-047 关闭。
 - [x] **ARCH-06／P2：endpoint 写入越过自身读取预算（WI-047 已关闭）。** 输出预算在提交前验证，超限保留原文件并报告 `too-large`；pretty-print 扩大同样约束。证据见[验收](docs/archive/2026-09-30-wi-047-macos-acceptance.zh.md)。
-- [ ] **ARCH-02 补充／P2：默认保存失败仍修改实时模型（WI-048 Build）。** [保存方法](src/extension/models/providerConfig.ts)失败后只更新 error 并返回 void；[宿主](src/extension/piChatViewProvider.ts)仍将请求参数交给实时模型同步。在内存中使用真实 ProviderConfig 方法和宿主 configure／sync 方法、替代 settings flush 与模型边界，注入写入失败：默认投影保留 old-model 并报告失败，但实时 applyConfiguredModel 收到 new-model。候选完成标准：操作接口区分已提交、失败、未执行及过期结果，后续动作只基于明确提交结果；这是新增故障证据，不仅是首轮的顺序封装建议。当前 WIP。
-- [ ] **ARCH-07／P2：组包入口未强制完整产物验证。** [collectPackageFiles](scripts/packaging/package-vsix.mjs#L265)仅要求宿主与 Webview JS；隔离文件集合缺少三份 helper 与 CSS 仍通过。独立 [verify-vsix](scripts/packaging/verify-vsix.mjs#L21)可发现 helper 缺失，资源验证器可查 CSS，但 [package:vsix](package.json#L108)与 [CI](.github/workflows/ci.yml#L21)未串联完整产物验证。不是已交付 VSIX 被证明损坏。候选完成标准：交付入口缺必需资产时失败，并保留实际解包运行验证与构建测试的证据区分。
+- [x] **ARCH-02 补充／P2：默认保存失败仍修改实时模型（WI-048 已关闭）。** 操作接口区分已提交、失败、未执行及过期；后续动作只基于明确提交结果。flush 失败保留旧投影且实时 apply 收不到新模型。证据见[验收](docs/archive/2026-09-30-wi-048-macos-acceptance.zh.md)。
+- [ ] **ARCH-07／P2：组包入口未强制完整产物验证（WI-049 Build）。** [collectPackageFiles](scripts/packaging/package-vsix.mjs#L265)仅要求宿主与 Webview JS；隔离文件集合缺少三份 helper 与 CSS 仍通过。独立 [verify-vsix](scripts/packaging/verify-vsix.mjs#L21)可发现 helper 缺失，资源验证器可查 CSS，但 [package:vsix](package.json#L108)与 [CI](.github/workflows/ci.yml#L21)未串联完整产物验证。不是已交付 VSIX 被证明损坏。候选完成标准：交付入口缺必需资产时失败，并保留实际解包运行验证与构建测试的证据区分。当前 WIP。
 - [ ] **ARCH-08／性能风险，未测量：流式展示与历史预览的重复工作。** [宿主](src/extension/piChatViewProvider.ts#L234)每个 delta 更新并发布全量 workspace，浏览器更新全局快照，[会话组件](src/webview/chat/candidate-conversation.tsx#L41)重新遍历消息，[Markdown](src/webview/chat/reply-markdown.tsx#L104)每次调用重新 lex 文本；[历史 worker](src/adapter/sessions/sessionWorker.ts#L112)每次预览重新定位、列出并校验所有 session，再 open 目标，[预览投影](src/adapter/sessions/session-history-projection.ts#L106)为 totalChars 遍历全文。有回复／响应预算不等于有处理成本预算；不声称已复现卡顿。候选下一步：确定代表性长对话／大量 session 负载，测量发布字节、解析次数及延迟后再决定是否优化；保留公共 SDK 与身份／anchor 校验，不自行解析 session 文件。
 
 - [x] **PACKAGE-01／P1（WI-039 已接受关闭）：隔离安装版 VSIX 缺少已声明依赖 `@earendil-works/pi-ai`。** 根因、红／绿解包 import 与隔离安装版 `provider-loaded: true` 见[验收](docs/archive/2026-09-30-wi-039-macos-acceptance.zh.md)。把验证串接进 `package:vsix`／CI 仍属 ARCH-07。
@@ -206,6 +208,7 @@
 
 | WI | 结果 | 完成／验收 | 历史 |
 |----|------|------------|------|
+| WI-048 | 默认保存失败不修改实时模型（ARCH-02 补充） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-048-macos-acceptance.zh.md) |
 | WI-047 | endpoint 写入输出预算（ARCH-06） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-047-macos-acceptance.zh.md) |
 | WI-046 | 诊断探针结算与成功证据（RUNTIME-03／04／05） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-046-macos-acceptance.zh.md) |
 | WI-045 | 缺失审阅路径正文与 tooltip 共用翻译（UI-03） | 2026-09-30 代理按本会话完成 ACTIVE 收尾并提交的要求接受；无 gate／ADR | [记录](docs/archive/2026-09-30-wi-045-macos-acceptance.zh.md) |
