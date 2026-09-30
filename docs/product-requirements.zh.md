@@ -176,6 +176,8 @@ WI-006 当时仅记录选择，不启动 pi；随后 WI-007 接入根据选择�
 
 维护者已确认空闲选择、基础 UI，以及 2026-09-21 19:44 的延后选择主路径：当前回复不变，结束后应用，下一条使用新配置。WI-008已于9月28日按委托限定接受，具有分层当前回归及实际宿主证据；WI-009 thinking已于9月28日独立按委托接受，见[验收及版本限制](archive/2026-09-28-wi-009-thinking-acceptance.zh.md)。失败readback竞态为确定性注入，不冒称实际provider故障。当前交接见 [`ACTIVE.md`](../ACTIVE.md)。
 
+**WI-042 Build 切片（维护者通过完成 ACTIVE 剩余任务授权，2026-09-30；REQ-002／UI-01）：** 模型选择器仅用稳定的供应商与模型 id 身份标记已应用项，不用显示标签。同名标签、以及标签与另一模型 canonical 组合碰撞时仍只选中一个 radio。这是展示唯一性，不宣称运行时收到了错误模型。不改协议。
+
 ### REQ-003 — 显式编辑器上下文
 
 允许附加工作区文本文件或代码选区，预览确切上下文并在发送前移除。整文件附件在发送时读取最新编辑器内容。选区在附加时固定快照，显示来源路径与原始范围；来源文档变化后，须重新附加或明确确认发送旧快照。不得将旧行号呈现为当前位置。发送后的历史附件保留实际发送时的内容。
@@ -275,7 +277,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 超长历史先展示最近一段，明确提示存在更早历史并允许向前分批加载；每批及渲染预算通过性能验证确定。有界或折叠的工具输出须说明省略，UI 历史窗口不定义模型上下文。公开会话 API 保留的历史附件原文应可查看并标为历史快照；信息不足则明确不可恢复，不能重读当前文件冒充原附件。不增加额外附件持久化保证。
 
-**WI-041 Build 切片（维护者通过完成 ACTIVE 剩余任务授权，2026-09-30；REQ-008／CORE-02）：** session-worker 的 inspect／history／preview 成功响应必须把返回的会话 id、历史页码与预览 offset 绑定到本次请求。非终态预览必须推进游标；结束标记不得与剩余字符矛盾。list 已对照返回页码，保留该对照。解析器反例不构成真实 worker 会发出这些帧、或已错误切换所选会话的产品结论。
+**WI-041 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-008／CORE-02）：** session-worker 的 inspect／history／preview 成功响应必须把返回的会话 id、历史页码与预览 offset 绑定到本次请求。非终态预览必须推进游标；结束标记不得与剩余字符矛盾。list 已对照返回页码，保留该对照。解析器反例不构成真实 worker 会发出这些帧、或已错误切换所选会话的产品结论。[验收与限制](archive/2026-09-30-wi-041-macos-acceptance.zh.md)。
 
 ### REQ-009 — 代表性 pi 兼容
 
@@ -374,7 +376,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
-| WI-041 | REQ-008 session-worker inspect／history／preview 请求关联与预览游标不变量（CORE-02） | 维护者通过本会话完成 ACTIVE 剩余任务授权。Build 见 [ACTIVE](../ACTIVE.md)。 |
+| WI-041 | REQ-008 session-worker inspect／history／preview 请求关联与预览游标不变量（CORE-02） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解析器反例证据与限制](archive/2026-09-30-wi-041-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
+| WI-042 | REQ-002 模型选择器已应用状态使用稳定的供应商／模型 id 身份，不用显示标签（UI-01） | 维护者通过本会话完成 ACTIVE 剩余任务授权。Build 见 [ACTIVE](../ACTIVE.md)。 |
 | WI-039 | REQ-009 交付 VSIX 必须包含自身 bundle 会加载的运行时依赖闭包（安装版供应商配置属 REQ-002） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[解包 import 验证、隔离安装版供应商配置加载与限制](archive/2026-09-30-wi-039-macos-acceptance.zh.md)。不新增 gate、ADR 或整份 PRD 接受。 |
 | 剩余范围 | 未由单项已接受 WI 覆盖的 Draft 需求 | 完整产品目标及未分配切片仍未接受；WI-010／Goal 限定收尾见[归档](archive/2026-09-28-wi-010-goal-closure.zh.md)。2026-09-27 委托只覆盖明确记录且有证据的范围，不接受整份 PRD。 |
 

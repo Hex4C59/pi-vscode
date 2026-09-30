@@ -63,6 +63,7 @@
 | WI-039 | 交付 VSIX 包含自身 bundle 会加载的运行时依赖闭包（PACKAGE-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；ARCH-07 仍停车场 | [记录](2026-09-30-wi-039-macos-acceptance.zh.md) |
 | WI-038 | 跨宿主 endpoint 写入互斥及明确冲突／清理结果（ARCH-05）；ADR 0007 Accepted | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；ADR 0005 与输出预算仍范围外 | [记录](2026-09-30-wi-038-macos-acceptance.zh.md) |
 | WI-040 | 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-040-macos-acceptance.zh.md) |
+| WI-041 | session-worker inspect／history／preview 请求关联与预览游标不变量（CORE-02） | 2026-09-30 代理依据本会话完成 ACTIVE 收尾并提交的要求接受；无 gate 或 ADR | [记录](2026-09-30-wi-041-macos-acceptance.zh.md) |
 
 ## 不在本索引
 

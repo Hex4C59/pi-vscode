@@ -72,9 +72,11 @@
 | [WI-039 代理受托接受](2026-09-30-wi-039-macos-acceptance.zh.md) | 安装版 VSIX 运行时依赖闭包（PACKAGE-01）；解包 import 验证与隔离安装版供应商配置加载 |
 | [WI-038 代理受托接受](2026-09-30-wi-038-macos-acceptance.zh.md) | 跨宿主 endpoint 写入互斥；双窗口争用／串行提交证据；ADR 0007 Accepted |
 | [WI-040 代理受托接受](2026-09-30-wi-040-macos-acceptance.zh.md) | 并发预检查下八张审批卡准入（CORE-01）；写入点重检 |
+| [WI-041 代理受托接受](2026-09-30-wi-041-macos-acceptance.zh.md) | session-worker 请求关联与预览游标不变量（CORE-02） |
 | [WI-038 批准提案](2026-09-30-wi-038-approved-proposal.zh.md) | 完整批准并发范围；历史，不是新的 Build 授权 |
 | [WI-039 批准提案](2026-09-30-wi-039-approved-proposal.zh.md) | 完整批准组包范围；历史，不是新的 Build 授权 |
 | [WI-040 批准提案](2026-09-30-wi-040-approved-proposal.zh.md) | 完整批准八张卡准入范围；历史，不是新的 Build 授权 |
+| [WI-041 批准提案](2026-09-30-wi-041-approved-proposal.zh.md) | 完整批准解析器关联范围；历史，不是新的 Build 授权 |
 | [WI-035 批准提案](2026-09-30-wi-035-approved-proposal.zh.md) | 完整批准范围与验收；历史，不是新的 Build 授权 |
 | [WI-034 批准提案](2026-09-30-wi-034-approved-proposal.md) | 关闭后原样保留的 ACTIVE 单语提案；不是新建造授权 |
 | [前端调查与候选提案](2026-09-22-webview-framework.zh.md) | WI-015／019及ADR0003接受后归档；保留访谈、来源与候选切片 |

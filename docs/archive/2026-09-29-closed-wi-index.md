@@ -60,6 +60,7 @@ Open the linked record for scope, evidence and limits. Do not implement from thi
 | WI-039 | Delivered VSIX ships the runtime dependency closure its bundles load (PACKAGE-01) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; ARCH-07 remains parked | [record](2026-09-30-wi-039-macos-acceptance.md) |
 | WI-038 | Cross-host endpoint write exclusion and explicit conflict/cleanup outcomes (ARCH-05); ADR 0007 Accepted | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; ADR 0005 and output budget remain outside | [record](2026-09-30-wi-038-macos-acceptance.md) |
 | WI-040 | At most eight in-flight approval cards under concurrent preflight (CORE-01) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-040-macos-acceptance.md) |
+| WI-041 | Session-worker inspect/history/preview request affinity and preview cursor invariants (CORE-02) | 2026-09-30 agent under this session's complete-ACTIVE wrap-up-and-commit request; no gate or ADR | [record](2026-09-30-wi-041-macos-acceptance.md) |
 
 ## Not in this index
 
