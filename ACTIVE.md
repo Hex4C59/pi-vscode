@@ -11,13 +11,37 @@
 | 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证。 |
 | 收尾 | 记录验收身份、检查结果与未决项；按规则归档并清理资源。 |
 
-## 当前无活动 WI（WIP=0）
+## 正在做（WIP=1）
 
-WI-060（宿主清单存储）已关闭。维护者 `/goal` 要求串行做完本入口全部任务。下一项是清单切片 3（设置空列表＋从磁盘添加），晋升为 WI-061 前须写入可审查提案。
+从清单移除。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
+
+| 字段 | 内容 |
+|---|---|
+| **ID** | WI-062 |
+| **阶段** | 建造 |
+| **Gate ID** | none |
+| **Decision** | Draft ADR 0010 |
+| **PRD 判定** | 用户可见：REQ-010 切片 4，从清单移除 |
+
+### 目标与范围
+
+Settings **Plugins** 每项可移除。宿主从 `plugin-inventory-v1.json` 删掉该条目。可见披露磁盘文件仍在。不删除扩展文件、不卸载 pi 全局包、不改写活 runtime、不打开加载确认。
+
+### 方案与架构核对
+
+投影增加不透明 `id`（由绝对路径派生，不是路径本身）。`removePluginInventoryEntry` 携带 `{id}`。宿主映射后 `replacePluginInventory`。未知 id 报错且不改写。损坏／过大仍 `existing-unusable`。Webview 不接收路径。
+
+### 验收
+
+有一项时移除后列表空且文件少一条；磁盘文件仍在；未知 id 不改写；busy／existing-unusable 禁用移除。`compile`／`lint`／`npm test`。预览核对移除与磁盘仍在的披露。不要求原生 F5。
+
+### 范围外与批准边界
+
+启用开关、runtime `-e`、作曲区收拢、下载／市场、ADR 0010 Accepted。批准：维护者 `/goal` 完成 ACTIVE 全部任务。
 
 ## 当前焦点与未决项
 
-插件清单从设置「插件」分类继续。模型芯片、选择器互斥、REQ-001／002、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
+正在做清单切片 4。模型芯片、选择器互斥、REQ-001／002、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
 
 [PRD](docs/product-requirements.zh.md) 自用 macOS Accepted 仍有：REQ-001 拒绝资源后无持续提示；REQ-002 跨供应商同名标不清；REQ-009 macOS 五类完整矩阵证据仍缺。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -27,8 +51,6 @@ WI-060（宿主清单存储）已关闭。维护者 `/goal` 要求串行做完�
 
 | 顺序 | 切片 | 范围内 | 依赖 |
 |------:|------|--------|------|
-| 3 | 设置「插件」：空列表＋从磁盘添加 | 原生选择器写入清单；空／重复／无效路径 | WI-060 |
-| 4 | 从清单移除 | 删清单项；披露磁盘仍在 | 3 |
 | 5 | 启用／关闭 | 持久化标志；活 runtime 须空闲重建后才变 | 3 |
 | 6 | 已启用项接到 runtime | 空闲受信启动／切换经公开 API 加载；覆盖警告；失败恢复不变 | 1 与 5 |
 | 7 | 消息编辑区入口收拢 | 权限区只留状态／恢复；管理在设置 | 6 |
@@ -47,14 +69,14 @@ WI-060（宿主清单存储）已关闭。维护者 `/goal` 要求串行做完�
 
 ## 最近交接
 
-### 2026-10-01 — WI-060 关闭（宿主清单存储）
+### 2026-10-01 — WI-062 晋升（从清单移除）
 
-`plugin-inventory-v1.json` 在 `globalStorageUri`：路径＋enabled。缺失为空；损坏／过大不改写。无设置 UI、无 Webview、无 `-e`。`compile`／`lint`／`npm test` 1033 通过。ADR 0010 仍 Draft。下一项切片 3。
+维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-061 已关闭。本切片只做移除清单项并披露磁盘仍在。
 
-### 2026-10-01 — WI-059 关闭（清单产品边界）
+### 2026-10-01 — WI-061 关闭（设置插件空列表＋添加）
 
-REQ-010 与 Draft ADR 0010：清单≠当场加载；启用＝下一次空闲受信资格；受控忽略清单；原生加载确认保留。仅文档。
+Settings **Plugins** 空列表与从磁盘添加。投影仅 basename。添加不加载、不确认。ADR 0010 仍 Draft。见[验收](docs/archive/2026-10-01-wi-061-acceptance.zh.md)。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-060。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-061。

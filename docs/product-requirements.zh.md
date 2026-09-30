@@ -402,6 +402,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-059 | REQ-010 本机插件清单产品边界（仅文档） | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-059-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-059-acceptance.zh.md)。[Draft ADR 0010](decisions/0010-local-plugin-inventory.zh.md) 未 Accepted。无存储、设置 UI 或运行时加载。 |
 | WI-060 | REQ-010 宿主清单存储 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-060-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-060-acceptance.zh.md)。无设置 UI 或运行时加载。ADR 0010 仍为 Draft。 |
 | WI-061 | REQ-010 设置「插件」空列表与从磁盘添加 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-061-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-061-acceptance.zh.md)。无移除、启用 UI 或运行时加载。ADR 0010 仍为 Draft。 |
+| WI-062 | REQ-010 从插件清单移除 | 依据完成 ACTIVE 的 `/goal` 进行中。删清单项并披露磁盘文件仍在。无启用 UI 或运行时加载。ADR 0010 仍为 Draft。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
 | WI-040 | REQ-006 并发预检查下待审批卡最多八张（CORE-01） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[并发预检查自动化证据与限制](archive/2026-09-30-wi-040-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
@@ -423,7 +424,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | REQ-007 | 对可识别受控写入保护脏编辑器，诚实审阅已应用 diff | WI-016限定委托接受；[证据](archive/2026-09-28-wi-016-review-acceptance.zh.md)。WI-032 共用审阅正文不可用于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
 | REQ-008 | 列出当前项目已保存会话，主动恢复、顺序交接及重新授权 | WI-017限定委托接受；[证据](archive/2026-09-28-wi-017-session-acceptance.zh.md) |
 | REQ-009 | 自用已安装VSIX的五类成功／失败与代表性真实扩展 | 平台为 macOS 本机 VS Code（2026-09-30 维护者确认，Windows 已移出验收范围）。[WI-010组合验收](archive/2026-09-28-wi-010-goal-closure.zh.md)在已接受各WI基础上核对五类与实际资源调用、核心闭环及故障恢复；原批准代表范围已按委托接受，不声称全生态／Cursor／其他平台。WI-032 共用对话框与反馈拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
-| REQ-010 | 设置里的本机 pi 扩展路径清单；启用表示下一次空闲受信应用；不是当场加载 | WI-059 接受产品边界。WI-060 接受宿主文件存储。WI-061 接受设置「插件」空列表与从磁盘添加。移除／启用、运行时应用与消息编辑区收拢仍属后续切片。[Draft ADR 0010](decisions/0010-local-plugin-inventory.zh.md)。 |
+| REQ-010 | 设置里的本机 pi 扩展路径清单；启用表示下一次空闲受信应用；不是当场加载 | WI-059 接受产品边界。WI-060 接受宿主文件存储。WI-061 接受设置「插件」空列表与从磁盘添加。WI-062 是从清单移除切片。启用、运行时应用与消息编辑区收拢仍属后续切片。[Draft ADR 0010](decisions/0010-local-plugin-inventory.zh.md)。 |
 
 ## 非目标与延期能力
 
