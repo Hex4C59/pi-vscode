@@ -13,35 +13,35 @@
 
 ## 正在做（WIP=1）
 
-从清单移除。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
+清单启用／关闭。维护者 `/goal` 完成 ACTIVE.md 全部任务并授权本 Build。
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-062 |
+| **ID** | WI-063 |
 | **阶段** | 建造 |
 | **Gate ID** | none |
 | **Decision** | Draft ADR 0010 |
-| **PRD 判定** | 用户可见：REQ-010 切片 4，从清单移除 |
+| **PRD 判定** | 用户可见：REQ-010 切片 5，启用／关闭 |
 
 ### 目标与范围
 
-Settings **Plugins** 每项可移除。宿主从 `plugin-inventory-v1.json` 删掉该条目。可见披露磁盘文件仍在。不删除扩展文件、不卸载 pi 全局包、不改写活 runtime、不打开加载确认。
+Settings **Plugins** 每项可开关 `enabled`。写入 `plugin-inventory-v1.json`。可见披露：启用表示下一次空闲受信应用；活 runtime 不变直到空闲重建／切换。不加载、不打开加载确认、不改写活 runtime。
 
 ### 方案与架构核对
 
-投影增加不透明 `id`（由绝对路径派生，不是路径本身）。`removePluginInventoryEntry` 携带 `{id}`。宿主映射后 `replacePluginInventory`。未知 id 报错且不改写。损坏／过大仍 `existing-unusable`。Webview 不接收路径。
+投影增加 `enabled: boolean`。`setPluginInventoryEnabled` 携带 `{id, enabled}`。宿主按不透明 id 改写标志。未知 id 报错且不改写。损坏／过大仍 `existing-unusable`。Webview 不接收路径。
 
 ### 验收
 
-有一项时移除后列表空且文件少一条；磁盘文件仍在；未知 id 不改写；busy／existing-unusable 禁用移除。`compile`／`lint`／`npm test`。预览核对移除与磁盘仍在的披露。不要求原生 F5。
+开关后文件标志变化且列表反映；活 runtime／执行配置不变；未知 id 不改写；busy／existing-unusable 禁用。`compile`／`lint`／`npm test`。预览核对开关与披露。不要求原生 F5。
 
 ### 范围外与批准边界
 
-启用开关、runtime `-e`、作曲区收拢、下载／市场、ADR 0010 Accepted。批准：维护者 `/goal` 完成 ACTIVE 全部任务。
+runtime `-e`、作曲区收拢、下载／市场、ADR 0010 Accepted。批准：维护者 `/goal` 完成 ACTIVE 全部任务。docs 目录整理仍停放、不自动启动。
 
 ## 当前焦点与未决项
 
-正在做清单切片 4。模型芯片、选择器互斥、REQ-001／002、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
+正在做清单切片 5。模型芯片、选择器互斥、REQ-001／002、REQ-009 macOS 五类证据、Webview 与 Runtime 目录整理、docs 目录检索仍在停车场。下载／市场仍排除。界面名词见[说明](docs/reference/plugin-parts.zh.md)。
 
 [PRD](docs/product-requirements.zh.md) 自用 macOS Accepted 仍有：REQ-001 拒绝资源后无持续提示；REQ-002 跨供应商同名标不清；REQ-009 macOS 五类完整矩阵证据仍缺。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -51,7 +51,6 @@ Settings **Plugins** 每项可移除。宿主从 `plugin-inventory-v1.json` 删�
 
 | 顺序 | 切片 | 范围内 | 依赖 |
 |------:|------|--------|------|
-| 5 | 启用／关闭 | 持久化标志；活 runtime 须空闲重建后才变 | 3 |
 | 6 | 已启用项接到 runtime | 空闲受信启动／切换经公开 API 加载；覆盖警告；失败恢复不变 | 1 与 5 |
 | 7 | 消息编辑区入口收拢 | 权限区只留状态／恢复；管理在设置 | 6 |
 
@@ -65,18 +64,30 @@ Settings **Plugins** 每项可移除。宿主从 `plugin-inventory-v1.json` 删�
 
 见 [Webview README](src/webview/README.zh.md)。尚未批准独立 Build。
 
+### docs 目录检索与归属整理（文档维护，待晋升）
+
+2026-10-01 维护者要求把目录评估中的问题记录为后续任务。**仅授权记录；不改变当前 WI、既有队列顺序或 WIP=1，不沿用已有 `/goal` 批准自动启动本组 Build。** 晋升时按 Prepare→Build 确认具体范围。保留 architecture／decisions／guides／reference／discussions／archive 大分类。
+
+| ID／优先级 | 问题与范围 | 完成标准 |
+|---|---|---|
+| DOC-NAV-01／优先 | archive 平铺记录多，方案、验收与旧交接混在一起，按 WI 检索成本高。优先整理 [归档索引](docs/archive/README.md)与[关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.md)的导航；不先批量移动文件。 | 可按 WI 找到已有方案、验收及相关历史记录；按记录类别找到非 WI 历史；缺失材料明确标注，不补造证据。保留历史状态、替代关系及当前权威文档入口，两个索引分工明确、不复制完整记录。 |
+| DOC-NAV-02／其次 | discussions 同时容纳产品讨论、架构评估、技术调研与代码审计，索引区分不足。整理 [讨论索引](docs/discussions/README.md)，按主题／用途分组，允许交叉链接，不新增目录作为默认方案。 | 现有讨论均可从索引定位；分组可区分产品／UI、架构、调研及审计证据；保留“背景而非实现授权”的边界，不因记录已过期或篇幅长就归档，不隐藏未决问题。 |
+| DOC-ORG-03／低，可不迁移 | docs 根目录的 [Git 提交约定](docs/git-commit-convention.md)与[双语文档指南](docs/bilingual-documentation.md)属于指南，与 guides 的归属略不一致。先评估移动收益及全部引用／校验配置影响，再提出保留或迁移方案。 | 记录保留或迁移的理由。若确认迁移，中英文成对移动，修复入站／相对链接、导航与必要校验配置，规则内容与权威性不变；若收益不足，明确保留并结束评估，不为一致性强制改路径。 |
+
+**共同验收与边界：** 仅文档组织／检索，不改产品行为、批准状态、ADR 状态或历史事实，不删除历史，不为单份架构文档增设无必要层级。涉及双语索引或迁移时同步对应语言；完成后运行 `npm run docs:verify` 与 `npm run docs:health`，报告错误、警告与未验证项。Draft ADR 0010 的状态／索引警告不是本组目录缺陷，不以改成 Accepted 来消除。本次记录未执行上述整理。
+
 下列仍为 standing non-goals：额外扩展生态（上表本机清单除外）、编辑区 Chat Participant、remote／multi-root、额外平台、跳过审批、公开发布。
 
 ## 最近交接
 
-### 2026-10-01 — WI-062 晋升（从清单移除）
+### 2026-10-01 — WI-063 晋升（启用／关闭）
 
-维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-061 已关闭。本切片只做移除清单项并披露磁盘仍在。
+维护者 `/goal` 串行完成 ACTIVE 全部任务。WI-062 已关闭。本切片只持久化 enabled 标志并披露活 runtime 不变。
 
-### 2026-10-01 — WI-061 关闭（设置插件空列表＋添加）
+### 2026-10-01 — WI-062 关闭（从清单移除）
 
-Settings **Plugins** 空列表与从磁盘添加。投影仅 basename。添加不加载、不确认。ADR 0010 仍 Draft。见[验收](docs/archive/2026-10-01-wi-061-acceptance.zh.md)。
+不透明 `id` 删除清单项；磁盘文件仍在。ADR 0010 仍 Draft。见[验收](docs/archive/2026-10-01-wi-062-acceptance.zh.md)。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-061。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-062。
