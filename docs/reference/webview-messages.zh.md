@@ -44,6 +44,8 @@
 
 **本地 host delivery 保留（局部，未接线）：** `QueuedTextDelivery` 接受未来 draft coordinator 提交的 session-scoped 纯文字，在一次性 callback／write 前同步预留本地记录与 UTF-8 bytes；pending、ACKed、rejected／unknown 本地文字共用 32 条／256 KiB，ACK 不释放记录。容量拒绝不提交 draft callback、不 write／驱逐；可识别凭据复用既有共享 detector，leading slash、invalid／空白／超长文字或 mode 在保留前拒绝。Adapter 在 callback 前拒绝只释放未提交预留；callback 后 `not-sent` 仍保留原文，因为草稿可能已提交。Host-only snapshot 不是 wire DTO。Host→真实 adapter 配注入内存 JSONL composition 在 `dist/wi077-host-delivery/` 生成安全报告。Provider／DraftSubmission 接线、外部队列／clear 预留、归属、显式 recovery use／discard 和 commit 后 session-handoff 清理仍缺失；该保守本地保留不是完整 ledger 或产品验收。
 
+**Host ledger 容量与归属（局部，未接线）：** `QueuedTextLedger` 拥有本地保留（经 `QueuedTextDelivery`）、上游 `queue_updated` 待处理投影与 clear 恢复共用的内存额度。clear 预留相对已保留本地／恢复文字同步加算；容量拒绝不改记录，也不 clear、write 或驱逐。两队列同时出现相同文字，或一次消费对应多条本地匹配时，本地归属标 unknown 并保留重复数量。未匹配的上游待处理文字标 external，不声称由 UI 发送。凭据类 clear 输出仅宿主保留为不可复用（`unavailable`），恢复投影省略原文；普通 clear 文字仍可复用。Composition 报告在 `dist/wi077-host-ledger/`。DraftSubmission 准入、provider Stop／recall 接线、use／discard 恢复意图、view／generation／session 交接与生产 UI 仍缺失。
+
 **证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）
