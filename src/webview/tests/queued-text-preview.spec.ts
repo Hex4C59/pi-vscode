@@ -36,9 +36,18 @@ test("streaming preview admits Steer into pending and Stop recalls into recovery
   assert.match(h.root.textContent ?? "", /Recalled text|brought back|steer from preview/);
   assert.match(h.root.textContent ?? "", /Use in draft|Discard/);
 
+  const use = [...h.root.querySelectorAll("button")].find(button => button.textContent === "Use in draft");
+  assert.ok(use);
+  await act(async () => { use.click(); });
+  await h.advance(0);
+  const composer = h.root.querySelector("textarea");
+  assert.ok(composer);
+  assert.equal(composer.value, "steer from preview", "Use in draft must restore recalled text into the composer");
+
   await report("preview-queue-steer-stop", {
     steerVisibleOnStreaming: true,
     pendingAfterSteer: true,
     recoveryAfterStop: true,
+    useInDraftRestoresComposer: true,
   });
 });

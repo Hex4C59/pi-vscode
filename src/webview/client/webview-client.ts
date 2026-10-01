@@ -325,6 +325,10 @@ export class WebviewClient {
     if (previous && message.draft.revision < previous.draft.revision) return;
     let text = this.snapshot.text;
     if (!previous && !text) text = message.draft.text;
+    else if (!text && message.draft.text && (!previous || message.draft.revision > previous.draft.revision)) {
+      // Host-authored restores (e.g. useRecoveredText) land in draft.text; adopt when the composer is empty.
+      text = message.draft.text;
+    }
     if (this.submitted && message.lastSubmission?.draftRevision === this.submitted.revision) {
       if (text === this.submitted.text && this.sequence === this.submitted.sequence) text = "";
       this.submitted = null;
