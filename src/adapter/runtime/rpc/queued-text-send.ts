@@ -12,6 +12,7 @@ type QueueSendContext = {
   command: "steer" | "follow_up";
   admit(): Writable | undefined;
   isCurrent(): boolean;
+  canWrite(): boolean;
   watch(settle: (reply: RpcReplyResult) => void): void;
   drop(): void;
   track(pending: Promise<AttachmentPromptResult>): void;
@@ -51,6 +52,8 @@ class QueuedWriteAttempt {
     this.stream.on("error", this.lost); this.stream.on("close", this.lost); this.stream.on("drain", this.drain);
     try {
       onAttempt();
+      if (this.finished) return;
+      if (!this.context.canWrite()) { this.finish("not-sent", "runtime-lost"); return; }
       const accepted = this.stream.write(this.frame, error => {
         if (error) this.lost(); else { this.callback = true; this.check(); }
       });

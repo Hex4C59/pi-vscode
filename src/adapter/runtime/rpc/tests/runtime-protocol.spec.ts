@@ -163,6 +163,81 @@ for (const phase of ["write", "ack"] as const) test(`queue ${phase} observations
   } finally { await f.runtime.stop(); }
 });
 
+for (const change of ["settlement", "revocation"] as const) test(`queue admission callback ${change} prevents a later physical write`, async context => {
+  const f = fixture();
+  let revoked: Promise<void> | undefined;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    const write = context.mock.method(f.connection.stdin, "write");
+    const token = f.runtime.prepareQueuedText?.("must not enter", "steering", f.runtime.getSession());
+    assert.ok(token);
+    const result = await token.send(() => {
+      if (change === "settlement") f.connection.frame({ type: "agent_settled" });
+      else revoked = f.runtime.stop();
+    });
+    assert.equal(write.mock.callCount(), 0);
+    assert.deepEqual(result, { delivery: change === "settlement" ? "not-sent" : "unknown", code: "runtime-lost" });
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt"]);
+    assert.equal((await token.send(() => undefined)).delivery, "not-sent");
+    assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+    assert.equal(f.memory.endCalls, 0);
+  } finally { await f.runtime.stop(); await revoked; }
+});
+
+test("task settlement does not admit ordinary sends or runtime mutations while queue ACK is pending", async () => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" }); f.hold("steer");
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession());
+    assert.ok(token);
+    pending = token.send(() => undefined);
+    const request = f.commands.at(-1)!;
+    f.connection.frame({ type: "agent_settled" });
+    const direct = await f.runtime.prompt("must wait");
+    const prepared = await f.runtime.preparePrompt({ kind: "plain", body: "must also wait" }, f.runtime.getSession()).send(() => undefined);
+    const mutation = await f.runtime.setThinkingLevel("off");
+    const checkpoint = await f.runtime.checkpointRestart?.({ id: "saved-id", path: "/private-store/saved.jsonl" });
+    assert.equal(direct.ok, false);
+    assert.equal(prepared.delivery, "not-sent");
+    assert.equal(mutation.ok, false);
+    assert.deepEqual(checkpoint, { kind: "unavailable" });
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    f.connection.frame({ type: "response", id: request.id, command: "steer", success: true });
+    assert.deepEqual(await pending, { delivery: "rpc-accepted" });
+    assert.equal((await f.runtime.prompt("available after observation")).ok, true);
+    const output = path.resolve("dist/wi077-queued-send");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "fence-report.json"), JSON.stringify({ schemaVersion: 1, status: "passed",
+      evidence: "injected-memory-JSONL-transport", pendingQueueAckFences: ["direct prompt", "prepared prompt", "thinking mutation", "checkpoint restart"],
+      limits: ["no host ledger/UI admission", "not real runtime or installed VSIX"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); await pending; }
+});
+
+test("releasing a settled task with queue ACK pending retains uncertain ownership", async () => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" }); f.hold("steer");
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession());
+    assert.ok(token);
+    pending = token.send(() => undefined);
+    f.connection.frame({ type: "agent_settled" });
+    await f.runtime.stop();
+    assert.deepEqual(await pending, { delivery: "unknown", code: "runtime-lost" });
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.equal(f.memory.endCalls, 0);
+    assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+  } finally { await f.runtime.stop(); await pending; }
+});
+
 // Explicit recall failure modes before implementation: aborting the task,
 // releasing prompt occupancy, duplicate clear with Stop, stale session writes,
 // malformed clear fabricating recovery, and unbounded failed observation.

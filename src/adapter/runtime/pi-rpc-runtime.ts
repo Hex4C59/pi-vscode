@@ -539,12 +539,18 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         return owned.stdin;
       },
       isCurrent: () => child === owned && session === activeSession,
+      canWrite: () => child === owned && session === activeSession && occupancy.agentRunning(),
       watch: settle => replies.watch(requestId, command, settle),
       drop: () => replies.drop(requestId),
       track(pending) {
         if (child !== owned || session !== activeSession) return;
         const attempt = queuedSend = { session, pending };
-        void pending.then(() => { if (queuedSend === attempt) queuedSend = undefined; });
+        occupancy.beginQueuedWrite();
+        void pending.then(() => {
+          if (queuedSend !== attempt) return;
+          queuedSend = undefined;
+          occupancy.finishQueuedWrite(owned, session);
+        });
       },
       onUnknown() {
         emit({ kind: "runtime_error", session, detail: environment.process.describeFailure("prompt-delivery") });

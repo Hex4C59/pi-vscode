@@ -3,6 +3,7 @@
 export function createRpcOccupancy() {
   let promptInFlight = false;
   let promptAckPending = false;
+  let queuedWriteInFlight = false;
   let commandInFlight = false;
   let agentRunning = false;
   let aborting = false;
@@ -26,6 +27,12 @@ export function createRpcOccupancy() {
       promptInFlight = true;
       promptAckPending = true;
       commandInFlight = options.command;
+    },
+    beginQueuedWrite(): void {
+      queuedWriteInFlight = true;
+    },
+    finishQueuedWrite(expectedConnection: object | null, expectedSession: number): void {
+      if (connection === expectedConnection && session === expectedSession) queuedWriteInFlight = false;
     },
     clearAck(expectedSession: number): void {
       if (session === expectedSession) promptAckPending = false;
@@ -81,17 +88,17 @@ export function createRpcOccupancy() {
       return agentRunning;
     },
     allowsSend(): boolean {
-      return !aborting && !promptInFlight && !promptAckPending;
+      return !aborting && !queuedWriteInFlight && !promptInFlight && !promptAckPending;
     },
     allowsModelMutation(): boolean {
-      return !promptInFlight;
+      return !queuedWriteInFlight && !promptInFlight;
     },
     allowsRestart(): boolean {
-      return !aborting && !promptInFlight && !promptAckPending && !agentRunning && !commandInFlight
+      return !aborting && !queuedWriteInFlight && !promptInFlight && !promptAckPending && !agentRunning && !commandInFlight
         && outstandingDialogs === 0 && approvals.size === 0;
     },
     classifyRelease(input: { forcedUncertain?: boolean; sessionActive: boolean }): "idle" | "uncertain" {
-      return input.forcedUncertain || !input.sessionActive || promptInFlight || promptAckPending
+      return input.forcedUncertain || !input.sessionActive || queuedWriteInFlight || promptInFlight || promptAckPending
         || commandInFlight || agentRunning || approvals.size > 0 || outstandingDialogs > 0
         ? "uncertain" : "idle";
     },
@@ -103,6 +110,7 @@ export function createRpcOccupancy() {
     },
     reset(): void {
       promptAckPending = false;
+      queuedWriteInFlight = false;
       promptInFlight = false;
       commandInFlight = false;
       agentRunning = false;
