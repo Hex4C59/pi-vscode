@@ -3,7 +3,7 @@
 English | [中文](2026-10-02-agent-isolation.zh.md)
 
 - Type: Discussion
-- Status: Approved scope; implemented locally; integration pending
+- Status: Approved scope; historical rollout record
 - Created: 2026-10-02
 - Scope: repository workflow only; no product behavior or shared-kernel changes
 
@@ -47,6 +47,8 @@ Logs and the baseline comparison are retained under `out/work/agent-isolation/`;
 ### Activation authorization
 
 On 2026-10-02 the maintainer requested enabling the completed configuration and continuing the remaining operations. This authorizes explicit-path task commits, refreshing this private branch, pushing it, opening and merging its PR through the applicable gates, and configuring the corresponding GitHub required check/up-to-date-base protection. It does not authorize discarding primary-checkout work, modifying product code, force-pushing, bypassing failing required checks or silently fixing unrelated baseline failures. Implementation and the `ACTIVE.md` session-contract summary remain separate commits. Remote `master` currently has no branch protection or rulesets; the authenticated account has administrator permission. Existing master CI already fails before this task, including documentation links and Windows behavior tests; record actual task/PR results separately.
+
+Activation checkpoint: implementation and session-contract changes were committed separately and rebased without conflicts onto `dd33b5de667a180c0ac0fe30c34ae394dd5d7101`. Clean candidate `5b8b5aebdbb6da60395253d4f6c19012a627818f` passed compile, lint, webview/package-file verification and all 1,171 tests. Documentation checks still report the original historical-artifact failures. PR #1 was opened from `codex/agent-isolation`. GitHub protection was verified to require `PR head contains base snapshot` from GitHub Actions app 15368 with strict up-to-date-base checking, apply to administrators, require PR delivery with zero external approvals, and disallow force pushes/deleting `master`. Existing checks were not disabled or made less restrictive; no previous protection/rulesets existed. Detailed PR CI diagnostics could not be retrieved through the app's disconnected integration; the PR aggregate state is UNSTABLE, not proof of complete CI success. Any merge must use normal GitHub enforcement, never an administrator bypass. This checkpoint and any later PR merge event describe activation; earlier verification paragraphs below retain their historical source states. Primary-checkout work remains untouched and local `master` synchronization must wait for its owner to make that checkout safe.
 
 ### Follow-up verification
 
