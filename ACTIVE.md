@@ -16,10 +16,10 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-077（PI-GAP-01：文字 steering／follow-up 与取回闭环） |
-| **阶段** | Prepare（持续授权已记录；中英 PRD 与生命周期设计核对后进入 Build，不待点名） |
+| **阶段** | Build（Prepare 核对完成；2026-10-01 持续授权批准本次文字切片，中英 PRD／Outline 已同步；先验证后实现） |
 | **Gate ID** | none（沿用既有 runtime／Webview 信任边界，不声明新 gate 关闭） |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：需在 Build 前同步中英 PRD 的独立 WI／REQ 行、状态／错误／验收；当前未改产品行为 |
+| **PRD 判定** | 用户可见：已同步中英 PRD WI-077／REQ-004／005 范围与追溯行；新增切片仅批准范围，尚未交付／接受 |
 
 ### 目标与范围
 
@@ -27,7 +27,23 @@
 
 ### 方案与架构核对
 
-[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。先核对 adapter 生命周期、draft owner、host admission、allowlisted Webview 协议及当前真实宿主 e2e 路径；不重复 probe 冒充产品交付。Adapter 隔离公开 RPC，host 拥有 runtime／session／view 世代与文字发送 ledger，UI 仅命名意图／状态。get_state 只有 pending count，不把本地 ACK 列表冒充上游权威文字列表；需核对公开消费事件及并发取回语义。取回结果进入明确可复用的恢复区，用户显式复用才进入草稿／再次发送；不自动拼接或覆盖。Prepare 明确总量／数量边界、拒绝与未知 ACK 策略后同步 PRD。无需新持久化或 session 文件操作；若发现必须新增重大边界决策，记录最小问题并转选其他候选。
+[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。本轮核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照，当前 adapter decoder 忽略；user message_start 前队列会更新，当前 decoder 丢弃 user content；Stop 丢弃 clear 返回 data。这三条是实现缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
+
+Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世代与有界 ledger，DraftSubmission 仍唯一拥有已确认草稿；UI 仅命名意图／状态。两数组快照、ACK 与 user 消费事件分别投影，重复文字保留 multiplicity；无法准确归属尝试时标未知，不把队列减少当完成。总额度为 32 条未释放本地文字／256 KiB UTF-8，单条 8000 UTF-16；写入与 clear 前预留，不淘汰／截断。拒绝附件、首部 slash／skills／模板和既有可识别凭据，保留原草稿。取回进入独立恢复区，显式移入无附件空草稿并校验 revision，不发送、不覆盖。Stop 关闭准入，在原共享五秒预算内串行在途 write→clear→abort；确认 clear 结果即保留，abort 失败不抹掉。未知 ACK 不重发；断线保留本地未知文字；明确替换确认丢失，commit 后清理，不跨项目带入。详情与命名 DTO 见[双语契约 Outline](docs/reference/webview-messages.zh.md#wi-077-文字队列增补outline未实现)。无新依赖、进程策略、存储或信任决定。
+
+### 架构检查（Prepare 结论：implement now；Decision none；设计 Implementable，尚非 Verifiable）
+
+| 维度 | 状态／证据与下一检查 |
+|---|---|
+| 1–3 分解／接口／依赖 | pass（设计）：沿用[架构 host capability](docs/architecture/vscode-extension-architecture.md#internal-host-capability-modules)与 host-owned contracts，adapter／host／UI 各守 owner；Outline 命名四意图，无 generic bridge。实现时核对实际 imports。 |
+| 4 契约 | pass（Outline）：[文字队列契约](docs/reference/webview-messages.zh.md#wi-077-文字队列增补outline未实现)定义数据、前置、准入、额度、错误、一次 write、超时与 clear／Stop 顺序；Build 须成对类型／validator／消费者。 |
+| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：DraftSubmission 单一草稿 owner，coordinator 管 ledger／Stop，adapter 仅翻译；设计已规定 session／generation／revision 防迟到、失联保留、commit 清理。gap（验证）：消费→clear 与 late ACK interleaving 先写 composition tests。 |
+| 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-077 REQ-004／005 和本次持续批准；不扩附件／命令，不接受整个候选。 |
+| 12–14 安全／数据／隐私 | pass（设计）：沿用信任／凭据规则，内存 ledger 不新增存储；不记录 prompt 或 raw frame 到日志。gap（实现）：敏感上游队列投影拒收与复用拒绝先验证。 |
+| 15 性能／背压 | pass（设计）：32 条／256 KiB 与已有单条限制、one-attempt write／drain 预算；clear 前容量预留。gap：边界与外部不可归属队列拒绝须验证，不造无限恢复缓存。 |
+| 16–17 验证／构建 | gap：尚未新增产品闭环验证；沿用 npm test composition、真实 runtime 及浏览器／macOS F5／安装 VSIX，各自留工件；pin 与构建策略不变。 |
+| 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3，新意图只准 chat；旧 viewId 拒绝，升级后重载旧页面。无持久 schema 迁移。 |
+| 19 UX／可访问性 | gap：独立动作／状态／恢复冲突已规定，但 en／zh、280／320／400 三主题与 keyboard 实际渲染未验。 |
 
 ### 验收
 
@@ -35,11 +51,11 @@
 
 ### 范围外与批准边界
 
-2026-10-01 持续 /goal 对既有 PI-GAP 内合规独立切片提供 Prepare→Build 范围确认，无需逐次点名。本 WI 只做 PI-GAP-01 上述文字闭环；当前 Prepare 不代表已通过验证，Build 前完成 PRD。保留 Accepted PRD／强制 playbook／安全与重大架构审批，不改 Draft ADR 0010，不 push。仍排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳过审批、公开发布。实现提交不含 ACTIVE，关闭／晋升单独 docs(active)。
+2026-10-01 持续 /goal 对既有 PI-GAP 内合规独立切片提供 Prepare→Build 范围确认，无需逐次点名。本 WI 只做 PI-GAP-01 上述文字闭环；本轮 Prepare 完成后按持续授权批准 Build，中英 PRD 已同步，不代表已通过验证或已验收。保留 Accepted PRD／强制 playbook／安全与重大架构审批，不改 Draft ADR 0010，不 push。仍排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳过审批、公开发布。实现提交不含 ACTIVE，关闭／晋升单独 docs(active)。
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Prepare 产品文字闭环，按持续授权继续，不等待点名。先同步中英 PRD／契约和 test-first 验证安排，再 Build。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环，Prepare／中英 PRD／契约 Outline 已完成，按持续授权继续，不等待点名。下一步先写 provider／adapter／production-mounted 闭环失败验证，再实现；优先补 queue_update／消费事件和保留 clear 输出，不以此技术阶段宣称交付。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -129,13 +145,15 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-01 — WI-077 Prepare 完成，进入 Build（本轮仅范围／契约）
+
+核对当前公开 queue_update 与 user message_start 顺序，定位 adapter 忽略队列／消费文字、Stop 丢弃 clear data 的缺口。中英 PRD 新增独立 WI-077／REQ-004／005 范围／验收／追溯，双语契约新增明确 Outline；本提案记录额度、并发、恢复、拒绝与架构各维度，不改变 Living 实现／Accepted ADR 状态。当前实际 compile／lint／1064 tests（0 fail／skip）基线通过；docs:verify／docs:health 0 错误，保留 ADR 0010 两条提示。尚无新产品测试、UI、真实 runtime／F5／安装验收，不关闭 WI。
+
+具体下一步：先在现有 adapter transport／host provider／production-mounted seams 写闭环测试，列出的失败方式先于源码实现；queue_update snapshot 与 user content 消费验证先 red→green，再接一次性 steer／follow_up、clear 结果保留和唯一 draft owner 准入，最后 UI／真实 runtime／宿主分层验收。可用现有隔离 loopback 夹具观测实际事件，但不能用 WI-076 旧报告代替本产品工件。PRD／契约提交 `126f41a`，ACTIVE 记录单独提交；无 push。WI-077 及 PI-GAP-01 余项未交付，goal 保持 active，不重新询问常规授权。
+
 ### 2026-10-01 — WI-076 关闭；自动晋升 WI-077 Prepare
 
 交付 `49fd804`；[验收](docs/archive/2026-10-01-wi-076-acceptance.zh.md)记录真实 pi 0.86.1＋合成 loopback provider 队列／clear→abort／超时 close 与夹具删除。compile／lint／1064 tests／显式 spike、关闭 docs:verify／docs:health 通过（0 错误，保留 ADR 0010 两条提示）；不声称产品 UI／F5／安装验收。下一步直接核对 WI-077 生命周期、同步中英 PRD 与协议、先写闭环验证再 Build，不等待维护者点名。仍有未交付候选，goal 保持 active。
-
-### 2026-10-01 — WI-075 关闭；到达本轮授权边界
-
-[评估](docs/archive/2026-10-01-wi-075-guide-placement-evaluation.zh.md)结论保留指南原路径；[验收](docs/archive/2026-10-01-wi-075-acceptance.zh.md)记录实际检查。docs:verify／docs:health 均 0 错误，保留 ADR 0010 两条警告。没有启动 PI-GAP，等待维护者点名单个产品切片；大目标未结束。
 
 ## 已完成 WI 索引
 
