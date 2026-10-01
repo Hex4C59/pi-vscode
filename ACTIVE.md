@@ -16,7 +16,7 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-078（PI-GAP-02：作曲区 `/` 命令发现） |
-| **阶段** | Build（Prepare 核对完成；2026-10-01 持续授权批准本次发现切片，中英 PRD／Outline 已同步；先验证后实现） |
+| **阶段** | Build（Prepare 核对完成；2026-10-01 持续授权批准本次发现切片，中英 PRD／Outline 已同步；先验证后实现；验收尾随空格规则待确认） |
 | **Gate ID** | none（沿用既有 runtime／Webview 信任边界，不声明新 gate 关闭） |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：已同步中英 PRD WI-078／REQ-004／009 范围与追溯行；新增切片仅批准范围，尚未交付／接受 |
@@ -35,13 +35,13 @@
 |---|---|
 | 1–3 分解／接口／依赖 | pass（设计）：adapter 翻译 `get_commands`；宿主拥有快照／generation／补全准入；UI 只打开菜单与过滤。沿用 [host capability](docs/architecture/vscode-extension-architecture.md#internal-host-capability-modules) 与 `DraftSubmission`。实现时核对 imports。 |
 | 4 契约 | pass（实现，验收待补）：[命令发现契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现)定义数据、前置、错误、额度、顺序与隐私。成对类型／validator／消费者已实现；不声明真实宿主验收。 |
-| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。pass（composition）：空／失败与 Stop 迟到回包、未知 name／草稿与 generation 过期用例已通过；实际 runtime 四次启动／替换与退出已验证；原生宿主仍待验证。 |
+| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。pass（composition）：空／失败与 Stop 迟到回包、未知 name／草稿与 generation 过期用例已通过；实际 runtime 四次启动／替换与退出已验证；macOS F5／安装 VSIX 发现补全已验证；尾随空格规则待确认。 |
 | 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-078 与本次持续批准；不扩加载报告／包管理，不接受整个候选。 |
 | 12–14 安全／数据／隐私 | pass（设计）：路径与文件正文留宿主；描述打码；不新增持久化。pass（composition）：adapter 丢弃 path，浏览器 parser 拒收附加 path 字段；已拒收凭据式名称、屏蔽含路径描述并在打码后截断；不把 composition 等同真实宿主隐私验收。 |
 | 15 性能／背压 | pass（设计）：最多 512 行、名称／描述上限；过滤在已发布快照上本地进行。 |
-| 16–17 验证／构建 | partial：adapter／provider／DraftSubmission／client／菜单贯通，compile／lint／npm test 1156 通过；浏览器 18 组布局与键盘检查通过。实际 pi 0.86.1 Controlled 拒绝／同意、Trusted 注册与替换回拒绝通过；gap：F5／安装 VSIX。 |
+| 16–17 验证／构建 | partial：adapter／provider／DraftSubmission／client／菜单贯通，compile／lint／npm test 1156 通过；浏览器 18 组布局与键盘检查通过。实际 pi 0.86.1 Controlled 拒绝／同意、Trusted 注册与替换回拒绝通过；macOS F5／安装 VSIX Controlled 三种来源、保留参数补全不发送、零匹配 Enter 与 Escape 通过。gap：PRD 尾随空格规则。 |
 | 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3；新意图只准 chat；旧 viewId 拒绝。 |
-| 19 UX／可访问性 | partial：mounted 与浏览器键盘、合成 IME、弹出层互斥和中英状态通过；操作系统 IME 与原生宿主仍待验证。 |
+| 19 UX／可访问性 | partial：mounted 与浏览器键盘、合成 IME、弹出层互斥和中英状态通过；macOS F5／安装 VSIX 发现补全已验证；操作系统 IME 未测，尾随空格规则待确认。 |
 
 ### 验收
 
@@ -53,7 +53,7 @@
 
 ## 当前焦点与未决项
 
-WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：分别完成 macOS F5／安装 VSIX 验证；真实 pi 0.86.1 四场景已通过。adapter／宿主／草稿／client／菜单已实现，未完成原生宿主验收。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
+WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：等维护者确认尾随空格规则后继续验收，不自行修改已批准行为。实际 runtime、浏览器、macOS F5／安装 VSIX 发现补全证据齐备，但 WI 不关闭。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -143,11 +143,13 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
-### 2026-10-02 — WI-078 菜单／隐私子步，仍 Build
+### 2026-10-01 UTC — WI-078 原生证据与收尾差异，仍 Build
 
-实现提交 `08cf3f8`（名称／描述隐私与打码后额度）和 `a927a91`（前导 `/` 菜单、宿主确认补全、键盘／合成 IME／弹出层互斥、中英状态），均不含 ACTIVE。新失败用例先红后绿，预览清单仅为合成展示。compile／lint 与最终 `npm test` 1154 全通过；首次全跑有一项未改动的 inventory 等待超时，定向 7 项与全量重跑通过，未修改该模块。浏览器实际 Chrome 的 280／320／400px × dark／light／high contrast × 中英 18 组及短视口检查通过；合成 IME 不等于操作系统 IME。
+`a927a91` 菜单与 `b2e84b7` 实际 SourceInfo 修复之后，macOS arm64／VS Code 1.140.0／pi 0.86.1 的安装 VSIX 和真正 `[Extension Development Host] A` F5 均通过三种来源→过滤→保留参数补全不发送、零匹配 Enter 不发送、Escape 保留文字。工件 `dist/wi078-native/{installed-report,f5-report}.json`、两组截图与 `run.mjs`；VSIX SHA-256 `1b7da81273f05a597faf4c9fe9a72e97a22391087aa37b1a44d0c470960c01a7`。首轮 harness 错把空草稿 Send disabled 当 runtime 未 idle，已修正；继承 HOME 的首轮发现用户公开 skills，保留报告但不作为隔离验收，最终两路用夹具 HOME，恰有三行，cleanupRemaining 均为空。F5 的宿主扩展磁盘变更 toast 没有中断操作。不是维护者亲测、真实模型或 OS IME 证据。
 
-可重复工件在 `dist/wi078-command-catalogue/`：mounted JSON、`browser-matrix.json`、`browser-keyboard.json`、截图／contact sheets、`replay-browser.cjs` 和首次失败／最终通过日志。目录契约转为 Living 实现，WI／原生验收仍待补。后续 `b2e84b7` 修复真实 0.86.1 的 sourceInfo：隔离真实 runtime 四场景、四个子进程退出与夹具删除已观察，无 prompt／供应商调用；新 transport 用例先红后绿，compile／lint／1156 tests 与 docs:verify 通过（仅既有 ADR0010 两条警告）。工件新增 `runtime-replay.mjs`／`runtime-report.json`，是实际 pi＋生产 adapter＋spike process，不是原生宿主。下一步 macOS F5、安装 VSIX；不关闭 WI、不整体完成 PI-GAP-02、不改 Draft ADR 0010。本 Goal 保持 active，无 push／amend／rebase／force。
+`dist/wi078-command-catalogue/runtime-report.json` 另验证 Controlled 拒绝／同意、Trusted 夹具注册与替换回拒绝，四个 child close／夹具删除；显式公开 prompt 给无副作用夹具命令 RPC-accepted 且保留参数，发现自身未执行，无供应商调用。compile／lint／最终 1156 tests 通过；浏览器既有 18 组与合成 IME 证据保留。中英契约／控件目录已更新实际证据，不改 PRD／ADR 批准状态。docs:verify／docs:health 均 0 错误，仅保留 Draft ADR 0010 两条既有提示。
+
+**收尾对齐阻碍（本轮首次发现）：** 中英 PRD WI-078 明确“需要参数时加尾随空格”；`get_commands` 没有是否需要参数的元数据，当前 `DraftSubmission.completeCommand` 只替换 token、保留后缀，裸补全不新增空格。此前契约明确 API 限制，但未解决批准规则；不能据通过的检查静默接受或重写 PRD。问维护者采用哪条明确规则，再继续。WI-078 保持 Build；不归档关闭、不晋升下一项、不整体完成 PI-GAP-02。本 Goal 保持 active，无 push／amend／rebase／force。
 
 ### 2026-10-02 — WI-077 关闭：F5 与安装 VSIX 文字队列闭环
 
