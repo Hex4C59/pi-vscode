@@ -11,22 +11,35 @@
 | 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证。 |
 | 收尾 | 记录验收身份、检查结果与未决项；按规则归档并清理资源。 |
 
-## 当前无活动 WI（WIP=0）
+## 正在做（WIP=1）
 
-本轮明确授权的 WI-072、DOC-NAV-01（WI-073）、DOC-NAV-02（WI-074）、DOC-ORG-03（WI-075）已串行关闭。没有自动晋升产品 WI。大目标未标完成，等待维护者点名下一独立切片；不 push。
+| 字段 | 内容 |
+|---|---|
+| **ID** | WI-077（PI-GAP-01：文字 steering／follow-up 与取回闭环） |
+| **阶段** | Prepare（持续授权已记录；中英 PRD 与生命周期设计核对后进入 Build，不待点名） |
+| **Gate ID** | none（沿用既有 runtime／Webview 信任边界，不声明新 gate 关闭） |
+| **Decision** | none |
+| **PRD 判定** | 用户可见：需在 Build 前同步中英 PRD 的独立 WI／REQ 行、状态／错误／验收；当前未改产品行为 |
+
+### 目标与范围
+
+按 PI-GAP-01 交付可观察的纯文字闭环：运行中明确选择「Steer current task」或「Follow up after task」，区分 ACK、待处理与已消费／结果未知；展示已确认队列与不确定状态；通过公开 clear_queue 取回全部尚待处理的文字。Stop 先 clear 再 abort，取回内容可恢复且不覆盖现有草稿；失败、断线与切换不能静默丢失或自动重发。文字切片不含附件及扩展 slash 命令／模板展开；禁用时解释原因，原草稿／附件保留。PI-GAP-01 的剩余扩展范围继续停车，不标整个 ID 完成。
+
+### 方案与架构核对
+
+[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。先核对 adapter 生命周期、draft owner、host admission、allowlisted Webview 协议及当前真实宿主 e2e 路径；不重复 probe 冒充产品交付。Adapter 隔离公开 RPC，host 拥有 runtime／session／view 世代与文字发送 ledger，UI 仅命名意图／状态。get_state 只有 pending count，不把本地 ACK 列表冒充上游权威文字列表；需核对公开消费事件及并发取回语义。取回结果进入明确可复用的恢复区，用户显式复用才进入草稿／再次发送；不自动拼接或覆盖。Prepare 明确总量／数量边界、拒绝与未知 ACK 策略后同步 PRD。无需新持久化或 session 文件操作；若发现必须新增重大边界决策，记录最小问题并转选其他候选。
+
+### 验收
+
+实现前安排现有 owner-local／端到端测试并列失败方式：两种语义串线；ACK 当执行；忙碌／空闲准入竞态；重复点击／late ACK；取回与消费竞争；Stop clear／abort 失败；草稿修改后异步覆盖；view／runtime／session／model／profile 世代污染；额度拒绝丢失文字；未知状态自动重发。可观察验收须覆盖发送→显示→消费／取回、Stop 与断线恢复，现有任务不被重置，附件／命令拒绝保留输入。compile／lint／npm test、适用浏览器与真实 runtime e2e；当前 macOS 真实宿主／安装 VSIX 按最终 PRD 验收生成可复现工件，模拟／runtime／F5／安装分别记录。docs:verify，关闭 docs:health；不以底层 ACK probe 代替产品验收。
+
+### 范围外与批准边界
+
+2026-10-01 持续 /goal 对既有 PI-GAP 内合规独立切片提供 Prepare→Build 范围确认，无需逐次点名。本 WI 只做 PI-GAP-01 上述文字闭环；当前 Prepare 不代表已通过验证，Build 前完成 PRD。保留 Accepted PRD／强制 playbook／安全与重大架构审批，不改 Draft ADR 0010，不 push。仍排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳过审批、公开发布。实现提交不含 ACTIVE，关闭／晋升单独 docs(active)。
 
 ## 当前焦点与未决项
 
-已完成本轮技术／文档授权。DOC-ORG-03 结论为保留两个指南原路径。Draft ADR 0010 保持 Draft；其两条既有文档警告保留。PI-GAP-01–28 都仍是候选（含既有记录中的 PI-GAP-28），没有产品 Build 授权。
-
-### 下一产品切片的 Prepare 问题（待点名，不启动）
-
-- 先点名单个 PI-GAP ID，再确定最小可观察范围；不把整组候选合并成一个 WI。
-- 若点名组内首项 PI-GAP-01，先决定本次只做 steering 还是 follow-up；队列展示／取回是否另拆后续切片。不默认一次交付整项。
-- 确认本次输入仅文字还是含附件，忙碌／空闲／Stop／断线／切换时的准入、失败保留与未知投递规则；不丢失或自动重发。
-- 核对锁定版本公开 RPC／SDK 的可行性与现有实现，再补中英 PRD 的已批准行为、错误／空状态、WI／REQ 追踪和端到端可重复工件；确定是否需要 F5／安装 VSIX 验收。点名前不写用户可见实现或把候选当批准。
-
-下载／市场、额外生态、Chat Participant、remote／multi-root、额外平台、跳过审批和公开发布仍排除。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Prepare 产品文字闭环，按持续授权继续，不等待点名。先同步中英 PRD／契约和 test-first 验证安排，再 Build。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -52,7 +65,9 @@ DOC-NAV-02 已在本轮独立授权下按 WI-074 完成；见[验收](docs/archi
 
 DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archive/2026-10-01-wi-075-acceptance.zh.md)。
 
-### pi 功能差距待办（产品候选，待晋升）
+### pi 功能差距待办（按本轮持续授权逐项晋升）
+
+**当前授权（2026-10-01）：** 新 /goal 允许按优先级自动选单个 ID，完成 Prepare、范围记录后 Build，不需维护者逐次点名。下列“仅记录／旧 goal 不覆盖”原文保留为历史，不作为当前启动限制；重大新增取舍、安全／数据审批、Accepted PRD 冲突仍保留单独确认。范围不明或外部条件阻塞时记录具体原因，再找其他可执行候选，不合并整组。
 
 2026-10-01 维护者先后授权把两轮功能差距写入 ACTIVE，供后续实现。基线为当前锁定的 **pi 0.86.1**；证据与能力限定见[功能差距讨论](docs/discussions/2026-10-01-pi-feature-gaps.zh.md)。**仅授权记录，不启动 Build，不改变当前 WI、既有队列顺序或 WIP=1；已有 `/goal` 批准不自动覆盖这些新增候选。** 优先级仅为组内建议，晋升须重新核对版本、现有实现与公开 SDK／RPC，按 Prepare→Build 确认 PRD、范围、架构影响和验收。
 
@@ -114,14 +129,14 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-01 — WI-076 关闭；自动晋升 WI-077 Prepare
+
+交付 `49fd804`；[验收](docs/archive/2026-10-01-wi-076-acceptance.zh.md)记录真实 pi 0.86.1＋合成 loopback provider 队列／clear→abort／超时 close 与夹具删除。compile／lint／1064 tests／显式 spike、关闭 docs:verify／docs:health 通过（0 错误，保留 ADR 0010 两条提示）；不声称产品 UI／F5／安装验收。下一步直接核对 WI-077 生命周期、同步中英 PRD 与协议、先写闭环验证再 Build，不等待维护者点名。仍有未交付候选，goal 保持 active。
+
 ### 2026-10-01 — WI-075 关闭；到达本轮授权边界
 
 [评估](docs/archive/2026-10-01-wi-075-guide-placement-evaluation.zh.md)结论保留指南原路径；[验收](docs/archive/2026-10-01-wi-075-acceptance.zh.md)记录实际检查。docs:verify／docs:health 均 0 错误，保留 ADR 0010 两条警告。没有启动 PI-GAP，等待维护者点名单个产品切片；大目标未结束。
 
-### 2026-10-01 — WI-074 关闭
-
-26 份讨论及中文对已按用途导航，未移动／归档讨论。见[验收](docs/archive/2026-10-01-wi-074-acceptance.zh.md)。WI-072 的 compile／lint／1064 测试证据见其[验收](docs/archive/2026-10-01-wi-072-acceptance.zh.md)，不当作文档切片重新跑的代码测试。
-
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-075。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-076。

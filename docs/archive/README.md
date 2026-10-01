@@ -36,6 +36,10 @@ WI records are historical, including old pending/open wording; current work and 
 
 - [macOS verification and personal-use acceptance (2026-09-30)](2026-09-30-macos-verification-acceptance.md)
 
+## Runtime prerequisite evidence
+
+- [Queued-input public RPC proof — WI-076](2026-10-01-wi-076-acceptance.md); synthetic provider, not product acceptance.
+
 ## Superseded proposals and investigations
 
 - [pi compatibility investigation](2026-09-22-pi-compatibility.md)

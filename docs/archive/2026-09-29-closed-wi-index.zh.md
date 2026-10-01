@@ -101,6 +101,7 @@
 | WI-073 | DOC-NAV-01 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-073-acceptance.zh.md); [方案](2026-10-01-wi-073-approved-proposal.zh.md) |
 | WI-074 | DOC-NAV-02 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-074-acceptance.zh.md); [方案](2026-10-01-wi-074-approved-proposal.zh.md) |
 | WI-075 | DOC-ORG-03 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-075-acceptance.zh.md); [方案](2026-10-01-wi-075-approved-proposal.zh.md); [评估](2026-10-01-wi-075-guide-placement-evaluation.zh.md) |
+| WI-076 | 公开队列 RPC 前置证据 | 2026-10-01 agent /goal; runtime-only, no product acceptance | [record](2026-10-01-wi-076-acceptance.zh.md); [proposal](2026-10-01-wi-076-approved-proposal.zh.md) |
 
 
 ## 不在本索引
