@@ -15,10 +15,13 @@ function fixture() {
   let stallPromptWrite = false;
   let stalledCommand = "prompt";
   let completeWrite: (() => void) | undefined;
+  let queueWriteFault: "throw" | "callback" | undefined;
   const memory = createMemoryProcess(options => {
     const transport = createMemoryConnection((line, done) => {
       const request = JSON.parse(line);
       commands.push(request);
+      if (request.type === "steer" && queueWriteFault === "throw") throw new Error("PRIVATE_STREAM_ERROR");
+      if (request.type === "steer" && queueWriteFault === "callback") { done(new Error("PRIVATE_STREAM_ERROR")); return false; }
       queueMicrotask(() => {
         if (held.has(request.type)) return;
         if (request.type === "get_state") transport.frame({
@@ -48,6 +51,7 @@ function fixture() {
     resume(command: string) { held.delete(command); },
     stallPrompt() { stallPromptWrite = true; },
     stallQueue() { stalledCommand = "steer"; stallPromptWrite = true; },
+    failQueue(kind: "throw" | "callback") { queueWriteFault = kind; },
     finishWrite() { completeWrite?.(); connection.stdin.emit("drain"); },
     start: () => runtime.start({ cwd: "/project", projectTrust: "no-approve" }),
   };
@@ -334,6 +338,125 @@ test("Stop queue-wait timer expires within its control budget without destructiv
     }, null, 2) + "\n");
   } finally { await f.runtime.stop(); context.mock.timers.tick(30000); await Promise.allSettled([pending, stopping]); }
 });
+
+// Failure mode: agent_settled makes prompt idle while clear still owns the
+// control fence; model/thinking RPC mutates the session during destructive clear.
+for (const control of ["stop", "recall"] as const) test(`${control} clear observation fences model mutations after natural task settlement`, async () => {
+  const f = fixture();
+  let controlling: Promise<PromptResult> | undefined;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" }); f.hold("clear_queue");
+    let callbacks = 0;
+    controlling = control === "stop" ? f.runtime.abortTask?.(() => { callbacks++; })
+      : f.runtime.recallQueuedText?.(f.runtime.getSession(), () => { callbacks++; });
+    const clear = f.commands.at(-1)!;
+    assert.equal(clear.type, "clear_queue");
+    f.connection.frame({ type: "agent_settled" });
+    const thinking = await f.runtime.setThinkingLevel("off");
+    const model = await f.runtime.setModel("fixture", "model");
+    assert.equal(thinking.ok, false); assert.equal(model.ok, false);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "clear_queue"]);
+    assert.equal(callbacks, 0);
+    f.connection.frame({ type: "response", id: clear.id, command: "clear_queue", success: true, data: { steering: [], followUp: [] } });
+    assert.deepEqual(await controlling, { ok: true }); assert.equal(callbacks, 1);
+    assert.equal((await f.runtime.setThinkingLevel("off")).ok, true);
+    assert.equal((await f.runtime.setModel("fixture", "model")).ok, true);
+    const output = path.resolve("dist/wi077-queued-send"); await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, `${control}-model-fence.json`), JSON.stringify({ schemaVersion: 1, status: "passed", control,
+      evidence: "injected-memory-JSONL-transport", mutationsFencedDuringClear: true, admissionRestoredAfterControl: true,
+      limits: ["no provider/host ledger/UI integration", "not real runtime or installed VSIX"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); await controlling; }
+});
+
+for (const scenario of ["idle", "settled-token", "stale-session", "blank", "oversized", "invalid-mode", "at-limit"] as const)
+  test(`queue admission boundary ${scenario} preserves one-attempt literal delivery`, async () => {
+    const f = fixture();
+    try {
+      assert.equal((await f.start()).ok, true);
+      if (scenario !== "idle") { assert.equal((await f.runtime.prompt("running")).ok, true); f.connection.frame({ type: "agent_start" }); }
+      const prepare = f.runtime.prepareQueuedText; assert.ok(prepare);
+      const session = f.runtime.getSession();
+      const text = scenario === "blank" ? " \t\n" : scenario === "at-limit" ? "🙂".repeat(4000)
+        : scenario === "oversized" ? "🙂".repeat(4000) + "x" : "literal";
+      let token: ReturnType<typeof prepare>;
+      if (scenario === "invalid-mode") {
+        // @ts-expect-error Deliberately corrupt the JS-callable enum to verify its defensive runtime check.
+        token = prepare(text, "invalid-mode", session);
+      } else token = prepare(text, "steering", scenario === "stale-session" ? session + 1 : session);
+      if (scenario === "settled-token") f.connection.frame({ type: "agent_settled" });
+      let attempts = 0;
+      const result = await token.send(() => { attempts++; });
+      assert.equal(result.delivery, scenario === "at-limit" ? "rpc-accepted" : "not-sent");
+      assert.equal(attempts, scenario === "at-limit" ? 1 : 0);
+      assert.equal((await token.send(() => { attempts++; })).delivery, "not-sent");
+      assert.equal(attempts, scenario === "at-limit" ? 1 : 0);
+      assert.equal(f.commands.filter(command => command.type === "steer").length, scenario === "at-limit" ? 1 : 0);
+      assert.equal(f.commands.filter(command => command.type === "follow_up").length, 0);
+      assert.equal(f.commands.filter(command => command.type === "prompt").length, scenario === "idle" ? 0 : 1);
+      if (scenario === "at-limit") assert.equal(f.commands.at(-1)?.message, text);
+      assert.equal(f.runtime.getSession(), session); assert.deepEqual(f.memory.releases, []);
+      const output = path.resolve("dist/wi077-queued-send"); await mkdir(output, { recursive: true });
+      await writeFile(path.join(output, `admission-${scenario}.json`), JSON.stringify({ schemaVersion: 1, status: "passed", scenario,
+        evidence: "injected-memory-JSONL-transport", delivery: result.delivery, attemptCallbacks: attempts, inputUtf16Units: text.length,
+        limits: ["not host draft/capacity/UI admission", "not real runtime or installed VSIX"],
+      }, null, 2) + "\n");
+    } finally { await f.runtime.stop(); }
+  });
+
+for (const response of ["rejected", "wrong-command", "invalid-success"] as const)
+  test(`queue response boundary ${response} is fixed, one-attempt and never exposes upstream error`, async () => {
+    const f = fixture();
+    try {
+      assert.equal((await f.start()).ok, true);
+      assert.equal((await f.runtime.prompt("running")).ok, true); f.connection.frame({ type: "agent_start" });
+      f.override(command => command !== "steer" ? undefined : response === "rejected" ? { success: false, error: "PRIVATE_RPC_ERROR" }
+        : response === "wrong-command" ? { command: "abort", error: "PRIVATE_RPC_ERROR" } : { success: "yes", error: "PRIVATE_RPC_ERROR" });
+      const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession()); assert.ok(token);
+      const result = await token.send(() => undefined);
+      assert.deepEqual(result, response === "rejected" ? { delivery: "rpc-rejected", code: "rpc-rejected" } : { delivery: "unknown", code: "runtime-lost" });
+      assert.equal((await token.send(() => undefined)).delivery, "not-sent");
+      assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+      assert.deepEqual(f.memory.releases, response === "rejected" ? [] : ["uncertain"]);
+      assert.equal(f.events.filter(event => event.kind === "runtime_error").length, response === "rejected" ? 0 : 1);
+      assert.equal(JSON.stringify({ result, events: f.events }).includes("PRIVATE_RPC_ERROR"), false);
+      assert.equal(f.memory.endCalls, 0); assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+      const output = path.resolve("dist/wi077-queued-send"); await mkdir(output, { recursive: true });
+      await writeFile(path.join(output, `protocol-${response}.json`), JSON.stringify({ schemaVersion: 1, status: "passed", response,
+        evidence: "injected-memory-JSONL-transport", delivery: result.delivery, releases: f.memory.releases,
+        limits: ["not host ledger/UI recovery", "not real runtime or installed VSIX"],
+      }, null, 2) + "\n");
+    } finally { await f.runtime.stop(); }
+  });
+
+// Public stream failures must not retry, kill the child or expose error content.
+for (const fault of ["throw", "callback", "event"] as const)
+  test(`queue stream failure ${fault} retires exactly one uncertain observation`, async () => {
+    const f = fixture();
+    try {
+      assert.equal((await f.start()).ok, true);
+      assert.equal((await f.runtime.prompt("running")).ok, true); f.connection.frame({ type: "agent_start" });
+      if (fault === "event") { f.stallQueue(); f.hold("steer"); } else f.failQueue(fault);
+      const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession()); assert.ok(token);
+      const pending = token.send(() => undefined);
+      if (fault === "event") f.connection.stdin.emit("error", new Error("PRIVATE_STREAM_ERROR"));
+      const result = await pending;
+      assert.deepEqual(result, { delivery: "unknown", code: fault === "event" ? "runtime-lost" : "write-failed" });
+      assert.equal((await token.send(() => undefined)).delivery, "not-sent");
+      assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+      assert.deepEqual(f.memory.releases, ["uncertain"]);
+      assert.equal(f.events.filter(event => event.kind === "runtime_error").length, 1);
+      assert.equal(JSON.stringify({ result, events: f.events }).includes("PRIVATE_STREAM_ERROR"), false);
+      assert.equal(f.memory.endCalls, 0); assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+      const output = path.resolve("dist/wi077-queued-send"); await mkdir(output, { recursive: true });
+      await writeFile(path.join(output, `stream-${fault}.json`), JSON.stringify({ schemaVersion: 1, status: "passed", fault,
+        evidence: "injected-memory-JSONL-transport", delivery: result.delivery, releases: f.memory.releases,
+        limits: ["not host ledger/UI recovery", "not real runtime or installed VSIX"],
+      }, null, 2) + "\n");
+    } finally { await f.runtime.stop(); }
+  });
 
 // Explicit recall failure modes before implementation: aborting the task,
 // releasing prompt occupancy, duplicate clear with Stop, stale session writes,

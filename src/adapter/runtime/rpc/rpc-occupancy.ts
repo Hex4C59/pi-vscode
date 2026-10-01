@@ -91,7 +91,7 @@ export function createRpcOccupancy() {
       return !aborting && !queuedWriteInFlight && !promptInFlight && !promptAckPending;
     },
     allowsModelMutation(): boolean {
-      return !queuedWriteInFlight && !promptInFlight;
+      return !aborting && !queuedWriteInFlight && !promptInFlight;
     },
     allowsRestart(): boolean {
       return !aborting && !queuedWriteInFlight && !promptInFlight && !promptAckPending && !agentRunning && !commandInFlight
