@@ -27,7 +27,7 @@
 
 ### 方案与架构核对
 
-安装包公开 rpc.md（pi 0.86.1）定义 `get_commands`：`source` 为 `extension`／`prompt`／`skill`，可选 `location` 与 `path`。生产 adapter 已在 Controlled 与 Trusted 的 runtime ready／替换后刷新有界展示快照。宿主过滤路径与凭据，UI 只渲染投影。补全走 `DraftSubmission` 一次草稿变更；发送仍走既有 idle `prompt`。WI-077 队列继续拒绝首部 slash。内置仅 TUI 命令不在 `get_commands` 中，不得发明。无新依赖、进程策略、存储或信任决定。当前实现契约见[双语契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现)。
+安装包公开 rpc.md（pi 0.86.1）示例仍列 `location/path`，实际公开 `SlashCommandInfo`／`SourceInfo` 类型与 RPC 返回 `sourceInfo`；`extensions.md` 说明以它为规范来源。adapter 已支持实际形状并仅映射 user／project scope，不投影嵌套路径或包来源。`source` 为 `extension`／`prompt`／`skill`。生产 adapter 已在 Controlled 与 Trusted 的 runtime ready／替换后刷新有界展示快照。宿主过滤路径与凭据，UI 只渲染投影。补全走 `DraftSubmission` 一次草稿变更；发送仍走既有 idle `prompt`。WI-077 队列继续拒绝首部 slash。内置仅 TUI 命令不在 `get_commands` 中，不得发明。无新依赖、进程策略、存储或信任决定。当前实现契约见[双语契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现)。
 
 ### 架构检查（Prepare 结论：implement now；Decision none；设计 Implementable，尚非 Verifiable）
 
@@ -35,11 +35,11 @@
 |---|---|
 | 1–3 分解／接口／依赖 | pass（设计）：adapter 翻译 `get_commands`；宿主拥有快照／generation／补全准入；UI 只打开菜单与过滤。沿用 [host capability](docs/architecture/vscode-extension-architecture.md#internal-host-capability-modules) 与 `DraftSubmission`。实现时核对 imports。 |
 | 4 契约 | pass（实现，验收待补）：[命令发现契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现)定义数据、前置、错误、额度、顺序与隐私。成对类型／validator／消费者已实现；不声明真实宿主验收。 |
-| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。pass（composition）：空／失败与 Stop 迟到回包、未知 name／草稿与 generation 过期用例已通过；真实 runtime／宿主仍待验证。 |
+| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。pass（composition）：空／失败与 Stop 迟到回包、未知 name／草稿与 generation 过期用例已通过；实际 runtime 四次启动／替换与退出已验证；原生宿主仍待验证。 |
 | 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-078 与本次持续批准；不扩加载报告／包管理，不接受整个候选。 |
 | 12–14 安全／数据／隐私 | pass（设计）：路径与文件正文留宿主；描述打码；不新增持久化。pass（composition）：adapter 丢弃 path，浏览器 parser 拒收附加 path 字段；已拒收凭据式名称、屏蔽含路径描述并在打码后截断；不把 composition 等同真实宿主隐私验收。 |
 | 15 性能／背压 | pass（设计）：最多 512 行、名称／描述上限；过滤在已发布快照上本地进行。 |
-| 16–17 验证／构建 | partial：adapter／provider／DraftSubmission／client／菜单贯通，compile／lint／npm test 1154 通过；浏览器 18 组布局与键盘检查通过。gap：真实 runtime／F5／安装 VSIX。 |
+| 16–17 验证／构建 | partial：adapter／provider／DraftSubmission／client／菜单贯通，compile／lint／npm test 1156 通过；浏览器 18 组布局与键盘检查通过。实际 pi 0.86.1 Controlled 拒绝／同意、Trusted 注册与替换回拒绝通过；gap：F5／安装 VSIX。 |
 | 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3；新意图只准 chat；旧 viewId 拒绝。 |
 | 19 UX／可访问性 | partial：mounted 与浏览器键盘、合成 IME、弹出层互斥和中英状态通过；操作系统 IME 与原生宿主仍待验证。 |
 
@@ -53,7 +53,7 @@
 
 ## 当前焦点与未决项
 
-WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：隔离公开资源夹具取真实 pi 快照，再分别完成 macOS F5／安装 VSIX 验证。adapter／宿主／草稿／client／菜单已实现，未完成原生宿主验收。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
+WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：分别完成 macOS F5／安装 VSIX 验证；真实 pi 0.86.1 四场景已通过。adapter／宿主／草稿／client／菜单已实现，未完成原生宿主验收。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -147,7 +147,7 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 实现提交 `08cf3f8`（名称／描述隐私与打码后额度）和 `a927a91`（前导 `/` 菜单、宿主确认补全、键盘／合成 IME／弹出层互斥、中英状态），均不含 ACTIVE。新失败用例先红后绿，预览清单仅为合成展示。compile／lint 与最终 `npm test` 1154 全通过；首次全跑有一项未改动的 inventory 等待超时，定向 7 项与全量重跑通过，未修改该模块。浏览器实际 Chrome 的 280／320／400px × dark／light／high contrast × 中英 18 组及短视口检查通过；合成 IME 不等于操作系统 IME。
 
-可重复工件在 `dist/wi078-command-catalogue/`：mounted JSON、`browser-matrix.json`、`browser-keyboard.json`、截图／contact sheets、`replay-browser.cjs` 和首次失败／最终通过日志。目录契约转为 Living 实现，WI／runtime／原生验收仍待补。下一步真实 pi、macOS F5、安装 VSIX；不关闭 WI、不整体完成 PI-GAP-02、不改 Draft ADR 0010。本 Goal 保持 active，无 push／amend／rebase／force。
+可重复工件在 `dist/wi078-command-catalogue/`：mounted JSON、`browser-matrix.json`、`browser-keyboard.json`、截图／contact sheets、`replay-browser.cjs` 和首次失败／最终通过日志。目录契约转为 Living 实现，WI／原生验收仍待补。后续 `b2e84b7` 修复真实 0.86.1 的 sourceInfo：隔离真实 runtime 四场景、四个子进程退出与夹具删除已观察，无 prompt／供应商调用；新 transport 用例先红后绿，compile／lint／1156 tests 与 docs:verify 通过（仅既有 ADR0010 两条警告）。工件新增 `runtime-replay.mjs`／`runtime-report.json`，是实际 pi＋生产 adapter＋spike process，不是原生宿主。下一步 macOS F5、安装 VSIX；不关闭 WI、不整体完成 PI-GAP-02、不改 Draft ADR 0010。本 Goal 保持 active，无 push／amend／rebase／force。
 
 ### 2026-10-02 — WI-077 关闭：F5 与安装 VSIX 文字队列闭环
 
