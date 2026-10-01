@@ -55,7 +55,7 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider 与 production UI（Steer／Follow-up／pending／recall／recovery）已接线；下一步浏览器 en／zh／窄宽／主题／键盘与真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider 与 production UI（Steer／Follow-up／pending／recall／recovery）已接线；jsdom 挂载证据在 `dist/wi077-queued-ui/`。下一步：preview 合成队列演示、浏览器 en／zh／窄宽／主题／键盘，以及真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -147,7 +147,7 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ### 2026-10-01 — WI-077 Build 第十二步：production 队列 UI
 
-实现 `1fdd692` 不含 ACTIVE。Client 镜像 `queuedTextState`、busy 时 `queueChat`／recall／use／discard；composer 挂载 Steer／Follow-up 与 pending／recovery 面板（en／zh）；composition `dist/wi077-queued-ui/`。双语契约改为已挂载 UI、验收未完成。compile／lint／1138 tests、docs:verify 0 错误，ADR 0010 两提示保留。下一步浏览器与真实宿主分层验收；不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+实现 `1fdd692`／挂载测试 `f284b7f` 不含 ACTIVE。Client 镜像 `queuedTextState`、busy 时 `queueChat`／recall／use／discard；composer 挂载 Steer／Follow-up 与 pending／recovery 面板（en／zh）；composition `dist/wi077-queued-ui/`（含 client intents 与 mounted composer）。双语契约改为已挂载 UI、验收未完成。compile／lint／1139 tests、docs:verify 0 错误，ADR 0010 两提示保留。下一步 preview 队列演示、浏览器与真实宿主分层验收；不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
 
 ### 2026-10-01 — WI-077 Build 第十一步：provider 队列会话接线
 
