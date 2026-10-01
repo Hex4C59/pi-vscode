@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
-import type { AttachmentHistoryEntry, AttachmentStateMessage, ExecutionProfileProjection, ProviderConfigProjection, QueuedTextStateMessage, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
+import { useEffect, useRef, useState, type ReactElement, type RefObject } from "react";
+import type { AttachmentHistoryEntry, AttachmentStateMessage, CommandCatalogueStateMessage, ExecutionProfileProjection, ProviderConfigProjection, QueuedTextStateMessage, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
 import { ModelPickerView, SessionGrants, useChatPreview, useUiText, type AttachmentPreview } from "../../components/index.js";
+import { CommandInput } from "./command-input.js";
 import { CandidateContext } from "./candidate-context.js";
 import { ComposerIcon } from "./composer-icon.js";
 import { QueuedTextPanel } from "./queued-text-panel.js";
@@ -12,6 +13,9 @@ type ComposerProps = {
   workspace: WorkspaceStateMessage | null;
   attachments: AttachmentStateMessage | null;
   queuedText: QueuedTextStateMessage | null;
+  commandCatalogue: CommandCatalogueStateMessage | null;
+  onCompleteCommand: (name: string) => void;
+  commandCompletionDisabled: boolean;
   history: AttachmentHistoryEntry[];
   historyOpen: boolean;
   historyPage: number | null;
@@ -61,6 +65,8 @@ type ComposerProps = {
 type ComposerChrome = {
   modelOpen: boolean;
   setModelOpen: (next: boolean) => void;
+  permissionsOpen: boolean;
+  closePopovers: () => void;
   permissions: { readonly current: HTMLDetailsElement | null };
   onPermissionsToggle: (event: { currentTarget: HTMLDetailsElement }) => void;
 };
@@ -68,64 +74,36 @@ type ComposerChrome = {
 function useComposerChrome(identity: string | null): ComposerChrome {
   const permissions = useRef<HTMLDetailsElement>(null);
   const [modelOpen, setModelOpenState] = useState(false);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
   useEffect(() => {
-    setModelOpenState(false);
+    setModelOpenState(false); setPermissionsOpen(false);
     if (permissions.current) permissions.current.open = false;
   }, [identity]);
   return {
-    modelOpen,
+    modelOpen, permissionsOpen,
+    closePopovers: () => { setModelOpenState(false); setPermissionsOpen(false); if (permissions.current) permissions.current.open = false; },
     permissions,
     setModelOpen: (next: boolean) => {
-      if (next && permissions.current) permissions.current.open = false;
+      if (next && permissions.current) { permissions.current.open = false; setPermissionsOpen(false); }
       setModelOpenState(next);
     },
     onPermissionsToggle: event => {
+      setPermissionsOpen(event.currentTarget.open);
       if (event.currentTarget.open) setModelOpenState(false);
     },
   };
 }
 
-/** Layout and input behavior; send, stop, draft and attachment intents are bound by the page. */
-export function MessageComposer({
-  text, error, workspace, attachments, queuedText, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
-  input, canPrepare, canBrowse, canCompose, readableRuntimeError, showStop, stopping, sendBlocked, queueDisabled, recallDisabled,
-  attachmentDisabled, settingsDisabled, sessionTransitioning, submit, onEdit, onStop, onQueueChat, onRecallQueuedText,
-  onUseRecoveredText, onDiscardRecoveredText, onAddAttachment, onAddSelection, onRemoveAttachment,
-  onConfirmAttachment, onToggleHistory, onNavigateHistory, onRequestPreview, onClosePreview, onSetDefaultModel,
-  onSetDefaultThinking, onSetChatModel, onSetThinking, onChooseExecutionProfile, onEndOwnedRuntime,
-  onRecoverControlledRuntime, onRevokeGrant, onRequireWorkspace, onSettings,
-}: ComposerProps): ReactElement {
+
+type ComposerModelProps = Pick<ComposerProps, "workspace" | "canPrepare" | "providerConfig" | "error" | "settingsDisabled"
+  | "onSetDefaultModel" | "onSetDefaultThinking" | "onSetChatModel" | "onSetThinking" | "onSettings"> & { chrome: ComposerChrome };
+
+function ComposerModel({ workspace, canPrepare, providerConfig, error, settingsDisabled,
+  onSetDefaultModel, onSetDefaultThinking, onSetChatModel, onSetThinking, onSettings, chrome,
+}: ComposerModelProps): ReactElement {
   const { text: t } = useUiText();
   const previewMode = useChatPreview();
-  const identity = workspace ? workspace.viewId + ":" + workspace.generation : null;
-  const chrome = useComposerChrome(identity);
-  const taskRunning = !!workspace?.chatBusy;
-  useLayoutEffect(() => {
-    const node = input.current;
-    if (node) { node.style.height = "auto"; node.style.height = `${Math.min(node.scrollHeight, 140)}px`; }
-  }, [text, input]);
-  return <form className="candidate__composer" onSubmit={event => { event.preventDefault(); if (!taskRunning) submit(); }}>
-    <QueuedTextPanel state={queuedText} draftEmpty={!text.trim() && !(attachments?.draft.attachments.length)}
-      recallDisabled={recallDisabled} onRecall={onRecallQueuedText} onUse={onUseRecoveredText} onDiscard={onDiscardRecoveredText} />
-    <CandidateContext onRequireWorkspace={onRequireWorkspace} historyDisabled={!canBrowse || sessionTransitioning} key={identity} pageSize={16} history={history} historyOpen={historyOpen} historyPage={historyPage} onHistory={onToggleHistory} onHistoryPage={onNavigateHistory} state={attachments} disabled={attachmentDisabled} onAdd={onAddAttachment} onAddSelection={onAddSelection} onRemove={onRemoveAttachment} onConfirm={onConfirmAttachment} onPreview={onRequestPreview} onClosePreview={onClosePreview} preview={preview}>{({ actions, content }) => <>
-    {content}
-    <textarea ref={input} aria-label={t("Message")} placeholder={t("Ask pi anything…")} rows={2} maxLength={8000} value={text}
-      readOnly={readableRuntimeError}
-      disabled={!!error || (canPrepare ? !!workspace?.busy : (!canCompose && !readableRuntimeError) || !attachments)}
-      onChange={event => onEdit(event.currentTarget.value)}
-      onKeyDown={event => {
-        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-          event.preventDefault();
-          if (!taskRunning) submit();
-        }
-      }} />
-    {taskRunning && <div className="candidate__composer-queue" role="group" aria-label={t("Queued text")}>
-      <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("steering")}>{t("Steer current task")}</button>
-      <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("follow-up")}>{t("Follow up after task")}</button>
-    </div>}
-    <div className="candidate__composer-actions">
-      {actions}
-      <div className="candidate__model">
+  return <div className="candidate__model">
         {canPrepare
           ? <ModelPickerView savedDefault={providerConfig} disabled={!!error || !!workspace?.busy}
               continuousThinkingDrag animatePopover
@@ -146,7 +124,41 @@ export function MessageComposer({
               <span className="model-effort-trigger__model">{t("Model not configured")}</span>
               <span className="model-effort-trigger__thinking"> · —</span>
             </button>}
-      </div>
+  </div>;
+}
+
+/** Layout and input behavior; send, stop, draft and attachment intents are bound by the page. */
+export function MessageComposer({
+  text, error, workspace, attachments, queuedText, commandCatalogue, onCompleteCommand, commandCompletionDisabled, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
+  input, canPrepare, canBrowse, canCompose, readableRuntimeError, showStop, stopping, sendBlocked, queueDisabled, recallDisabled,
+  attachmentDisabled, settingsDisabled, sessionTransitioning, submit, onEdit, onStop, onQueueChat, onRecallQueuedText,
+  onUseRecoveredText, onDiscardRecoveredText, onAddAttachment, onAddSelection, onRemoveAttachment,
+  onConfirmAttachment, onToggleHistory, onNavigateHistory, onRequestPreview, onClosePreview, onSetDefaultModel,
+  onSetDefaultThinking, onSetChatModel, onSetThinking, onChooseExecutionProfile, onEndOwnedRuntime,
+  onRecoverControlledRuntime, onRevokeGrant, onRequireWorkspace, onSettings,
+}: ComposerProps): ReactElement {
+  const { text: t } = useUiText();
+  const identity = workspace ? workspace.viewId + ":" + workspace.generation : null;
+  const chrome = useComposerChrome(identity);
+  const taskRunning = !!workspace?.chatBusy;
+  return <form className="candidate__composer" onSubmit={event => { event.preventDefault(); if (!taskRunning) submit(); }}>
+    <QueuedTextPanel state={queuedText} draftEmpty={!text.trim() && !(attachments?.draft.attachments.length)}
+      recallDisabled={recallDisabled} onRecall={onRecallQueuedText} onUse={onUseRecoveredText} onDiscard={onDiscardRecoveredText} />
+    <CandidateContext onRequireWorkspace={onRequireWorkspace} historyDisabled={!canBrowse || sessionTransitioning} key={identity} pageSize={16} history={history} historyOpen={historyOpen} historyPage={historyPage} onHistory={onToggleHistory} onHistoryPage={onNavigateHistory} state={attachments} disabled={attachmentDisabled} onAdd={onAddAttachment} onAddSelection={onAddSelection} onRemove={onRemoveAttachment} onConfirm={onConfirmAttachment} onPreview={onRequestPreview} onClosePreview={onClosePreview} preview={preview}>{({ actions, content }) => <>
+    {content}
+    <CommandInput key={identity} text={text} input={input} catalogue={commandCatalogue}
+      readOnly={readableRuntimeError} disabled={!!error || (canPrepare ? !!workspace?.busy : (!canCompose && !readableRuntimeError) || !attachments)}
+      blocked={chrome.modelOpen || chrome.permissionsOpen} completionDisabled={commandCompletionDisabled}
+      taskRunning={taskRunning} onEdit={onEdit} onComplete={onCompleteCommand} onOpen={chrome.closePopovers} submit={submit} />
+    {taskRunning && <div className="candidate__composer-queue" role="group" aria-label={t("Queued text")}>
+      <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("steering")}>{t("Steer current task")}</button>
+      <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("follow-up")}>{t("Follow up after task")}</button>
+    </div>}
+    <div className="candidate__composer-actions">
+      {actions}
+      <ComposerModel workspace={workspace} canPrepare={canPrepare} providerConfig={providerConfig} error={error}
+        settingsDisabled={settingsDisabled} chrome={chrome} onSetDefaultModel={onSetDefaultModel}
+        onSetDefaultThinking={onSetDefaultThinking} onSetChatModel={onSetChatModel} onSetThinking={onSetThinking} onSettings={onSettings} />
       {(executionProfile || canBrowse) && <details ref={chrome.permissions} className="candidate-permissions" key={`permissions-${identity}`} onToggle={chrome.onPermissionsToggle} onKeyDown={event => {
         if (event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
       }}>

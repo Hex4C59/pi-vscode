@@ -90,6 +90,12 @@ This is the bottom card. “Input” is only the text field; the composer includ
 
 The row under the input is the **composer toolbar**.
 
+## Command discovery menu
+
+**命令发现菜单 (command discovery menu)** opens above the message composer when the draft starts with `/` and the caret is in its first token. It shows the current host snapshot's extension commands, prompt templates and skills, with optional descriptions and coarse source locations; it is not a package inventory or TUI built-in list. Arrow keys select; Enter/Tab complete the acknowledged draft without sending, and Escape closes it without clearing text. Empty, unavailable and no matches have distinct notices.
+
+WI-078 currently has mounted and browser-preview evidence, not completed real-runtime/F5/installed-VSIX acceptance; see [ACTIVE](../../ACTIVE.md) and the [message contract](webview-messages.md#wi-078-composer-command-discovery). Existing numbered screenshots predate this addition.
+
 ## Model picker
 
 Opened from the model chip. In everyday speech call the whole floating card the **model picker**, not a popover, 弹出层, or dropdown. Inside it there is a model list and a thinking slider.

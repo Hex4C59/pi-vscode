@@ -50,16 +50,17 @@
 
 **证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。Living 意图、provider 接线与生产挂载 Steer／Follow-up／recall／recovery UI 已交付。2026-10-02 已记录浏览器 280 px en／zh／主题／键盘、隔离安装 VSIX 与 macOS F5 的 Steer→Stop→Use in draft（锁定 pi 0.86.1＋合成 provider）；[WI-077 验收](../archive/2026-10-02-wi-077-acceptance.zh.md)。这些宿主未单独点击 Follow-up；活断线与 320／400 宽度未再取证。附件与 slash 展开仍在本切片之外。不接受 gate。
 
-## WI-078 作曲区命令发现（Outline，未实现）
+## WI-078 作曲区命令发现
 
-已批准 REQ-004／009 切片见 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。仅 chat 的命名操作与宿主目录投影；设置页忽略且无副作用。Build 须成对落地类型／校验器／消费者后才能视为 Living。
+**实现为 Living；WI 验收待完成。** 已批准 REQ-004／009 切片见 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。v3 类型、校验器、宿主投影、草稿 owner、浏览器 parser／client 与生产 composer 菜单已成对接线。已有 mounted 与真实 Chrome 预览证据；真实 pi、macOS F5 与安装 VSIX 验收仍待完成，见 [ACTIVE](../../ACTIVE.md)。设置页不准入 chat 补全意图。
 
 - 宿主在 Controlled 与 Trusted 配置下 runtime ready 后，以及提交的 runtime／session 替换后，从公开 `get_commands` 刷新有界快照。Adapter 翻译 RPC；宿主拥有校验、世代与展示过滤。UI 不调用 RPC、不发明名称。
-- 入站仅 chat 意图（精确 v3 信封）：`completeCommand {draftRevision, name}` 把 `/name` 插入已确认草稿（已知带参数时加尾随空格）。宿主只对照当前快照匹配 `name`；未知／过期名称拒绝且不改较新编辑。补全不发送、不入队、不展开。打开／过滤菜单是对最近已发布投影的本地 UI；可选 `refreshCommands` 必须幂等、仅 chat、受 generation 守卫。
-- 宿主 `commandCatalogueState` 使用当前信封与单调 revision：`status: loading | ready | empty | unavailable`、可选固定错误码、最多 512 行 `{name, description?, source: extension | prompt | skill, location?: user | project | path}`。名称非空、≤200 UTF-8、无空白或 `/`。描述可选、≤500 UTF-16，按既有宿主规则打码凭据。**绝不**投影 `path` 或文件正文。`get_commands` 没有的仅 TUI 命令保持缺席。
+- 入站仅 chat 意图（精确 v3 信封）：`completeCommand {draftRevision, name}` 只替换精确已确认草稿的首部 slash token，保留参数后缀原文。`get_commands` 不提供参数元数据；补全不发明尾随参数。宿主只对照当前快照匹配 `name`；未知／过期名称拒绝且不改较新编辑。补全不发送、不入队、不展开。打开／过滤菜单是对最近已发布投影的本地 UI。没有准入 `refreshCommands` 意图；刷新发生在 ready／替换时。
+- 宿主 `commandCatalogueState` 使用当前信封与单调 revision：`status: loading | ready | empty | unavailable`、`error: null | unavailable`、最多 512 行 `{name, description?, source: extension | prompt | skill, location?: user | project | path}`。名称非空、≤200 UTF-8、无空白或 `/`；凭据形状的名称使发现不可用。描述可选，先按既有宿主规则打码凭据再限制到 ≤500 UTF-16；含路径的可选描述不展示。非 ready 状态 rows 为空数组；名称不得重复。**绝不**投影 `path` 或文件正文。`get_commands` 没有的仅 TUI 命令保持缺席。
 - 前置：当前 chat 视图、匹配 generation、runtime ready。非法：设置页、过期 generation、名称不在快照、草稿忙碌／过期 revision、插入后超长。空快照是 `empty`，不发明内置列表。失败／损坏的 `get_commands` 为 `unavailable`，固定诊断且无行；提交替换后不得保留上一世代行。
-- 顺序：先发布目录，菜单才能声称 ready。补全是 `DraftSubmission` 下一次草稿变更。超时沿用既有 RPC start／control 预算；不静默重试以免混目录。取消／替换丢弃在途回包。同一 revision 对同一 name 的幂等补全，若草稿已以 `/name` 开头则 no-op。
+- 顺序：先发布目录，菜单才能声称 ready。补全是 `DraftSubmission` 下一次草稿变更。超时沿用既有 RPC start／control 预算；不静默重试以免混目录。取消／替换丢弃在途回包。同一 revision 对同一 name 的幂等补全，若首部 token 已精确等于 `/name` 则 no-op。
 - 机密与隐私：绝对路径、AGENTS.md 正文与凭据留在宿主。日志不得打印目录路径或 prompt 正文。Webview 只收上述展示 DTO。
+- 作曲区交互：文字以 `/` 开头且光标在首个 token 内时打开有界 listbox；输入过滤已发布快照。方向键导航；Enter／Tab 仅补全已确认草稿，菜单打开时不发送；Escape 关闭且不清文字。忽略 composition／IME Enter。空列表、不可用与零匹配分开显示。命令与模型／权限弹出层互斥。打开或选择一项不代表命令已执行。
 
 ## 编辑区设置界面（WI-026）
 

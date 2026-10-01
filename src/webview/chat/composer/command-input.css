@@ -1,0 +1,13 @@
+/* Anchored above the composer so neither typing nor Send is covered. */
+.command-menu { position: absolute; z-index: 3; bottom: calc(100% + var(--ui-space-2)); left: 0; width: 100%; min-width: 0; box-sizing: border-box; padding: var(--ui-space-2); color: var(--ui-fg); background: var(--ui-surface-raised); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); box-shadow: var(--ui-shadow); }
+.command-menu__heading { padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-2); color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.command-menu__list { display: grid; gap: var(--ui-space-1); max-height: min(240px, 35dvh); overflow-y: auto; overflow-x: hidden; }
+.command-menu__row { display: grid; gap: var(--ui-space-1); width: 100%; min-width: 0; padding: var(--ui-space-2); border: 1px solid transparent; border-radius: var(--ui-radius); background: transparent; color: var(--ui-fg); text-align: left; cursor: pointer; }
+.command-menu__row:hover:not(:disabled) { background: var(--ui-hover); }
+.command-menu__row[aria-selected="true"] { background: var(--ui-hover); border-color: var(--ui-border-strong); }
+.command-menu__row:disabled { cursor: default; opacity: 0.72; }
+.command-menu__name { font-size: var(--ui-font-body); overflow-wrap: anywhere; }
+.command-menu__source, .command-menu__description, .command-menu__notice { font-size: var(--ui-font-chrome); color: var(--ui-muted); overflow-wrap: anywhere; }
+.command-menu__description { line-height: 1.4; }
+.command-menu__notice { margin: var(--ui-space-1) var(--ui-space-2) var(--ui-space-2); }
+@media (forced-colors: active) { .command-menu__row[aria-selected="true"] { border-color: Highlight; } }

@@ -67,3 +67,18 @@ async function reportRoundtrip(): Promise<void> {
       "old revision ignored", "disconnect clears rows"],
     limits: ["runtime and VS Code seams", "not rendered menu, F5 or installed VSIX"] }, null, 2) + "\n");
 }
+
+// Preview is synthetic, but must use the same acknowledged-draft completion contract.
+test("preview bridge discovers and completes synthetic commands without starting a task", async () => {
+  const { PreviewBridge } = await import("../preview/preview-bridge.js");
+  const bridge = new PreviewBridge("ready");
+  const client = new WebviewClient(bridge);
+  try {
+    client.start();
+    assert.equal(client.getSnapshot().commandCatalogue?.status, "ready");
+    client.edit("/fi retain arguments");
+    client.completeCommand("fix-tests");
+    assert.equal(client.getSnapshot().text, "/fix-tests retain arguments");
+    assert.equal(client.getSnapshot().workspace?.chatBusy, false);
+  } finally { client.dispose(); bridge.dispose(); }
+});

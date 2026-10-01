@@ -5,6 +5,7 @@ import type {
   AttachmentPreviewMessage,
   AttachmentStateMessage,
   ChangeReviewStateMessage,
+  CommandCatalogueRow,
   DraftAttachment,
   ExecutionProfileProjection,
   ExtensionInteractionProjection,
@@ -102,6 +103,13 @@ function providerConfigFor(fixture?: SettingsFixture): ProviderConfigProjection 
   }
   return ready;
 }
+
+// Synthetic sample catalogue, never evidence of installed runtime resources.
+const PREVIEW_COMMANDS: readonly CommandCatalogueRow[] = [
+  { name: "review", source: "extension", description: "Review the current changes" },
+  { name: "fix-tests", source: "prompt", location: "project", description: "Investigate and fix failing tests" },
+  { name: "skill:review", source: "skill", location: "user", description: "Use the review skill" },
+];
 
 export class PreviewBridge implements WebviewBridge {
   readonly viewId: string;
@@ -201,6 +209,7 @@ export class PreviewBridge implements WebviewBridge {
       this.emitWorkspace();
       this.emitAttachment();
       this.emitQueue();
+      this.emitCommands();
       this.emitReview();
       this.emitSettings();
       if (this.previewOptions?.locale) this.emit({ version: 3, type: "uiLanguageState", viewId: this.viewId, generation: this.workspace.generation, locale: this.previewOptions.locale });
@@ -236,6 +245,7 @@ export class PreviewBridge implements WebviewBridge {
       case "sendChat":
         this.sendChat(message);
         break;
+      case "completeCommand": this.completeCommand(message); break;
       case "queueChat":
         this.queueChat(message);
         break;
@@ -601,6 +611,25 @@ export class PreviewBridge implements WebviewBridge {
 
   private emitQueue(): void {
     this.emit({ ...this.queued, viewId: this.viewId, generation: this.workspace.generation });
+  }
+
+  private emitCommands(): void {
+    const ready = this.workspace.runtime === "ready";
+    this.emit({ version: 3, type: "commandCatalogueState", viewId: this.viewId, generation: this.workspace.generation,
+      revision: this.workspace.generation, status: ready ? "ready" : "unavailable",
+      error: ready ? null : "unavailable", rows: ready ? PREVIEW_COMMANDS : [] });
+  }
+
+  private completeCommand(message: Extract<WebviewMessage, { type: "completeCommand" }>): void {
+    if (this.workspace.runtime !== "ready" || !PREVIEW_COMMANDS.some(row => row.name === message.name)
+      || this.attachment.preparation !== "idle") return;
+    const draft = this.attachment.draft;
+    const leading = /^\/[^\s/]*(?=\s|$)/.exec(draft.text);
+    if (!leading) return;
+    const text = `/${message.name}${draft.text.slice(leading[0].length)}`;
+    if (text.length > 8000 || text === draft.text) return;
+    this.attachment = { ...this.attachment, result: null, draft: { ...draft, revision: draft.revision + 1, text } };
+    this.emitAttachment();
   }
 
   private emitSession(): void {

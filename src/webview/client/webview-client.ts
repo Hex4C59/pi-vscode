@@ -144,7 +144,7 @@ export class WebviewClient {
       || this.commandCompletion || snapshot.synchronizing || snapshot.submitting || snapshot.error
       || snapshot.attachments?.preparation !== "idle" || snapshot.workspace?.runtime !== "ready"
       || controls.stopping || controls.sessionTransitioning || snapshot.workspace.busy
-      || snapshot.executionProfile?.phase !== "idle" || snapshot.interactions?.active) return;
+      || (snapshot.executionProfile && snapshot.executionProfile.phase !== "idle") || snapshot.interactions?.active) return;
     const leading = /^\/[^\s/]*(?=\s|$)/.exec(snapshot.text);
     if (!leading) return;
     const after = `/${name}${snapshot.text.slice(leading[0].length)}`;

@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[plugin-parts.md](plugin-parts.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-10-01
+- 最近同步：2026-10-02
 
 - 类型：参考
 - 状态：Living
@@ -94,6 +94,12 @@ flowchart LR
 | 5 | 发送 | **Send** | 任务进行中同一位置变成 **停止（Stop）** |
 
 输入框下面那一排叫 **输入工具栏**。
+
+## 命令发现菜单
+
+**命令发现菜单（command discovery menu）**：草稿以 `/` 开头且光标在首个 token 内时，显示在消息编辑区上方。只列当前宿主快照中的扩展命令、提示词模板和技能，并展示可选描述与粗粒度来源位置；不是包清单或 TUI 内置命令列表。方向键选择；Enter／Tab 补全已确认草稿而不发送，Escape 关闭且不清文字。空列表、不可用和无匹配各有提示。
+
+WI-078 当前只有 mounted 与浏览器预览证据，真实 runtime／F5／安装 VSIX 验收尚未完成；见 [ACTIVE](../../ACTIVE.md) 与[消息契约](webview-messages.zh.md#wi-078-作曲区命令发现)。既有编号截图早于本次新增。
 
 ## 模型选择器
 
