@@ -82,6 +82,8 @@ Optional `.host.spec.ts` / `.client.spec.ts` / `.compat.spec.ts` qualifiers iden
 
 ## Evidence tiers and safety
 
+For task-candidate and PR-integration evidence, use the [candidate identity and remote-check rules](../agent-collaboration.md#candidate-evidence-and-remote-checks). Record the exact tested commit and base, and distinguish dirty-tree development checks from committed-candidate acceptance. The PR ancestry workflow does not substitute for any behavioral or real-host evidence below.
+
 - **Automated tests (`npm test`):** repeatable, keyless behavior and regression checks. Prefer real deterministic implementations; substitute narrow external seams such as VS Code APIs, processes, clocks, RPC and the browser host boundary. Mounted React/jsdom Webview specs cover projection, interaction and cleanup without claiming browser layout or VS Code host behavior. Test relevant malformed input, errors, cancellation, late completion, generation changes and resource cleanup. Assert observable outputs and side effects, not just mock call counts or implementation-shaped strings.
 - **Runtime/project-trust spikes (`spike:*`):** explicit, isolated integration evidence under the [pi integration playbook](pi-integration.md). A mock RPC test is not proof that the installed pi process behaves the same way.
 - **Manual host acceptance (F5):** actual extension lifecycle and Webview interactions, including applicable keyboard, focus, theme and failure behavior. HTML/CSP assertions and scripted UI tests are useful but do not establish real host rendering or interaction correctness.

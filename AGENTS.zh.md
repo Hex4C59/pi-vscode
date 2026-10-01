@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[AGENTS.md](AGENTS.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-22
+- 最近同步：2026-10-02
 
 - 永远不要在编写代码后编写单元测试。
 - 强烈优先使用端到端测试作为唯一的测试机制。使用它们来验证复杂功能是否正常工作。在端到端测试结束时，生成一个可验证且可重复的工件。
@@ -14,6 +14,24 @@
 **pi VS Code** 的项目专用 Agent 工作规则。通用规则见 [`AGENTS.kernel.zh.md`](AGENTS.kernel.zh.md)（英文：[`AGENTS.kernel.md`](AGENTS.kernel.md)）——从 engineering-template 复制该对，内核升级时保持同步。
 
 详细 playbook 在 `docs/guides/agent/`（见 **加载地图**）。
+
+## 多 Agent 隔离
+
+假定其他 Agent 正在并行工作。**一个任务 = 一个分支 + 一个专属 worktree。** 主 checkout 与本地 `master` / `main` 是协调入口，不是开发工作区。接续任务仅使用自己的 worktree；所有编辑、测试、冲突解决和获授权提交均在其中进行。
+
+- 任何编辑前，从 `origin/master` 创建指定 worktree；除非维护者指定其他名称，使用 `codex/<task>` 分支。[协作 §5](docs/guides/agent-collaboration.zh.md#多-agent-任务隔离) 提供命令，[§6](docs/guides/agent-collaboration.zh.md#隔离任务单) 提供任务单。
+- 不得复用、修改或删除其他任务的分支／worktree，不得导入其未提交文件、混入无关清理，或为集成／测试将任务合并到本地 `master` / `main`。
+- 除非维护者明确点名该条命令，不得运行 `git reset --hard`、`git checkout .`、`git clean -fd`、`git stash` 或 `git add .`。仅暂存明确列出的路径。
+- 仅在自己的任务 worktree 刷新基线和解决冲突，且须明确提交／历史改写授权。冲突文件不是本任务改过的文件时停止。不得 force-push；已发布分支使用获授权的 merge，而不是 rebase。
+- 创建或更新 PR 前运行 `npm run check:pr-base`；刷新后重跑受影响检查，仅在获授权时推送本分支。按[协作 §5](docs/guides/agent-collaboration.zh.md#候选证据与远端检查) 将证据绑定到实际测试候选与基线。创建 worktree 不授予 commit、rebase、merge、push 或 PR 权限。
+- 保留产品 WIP=1。并行子任务须有互不重叠的写入范围，共享记录由一个协调者负责。未分配给本任务的热点不得修改，先请求所有权。
+
+热点（同时只能有一个指定写入者）：
+
+- `src/extension/piChatViewProvider.ts`
+- `src/extension/contracts/webviewProtocol.ts`
+- `package.json` 和 `package-lock.json`
+- `ACTIVE.md`（仅协调者）
 
 ## 文档职责与冲突优先级
 

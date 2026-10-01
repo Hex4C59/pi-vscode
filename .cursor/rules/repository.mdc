@@ -1,0 +1,6 @@
+---
+description: pi VS Code repository working rules
+alwaysApply: true
+---
+
+Read and follow [AGENTS.md](../../AGENTS.md) before working in this repository. It is the repository rule entry point; follow its applicable document pointers rather than maintaining duplicate rules here.

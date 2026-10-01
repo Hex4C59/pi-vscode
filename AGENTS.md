@@ -10,6 +10,24 @@ Project-specific agent working rules for **pi VS Code**. **Universal rules** are
 
 Detailed playbooks live under `docs/guides/agent/` (see **Load map**).
 
+## Multi-agent isolation
+
+Assume other agents are working concurrently. **One task = one branch + one dedicated worktree.** The primary checkout and local `master` / `main` are coordination surfaces, not development workspaces. Continue a task only in its own worktree; do all edits, tests, conflict resolution and authorized commits there.
+
+- Before any edit, create the assigned worktree from `origin/master`; use `codex/<task>` unless the maintainer names another branch. See [collaboration §5](docs/guides/agent-collaboration.md#multi-agent-task-isolation) for commands and [§6](docs/guides/agent-collaboration.md#isolated-task-sheet) for the task sheet.
+- Never reuse, modify or delete another task's branch/worktree, import its uncommitted files, mix unrelated cleanup, or merge a task into local `master` / `main` for integration or testing.
+- Never run `git reset --hard`, `git checkout .`, `git clean -fd`, `git stash` or `git add .` unless the maintainer explicitly names that exact command. Stage named paths only.
+- Refresh and resolve conflicts only in the task worktree, with explicit commit/history-change authorization. Stop if a conflicting file was not changed by this task. Never force-push; a published branch uses an authorized merge instead of rebase.
+- Before opening or updating a PR, run `npm run check:pr-base`, rerun affected checks after any refresh, and push only this branch when authorized. Bind evidence to the actual tested candidate and base under [collaboration §5](docs/guides/agent-collaboration.md#candidate-evidence-and-remote-checks). A worktree does not grant commit, rebase, merge, push or PR permission.
+- Keep product WIP=1. Parallel subtasks need disjoint write scopes and one coordinator for shared records. Do not modify an unassigned hotspot; request ownership first.
+
+Hotspots (one assigned writer at a time):
+
+- `src/extension/piChatViewProvider.ts`
+- `src/extension/contracts/webviewProtocol.ts`
+- `package.json` and `package-lock.json`
+- `ACTIVE.md` (coordinator only)
+
 ## Document responsibilities and conflict priority
 
 Use each document for the kind of question it owns. The list also gives conflict priority from highest to lowest:

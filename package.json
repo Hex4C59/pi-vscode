@@ -99,6 +99,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.tests.json",
     "test": "node scripts/testing/run-tests.mjs",
     "commit:check": "node scripts/testing/commit-check.mjs",
+    "check:pr-base": "node scripts/testing/pr-base.mjs",
     "spike:queued-input": "node scripts/spikes/spike-queued-input.mjs",
     "spike:offline-inference": "node scripts/spikes/spike-offline-inference.mjs",
     "spike:approval": "npm run compile && node scripts/spikes/spike-approval.mjs",

@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[agent-collaboration.md](agent-collaboration.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-30
+- 最近同步：2026-10-02
 
 - 类型：指南
 - 状态：Accepted
@@ -42,6 +42,7 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 ## 4. 单一进行中项（WIP=1）
 
 - `ACTIVE.md` 中同时只有 **一个** 活动工作项（`WI-xxx`）。
+- 该 WI 已批准的子任务仅可在写入范围互不重叠时并行。指定一个协调者维护共享记录并串行安排热点修改；并行不授权额外 WI 或 Agent。
 - 新想法写入 **停车场**，不直接插队实现。
 - 每个活动 WI 在 `ACTIVE.md` 保留可完整审阅的持久讨论稿，涵盖目标与范围、方案与风险、可操作的验收、明确不做的事、适用时的 gate ID 与决策类、**PRD 判定**以及确认状态。Prepare 阶段可未写全，但进入 Build 前须记录维护者确认。
 - `ACTIVE.md` 是当前工作入口，不是只增不减的历史日志。固定结构为：会话入口、唯一「正在做」、当前焦点与未决项、停车场、最多两条最近交接、紧凑的已完成 WI 索引。已关闭 WI 的讨论稿、长验收清单与更早交接移入 `docs/archive/`，索引保留链接。
@@ -70,11 +71,86 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 ### Git 所有权与关注点隔离
 
-每次任务开始时检查 `git status`、`ACTIVE.md` 的未暂存 diff，以及已有的暂存 diff。将看到的每项变更归类为**既有 Agent 工作**、**当前任务工作**或**用户所有的工作**；无法确定时，在澄清前按用户所有处理。会话期间维护一份临时 commit map：每个关注点一行，记录所有者、预期提交以及预期路径或 hunk。尽管产品工作保持 WIP=1，worktree 可以同时存在多个关注点，但每项变更在暂存前都必须有明确所有权和去向。
+每次任务开始时检查 `git status`、`ACTIVE.md` 的未暂存 diff，以及已有的暂存 diff。将看到的每项变更归类为**既有 Agent 工作**、**当前任务工作**或**用户所有的工作**；无法确定时，在澄清前按用户所有处理。会话期间维护一份临时 commit map：每个关注点一行，记录所有者、预期提交以及预期路径或 hunk。每项变更在暂存前都必须有明确所有权和去向；这种分类不授权不同任务共用开发 worktree。
 
 暂存或提交时，加载 [Git 提交规范](../git-commit-convention.zh.md)：其中集中规定 ACTIVE 隔离、重叠 hunk 恢复和完整暂存审阅。当前 WI 记录独立于实现关注点；保持既有 index 和用户工作。提交仍须明确授权。
 
+### 多 Agent 任务隔离
+
+硬规则与热点清单集中在 [AGENTS](../../AGENTS.zh.md#多-agent-隔离)。每个编辑任务按以下顺序执行：
+
+1. 分配一份任务单，明确分支、worktree、基线、允许路径、禁止路径、检查、Git 权限与协调者。派活前检查路径、共享契约、fixture 和 lockfile 是否重叠，不启动写入范围重叠的任务。热点列入范围时须明确指定唯一写入者。
+2. 只读检查主 checkout，保留现有工作，按已提交基线核对批准。产品任务需要的批准或代码仅存在于其他 worktree 的未提交文件时，停止并请所有者发布获授权基线，不复制文件。独立授权的工作流维护不改变产品 WI，在自己链接的 discussion 中记录批准与交接，例如[隔离规则落地](../discussions/2026-10-02-agent-isolation.zh.md)。
+3. 获授权创建 worktree／分支后，从仓库根目录执行，将两个 `<task>` 占位符替换为指定的唯一任务名：
+
+```bash
+git fetch origin master
+git worktree add -b codex/<task> ../pi-vscode-worktrees/<task> origin/master
+cd ../pi-vscode-worktrees/<task>
+```
+
+4. 接续仅使用同一任务的 worktree，先用 `git worktree list` 和 `git status` 核对路径、分支与所有者。重名不代表可以复用其他任务的 checkout。包括协调文档修改在内的全部编辑与验证均在指定 worktree 进行，不在主 checkout 进行。
+5. 创建／更新 PR 前运行 `npm run check:pr-base`。它 fetch `origin/master`，该引用不是 HEAD 祖先时失败；fetch／Git 错误也按失败处理。它修改共享的远端跟踪元数据，不修改任务文件或提交；不会自动刷新历史，也不强制执行服务端 PR 策略。结果仅覆盖本次获取的快照；基线推进后须重跑。
+6. 门禁失败时，先取得明确历史修改授权并确认自己的 worktree 干净。私有且从未推送的分支使用 `git fetch origin master && git rebase origin/master`；已推送分支使用 `git fetch origin master && git merge origin/master`，不得 force-push。仅解决本任务改过文件中的冲突；其他路径冲突须停止并询问。刷新后重跑受影响检查，在获授权 push／PR 操作前立即重跑基线门禁。仅推送指定分支，不推送本地 `master` / `main`。
+7. 协调者接收各子任务的修改路径、实际结果、工件与剩余风险，在自己的指定 worktree 串行更新共享记录。未分配协调者所有权的子任务不修改 `ACTIVE.md`。独立授权维护使用自己的交接，不替换产品 WI。合入且获明确清理授权后，核对本任务提交已包含在刚获取的基线中，保留所需 ignored 工件，确认无未提交／未推送工作，再仅删除本任务的 worktree／分支。不积累已完成 worktree，也不删除其他任务资源。
+
+### 候选证据与远端检查
+
+任务候选验证与 PR 集成验证回答不同问题：
+
+- 任务 worktree 纳入已获取的 `origin/master` 后，对已提交候选运行相关检查，并解决本任务所有的冲突。不得合并到本地 `master` 来制造测试候选。
+- 落地前验证实际集成候选，例如 PR merge ref 或可信 merge-queue 候选。记录实际测试提交、目标基线与 PR head，而不只是任务分支名。仅当相关可执行树相同时，任务结果才适用于另一候选；基线变化须更新集成证据。
+- 正式候选证据标识已提交且干净的源码树。针对未提交文件的检查属于开发证据：记录脏状态并保留补丁／源码快照，不声称 HEAD 本身通过。运行后修改不继承之前结果。
+- [PR 基线工作流](../../.github/workflows/pr-base.yml) 对所有目标为 `master` 的 PR 运行，包括仅文档修改。共享 CLI 接受 `--base <full-commit-sha> --head <full-commit-sha>`，不 fetch，只检查这两个准确快照，不误查可能为合成 merge 的 checkout HEAD。无参数本地命令仍先 fetch。工作流保留 fixture 结果及 PR 祖先检查日志；两者均不证明产品行为或真实宿主验收。
+- 远端检查仅覆盖 PR 事件的 base/head 快照。有工作流不代表已配置合并必需检查，也不持续证明包含目标分支最新版本。维护者须另行配置必需检查与分支最新／可信 merge-queue 保护；候选变化须重跑受影响检查。不得仅凭本地工作流文件声称服务端设置或远端运行已验证。
+
+将以下身份块与[测试指南](agent/testing.zh.md) 要求的检查一起记录，不为填模板新增测试层级：
+
+```text prompt
+Validation stage: 任务候选 | PR 集成 | 开发
+Tested candidate commit: <实际运行源码的完整 SHA>
+Base commit: <该候选纳入或使用的基线完整 SHA>
+PR head commit: <集成证据的完整 SHA；其他情况写不适用>
+Source state: 干净 | 脏（仅开发证据）
+Dirty source snapshot: <脏状态的补丁／源码工件；其他情况写不适用>
+Checks: <准确命令／套件>
+Results: <分别列出通过、失败、跳过、未验证>
+Environment: <实际宿主／runtime 及相关版本>
+Artifacts: <可重复报告／日志位置>
+```
+
 ## 6. 维护者提示词（可复制）
+
+### 隔离任务单
+
+每个编辑任务单独发一份；后续对话接续同一任务可沿用该任务单。任务单仅授予明确列出的权限，不授权派出更多 Agent。检查栏填写已批准行为和所需可重复工件，保留现有先写失败用例／优先 E2E 政策。
+
+```text prompt
+Task: <一个具体目标>
+WI / approval: <当前 WI 及批准切片，或独立批准的工作流维护>
+Coordinator: <共享记录的唯一所有者>
+Branch: codex/<task>
+Worktree: ../pi-vscode-worktrees/<task>
+Base: 仅 origin/master；任何编辑前创建指定 worktree
+
+In scope（独占写入所有权）：
+- <文件或目录；热点须明确分配>
+Out of scope（不得修改）：
+- <其他所有者的路径、共享 API/schema/types、非协调者不得改 ACTIVE.md>
+
+不得重排无关文件或导入其他 worktree 的未提交代码。
+Checks / artifact: <针对性检查、适用仓库检查、可重复工件>
+Git authorization: <默认仅创建；列出允许的 commit/历史/push/PR 操作>
+
+Done when：
+1. 全部编辑与检查均在指定 worktree。
+2. 所需检查通过且工件可用；报告未验证项。
+3. 获授权 PR 前，任何获授权刷新后 check:pr-base 通过。
+4. 冲突仅限任务修改的路径；其他文件冲突须停止。
+5. 向协调者报告修改路径、实际检查、工件与剩余风险。
+
+除非明确授权，不得提交、改写历史、push 或开 PR。
+```
 
 **新对话（常规）：**
 

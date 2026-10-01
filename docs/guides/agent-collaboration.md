@@ -37,6 +37,7 @@ When a new confirmed choice in chat differs from ACTIVE, update ACTIVE to that c
 ## 4. Work in progress (WIP=1)
 
 - Exactly **one** active work item (`WI-xxx`) in `ACTIVE.md` at a time.
+- Approved subtasks of that WI may run in parallel only with disjoint write scopes. One named coordinator owns shared records and serializes hotspot changes; parallelism does not authorize extra WIs or agents.
 - New ideas go to **Parking lot** in `ACTIVE.md`, not into implementation, until the maintainer reprioritizes.
 - Each active WI has a persistent, fully reviewable proposal in `ACTIVE.md` covering goal and scope, approach and risks, observable acceptance, out of scope, applicable gate ID and decision class, **PRD assessment**, and approval status. A proposal can be incomplete during Prepare, but Build requires recorded maintainer approval.
 - `ACTIVE.md` is the current-work entry point, not an append-only history. Its stable sections are: session entry, exactly one Current work section, Current focus and open items, Parking lot, at most two recent handoffs, and a compact Completed WI index. Closed-WI proposals, long acceptance checklists and older handoffs belong under `docs/archive/`, with a link from the index.
@@ -65,11 +66,86 @@ Stop expanding links when scope, constraints, contract and required evidence are
 
 ### Git ownership and concern isolation
 
-At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns even though product work remains WIP=1, but every change must have clear ownership and a destination before staging.
+At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. Every change must have clear ownership and a destination before staging. This classification does not authorize sharing a development worktree between tasks.
 
 When staging or committing, load the [Git commit convention](../git-commit-convention.md), which owns ACTIVE isolation, overlapping-hunk recovery and full staged-content review. Keep the WI record distinct from implementation concerns, preserving the existing index and user work. Commits still require explicit authorization.
 
+### Multi-agent task isolation
+
+The hard rules and hotspot inventory live in [AGENTS](../../AGENTS.md#multi-agent-isolation). Use this sequence for every editing task:
+
+1. Assign one task sheet with an explicit branch, worktree, base, allowed paths, excluded paths, checks, Git permissions and coordinator. Check overlapping paths, shared contracts, fixtures and lockfiles before dispatch; do not launch overlapping writers. Naming a hotspot in scope must explicitly assign its sole writer.
+2. Inspect the primary checkout without changing it. Preserve existing work and verify approval against the committed base. If a product task needs approval or code present only in another worktree's uncommitted files, stop and ask its owner to publish an authorized baseline; do not copy those files. Separately authorized workflow maintenance keeps the product WI unchanged and records approval/handoff in its own linked discussion, as in the [isolation rollout](../discussions/2026-10-02-agent-isolation.md).
+3. After worktree/branch creation is authorized, run from the repository root, replacing both `<task>` placeholders with the assigned unique name:
+
+```bash
+git fetch origin master
+git worktree add -b codex/<task> ../pi-vscode-worktrees/<task> origin/master
+cd ../pi-vscode-worktrees/<task>
+```
+
+4. Resume only the same task's worktree, after verifying its path, branch and owner with `git worktree list` and `git status`. A name collision is not permission to reuse another task's checkout. All editing and verification, including coordination-document changes, happens in the assigned worktree, never the primary checkout.
+5. Run `npm run check:pr-base` before PR creation/update. It fetches `origin/master` and fails unless that ref is an ancestor of HEAD; fetch/Git errors fail closed. It changes shared remote-tracking metadata, not task files or commits. It neither refreshes history automatically nor enforces server-side PR policy. The result covers the fetched snapshot only; rerun if the base advances.
+6. If the gate fails, obtain explicit history-change authorization and a clean owned worktree first. For a private, never-pushed branch use `git fetch origin master && git rebase origin/master`; for an already-pushed branch use `git fetch origin master && git merge origin/master`, never force-push. Resolve only conflicts in files changed by this task; stop and ask on any other conflicting path. Re-run affected checks after refresh, then the base gate immediately before an authorized push/PR operation. Push only the assigned branch, never local `master` / `main`.
+7. The coordinator receives each subtask's changed paths, actual results, artifacts and remaining risks and updates shared records serially in its own assigned worktree. No subtask edits `ACTIVE.md` unless assigned coordinator ownership. Separately authorized maintenance uses its scoped handoff instead of replacing the product WI. Once merged and explicitly authorized for cleanup, verify this task's commits are included in the fetched base, preserve needed ignored artifacts and confirm no uncommitted/unpushed work remains before removing only this task's worktree/branch. Do not accumulate completed worktrees or delete other tasks' resources.
+
+### Candidate evidence and remote checks
+
+Task-candidate validation and PR-integration validation answer different questions:
+
+- Validate the task's committed candidate in its worktree after incorporating the fetched `origin/master`, with relevant checks and resolved task-owned conflicts. Never merge into local `master` to manufacture a test candidate.
+- Before landing, validate the actual integration candidate, such as the PR merge ref or a trusted merge-queue candidate. Record its tested commit, target base and PR head, not merely the task branch name. A task result applies to another candidate only when the relevant executable tree is identical; a changed base requires updated integration evidence.
+- Formal candidate evidence identifies a committed, clean source tree. Checks against uncommitted files are development evidence: record the dirty state and retain the patch/source snapshot, rather than claiming that HEAD alone passed. Changes after a run do not inherit its result.
+- The [PR base workflow](../../.github/workflows/pr-base.yml) runs on all PRs targeting `master`, including documentation-only changes. The shared CLI accepts `--base <full-commit-sha> --head <full-commit-sha>` without fetching and checks those exact snapshots, not checkout HEAD, which may be a synthetic merge. The no-argument local command still fetches first. The workflow preserves fixture results and the PR ancestry log; neither proves product behavior or real-host acceptance.
+- The remote check covers the PR event's base/head snapshot only. Its presence is not a configured merge requirement or continuous proof of the latest target branch. Maintainers must separately configure required checks and up-to-date-branch or trusted merge-queue protection, and rerun affected checks for a changed candidate. Do not claim these server settings or remote execution are verified from a local workflow file.
+
+Record evidence using this identity block alongside the checks required by the [testing guide](agent/testing.md); do not create a new test tier merely to fill the template:
+
+```text prompt
+Validation stage: task-candidate | PR-integration | development
+Tested candidate commit: <full SHA of the source that actually ran>
+Base commit: <full SHA incorporated or used by that candidate>
+PR head commit: <full SHA for integration evidence, otherwise not applicable>
+Source state: clean | dirty (development evidence only)
+Dirty source snapshot: <patch/source artifact if dirty, otherwise not applicable>
+Checks: <exact commands/suites>
+Results: <passed, failed, skipped and unverified separately>
+Environment: <actual host/runtime and relevant versions>
+Artifacts: <repeatable report/log locations>
+```
+
 ## 6. Maintainer prompts (copy-paste)
+
+### Isolated task sheet
+
+Send one sheet per editing task; the same sheet may resume that task in a later chat. A sheet grants only its named permissions, not permission to dispatch more agents. Fill checks with the approved behavior and required repeatable artifact, retaining the existing test-first/E2E policy.
+
+```text prompt
+Task: <one concrete goal>
+WI / approval: <current WI and approved slice, or separately approved workflow maintenance>
+Coordinator: <sole owner of shared records>
+Branch: codex/<task>
+Worktree: ../pi-vscode-worktrees/<task>
+Base: origin/master only; create the assigned worktree before any edit
+
+In scope (exclusive write ownership):
+- <file or directory; explicitly assign any hotspot>
+Out of scope (do not touch):
+- <other owners' paths, shared APIs/schema/types, ACTIVE.md unless coordinator>
+
+Do not reformat unrelated files or import another worktree's uncommitted code.
+Checks / artifact: <targeted checks, applicable repository checks, repeatable artifact>
+Git authorization: <creation only by default; name any allowed commit/history/push/PR operations>
+
+Done when:
+1. All edits and checks are in the assigned worktree.
+2. Required checks pass and the artifact is available; report unverified areas.
+3. Before an authorized PR, check:pr-base passes after any authorized refresh.
+4. Conflicts are limited to task-changed paths; stop on any other conflicting file.
+5. Report changed paths, actual checks, artifacts and remaining risks to the coordinator.
+
+Do not commit, rewrite history, push or open a PR unless explicitly authorized.
+```
 
 **New chat (routine):**
 

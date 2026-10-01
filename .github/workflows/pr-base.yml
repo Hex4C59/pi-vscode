@@ -1,0 +1,43 @@
+name: PR base
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-base-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-base:
+    name: PR head contains base snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exercise the gate against real Git fixtures
+        run: node --test scripts/testing/pr-base.spec.mjs
+      - name: Check the PR head rather than checkout HEAD
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/testing/pr-base.mjs --base "$PR_BASE_SHA" --head "$PR_HEAD_SHA" 2>&1 | tee out/work/agent-isolation/pr-base-ci.log
+      - name: Preserve gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-base-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: |
+            out/work/agent-isolation/pr-base.json
+            out/work/agent-isolation/pr-base-ci.log
+          if-no-files-found: error
