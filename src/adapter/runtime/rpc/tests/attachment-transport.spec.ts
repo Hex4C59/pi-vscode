@@ -13,9 +13,9 @@ async function transportFixture(writeFault?: "throw") {
     connection = createMemoryConnection((frame, done) => {
       const stdout = connection.stdout;
       const message = JSON.parse(frame);
-      if (message.type === "get_state") queueMicrotask(() => {
-        stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
-        stdout.write(JSON.stringify({ type: "response", id: message.id, command: "get_state", success: true, data: { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } }) + "\n");
+      if (message.type === "get_state" || message.type === "get_commands") queueMicrotask(() => {
+        if (message.type === "get_state") stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
+        stdout.write(JSON.stringify({ type: "response", id: message.id, command: message.type, success: true, data: message.type === "get_state" ? { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } : { commands: [] } }) + "\n");
       });
       if (message.type === "prompt") { lastPrompt = frame; writes++; callback = done; promptId = message.id; if (writeFault === "throw") throw new Error("synthetic write fault"); return false; }
       if (message.type === "clear_queue" || message.type === "abort") queueMicrotask(() => { if (message.type === "abort") stdout.write('{"type":"agent_settled"}\n'); stdout.write(JSON.stringify({ type: "response", id: message.id, command: message.type, success: true, ...(message.type === "clear_queue" ? { data: { steering: [], followUp: [] } } : {}) }) + "\n"); });

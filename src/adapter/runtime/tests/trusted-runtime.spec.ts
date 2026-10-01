@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import type { PassThrough } from "node:stream";
 import { createMemoryConnection, createMemoryProcess } from "./memory-process.js";
 import { createManagedProcess } from "../process/managed-process.js";
@@ -8,12 +10,15 @@ import { createPiRpcRuntime } from "../index.js";
 function fixture(initializationError = false, startupDialog = false) {
   let messages: unknown[] = [];
   let holdStats = false;
+  let holdCommands = false;
+  let commandsSuccess = true;
   let stallReplies = false;
   let stopRpcDelay = 0;
   let statsOverrides: Record<string, unknown> = {};
   let statsResponse: Record<string, unknown> = {};
   let afterStats: (() => void) | undefined;
   let stateOverrides: Record<string, unknown> = {};
+  let commandsPayload: unknown = { commands: [{ name: "sysprompt", source: "extension" }] };
   let faultTransport: () => void = () => undefined;
   const frames: Record<string, unknown>[] = [];
   let output: PassThrough;
@@ -37,7 +42,7 @@ function fixture(initializationError = false, startupDialog = false) {
         output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, data: { sessionId: "test", sessionFile: "/owned/session.jsonl", assistantMessages, totalMessages: messages.length, ...statsOverrides }, ...statsResponse }) + "\n");
         afterStats?.();
       });
-      if (request.type === "get_commands") queueMicrotask(() => output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, data: { commands: [{ name: "sysprompt", source: "extension" }] } }) + "\n"));
+      if (request.type === "get_commands" && !holdCommands) queueMicrotask(() => output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: commandsSuccess, data: commandsPayload }) + "\n"));
       if (request.type === "clear_queue" || request.type === "abort") {
         const respond = () => output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, ...(request.type === "clear_queue" ? { data: { steering: [], followUp: [] } } : {}) }) + "\n");
         if (stopRpcDelay) setTimeout(respond, stopRpcDelay);
@@ -50,7 +55,7 @@ function fixture(initializationError = false, startupDialog = false) {
     return connection;
   });
   const runtime = createPiRpcRuntime({ process: memory.process, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined });
-  return { runtime, frames, releases: memory.releases, delayStopRpc(ms: number) { stopRpcDelay = ms; }, stallReplies() { stallReplies = true; }, setStats(value: Record<string, unknown>) { statsOverrides = value; }, holdStats() { holdStats = true; }, setStatsResponse(value: Record<string, unknown>) { statsResponse = value; }, afterStats(action: () => void) { afterStats = action; }, setMessages(value: unknown[]) { messages = value; }, setState(value: Record<string, unknown>) { stateOverrides = value; }, failTransport() { faultTransport(); }, get endCalls() { return memory.endCalls; }, get recoveryCalls() { return memory.recoveryCalls; }, get args() { return args; }, get environment() { return environment; }, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); } };
+  return { runtime, frames, releases: memory.releases, delayStopRpc(ms: number) { stopRpcDelay = ms; }, stallReplies() { stallReplies = true; }, setStats(value: Record<string, unknown>) { statsOverrides = value; }, holdStats() { holdStats = true; }, setStatsResponse(value: Record<string, unknown>) { statsResponse = value; }, afterStats(action: () => void) { afterStats = action; }, setMessages(value: unknown[]) { messages = value; }, setState(value: Record<string, unknown>) { stateOverrides = value; }, setCommands(value: unknown) { commandsPayload = value; }, holdCommands() { holdCommands = true; }, rejectCommands() { commandsSuccess = false; }, failTransport() { faultTransport(); }, get endCalls() { return memory.endCalls; }, get recoveryCalls() { return memory.recoveryCalls; }, get args() { return args; }, get environment() { return environment; }, frame(value: unknown) { output.write(JSON.stringify(value) + "\n"); } };
 }
 
 test("trusted loading passes only an explicit entry and requires the trusted gate profile", async () => {
@@ -675,4 +680,92 @@ test("Stop can confirm handler settlement within the remaining shared budget wit
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(f.runtime.getSession(), session, "successful Stop must release its observation timer");
   } finally { await f.runtime.stop(); await Promise.all([stopping, sending]); }
+});
+
+test("controlled and trusted ready present get_commands without filesystem paths and drop the snapshot on release", async () => {
+  const f = fixture();
+  f.setCommands({
+    commands: [
+      { name: "sysprompt", source: "extension", path: "/secret/extension.ts" },
+      { name: "fix-tests", source: "prompt", location: "project", path: "/secret/fix-tests.md" },
+    ],
+  });
+  try {
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    const presented = f.runtime.getCommandCatalogue?.();
+    assert.deepEqual(presented, {
+      status: "ready",
+      rows: [
+        { name: "sysprompt", source: "extension" },
+        { name: "fix-tests", source: "prompt", location: "project" },
+      ],
+    });
+    assert.equal(JSON.stringify(presented).includes("/secret/"), false);
+    await f.runtime.stop();
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, true);
+    assert.equal(f.runtime.getCommandCatalogue?.()?.status, "ready");
+  } finally { await f.runtime.stop(); }
+});
+
+test("empty get_commands is empty; malformed keeps controlled ready and fails closed on trusted names", async () => {
+  const f = fixture();
+  try {
+    f.setCommands({ commands: [] });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "empty" });
+    await f.runtime.stop();
+    f.setCommands({ commands: [{ name: "broken" }] });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+    await f.runtime.stop();
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, false);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+    assert.equal(f.runtime.getSession(), 0);
+  } finally { await f.runtime.stop(); }
+});
+
+
+test("a get_commands response settled immediately before stop cannot resurrect retired catalogue rows", async () => {
+  const f = fixture();
+  f.holdCommands();
+  const starting = f.runtime.start({ cwd: "/project", projectTrust: "no-approve" });
+  try {
+    for (let attempt = 0; attempt < 20 && !f.frames.some(frame => frame.type === "get_commands"); attempt++) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    const command = f.frames.find(frame => frame.type === "get_commands");
+    assert.ok(command, "startup must reach the public catalogue RPC");
+    f.frame({ type: "response", id: command.id, command: "get_commands", success: true,
+      data: { commands: [{ name: "retired-command", source: "prompt", location: "project" }] } });
+    await Promise.resolve(); // RPC identity check completes; catalogue continuation has not yet run.
+    const stopping = f.runtime.stop();
+    assert.equal((await starting).ok, false);
+    await stopping;
+    assert.equal(f.runtime.getSession(), 0);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+  } finally { await f.runtime.stop(); await starting; }
+});
+
+
+test("get_commands failure is unavailable rather than empty and controlled startup remains usable", async () => {
+  const f = fixture();
+  f.rejectCommands();
+  try {
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+    assert.notEqual(f.runtime.getSession(), 0);
+    await f.runtime.stop();
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve",
+      profile: { kind: "trusted", entryPath: "/reviewed/extension.mjs" } })).ok, false);
+    assert.equal(f.runtime.getSession(), 0);
+    const output = path.resolve("dist/wi078-command-catalogue");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "rpc-startup.json"), JSON.stringify({
+      schemaVersion: 1, status: "passed", evidence: "public-rpc-byte-transport-composition",
+      checks: ["controlled and trusted snapshot", "path exclusion", "release clears snapshot",
+        "empty versus malformed", "retired reply cannot resurrect rows", "RPC failure not empty"],
+      limits: ["memory process seam, not installed pi", "no host menu, F5 or installed VSIX acceptance"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); }
 });

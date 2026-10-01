@@ -55,6 +55,19 @@ export type ModelMutationResult =
 /** Public upstream pending text, host-only until the host creates a safe UI projection. */
 export type QueuedTextSnapshot = { steering: string[]; followUp: string[] };
 
+/** Host-safe composer discovery rows; filesystem paths never appear. */
+export type CommandCatalogueRow = {
+  name: string;
+  description?: string;
+  source: "extension" | "prompt" | "skill";
+  location?: "user" | "project" | "path";
+};
+
+export type CommandCatalogue =
+  | { status: "empty" }
+  | { status: "ready"; rows: readonly CommandCatalogueRow[] }
+  | { status: "unavailable" };
+
 export type RuntimeEvent =
   | ({ kind: "queue_updated"; session: number } & QueuedTextSnapshot)
   /** null means valid user input that cannot be losslessly correlated as bounded plain text. */
@@ -98,6 +111,8 @@ export interface PiRuntimeLifecycle {
   preparePrompt(input: PromptInput, expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
   /** Host admits/reserves the plain draft first; running-only, one consumed token, no idle fallback. */
   prepareQueuedText?(text: string, mode: "steering" | "follow-up", expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
+  /** Last verified get_commands presentation snapshot for this session; unavailable when none. */
+  getCommandCatalogue?(): CommandCatalogue;
   prompt(text: string): Promise<PromptResult>;
   getModelProjection(): Promise<ModelProjectionResult>;
   /** Mutations return a fresh applied projection, including current supported levels. */

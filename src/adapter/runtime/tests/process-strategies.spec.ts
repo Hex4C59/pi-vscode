@@ -160,9 +160,9 @@ test("production RPC plus managed process preserves uncertainty on transport los
     f.calls.push("launch");
     f.child.stdin.on("data", bytes => {
       const request = JSON.parse(String(bytes)) as { id: string; type: string };
-      if (request.type !== "get_state") return;
-      f.child.stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
-      f.child.stdout.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, data: { sessionId: "fixture", sessionFile: "/fixture/session.jsonl" } }) + "\n");
+      if (request.type !== "get_state" && request.type !== "get_commands") return;
+      if (request.type === "get_state") f.child.stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
+      f.child.stdout.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, data: request.type === "get_state" ? { sessionId: "fixture", sessionFile: "/fixture/session.jsonl" } : { commands: [] } }) + "\n");
     });
     return { ok: true, process: f.process, runId: "exact-run" };
   };

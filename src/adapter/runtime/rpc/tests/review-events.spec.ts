@@ -11,9 +11,9 @@ test("review completion events survive activity overflow and reject old-runtime 
     const connection = createMemoryConnection((frame, done) => {
       const stdout = connection.stdout;
       const command = JSON.parse(frame);
-      if (command.type === "get_state") queueMicrotask(() => {
-        stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
-        stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, ...(command.type === "get_state" ? { data: { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } } : {}) }) + "\n");
+      if (command.type === "get_state" || command.type === "get_commands") queueMicrotask(() => {
+        if (command.type === "get_state") stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) }) + "\n");
+        stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, data: command.type === "get_state" ? { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } : { commands: [] } }) + "\n");
       }); done(); return true;
     });
     outputs.push(connection.stdout);

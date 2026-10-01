@@ -1,20 +1,10 @@
-import { redactCredentialLikeText, type PromptInput } from "../../extension/contracts/index.js";
+import { redactCredentialLikeText, type CommandCatalogue, type CommandCatalogueRow, type PromptInput } from "../../extension/contracts/index.js";
 
 const COMMAND_SOURCES = new Set(["extension", "prompt", "skill"]);
 const COMMAND_LOCATIONS = new Set(["user", "project", "path"]);
 const COMMAND_KEYS = new Set(["name", "description", "source", "location", "path"]);
 
-export type CommandCatalogueRow = {
-  name: string;
-  description?: string;
-  source: "extension" | "prompt" | "skill";
-  location?: "user" | "project" | "path";
-};
-
-export type CommandCatalogue =
-  | { status: "empty" }
-  | { status: "ready"; rows: readonly CommandCatalogueRow[] }
-  | { status: "unavailable" };
+export type { CommandCatalogue, CommandCatalogueRow };
 
 function presentCommandRow(item: unknown): CommandCatalogueRow | undefined {
   if (!item || typeof item !== "object" || Array.isArray(item)) return;

@@ -29,6 +29,7 @@ function fixture() {
           message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }),
         });
         const data = request.type === "get_state" ? { sessionId: "saved-id", sessionFile: "/private-store/saved.jsonl" }
+          : request.type === "get_commands" ? { commands: [] }
           : request.type === "get_available_models" ? { models: [] }
           : request.type === "get_available_thinking_levels" ? { levels: [] }
           : request.type === "clear_queue" ? { steering: [], followUp: [] } : undefined;
@@ -74,7 +75,7 @@ test("running task accepts distinct literal queue commands once without releasin
       assert.equal((await token.send(() => { attempts++; })).delivery, "not-sent");
     }
     assert.equal(attempts, 2);
-    assert.deepEqual(f.commands.slice(2).map(({ type, message }) => ({ type, message })), [
+    assert.deepEqual(f.commands.slice(3).map(({ type, message }) => ({ type, message })), [
       { type: "steer", message: "  literal 中\nnext  " },
       { type: "follow_up", message: "  literal 中\nnext  " },
     ]);
@@ -113,7 +114,7 @@ test("Stop fences queue sends and waits for ACK plus callback/drain before destr
     f.finishWrite();
     assert.deepEqual(await pending, { delivery: "rpc-accepted" });
     assert.deepEqual(await stopping, { ok: true });
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer", "clear_queue", "abort"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer", "clear_queue", "abort"]);
     assert.equal(f.connection.stdin.listenerCount("drain"), 0);
   } finally { await f.runtime.stop(); await Promise.allSettled([pending, stopping]); }
 });
@@ -136,7 +137,7 @@ test("Stop requested inside queue attempt admission still waits before clear", a
     assert.equal(clearedInsideAdmission, false);
     assert.equal(result.delivery, "rpc-accepted");
     assert.deepEqual(await stopping, { ok: true });
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer", "clear_queue", "abort"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer", "clear_queue", "abort"]);
   } finally { await f.runtime.stop(); await stopping; }
 });
 
@@ -183,7 +184,7 @@ for (const change of ["settlement", "revocation"] as const) test(`queue admissio
     });
     assert.equal(write.mock.callCount(), 0);
     assert.deepEqual(result, { delivery: change === "settlement" ? "not-sent" : "unknown", code: "runtime-lost" });
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt"]);
     assert.equal((await token.send(() => undefined)).delivery, "not-sent");
     assert.equal(f.connection.stdin.listenerCount("drain"), 0);
     assert.equal(f.memory.endCalls, 0);
@@ -210,7 +211,7 @@ test("task settlement does not admit ordinary sends or runtime mutations while q
     assert.equal(prepared.delivery, "not-sent");
     assert.equal(mutation.ok, false);
     assert.deepEqual(checkpoint, { kind: "unavailable" });
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer"]);
     f.connection.frame({ type: "response", id: request.id, command: "steer", success: true });
     assert.deepEqual(await pending, { delivery: "rpc-accepted" });
     assert.equal((await f.runtime.prompt("available after observation")).ok, true);
@@ -301,7 +302,7 @@ for (const phase of ["write", "ack"] as const) test(`queue ${phase} scheduled ti
     time = budget; context.mock.timers.tick(1);
     assert.deepEqual(await pending, { delivery: "unknown", code: phase === "write" ? "write-failed" : "ack-timeout" });
     assert.equal((await token.send(() => undefined)).delivery, "not-sent");
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer"]);
     assert.deepEqual(f.memory.releases, ["uncertain"]);
     assert.equal(f.memory.endCalls, 0);
     assert.equal(f.connection.stdin.listenerCount("drain"), 0);
@@ -323,13 +324,13 @@ test("Stop queue-wait timer expires within its control budget without destructiv
     let callbacks = 0;
     stopping = f.runtime.abortTask?.(() => { callbacks++; });
     time = 4999; context.mock.timers.tick(4999); await Promise.resolve();
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer"]);
     time = 5000; context.mock.timers.tick(1);
     const stopped = await stopping; assert.ok(stopped);
     assert.equal(stopped.ok, false);
     assert.deepEqual(await pending, { delivery: "unknown", code: "runtime-lost" });
     assert.equal(callbacks, 0);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer"]);
     assert.deepEqual(f.memory.releases, ["uncertain"]); assert.equal(f.memory.endCalls, 0);
     const output = path.resolve("dist/wi077-queued-send"); await mkdir(output, { recursive: true });
     await writeFile(path.join(output, "stop-budget.json"), JSON.stringify({ schemaVersion: 1, status: "passed",
@@ -357,7 +358,7 @@ for (const control of ["stop", "recall"] as const) test(`${control} clear observ
     const thinking = await f.runtime.setThinkingLevel("off");
     const model = await f.runtime.setModel("fixture", "model");
     assert.equal(thinking.ok, false); assert.equal(model.ok, false);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "clear_queue"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "clear_queue"]);
     assert.equal(callbacks, 0);
     f.connection.frame({ type: "response", id: clear.id, command: "clear_queue", success: true, data: { steering: [], followUp: [] } });
     assert.deepEqual(await controlling, { ok: true }); assert.equal(callbacks, 1);
@@ -418,7 +419,7 @@ for (const response of ["rejected", "wrong-command", "invalid-success"] as const
       const result = await token.send(() => undefined);
       assert.deepEqual(result, response === "rejected" ? { delivery: "rpc-rejected", code: "rpc-rejected" } : { delivery: "unknown", code: "runtime-lost" });
       assert.equal((await token.send(() => undefined)).delivery, "not-sent");
-      assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+      assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer"]);
       assert.deepEqual(f.memory.releases, response === "rejected" ? [] : ["uncertain"]);
       assert.equal(f.events.filter(event => event.kind === "runtime_error").length, response === "rejected" ? 0 : 1);
       assert.equal(JSON.stringify({ result, events: f.events }).includes("PRIVATE_RPC_ERROR"), false);
@@ -445,7 +446,7 @@ for (const fault of ["throw", "callback", "event"] as const)
       const result = await pending;
       assert.deepEqual(result, { delivery: "unknown", code: fault === "event" ? "runtime-lost" : "write-failed" });
       assert.equal((await token.send(() => undefined)).delivery, "not-sent");
-      assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+      assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "steer"]);
       assert.deepEqual(f.memory.releases, ["uncertain"]);
       assert.equal(f.events.filter(event => event.kind === "runtime_error").length, 1);
       assert.equal(JSON.stringify({ result, events: f.events }).includes("PRIVATE_STREAM_ERROR"), false);
@@ -493,7 +494,7 @@ test("explicit recall rejects stale session before destructive clear", async () 
     assert.equal((await f.start()).ok, true);
     assert.equal((await f.runtime.recallQueuedText?.(f.runtime.getSession() + 1, () => { calls++; }))?.ok, false);
     assert.equal(calls, 0);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands"]);
   } finally { await f.runtime.stop(); }
 });
 
@@ -508,7 +509,7 @@ test("recall and Stop share one clear owner without duplicate destructive reques
     assert.equal((await f.runtime.abortTask?.())?.ok, false);
     assert.equal((await f.runtime.recallQueuedText?.(f.runtime.getSession(), () => undefined))?.ok, false);
     const request = f.commands.at(-1)!;
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "clear_queue"]);
     f.connection.frame({ type: "response", id: request.id, command: "clear_queue", success: true, data: { steering: [], followUp: ["kept"] } });
     assert.deepEqual(await pending, { ok: true });
     assert.deepEqual(saved, [{ steering: [], followUp: ["kept"] }]);
@@ -548,7 +549,7 @@ for (const abortFails of [false, true]) test(`Stop preserves confirmed clear tex
     });
     assert.equal(result?.ok, !abortFails);
     assert.deepEqual(recalled, [queue]);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue", "abort"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "clear_queue", "abort"]);
     assert.equal(f.memory.endCalls, 0);
     const output = path.resolve("dist/wi077-stop-recall");
     await mkdir(output, { recursive: true });
@@ -573,7 +574,7 @@ for (const [name, data] of [
     f.override(command => command === "clear_queue" ? { data } : undefined);
     assert.equal((await f.runtime.abortTask?.(() => { saved++; }))?.ok, false);
     assert.equal(saved, 0);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "clear_queue"]);
     assert.equal(f.runtime.getSession(), 0);
     assert.deepEqual(f.memory.releases, ["uncertain"]);
     assert.equal(f.memory.endCalls, 0);
@@ -609,7 +610,7 @@ test("clear callback failure preserves its saved text but prevents abort and rep
     f.override(command => command === "clear_queue" ? { data: { steering: ["kept"], followUp: [] } } : undefined);
     assert.equal((await f.runtime.abortTask?.(snapshot => { saved.push(snapshot); throw new Error("synthetic private failure"); }))?.ok, false);
     assert.deepEqual(saved, [{ steering: ["kept"], followUp: [] }]);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "clear_queue"]);
     assert.deepEqual(f.memory.releases, ["uncertain"]);
     assert.doesNotMatch(JSON.stringify(f.events), /private failure/);
   } finally { await f.runtime.stop(); }
@@ -629,7 +630,7 @@ test("expired clear ACK cannot save text or continue abort", async context => {
     f.connection.frame({ type: "response", id: request.id, command: "clear_queue", success: true, data: { steering: ["too late"], followUp: [] } });
     assert.equal((await stopping)?.ok, false);
     assert.equal(saved, 0);
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "clear_queue"]);
     assert.deepEqual(f.memory.releases, ["uncertain"]);
   } finally { await f.runtime.stop(); }
 });
@@ -821,7 +822,7 @@ for (const operation of ["projection", "model", "thinking", "prompt", "prepared-
       assert.equal(f.connection.stdout.listenerCount("data"), 0);
       assert.equal(f.connection.stdout.listenerCount("end"), 0);
       assert.equal(f.connection.stdin.listenerCount("drain"), 0);
-      assert.equal(f.commands.length, operation === "abort" ? 3 : 2);
+      assert.equal(f.commands.length, operation === "abort" ? 4 : 3);
       assert.equal(f.memory.endCalls, 0);
     } finally { await f.runtime.stop(); }
   });
@@ -861,7 +862,7 @@ test("invalid event revokes every pending operation and drops later lines in the
     assert.equal((await projection).ok, false);
     assert.equal((await prompt).delivery, "unknown");
     assert.deepEqual(f.events.map(event => event.kind), ["runtime_error"]);
-    assert.equal(f.commands.length, 3, "no response is written for the same-chunk retired dialog");
+    assert.equal(f.commands.length, 4, "no response is written for the same-chunk retired dialog");
     assert.equal((await f.start()).ok, false, "uncertain owner requires explicit recovery");
     assert.equal((await f.runtime.recoverOwnedRuntime?.())?.ok, true);
     // Restore normal readiness responses for the new connection.
@@ -888,7 +889,7 @@ test("malformed event during Stop settlement cannot become successful Stop after
     const stopping = f.runtime.abortTask?.();
     // Let the scripted ACKs finish so Stop is observing agent settlement.
     await new Promise<void>(resolve => setImmediate(resolve));
-    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "clear_queue", "abort"]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "get_commands", "prompt", "clear_queue", "abort"]);
     f.connection.frame({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: null } });
     assert.equal((await stopping)?.ok, false);
     assert.deepEqual(f.memory.releases, ["uncertain"]);

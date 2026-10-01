@@ -13,9 +13,9 @@ function fixture(state: unknown = identity, reportedCwd?: string) {
   const connection = createMemoryConnection((frame, done) => {
    const stdout = connection.stdout;
    const command = JSON.parse(frame); commands.push(command.type); if(command.type==="extension_ui_response")replies.push(command);
-   if (command.type === "get_state") queueMicrotask(() => {
-    stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: reportedCwd ?? options.cwd }) }) + "\n");
-    stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, data: state }) + "\n");
+   if (command.type === "get_state" || command.type === "get_commands") queueMicrotask(() => {
+    if (command.type === "get_state") stdout.write(JSON.stringify({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: reportedCwd ?? options.cwd }) }) + "\n");
+    stdout.write(JSON.stringify({ type: "response", id: command.id, command: command.type, success: true, data: command.type === "get_state" ? state : { commands: [] } }) + "\n");
    });
    if (command.type === "get_available_models" || command.type === "get_available_thinking_levels") queueMicrotask(() => {
     stdout.write(JSON.stringify({type:"response",id:command.id,command:command.type,success:true,data:command.type === "get_available_models" ? {models:[]} : {levels:[]}})+"\n");
@@ -46,7 +46,7 @@ test("resume passes a host-selected opaque path and verifies identity without un
  const f = fixture(); try {
   const result = await f.runtime.start({ cwd: "/project", projectTrust: "no-approve", resume: { id: identity.sessionId, path: identity.sessionFile } }); assert.equal(result.ok, true);
   const index = f.launches[0].indexOf("--session"); assert.ok(index >= 0); assert.equal(f.launches[0][index + 1], identity.sessionFile);
-  assert.deepEqual(f.commands, ["get_state"]);
+  assert.deepEqual(f.commands, ["get_state", "get_commands"]);
  } finally { await f.runtime.stop(); }
 });
 test("malformed or mismatched restored identity releases an uncertain connection before readiness", async () => {

@@ -1,5 +1,5 @@
 import { createExtensionFeedback } from "./extension-feedback.js";
-import { extensionCommandNames, dispatchedExtensionCommand } from "./command-classification.js";
+import { extensionCommandNames, dispatchedExtensionCommand, presentCommandCatalogue } from "./command-classification.js";
 import { createInteractionWriter } from "./rpc/interaction-writer.js";
 import { createRpcDialogs } from "./rpc/rpc-dialogs.js";
 import { createRpcFrames, sameGateCwd } from "./rpc-frames.js";
@@ -22,6 +22,7 @@ import { resolvePiCliPath } from "./rpc/pi-rpc-probe.js";
 import { readPiStartupModelArg } from "./piStartupModel.js";
 import type {
   AttachmentPromptResult,
+  CommandCatalogue,
   ExtensionExecutionProfile,
   ModelMutationResult,
   ModelProjectionResult,
@@ -54,6 +55,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let resumedConversation = false;
   let untouchedConversation = false;
   let commandNames: ReadonlySet<string> = new Set();
+  let commandCatalogue: CommandCatalogue = { status: "unavailable" };
   let gateId = '';
   let cwd = '';
   let gateReady = false;
@@ -192,6 +194,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     if (startToken < Number.MAX_SAFE_INTEGER) startToken += 1;
     activeSession = 0;
     commandNames = new Set();
+    commandCatalogue = { status: "unavailable" };
     gateReady = false; verifiedCustomTools = new Set();
     frames.reset();
     if (detachReader) {
@@ -293,23 +296,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
           detail: 'Runtime readiness or approval extension verification failed.',
         };
       }
-      const data = response.data as Record<string, unknown> | undefined;
-      const identityValid = data && typeof data === "object" && typeof data.sessionId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(data.sessionId) && typeof data.sessionFile === "string" && data.sessionFile.length <= 32768 && path.isAbsolute(data.sessionFile) && (data.sessionName == null || typeof data.sessionName === "string");
-      if (!identityValid || (options.resume && (data.sessionId !== options.resume.id || !sameNativePath(data.sessionFile as string, options.resume.path)))) {
-        await faultStop();
-        return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
-      }
-      activeSession = token;
-      occupancy.setSession(token);
-      resumedConversation = options.resume !== undefined;
-      untouchedConversation = !resumedConversation;
-      if (executionProfile.kind === 'trusted') {
-        const catalogue = await invokeRpc({ type: 'get_commands' }, START_TIMEOUT_MS);
-        const names = catalogue.success ? extensionCommandNames(catalogue.data) : undefined;
-        if (!names) { await faultStop(); return { ok: false, detail: 'Extension command catalogue could not be verified.' }; }
-        commandNames = names;
-      }
-      return { ok: true, modelLabel: formatModelLabel(response.data), conversation: { id: data.sessionId as string, path: data.sessionFile as string, name: typeof data.sessionName === "string" ? data.sessionName.slice(0,160) : null } };
+      return await activateSession(token, response.data as Record<string, unknown> | undefined, options.resume);
     } catch (error) {
       if (token === startToken) await faultStop();
       const message = error instanceof Error ? error.message : String(error);
@@ -336,6 +323,59 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       throw new Error("Runtime restarted during request.");
     }
     return response;
+  };
+
+  const loadCommandCatalogue = async (token: number, trusted: boolean): Promise<boolean> => {
+    let reply: RpcResponse;
+    try {
+      reply = await invokeRpc({ type: "get_commands" }, START_TIMEOUT_MS);
+    } catch {
+      if (token !== startToken || token !== activeSession) return false;
+      commandCatalogue = { status: "unavailable" };
+      return !trusted;
+    }
+    if (token !== startToken || token !== activeSession) return false;
+    if (trusted) {
+      const names = reply.success ? extensionCommandNames(reply.data) : undefined;
+      if (!names) {
+        commandCatalogue = { status: "unavailable" };
+        return false;
+      }
+      commandNames = names;
+    }
+    commandCatalogue = reply.success ? presentCommandCatalogue(reply.data) : { status: "unavailable" };
+    return true;
+  };
+
+  const activateSession = async (
+    token: number,
+    data: Record<string, unknown> | undefined,
+    resume: { id: string; path: string } | undefined,
+  ): Promise<RuntimeStartResult> => {
+    const identityValid = data && typeof data === "object" && typeof data.sessionId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(data.sessionId) && typeof data.sessionFile === "string" && data.sessionFile.length <= 32768 && path.isAbsolute(data.sessionFile) && (data.sessionName == null || typeof data.sessionName === "string");
+    if (!data || !identityValid || (resume && (data.sessionId !== resume.id || !sameNativePath(data.sessionFile as string, resume.path)))) {
+      await faultStop();
+      return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
+    }
+    activeSession = token;
+    occupancy.setSession(token);
+    resumedConversation = resume !== undefined;
+    untouchedConversation = !resumedConversation;
+    if (!await loadCommandCatalogue(token, executionProfile.kind === "trusted")) {
+      if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
+      await faultStop();
+      return { ok: false, detail: "Extension command catalogue could not be verified." };
+    }
+    if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
+    return {
+      ok: true,
+      modelLabel: formatModelLabel(data),
+      conversation: {
+        id: data.sessionId as string,
+        path: data.sessionFile as string,
+        name: typeof data.sessionName === "string" ? data.sessionName.slice(0, 160) : null,
+      },
+    };
   };
 
   const checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
@@ -678,6 +718,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       }
     },
     getSession: () => activeSession,
+    getCommandCatalogue: () => commandCatalogue,
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

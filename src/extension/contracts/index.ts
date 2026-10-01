@@ -2,7 +2,7 @@
 export type * from "./webviewProtocol.js";
 export type {
   PiRuntimeLifecycle, RuntimeEvent, ProjectTrustFlag, RuntimeStartResult, ExtensionExecutionProfile,
-  PromptInput, AttachmentPromptResult, PromptResult, QueuedTextSnapshot,
+  PromptInput, AttachmentPromptResult, PromptResult, QueuedTextSnapshot, CommandCatalogue, CommandCatalogueRow,
   RetainedRunState, RetainedRunHandoff,
   ModelProjectionResult, ModelMutationResult,
 } from "./runtimeLifecycle.js";

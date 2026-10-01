@@ -17,7 +17,8 @@ function fixture() {
         if (request.type === "get_state") transport.frame({ type: "extension_ui_request", method: "notify",
           message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) });
         transport.frame({ type: "response", id: request.id, command: request.type, success: !(rejected && request.type === "steer"),
-          data: request.type === "get_state" ? { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } : undefined });
+          data: request.type === "get_state" ? { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" }
+            : request.type === "get_commands" ? { commands: [] } : undefined });
       });
       done(); return true;
     });
