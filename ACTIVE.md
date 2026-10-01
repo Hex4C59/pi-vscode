@@ -27,7 +27,7 @@
 
 ### 方案与架构核对
 
-[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。Prepare 核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照、user message_start 前队列更新。Build 第一步已在 adapter 投影两种 host-only 事件并验证队列额度／user 关联文字／退役 reader；Stop adapter 已新增校验后、abort 前的同步取回 callback（宿主尚未接入）；adapter 已补 session-bound 显式 recall（与 Stop 共用 clear lease，竞争请求明确拒绝）；adapter 已补一次性队列发送／独立 write-drain-ACK owner 与 Stop 在途等待（局部 tracer 通过）；已补 onAttempt 后 fresh write guard 和 task settlement 后独立 queue observation fence／uncertain release；已补 connection-bound observer retirement（ACK 后断线也立即清理）、受控 write／ACK／Stop queue-wait timer handler 证据；已补 Stop／recall 在 clear 在途且任务自然结束后的 model／thinking fence，发送准入／RPC／stdin failure matrix 已有 synthetic transport 证据；host 已补本地 delivery 保留与共享 ledger 容量／归属／敏感恢复投影（仍未接线 provider／DraftSubmission／UI）。DraftSubmission acknowledged revision／取回-Stop 串行协调和 production-mounted 恢复 UI 仍是实现缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
+[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。Prepare 核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照、user message_start 前队列更新。Build 第一步已在 adapter 投影两种 host-only 事件并验证队列额度／user 关联文字／退役 reader；Stop adapter 已新增校验后、abort 前的同步取回 callback（宿主尚未接入）；adapter 已补 session-bound 显式 recall（与 Stop 共用 clear lease，竞争请求明确拒绝）；adapter 已补一次性队列发送／独立 write-drain-ACK owner 与 Stop 在途等待（局部 tracer 通过）；已补 onAttempt 后 fresh write guard 和 task settlement 后独立 queue observation fence／uncertain release；已补 connection-bound observer retirement（ACK 后断线也立即清理）、受控 write／ACK／Stop queue-wait timer handler 证据；已补 Stop／recall 在 clear 在途且任务自然结束后的 model／thinking fence，发送准入／RPC／stdin failure matrix 已有 synthetic transport 证据；host 已补本地 delivery 保留、共享 ledger 容量／归属／敏感恢复投影，以及 DraftSubmission 队列准入与 QueuedTextCoordinator clear 串行（仍未接线 provider／Living 契约／UI）。view／generation／session 迟到与 production-mounted 恢复 UI 仍是实现缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
 
 Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世代与有界 ledger，DraftSubmission 仍唯一拥有已确认草稿；UI 仅命名意图／状态。两数组快照、ACK 与 user 消费事件分别投影，重复文字保留 multiplicity；无法准确归属尝试时标未知，不把队列减少当完成。总额度为 32 条未释放本地文字／256 KiB UTF-8，单条 8000 UTF-16；写入与 clear 前预留，不淘汰／截断。拒绝附件、首部 slash／skills／模板和既有可识别凭据，保留原草稿。取回进入独立恢复区，显式移入无附件空草稿并校验 revision，不发送、不覆盖。Stop 关闭准入，在原共享五秒预算内串行在途 write→clear→abort；确认 clear 结果即保留，abort 失败不抹掉。未知 ACK 不重发；断线保留本地未知文字；明确替换确认丢失，commit 后清理，不跨项目带入。详情与命名 DTO 见[双语契约 Outline](docs/reference/webview-messages.zh.md#wi-077-文字队列增补outline未实现)。无新依赖、进程策略、存储或信任决定。
 
@@ -55,7 +55,7 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环，Prepare／中英 PRD／契约 Outline 已完成，按持续授权继续，不等待点名。adapter queue_update／user 消费事实及 Stop clear 输出回调已完成 test-first 局部验证；显式 recall／Stop 共用 clear owner 的 transport 场景已验证；队列 token／Stop 等在途 write-ACK 的 vertical tracer 已 red→green；onAttempt 后任务结束／runtime 撤销不 write、queue ACK 在途时普通 prompt／model／checkpoint fence 与 uncertain release 已 red→green；ACK 前后断线 retirement／替换隔离及受控五秒 write、三十秒 ACK、Stop 五秒 queue-wait timer handler 已验证（非实际耗时）；Stop／recall clear 在途的 model fence 已 red→green，另 13 项准入／协议／stream 边界已 characterization；host 本地 delivery 与 ledger 容量／归属／敏感恢复投影已 red→green（仍未接线）。下一步先接 DraftSubmission acknowledged revision／原子 onAttempt、clear 前预留与 recall-Stop 串行协调，再 view／generation／session replacement 的迟到，production UI 和真实环境闭环。实际替换后的旧 queue token 拒绝与最终真实 runtime 的全部组合仍需闭环，不以此技术阶段宣称交付。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环，Prepare／中英 PRD／契约 Outline 已完成，按持续授权继续，不等待点名。adapter／host ledger／DraftSubmission 队列准入与 QueuedTextCoordinator clear 串行已完成局部 composition；下一步接 provider／契约 Living 白名单／view／generation／session 迟到，再 production UI 和真实环境闭环。实际替换后的旧 queue token 拒绝与最终真实 runtime 的全部组合仍需闭环，不以此技术阶段宣称交付。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -145,15 +145,13 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-01 — WI-077 Build 第九步：DraftSubmission 准入／clear 串行协调
+
+实现 `6ade3e7` 不含 ACTIVE。先在 [draft／coordinator composition](src/extension/tests/queued-text-coordinator.spec.ts)列较新编辑被 late commit 清除、slash／过期 revision 仍准入，以及 recall 与 Stop 重叠双 clear 的失败方式。新增 `DraftSubmission.admitQueuedText`（精确 revision、附件／slash／凭据拒绝、仅当前 revision 时 commitAttempt 清草稿）与 `QueuedTextCoordinator`（结构类型注入 draft，不跨模块直引 draft 实现；queue／recall／Stop 互斥；clear 前预留）。两项 red→green；architecture public-entry 回归先红后按结构类型修复。工件：`dist/wi077-draft-queue/draft-admission.json`、`coordinator-serial.json`。compile／lint／1135 tests、docs:verify／docs:health 0 错误，ADR 0010 两提示保留。下一步 provider 接线与 Living 契约、view／generation／session 迟到、production UI 与真实环境闭环。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+
 ### 2026-10-01 — WI-077 Build 第八步：host ledger 容量／归属／敏感恢复
 
 实现 `fc9e0ab` 不含 ACTIVE。先在 [host ledger composition](src/extension/tests/queued-text-ledger.spec.ts)列 clear 与本地保留共用 32／256 KiB、失败仍 clear／驱逐，歧义归属当 local、重复折叠，以及敏感上游恢复投影原文或改写复用的失败方式；实现 `QueuedTextLedger`（`QueuedTextDelivery` 改为共用该额度）后三项 red→green。容量拒绝不 clear／不 write／不驱逐；两队列相同文字与多本地匹配标 unknown 并保留 multiplicity；未匹配上游标 external；凭据类 clear 输出 host-only `unavailable`、恢复投影省略原文。工件：`dist/wi077-host-ledger/` 下 `clear-capacity.json`、`attribution-multiplicity.json`、`sensitive-recovery.json`。compile／lint／1133 tests、docs:verify／docs:health 0 错误，ADR 0010 两提示保留。下一步 DraftSubmission acknowledged revision／原子 onAttempt、clear 前预留与 recall-Stop 串行协调，再 view／generation／session 迟到、production UI 与真实环境闭环。Provider 仍未接 queue send／recall／clear callback；不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
-
-### 2026-10-01 — WI-077 Build 第七步：control model fence／adapter 边界 characterization
-
-实现 `3dd48b4` 不含 ACTIVE。先在 [public runtime／JSONL transport composition](src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)列 natural agent_settled 在 clear 仍在途时误放开 model／thinking mutation 的失败方式，Stop／recall 两项均 first red（true !== false）；仅将既有 aborting fence 纳入 allowsModelMutation，green 后确认控制结束恢复准入，不永久锁 model。另 13 项既有行为 characterization 首次 pass：idle／settled-token／stale-session／空白／8001 UTF-16／invalid mode 拒绝且不调用 onAttempt，8000 UTF-16 emoji 原文接受；RPC rejected／错误 command／invalid success 与 stream throw／callback error／error event 不重发、不 end child、不暴露 raw error，token 消耗后拒绝复用。新增 15 项不声称全部 red。最终 compile／lint／1124 tests（0 fail／skip）、docs:verify／docs:health 0 错误、完整 staged diff／commit check 通过，ADR 0010 两提示保留。新测试／改 fixture body 最长 48 行；既有 createRpcOccupancy／createPiRpcRuntime 外层 factory 的长度限制仍未全量整改，未以无关大重构隐藏，不声称全量 quality-code 通过。
-
-npm test 重建 `dist/wi077-queued-send/` 下 stop／recall-model-fence、admission-*、protocol-*、stream-* JSON；无 prompt／raw error 内容，synthetic transport 不是 host draft／容量／敏感文字准入、真实 pi／F5／安装验收。下一步按已批准 host composition seam，先列 32 条／256 KiB 同步预留、失败不写／不 clear／不驱逐、pending 与 recovery 共用额度、消费归属 unknown／重复 multiplicity、敏感上游不可展示复用，再先 tracer 后实现 host ledger；随后 DraftSubmission acknowledged revision／原子 onAttempt、clear 前预留与 recall-Stop 串行协调、view／generation／session replacement 的迟到，production UI 和真实环境闭环。实际替换后的旧 queue token 拒绝尚未以本轮 stale-session 输入案例替代。Provider 仍未接 queue send／recall／clear callback；不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
 
 ## 已完成 WI 索引
 
