@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import type { RuntimeEvent } from "../../../../extension/contracts/index.js";
 import { createPiRpcRuntime } from "../../pi-rpc-runtime.js";
 import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "../../tests/memory-process.js";
@@ -47,6 +49,130 @@ function fixture() {
     start: () => runtime.start({ cwd: "/project", projectTrust: "no-approve" }),
   };
 }
+
+// WI-077 failure modes before implementation: lost multiplicity/Unicode, ACK or
+// queue removal treated as settlement, malformed or excessive text made empty,
+// partial projection, old-session pollution, and oversized ordinary user input
+// retained for correlation. This is the actual JSONL -> runtime subscription seam.
+test("queue snapshot and consumption travel independently through a live task without settling it", async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    const session = f.runtime.getSession();
+    assert.equal((await f.runtime.prompt("base task")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    const text = "same literal 中\u2028text";
+    f.connection.frame({ type: "queue_update", steering: [text, text], followUp: ["later"], upstreamMetadata: "not projected" });
+    f.connection.frame({ type: "queue_update", steering: [text], followUp: ["later"] });
+    f.connection.frame({ type: "message_start", message: { role: "user", content: [{ type: "text", text: "same literal " }, { type: "text", text: "中\u2028text" }], timestamp: 0 } });
+    f.connection.frame({ type: "queue_update", steering: [], followUp: [] });
+    assert.deepEqual(f.events, [
+      { kind: "queue_updated", session, steering: [text, text], followUp: ["later"] },
+      { kind: "queue_updated", session, steering: [text], followUp: ["later"] },
+      { kind: "user_message_started", session, text },
+      { kind: "queue_updated", session, steering: [], followUp: [] },
+    ]);
+    assert.equal((await f.runtime.prompt("must remain busy")).ok, false);
+    assert.equal(f.commands.filter(command => command.type === "prompt").length, 1);
+    f.connection.frame({ type: "agent_settled" });
+    assert.equal((await f.runtime.prompt("next ordinary task")).ok, true);
+    const output = path.resolve("dist/wi077-queue-transport");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "report.json"), JSON.stringify({
+      schemaVersion: 1, status: "passed", evidence: "injected-memory-JSONL-transport",
+      events: f.events.map(event => event.kind), preserved: ["multiplicity", "Unicode", "event order", "task occupancy"],
+      limits: ["no queue send/recall API", "no host recovery/UI", "not real runtime, F5 or installed VSIX"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); }
+});
+
+for (const [name, queue] of [
+  ["missing follow-up", { steering: [] }],
+  ["invalid follow-up", { steering: ["must not partially emit"], followUp: [null] }],
+  ["invalid steering", { steering: [7], followUp: [] }],
+  ["non-array", { steering: "text", followUp: [] }],
+  ["combined count", { steering: Array(17).fill("a"), followUp: Array(16).fill("b") }],
+  ["UTF-8 aggregate", { steering: Array(32).fill("中".repeat(2731)), followUp: [] }],
+] as const) test(`queue transport fails closed on ${name} without a fabricated empty queue`, async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    const session = f.runtime.getSession();
+    const old = f.connection;
+    old.stdout.write([
+      { type: "queue_update", ...queue },
+      { type: "queue_update", steering: [], followUp: [] },
+      { type: "message_start", message: { role: "user", content: "late consumed text" } },
+    ].map(frame => JSON.stringify(frame) + "\n").join(""));
+    assert.equal(f.runtime.getSession(), 0);
+    assert.deepEqual(f.events.map(event => event.kind), ["runtime_error"]);
+    assert.equal(f.events[0].session, session);
+    assert.doesNotMatch(JSON.stringify(f.events), /partially emit|late consumed/);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.equal(f.memory.endCalls, 0);
+    assert.equal(old.stdout.listenerCount("data"), 0);
+  } finally { await f.runtime.stop(); }
+});
+
+test("bounded queue text preserves the exact UTF-8 boundary, duplicates and empty entries", async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    const texts = Array(32).fill("é".repeat(4096));
+    f.connection.frame({ type: "queue_update", steering: texts, followUp: [] });
+    f.connection.frame({ type: "queue_update", steering: ["", " "], followUp: [""] });
+    assert.deepEqual(f.events, [
+      { kind: "queue_updated", session: f.runtime.getSession(), steering: texts, followUp: [] },
+      { kind: "queue_updated", session: f.runtime.getSession(), steering: ["", " "], followUp: [""] },
+    ]);
+    assert.deepEqual(f.memory.releases, []);
+  } finally { await f.runtime.stop(); }
+});
+
+test("user consumption is host-only, bounded and never truncates oversized or mixed attachment text", async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    const session = f.runtime.getSession();
+    for (const content of [" literal ", [{ type: "text", text: "api_key=synthetic-marker" }], "x".repeat(8001), [{ type: "text", text: "short" }, { type: "image", data: "not correlated" }]]) {
+      f.connection.frame({ type: "message_start", message: { role: "user", content } });
+      f.connection.frame({ type: "message_end", message: { role: "user", content } });
+    }
+    assert.deepEqual(f.events, [
+      { kind: "user_message_started", session, text: " literal " },
+      { kind: "user_message_started", session, text: "api_key=synthetic-marker" },
+      { kind: "user_message_started", session, text: null },
+      { kind: "user_message_started", session, text: null },
+    ]);
+    assert.notEqual(f.runtime.getSession(), 0);
+  } finally { await f.runtime.stop(); }
+});
+
+for (const content of [null, {}, [null], [{ type: "text", text: 4 }]]) test("malformed user message cannot produce consumption evidence", async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.connection.frame({ type: "message_start", message: { role: "user", content } });
+    assert.equal(f.runtime.getSession(), 0);
+    assert.deepEqual(f.events.map(event => event.kind), ["runtime_error"]);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+  } finally { await f.runtime.stop(); }
+});
+
+test("retired transports cannot publish queue or consumption into the replacement session", async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    const old = f.connection;
+    await f.runtime.stop();
+    assert.equal((await f.start()).ok, true);
+    const session = f.runtime.getSession();
+    old.frame({ type: "queue_update", steering: ["old"], followUp: [] });
+    old.frame({ type: "message_start", message: { role: "user", content: "old" } });
+    f.connection.frame({ type: "queue_update", steering: [], followUp: ["new"] });
+    assert.deepEqual(f.events, [{ kind: "queue_updated", session, steering: [], followUp: ["new"] }]);
+  } finally { await f.runtime.stop(); }
+});
 
 for (const event of [
   { type: "message_end", message: { role: "assistant", content: [null] } },

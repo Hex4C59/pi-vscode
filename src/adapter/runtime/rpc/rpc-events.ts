@@ -1,9 +1,14 @@
+import { parseConsumedUserText, parseQueuedTextSnapshot } from "./queued-text.js";
+import type { QueuedTextSnapshot } from "../../../extension/contracts/index.js";
+
 /** Only fields consumed by live projections are decoded; upstream metadata stays opaque. */
 export type ContentPart = { type: string; text?: string; thinking?: string };
 type Message = { role: string; content?: ContentPart[]; stopReason?: string; errorMessage?: string };
 type MessageUpdate = { type: string; contentIndex?: number; delta?: string; content?: string };
 export type RuntimeFrameEvent =
   | { type: "agent_start" | "agent_settled" }
+  | ({ type: "queue_update" } & QueuedTextSnapshot)
+  | { type: "user_message_start"; text: string | null }
   | { type: "message_start" | "message_end"; message: Message }
   | { type: "message_update"; assistantMessageEvent: MessageUpdate }
   | { type: "tool_execution_start" | "tool_execution_update" | "tool_execution_end"; toolCallId: string; toolName?: string; input?: string; content?: ContentPart[]; isError?: boolean }
@@ -35,33 +40,44 @@ function content(value: unknown): ContentPart[] | undefined {
 
 type DecodedEvent = { kind: "event"; event: RuntimeFrameEvent } | { kind: "ignored" } | { kind: "protocol-error" };
 const invalid = { kind: "protocol-error" } as const;
+function decodeMessage(raw: Record<string, unknown>, type: "message_start" | "message_end"): DecodedEvent {
+  const message = raw.message;
+  if (!isRecord(message) || typeof message.role !== "string" || !message.role) return invalid;
+  if (type === "message_start" && message.role === "user") {
+    const text = parseConsumedUserText(message.content);
+    return text ? { kind: "event", event: { type: "user_message_start", ...text } } : invalid;
+  }
+  if (message.role !== "assistant") return { kind: "event", event: { type, message: { role: message.role } } };
+  const parts = message.content === undefined && type === "message_start" ? undefined : content(message.content);
+  if ((parts === undefined && (type === "message_end" || message.content !== undefined))
+    || !optionalString(message.stopReason) || !optionalString(message.errorMessage)) return invalid;
+  return { kind: "event", event: { type, message: { role: message.role, content: parts, stopReason: message.stopReason, errorMessage: message.errorMessage } } };
+}
+
+function decodeMessageUpdate(update: unknown): DecodedEvent {
+  if (!isRecord(update) || typeof update.type !== "string") return invalid;
+  if (!["text_delta", "thinking_start", "thinking_delta", "thinking_end"].includes(update.type)) return { kind: "ignored" };
+  if ((update.type.startsWith("thinking_") || update.contentIndex !== undefined) && !index(update.contentIndex)) return invalid;
+  if ((update.type === "text_delta" || update.type === "thinking_delta") && typeof update.delta !== "string") return invalid;
+  if (update.type === "thinking_end" && typeof update.content !== "string") return invalid;
+  return { kind: "event", event: { type: "message_update", assistantMessageEvent: {
+    type: update.type, contentIndex: index(update.contentIndex) ? update.contentIndex : undefined,
+    delta: typeof update.delta === "string" ? update.delta : undefined,
+    content: typeof update.content === "string" ? update.content : undefined,
+  } } };
+}
+
 export function decodeRuntimeEvent(raw: Record<string, unknown>): DecodedEvent {
   const type = raw.type;
   switch (type) {
     case "agent_start": case "agent_settled":
       return { kind: "event", event: { type } };
-    case "message_start": case "message_end": {
-      const message = raw.message;
-      if (!isRecord(message) || typeof message.role !== "string" || !message.role) return invalid;
-      if (message.role !== "assistant") return { kind: "event", event: { type, message: { role: message.role } } };
-      const parts = message.content === undefined && type === "message_start" ? undefined : content(message.content);
-      if ((parts === undefined && (type === "message_end" || message.content !== undefined))
-        || !optionalString(message.stopReason) || !optionalString(message.errorMessage)) return invalid;
-      return { kind: "event", event: { type, message: { role: message.role, content: parts, stopReason: message.stopReason, errorMessage: message.errorMessage } } };
+    case "message_start": case "message_end": return decodeMessage(raw, type);
+    case "queue_update": {
+      const snapshot = parseQueuedTextSnapshot(raw);
+      return snapshot ? { kind: "event", event: { type, ...snapshot } } : invalid;
     }
-    case "message_update": {
-      const update = raw.assistantMessageEvent;
-      if (!isRecord(update) || typeof update.type !== "string") return invalid;
-      if (!["text_delta", "thinking_start", "thinking_delta", "thinking_end"].includes(update.type)) return { kind: "ignored" };
-      if ((update.type.startsWith("thinking_") || update.contentIndex !== undefined) && !index(update.contentIndex)) return invalid;
-      if ((update.type === "text_delta" || update.type === "thinking_delta") && typeof update.delta !== "string") return invalid;
-      if (update.type === "thinking_end" && typeof update.content !== "string") return invalid;
-      return { kind: "event", event: { type, assistantMessageEvent: {
-        type: update.type, contentIndex: index(update.contentIndex) ? update.contentIndex : undefined,
-        delta: typeof update.delta === "string" ? update.delta : undefined,
-        content: typeof update.content === "string" ? update.content : undefined,
-      } } };
-    }
+    case "message_update": return decodeMessageUpdate(raw.assistantMessageEvent);
     case "tool_execution_start": case "tool_execution_update": case "tool_execution_end": {
       if (typeof raw.toolCallId !== "string" || !raw.toolCallId || raw.toolCallId.length > 200 || !optionalString(raw.toolName)) return invalid;
       if (type === "tool_execution_end" && typeof raw.isError !== "boolean") return invalid;

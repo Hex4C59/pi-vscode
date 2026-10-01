@@ -52,7 +52,13 @@ export type ModelMutationResult =
   }
   | { ok: false; detail: string };
 
+/** Public upstream pending text, host-only until the host creates a safe UI projection. */
+export type QueuedTextSnapshot = { steering: string[]; followUp: string[] };
+
 export type RuntimeEvent =
+  | ({ kind: "queue_updated"; session: number } & QueuedTextSnapshot)
+  /** null means valid user input that cannot be losslessly correlated as bounded plain text. */
+  | { kind: "user_message_started"; session: number; text: string | null }
   | { kind: "workflow"; session: number; phase: "retrying" | "compacting" | "waiting" }
   | { kind: "tool_finished"; session: number; toolCallId: string; failed: boolean }
   | { kind: "activity"; session: number; item: ActivityItem }

@@ -28,7 +28,9 @@
 - 显式取回与 Stop 共用一个 clear owner。根据有界已观察快照，在破坏性 clear 前预留无损恢复容量；容量／不可归属数据缺口拒绝显式取回。Stop 容量失败不静默丢弃恢复，而是显示未确认 Stop 与既有安全恢复。校验 clear 两数组后才记录确认取回；clear 期间的空 `queue_update` 不把文字标消费。先保留确认 clear 内容再 abort，后者失败不抹掉前者。clear 超时保留本地文字未知，迟到旧 session 回包不改新 runtime。
 - 视图重建重新投影 ledger，关闭视图只取消未提交的 view 工作。断线保留本 generation 本地恢复与未知事实。New／Restore／profile／资源替换补 PRD 丢失警告，仅提交交接后清理。工作区身份变化沿用草稿失效规则，撤销旧能力，不把旧队列文字投影到新项目。Provider dispose 释放 ledger／订阅／计时器，无自动重发。
 
-**仍需实现证据：** 精确 parser／projection 验证、adapter transport 交错、host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据。本 Outline 不新增已交付能力或 gate 接受。
+**局部 adapter 实现（WI-077 Build）：** `RuntimeEvent` 已新增仅宿主 `queue_updated {session, steering, followUp}` 和 `user_message_started {session, text: string | null}`。实际 JSONL 入口原子校验两队列，保留顺序、空项和重复数量，合计最多 32 条／256 KiB UTF-8。无效／超量快照按既有不确定 runtime 路径撤销连接，不投影空队列，也不 kill 自有 child。有界 text-only user start 保留 literal 文字（string 或 text blocks）；合法混合附件或超过 8000 UTF-16 单位只投影 null 关联文字，不截断指令。Start 只说明进入对话，不证明本地尝试归属或执行成功。原始事件仅留宿主，不直接转发 Webview 消息，不释放 task occupancy；message end 不重复消费。退役 reader 与替换 session 保持隔离。
+
+**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）
 

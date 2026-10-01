@@ -142,7 +142,15 @@ export function createRpcFrames() {
         return { kind: "rpc", parsed };
       }
       const decoded = decodeRuntimeEvent(parsed);
-      return decoded.kind === "event" ? project(decoded.event, context) : decoded;
+      if (decoded.kind !== "event") return decoded;
+      const event = decoded.event;
+      if (event.type === "queue_update" || event.type === "user_message_start") {
+        if (!context.session) return { kind: "ignored" };
+        return event.type === "queue_update"
+          ? { kind: "runtime", events: [{ kind: "queue_updated", session: context.session, steering: event.steering, followUp: event.followUp }] }
+          : { kind: "runtime", conversationTouched: true, events: [{ kind: "user_message_started", session: context.session, text: event.text }] };
+      }
+      return project(event, context);
     },
   };
 }
