@@ -96,6 +96,8 @@ export interface PiRuntimeLifecycle {
   getSession(): number;
   subscribe(listener: (event: RuntimeEvent) => void): () => void;
   preparePrompt(input: PromptInput, expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
+  /** Host admits/reserves the plain draft first; running-only, one consumed token, no idle fallback. */
+  prepareQueuedText?(text: string, mode: "steering" | "follow-up", expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
   prompt(text: string): Promise<PromptResult>;
   getModelProjection(): Promise<ModelProjectionResult>;
   /** Mutations return a fresh applied projection, including current supported levels. */

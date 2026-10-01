@@ -34,6 +34,8 @@
 
 **局部显式取回 adapter 契约：** `recallQueuedText(expectedSession, onQueueCleared)` 清两队列，但不 abort、不释放任务占用。必填同步 callback 接收共享有界校验结果；调用者必须在准入前预留恢复容量。当前 gate／session 校验和共用 queue-control lease 在 write 前拒绝过期或并发 recall／Stop；竞争失败的 Stop 明确未确认，不自动重试。Recall 仅在单次 clear 在途期间封闭新准入，结束后移除自有 fence，不改变活动任务占用。沿用五秒控制观察预算与相同的迟到／损坏／断线 fail-closed 路径，不诊断原始文字。[传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)生成 `dist/wi077-explicit-recall/report.json`，验证不 abort、重复文字和 occupancy 行为。这仍是未接入的 host-only API，不是 Webview 意图或产品恢复能力。
 
+**局部队列发送 adapter 契约：** `prepareQueuedText(text, mode, expectedSession)` 为公开 `steer`／`follow_up` 返回一次性 token。write 前要求当前已验证 session、活动 agent、无 Stop／clear fence，且本 session 无队列 write 在途；无效／空白／超过 8000 UTF-16 文字拒绝，不降级 idle prompt。原文不改写序列化；首次 send 即消费 token，拒绝也不复用。独立 write owner 分别观察 ACK、callback 与必要 drain，以 monotonic deadline 执行五秒 write／drain、三十秒 ACK；队列 ACK／拒绝不改变普通 task occupancy。Unknown 仅按既有不确定恢复撤销当前连接，不重试、不 kill child。Stop／recall 同步封闭新准入，在既有控制预算内等待在途尝试后才 clear；在调用 `onAttempt` 前已发布在途 owner，重入 Stop 不能先 clear 再队列 write。清理 reply watch、timer 和 stream listener。[传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)生成 `dist/wi077-queued-send/report.json`，并验证 Stop 顺序／重入、延迟 timer 的预算边界。该 host-only API 尚未接 UI；公开前仍须宿主草稿／凭据／附件／slash 准入、容量预留和 ledger 关联。
+
 **证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）

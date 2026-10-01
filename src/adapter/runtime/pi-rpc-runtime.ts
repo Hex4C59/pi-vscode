@@ -17,9 +17,11 @@ import type { Readable } from "node:stream";
 
 import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./rpc/jsonl.js";
 import { parseQueuedTextSnapshot } from "./rpc/queued-text.js";
+import { prepareQueuedTextSend } from "./rpc/queued-text-send.js";
 import { resolvePiCliPath } from "./rpc/pi-rpc-probe.js";
 import { readPiStartupModelArg } from "./piStartupModel.js";
 import type {
+  AttachmentPromptResult,
   ExtensionExecutionProfile,
   ModelMutationResult,
   ModelProjectionResult,
@@ -48,6 +50,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let startToken = 0;
   let activeSession = 0;
   let queueControlOperation: { session: number } | undefined;
+  let queuedSend: { session: number; pending: Promise<AttachmentPromptResult> } | undefined;
   let resumedConversation = false;
   let untouchedConversation = false;
   let commandNames: ReadonlySet<string> = new Set();
@@ -520,8 +523,49 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     } };
   };
 
+  const prepareQueuedText: NonNullable<PiRuntimeLifecycle["prepareQueuedText"]> = (text, mode, session) => {
+    if (replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
+    const requestId = replies.rpcId(session);
+    const command = mode === "steering" ? "steer" : "follow_up";
+    const valid = typeof text === "string" && text.trim().length > 0 && text.length <= 8000
+      && (mode === "steering" || mode === "follow-up");
+    let owned: RuntimeLink | null = null;
+    return prepareQueuedTextSend({ requestId, command,
+      admit() {
+        if (!valid || session !== activeSession || !session || !gateReady || !occupancy.agentRunning()
+          || occupancy.isStopping() || queueControlOperation?.session === session || queuedSend?.session === session
+          || !child?.stdin || child.stdin.destroyed || child.stdin.writableEnded) return undefined;
+        owned = child;
+        return owned.stdin;
+      },
+      isCurrent: () => child === owned && session === activeSession,
+      watch: settle => replies.watch(requestId, command, settle),
+      drop: () => replies.drop(requestId),
+      track(pending) {
+        if (child !== owned || session !== activeSession) return;
+        const attempt = queuedSend = { session, pending };
+        void pending.then(() => { if (queuedSend === attempt) queuedSend = undefined; });
+      },
+      onUnknown() {
+        emit({ kind: "runtime_error", session, detail: environment.process.describeFailure("prompt-delivery") });
+        void faultStop();
+      },
+    }, valid ? serializeJsonLine({ id: requestId, type: command, message: text }) : "");
+  };
+
+  const waitForQueuedSend = (pending: Promise<AttachmentPromptResult>, remaining: () => number): Promise<void> => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Queue send was not observed before clear.")), remaining());
+    void pending.then(result => {
+      clearTimeout(timer);
+      if (result.delivery === "unknown") reject(new Error("Queue send outcome is unknown."));
+      else resolve();
+    });
+  });
+
   const clearQueuedText = async (session: number, remaining: () => number,
     onQueueCleared: Parameters<NonNullable<PiRuntimeLifecycle["abortTask"]>>[0]): Promise<void> => {
+    if (queuedSend?.session === session) await waitForQueuedSend(queuedSend.pending, remaining);
+    if (session !== activeSession) throw new Error("Runtime changed before clear.");
     const clear = await invokeRpc({ type: "clear_queue" }, remaining());
     remaining(); // Late ACK is not timely recovery evidence, even if its timer has not run.
     const recalled = clear.success ? parseQueuedTextSnapshot(clear.data) : undefined;
@@ -581,6 +625,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       return result;
     },
     preparePrompt,
+    prepareQueuedText,
     recallQueuedText,
     invalidateInteractions() {
       if (!child) return;

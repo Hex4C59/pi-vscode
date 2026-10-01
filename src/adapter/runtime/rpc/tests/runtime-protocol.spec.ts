@@ -13,6 +13,7 @@ function fixture() {
   const events: RuntimeEvent[] = [];
   const held = new Set<string>();
   let stallPromptWrite = false;
+  let stalledCommand = "prompt";
   let completeWrite: (() => void) | undefined;
   const memory = createMemoryProcess(options => {
     const transport = createMemoryConnection((line, done) => {
@@ -30,7 +31,7 @@ function fixture() {
           : request.type === "clear_queue" ? { steering: [], followUp: [] } : undefined;
         transport.frame({ type: "response", id: request.id, command: request.type, success: true, data, ...override?.(request.type) });
       });
-      if (request.type === "prompt" && stallPromptWrite) { completeWrite = done; return false; }
+      if (request.type === stalledCommand && stallPromptWrite) { completeWrite = done; return false; }
       done();
       return true;
     });
@@ -46,10 +47,121 @@ function fixture() {
     hold(command: string) { held.add(command); },
     resume(command: string) { held.delete(command); },
     stallPrompt() { stallPromptWrite = true; },
+    stallQueue() { stalledCommand = "steer"; stallPromptWrite = true; },
     finishWrite() { completeWrite?.(); connection.stdin.emit("drain"); },
     start: () => runtime.start({ cwd: "/project", projectTrust: "no-approve" }),
   };
 }
+
+// Queue delivery seam failure modes: wrong public command, replay, changed literal
+// text, idle fallback, ACK releasing task occupancy, incomplete write/drain, Stop
+// clearing before a pending attempt, disconnect/timeout retry and stale session.
+test("running task accepts distinct literal queue commands once without releasing task occupancy", async () => {
+  const f = fixture();
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    let attempts = 0;
+    for (const mode of ["steering", "follow-up"] as const) {
+      const token = f.runtime.prepareQueuedText?.("  literal 中\nnext  ", mode, f.runtime.getSession());
+      assert.ok(token);
+      assert.equal((await token.send(() => { attempts++; })).delivery, "rpc-accepted");
+      assert.equal((await token.send(() => { attempts++; })).delivery, "not-sent");
+    }
+    assert.equal(attempts, 2);
+    assert.deepEqual(f.commands.slice(2).map(({ type, message }) => ({ type, message })), [
+      { type: "steer", message: "  literal 中\nnext  " },
+      { type: "follow_up", message: "  literal 中\nnext  " },
+    ]);
+    assert.equal((await f.runtime.prompt("still occupied")).ok, false);
+    const output = path.resolve("dist/wi077-queued-send");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "report.json"), JSON.stringify({ schemaVersion: 1, status: "passed",
+      evidence: "injected-memory-JSONL-transport", preserved: ["distinct modes", "literal Unicode", "one attempt", "task occupancy"],
+      limits: ["no host ledger/draft/UI admission", "not real runtime or installed VSIX"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); }
+});
+
+test("Stop fences queue sends and waits for ACK plus callback/drain before destructive clear", async () => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined;
+  let stopping: Promise<unknown> | undefined;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    f.hold("steer"); f.stallQueue();
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession());
+    assert.ok(token);
+    let delivered = false;
+    pending = token.send(() => undefined).then(result => { delivered = true; return result; });
+    const request = f.commands.at(-1)!;
+    f.connection.frame({ type: "response", id: request.id, command: "steer", success: true });
+    await Promise.resolve();
+    assert.equal(delivered, false);
+    f.override(command => { if (command === "abort") f.connection.frame({ type: "agent_settled" }); return undefined; });
+    stopping = f.runtime.abortTask?.();
+    assert.equal(f.commands.some(command => command.type === "clear_queue"), false);
+    const refused = f.runtime.prepareQueuedText?.("too late", "follow-up", f.runtime.getSession());
+    assert.equal((await refused?.send(() => undefined))?.delivery, "not-sent");
+    f.finishWrite();
+    assert.deepEqual(await pending, { delivery: "rpc-accepted" });
+    assert.deepEqual(await stopping, { ok: true });
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer", "clear_queue", "abort"]);
+    assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+  } finally { await f.runtime.stop(); await Promise.allSettled([pending, stopping]); }
+});
+
+test("Stop requested inside queue attempt admission still waits before clear", async () => {
+  const f = fixture();
+  let stopping: Promise<unknown> | undefined;
+  let clearedInsideAdmission = false;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    f.override(command => { if (command === "abort") f.connection.frame({ type: "agent_settled" }); return undefined; });
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession());
+    assert.ok(token);
+    const result = await token.send(() => {
+      stopping = f.runtime.abortTask?.();
+      clearedInsideAdmission = f.commands.some(command => command.type === "clear_queue");
+    });
+    assert.equal(clearedInsideAdmission, false);
+    assert.equal(result.delivery, "rpc-accepted");
+    assert.deepEqual(await stopping, { ok: true });
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer", "clear_queue", "abort"]);
+  } finally { await f.runtime.stop(); await stopping; }
+});
+
+for (const phase of ["write", "ack"] as const) test(`queue ${phase} observations after budget fail even before the timer runs`, async context => {
+  const f = fixture();
+  let time = 0;
+  context.mock.method(performance, "now", () => time);
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    if (phase === "write") f.stallQueue(); else f.hold("steer");
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession());
+    assert.ok(token);
+    const pending = token.send(() => undefined);
+    await Promise.resolve();
+    time = phase === "write" ? 5001 : 30001;
+    if (phase === "write") f.finishWrite();
+    else {
+      const request = f.commands.at(-1)!;
+      f.connection.frame({ type: "response", id: request.id, command: "steer", success: true });
+    }
+    assert.deepEqual(await pending, { delivery: "unknown", code: phase === "write" ? "write-failed" : "ack-timeout" });
+    assert.equal((await token.send(() => undefined)).delivery, "not-sent");
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.equal(f.memory.endCalls, 0);
+    assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+  } finally { await f.runtime.stop(); }
+});
 
 // Explicit recall failure modes before implementation: aborting the task,
 // releasing prompt occupancy, duplicate clear with Stop, stale session writes,
@@ -278,7 +390,7 @@ test("queue snapshot and consumption travel independently through a live task wi
     await writeFile(path.join(output, "report.json"), JSON.stringify({
       schemaVersion: 1, status: "passed", evidence: "injected-memory-JSONL-transport",
       events: f.events.map(event => event.kind), preserved: ["multiplicity", "Unicode", "event order", "task occupancy"],
-      limits: ["no queue send/recall API", "no host recovery/UI", "not real runtime, F5 or installed VSIX"],
+      limits: ["scenario does not exercise queue send/recall APIs", "no host recovery/UI", "not real runtime, F5 or installed VSIX"],
     }, null, 2) + "\n");
   } finally { await f.runtime.stop(); }
 });
