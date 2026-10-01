@@ -774,7 +774,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const status = catalogue?.status ?? (this.state.runtime === "starting" ? "loading" : "unavailable");
     const rows = catalogue?.status === "ready" ? catalogue.rows.map(row => ({
       name: row.name, source: row.source,
-      ...(row.description === undefined ? {} : { description: redactCredentialLikeText(row.description.slice(0, 500)) }),
+      ...(row.description === undefined ? {} : { description: redactCredentialLikeText(row.description).slice(0, 500) }),
       ...(row.location === undefined ? {} : { location: row.location }),
     })) : [];
     return { ...this.envelope("commandCatalogueState"), status, rows, error: status === "unavailable" ? "unavailable" : null };

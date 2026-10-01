@@ -1,4 +1,4 @@
-import { redactCredentialLikeText, type CommandCatalogue, type CommandCatalogueRow, type PromptInput } from "../../extension/contracts/index.js";
+import { containsCredentialLikeText, redactCredentialLikeText, type CommandCatalogue, type CommandCatalogueRow, type PromptInput } from "../../extension/contracts/index.js";
 
 const COMMAND_SOURCES = new Set(["extension", "prompt", "skill"]);
 const COMMAND_LOCATIONS = new Set(["user", "project", "path"]);
@@ -11,13 +11,16 @@ function presentCommandRow(item: unknown): CommandCatalogueRow | undefined {
   const command = item as Record<string, unknown>;
   for (const key of Object.keys(command)) if (!COMMAND_KEYS.has(key)) return;
   const { name, source } = command;
-  if (typeof name !== "string" || !name || Buffer.byteLength(name) > 200 || /[\s/]/.test(name)) return;
+  if (typeof name !== "string" || !name || Buffer.byteLength(name) > 200 || /[\s/]/.test(name) || containsCredentialLikeText(name)) return;
   if (typeof source !== "string" || !COMMAND_SOURCES.has(source)) return;
   const row: CommandCatalogueRow = { name, source: source as CommandCatalogueRow["source"] };
   if (command.description !== undefined) {
     if (typeof command.description !== "string") return;
-    const description = redactCredentialLikeText(command.description.slice(0, 500));
-    if (description) row.description = description;
+    // Optional copy is withheld rather than projecting embedded filesystem paths.
+    const describesPath = /(?:^|[\s"'`([{=:])(?:\/|~\/)/.test(command.description)
+      || (typeof command.path === "string" && command.path.length > 0 && command.description.includes(command.path));
+    const description = redactCredentialLikeText(command.description).slice(0, 500);
+    if (!describesPath && description) row.description = description;
   }
   if (command.location !== undefined) {
     if (typeof command.location !== "string" || !COMMAND_LOCATIONS.has(command.location)) return;

@@ -769,3 +769,27 @@ test("get_commands failure is unavailable rather than empty and controlled start
     }, null, 2) + "\n");
   } finally { await f.runtime.stop(); }
 });
+
+// Discovery privacy failures: secret-shaped names exposed as labels; redaction grows
+// descriptions past their DTO cap; registered paths embedded in descriptions leak.
+test("runtime discovery suppresses private labels and path-bearing descriptions before projection", async () => {
+  const f = fixture();
+  try {
+    f.setCommands({ commands: [{ name: "review", source: "prompt", path: "/private/user/review.md",
+      description: "Review using /private/user/review.md" }] });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "ready", rows: [{ name: "review", source: "prompt" }] });
+    await f.runtime.stop();
+    f.setCommands({ commands: [{ name: "password=synthetic-private-value", source: "extension" }] });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+    await f.runtime.stop();
+    f.setCommands({ commands: [{ name: "review", source: "prompt", description: "a".repeat(487) + " password=x" }] });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    const catalogue = f.runtime.getCommandCatalogue?.();
+    assert.equal(catalogue?.status, "ready");
+    if (catalogue?.status !== "ready") throw new Error("Expected bounded catalogue");
+    assert.ok((catalogue.rows[0].description?.length ?? 0) <= 500);
+    assert.equal(JSON.stringify(catalogue).includes("password=x"), false);
+  } finally { await f.runtime.stop(); }
+});
