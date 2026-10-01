@@ -336,6 +336,23 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
       } as unknown as HostMessage;
     }
 
+    case "commandCatalogueState": {
+      if (!hasFields(message, [...envelope, "revision", "status", "error", "rows"])
+        || !integer(message.revision) || !oneOf(message.status, ["loading", "ready", "empty", "unavailable"])
+        || message.error !== (message.status === "unavailable" ? "unavailable" : null)) return;
+      const rows = list(message.rows, 512, value => {
+        const row = exactRecord(value, ["name", "source"], ["description", "location"]);
+        if (!row || !utf8Text(row.name, 200) || !row.name || /[\s/]/.test(row.name)
+          || !oneOf(row.source, ["extension", "prompt", "skill"])
+          || (row.description !== undefined && !string(row.description, 500))
+          || (row.location !== undefined && !oneOf(row.location, ["user", "project", "path"]))) return;
+        return row;
+      });
+      if (!rows || (message.status === "ready" ? !rows.length : !!rows.length)
+        || new Set(rows.map(row => row.name)).size !== rows.length) return;
+      return { ...message, rows } as unknown as HostMessage;
+    }
+
     case "queuedTextState": {
       const errors = ["busy", "stale", "capacity", "invalid-text", "attachments", "runtime-unavailable", "unconfirmed", "unavailable", "draft-not-empty"] as const;
       if (!hasFields(message, [...envelope, "revision", "phase", "error", "pending", "recovery"])

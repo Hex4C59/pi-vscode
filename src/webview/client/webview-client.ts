@@ -26,6 +26,7 @@ function blockedDuringSessionSwitch(intent: Intent): boolean {
     case "getSavedHistory":
     case "getSavedHistoryPreview":
     case "sendChat":
+    case "completeCommand":
     case "queueChat":
     case "recallQueuedText":
     case "useRecoveredText":
@@ -54,6 +55,7 @@ export class WebviewClient {
   private identity: { generation: number; viewId: string } | undefined;
   private sequence = 0;
   private pending: number | null = null;
+  private commandCompletion: { revision: number; sequence: number; before: string; after: string } | null = null;
   private submitted: { revision: number; sequence: number; text: string } | null = null;
   private queuedSubmit: { revision: number; text: string } | null = null;
   private previewCounter = 0;
@@ -66,7 +68,7 @@ export class WebviewClient {
     },
     intent => this.action(intent), snapshot => this.update(snapshot), error => this.update({ error }),
   );
-  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, sessions: null, text: "", synchronizing: true, submitting: false,
+  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, commandCatalogue: null, sessions: null, text: "", synchronizing: true, submitting: false,
     ...this.savedHistory.snapshot,
     changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   constructor(private readonly bridge: WebviewBridge) {}
@@ -132,6 +134,23 @@ export class WebviewClient {
     if (!draft || availability(this.snapshot).queueDisabled) return;
     this.queuedSubmit = { revision: draft.revision, text: this.snapshot.text };
     this.action({ type: "queueChat", draftRevision: draft.revision, mode });
+  };
+  completeCommand = (name: string): void => {
+    const snapshot = this.snapshot;
+    const draft = snapshot.attachments?.draft;
+    const catalogue = snapshot.commandCatalogue;
+    const controls = availability(snapshot);
+    if (!draft || catalogue?.status !== "ready" || !catalogue.rows.some(row => row.name === name)
+      || this.commandCompletion || snapshot.synchronizing || snapshot.submitting || snapshot.error
+      || snapshot.attachments?.preparation !== "idle" || snapshot.workspace?.runtime !== "ready"
+      || controls.stopping || controls.sessionTransitioning || snapshot.workspace.busy
+      || snapshot.executionProfile?.phase !== "idle" || snapshot.interactions?.active) return;
+    const leading = /^\/[^\s/]*(?=\s|$)/.exec(snapshot.text);
+    if (!leading) return;
+    const after = `/${name}${snapshot.text.slice(leading[0].length)}`;
+    if (after === snapshot.text || after.length > MAX_DRAFT_CHARACTERS) return;
+    this.commandCompletion = { revision: draft.revision, sequence: this.sequence, before: snapshot.text, after };
+    this.action({ type: "completeCommand", draftRevision: draft.revision, name });
   };
   recallQueuedText = (): void => {
     const queue = this.snapshot.queuedText;
@@ -273,6 +292,7 @@ export class WebviewClient {
       case "attachmentState":
         this.applyAttachmentState(message);
         return;
+      case "commandCatalogueState": return this.applyCommandCatalogue(message);
       case "queuedTextState":
         if (message.error && this.queuedSubmit) this.queuedSubmit = null;
         this.update({ queuedText: message });
@@ -288,6 +308,10 @@ export class WebviewClient {
         return;
     }
   }
+  private applyCommandCatalogue(message: Extract<HostMessage, { type: "commandCatalogueState" }>): void {
+    if (this.snapshot.commandCatalogue && message.revision < this.snapshot.commandCatalogue.revision) return;
+    this.update({ commandCatalogue: message });
+  }
   private isStale(message: HostMessage): boolean {
     return !!this.identity && (message.viewId !== this.identity.viewId || message.generation < this.identity.generation);
   }
@@ -300,10 +324,11 @@ export class WebviewClient {
     // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
     const committedHandoff = message.type === "sessionState" && message.phase === "switching";
     this.pending = null;
+    this.commandCompletion = null;
     this.submitted = null;
     this.queuedSubmit = null;
     this.update({
-      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, sessions: null,
+      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, commandCatalogue: null, sessions: null,
       ...this.savedHistory.reset(),
       changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
       ...(committedHandoff ? { text: "" } : {}),
@@ -324,6 +349,13 @@ export class WebviewClient {
     const previous = this.snapshot.attachments;
     if (previous && message.draft.revision < previous.draft.revision) return;
     let text = this.snapshot.text;
+    const completion = this.commandCompletion;
+    if (completion && (message.draft.revision > completion.revision || message.result)) {
+      if (!message.result && message.draft.revision === completion.revision + 1
+        && message.draft.text === completion.after && text === completion.before
+        && this.sequence === completion.sequence) text = completion.after;
+      this.commandCompletion = null;
+    }
     if (!previous && !text) text = message.draft.text;
     else if (!text && message.draft.text && (!previous || message.draft.revision > previous.draft.revision)) {
       // Host-authored restores (e.g. useRecoveredText) land in draft.text; adopt when the composer is empty.

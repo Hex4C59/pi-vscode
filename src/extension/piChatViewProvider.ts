@@ -1,12 +1,12 @@
 import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/index.js";
-import type { SessionStateMessage, SessionError } from "./contracts/index.js";
+import { redactCredentialLikeText, type CommandCatalogueStateMessage, type SessionStateMessage, type SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel } from "./bridge/index.js";
 import { ModelSettings, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
-import type { WorkspaceStateMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
+import type { WorkspaceStateMessage, WebviewMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
 
 import { SavedHistory } from "./sessions/index.js";
 import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
@@ -66,6 +66,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private lastInteractionProjection = "";
   private lastProfileProjection = "";
   private lastProviderConfigProjection = "";
+  private lastCommandProjection = "";
+  private commandRevision = 0;
   private readonly providerConfig: ProviderConfig;
   private readonly pluginInventory: PluginInventorySettings;
   private readonly inventoryStorage: string;
@@ -762,7 +764,39 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const providerKey = JSON.stringify(providers);
     if (forceExtensions || providerKey !== this.lastProviderConfigProjection) { this.lastProviderConfigProjection = providerKey; this.post(this.view, providers); }
     this.publishQueueState();
+    this.publishCommands(forceExtensions);
     this.post(this.view, { ...this.state, ...this.models.snapshot });
+  }
+
+  private commandProjection(): Omit<CommandCatalogueStateMessage, "revision"> {
+    const catalogue = this.state.runtime === "ready" && this.runtimeSession !== 0
+      && this.runtimeSession === this.runtime.getSession() ? this.runtime.getCommandCatalogue?.() : undefined;
+    const status = catalogue?.status ?? (this.state.runtime === "starting" ? "loading" : "unavailable");
+    const rows = catalogue?.status === "ready" ? catalogue.rows.map(row => ({
+      name: row.name, source: row.source,
+      ...(row.description === undefined ? {} : { description: redactCredentialLikeText(row.description.slice(0, 500)) }),
+      ...(row.location === undefined ? {} : { location: row.location }),
+    })) : [];
+    return { ...this.envelope("commandCatalogueState"), status, rows, error: status === "unavailable" ? "unavailable" : null };
+  }
+
+  private publishCommands(force = false): void {
+    if (!this.view || this.disposed) return;
+    const projection = this.commandProjection();
+    const key = JSON.stringify(projection);
+    if (key !== this.lastCommandProjection) {
+      this.lastCommandProjection = key;
+      this.commandRevision = Math.min(Number.MAX_SAFE_INTEGER, this.commandRevision + 1);
+    } else if (!force) return;
+    this.post(this.view, { ...projection, revision: this.commandRevision });
+  }
+
+  private completeCommand(message: Extract<WebviewMessage, { type: "completeCommand" }>): void {
+    const projection = this.commandProjection();
+    if (projection.status !== "ready" || !projection.rows.some(row => row.name === message.name)) {
+      this.draft.rejectStale(); this.publishCommands(true); return;
+    }
+    this.draft.completeCommand(message.draftRevision, message.name);
   }
 
   private post(view: vscode.WebviewView, message: unknown): void {
@@ -844,6 +878,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const toolGeneration = this.state.generation; const session = this.runtimeSession;
     const toolOperation = this.tools.handle(message, () => !this.disposed && this.view === view && toolGeneration === this.state.generation && session === this.runtimeSession);
     if (toolOperation) { await toolOperation; return; }
+    if (message.type === "completeCommand") { this.completeCommand(message); return; }
     const draftOperation = this.draft.handle(view, message);
     if (draftOperation) { await draftOperation; return; }
     const queueOperation = this.ensureQueueSession()?.handle(message);

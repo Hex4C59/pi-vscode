@@ -1,3 +1,4 @@
+import type { CommandCatalogueRow } from "./runtimeLifecycle.js";
 import type { ExtensionInteractionIntent, ExtensionInteractionProjection, ExecutionProfileProjection } from "./extensionInteractions.js";
 import type { PluginInventoryIntent, PluginInventoryProjection } from "./pluginInventory.js";
 import type { ProviderConfigIntent, ProviderConfigProjection } from "./providerConfig.js";
@@ -34,6 +35,7 @@ export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceStat
     | { type: "chooseResources"; choice: ResourceChoice }
     | { type: "sendChat" | "addFileAttachment"; draftRevision: number }
     | { type: "addSelectionAttachment"; draftRevision: number }
+    | { type: "completeCommand"; draftRevision: number; name: string }
     | { type: "queueChat"; draftRevision: number; mode: "steering" | "follow-up" }
     | { type: "recallQueuedText"; queueRevision: number }
     | { type: "useRecoveredText"; id: string; draftRevision: number }
@@ -122,7 +124,15 @@ export type ExecutionProfileStateMessage = HostEnvelope & ExecutionProfileProjec
 export type ProviderConfigStateMessage = HostEnvelope & ProviderConfigProjection & { type: "providerConfigState" };
 export type PluginInventoryStateMessage = HostEnvelope & PluginInventoryProjection & { type: "pluginInventoryState" };
 export type UiLanguageStateMessage = HostEnvelope & { type: "uiLanguageState"; locale: "en" | "zh-CN" };
-export type HostMessage = UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage | QueuedTextStateMessage
+export type CommandCatalogueStateMessage = Action & {
+  type: "commandCatalogueState";
+  revision: number;
+  status: "loading" | "ready" | "empty" | "unavailable";
+  error: "unavailable" | null;
+  rows: readonly CommandCatalogueRow[];
+};
+
+export type HostMessage = CommandCatalogueStateMessage | UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage | QueuedTextStateMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

@@ -110,6 +110,27 @@ export class DraftSubmission implements vscode.Disposable {
     this.publish();
     return { kind: "ok" };
   }
+  /** Complete only a leading command token in the exact acknowledged draft; never submit. */
+  completeCommand(expectedRevision: number, name: string): void {
+    const context = this.context();
+    if (this.disposed || context.disposed || !context.ready || !context.eligible
+      || this.draftRevision === Number.MAX_SAFE_INTEGER || expectedRevision !== this.draftRevision) {
+      this.rejectStale(); return;
+    }
+    if (this.awaitingAck || this.preparation !== "idle") {
+      this.attachmentResult = "busy"; this.publish(); return;
+    }
+    // No insertion into prose or attachment-only drafts; preserve all arguments literally.
+    const leading = /^\/[^\s/]*(?=\s|$)/.exec(this.draftText);
+    if (!leading) { this.rejectStale(); return; }
+    const text = `/${name}${this.draftText.slice(leading[0].length)}`;
+    if (text.length > 8000) { this.attachmentResult = "text-too-large"; this.publish(); return; }
+    if (text === this.draftText) return;
+    this.draftText = text;
+    this.draftRevision++;
+    this.attachmentResult = null;
+    this.publish();
+  }
   private attachmentEligible(): boolean { const context = this.context(); return !this.disposed && !context.disposed && context.eligible && !!context.cwd && !this.awaitingAck; }
   private attachmentEnvelope<T extends string>(type: T) {
     const { generation, viewId } = this.context();

@@ -28,6 +28,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
+    completeCommand: ["draftRevision", "name"],
     queueChat: ["draftRevision", "mode"], recallQueuedText: ["queueRevision"],
     useRecoveredText: ["id", "draftRevision"], discardRecoveredText: ["id"],
     updateDraft: ["draftRevision", "editSequence", "text"], removeAttachment: ["draftRevision", "attachmentId"],
@@ -53,6 +54,8 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   }
   if (message.type === "chooseResources" && message.choice !== "allow" && message.choice !== "decline") return undefined;
   if (message.type === "setUiLanguage" && message.locale !== "en" && message.locale !== "zh-CN") return undefined;
+  if (message.type === "completeCommand" && (typeof message.name !== "string" || !message.name
+    || Buffer.byteLength(message.name) > 200 || /[\s/]/.test(message.name))) return undefined;
   if (message.type === "queueChat" && message.mode !== "steering" && message.mode !== "follow-up") return undefined;
   if (message.type === "updateDraft" && (typeof message.text !== "string" || message.text.length > MAX_CHAT_MESSAGE_CHARS)) return undefined;
   if ((message.type === "setThinkingLevel" || message.type === "setDefaultThinkingLevel")) {
