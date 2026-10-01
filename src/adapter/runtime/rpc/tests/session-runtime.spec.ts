@@ -25,7 +25,7 @@ function fixture(state: unknown = identity, reportedCwd?: string) {
      stdout.write(JSON.stringify({type:"auto_retry_end",success:false,attempt:1,finalError:"Retry cancelled"})+"\n");
      stdout.write(JSON.stringify({type:"agent_settled"})+"\n");
     }
-    stdout.write(JSON.stringify({type:"response",id:command.id,command:command.type,success:true})+"\n");
+    stdout.write(JSON.stringify({type:"response",id:command.id,command:command.type,success:true,...(command.type === "clear_queue" ? {data:{steering:[],followUp:[]}} : {})})+"\n");
    }); done(); return true;
   });
   output = connection.stdout;

@@ -30,7 +30,9 @@
 
 **局部 adapter 实现（WI-077 Build）：** `RuntimeEvent` 已新增仅宿主 `queue_updated {session, steering, followUp}` 和 `user_message_started {session, text: string | null}`。实际 JSONL 入口原子校验两队列，保留顺序、空项和重复数量，合计最多 32 条／256 KiB UTF-8。无效／超量快照按既有不确定 runtime 路径撤销连接，不投影空队列，也不 kill 自有 child。有界 text-only user start 保留 literal 文字（string 或 text blocks）；合法混合附件或超过 8000 UTF-16 单位只投影 null 关联文字，不截断指令。Start 只说明进入对话，不证明本地尝试归属或执行成功。原始事件仅留宿主，不直接转发 Webview 消息，不释放 task occupancy；message end 不重复消费。退役 reader 与替换 session 保持隔离。
 
-**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
+**局部 Stop adapter 契约：** `abortTask(onQueueCleared?)` 现用相同两数组／数量／UTF-8 parser 校验成功 `clear_queue.data`，在发送 abort 前恰好调用一次同步、仅宿主 callback。投递前再次校验既有五秒观察预算；失败、损坏、超限、断线或超时 clear 不伪造取回，也不继续 abort。Callback 抛错使 Stop fail closed；已确认 callback 文字不因随后 abort 失败而撤回。按 session 的 Stop lease 独立于 `agent_settled` 阻止重复破坏性 clear；任务结束不再释放 Stop 准入 fence。旧 session 回复不向替换 runtime 投递。这仅是 adapter hook：当前 provider 尚未传入恢复 callback，显式取回、容量预留和 host ledger／UI 仍未实现。
+
+**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）
 

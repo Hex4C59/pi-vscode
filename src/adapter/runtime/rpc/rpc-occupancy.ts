@@ -44,7 +44,7 @@ export function createRpcOccupancy() {
     noteAgentSettled(): void {
       agentRunning = false;
       promptInFlight = commandInFlight;
-      aborting = false;
+      // Stop owns this fence until clear/abort/settlement observation finishes.
     },
     beginStopping(): void {
       aborting = true;

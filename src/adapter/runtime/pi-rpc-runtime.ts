@@ -16,6 +16,7 @@ import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../inde
 import type { Readable } from "node:stream";
 
 import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./rpc/jsonl.js";
+import { parseQueuedTextSnapshot } from "./rpc/queued-text.js";
 import { resolvePiCliPath } from "./rpc/pi-rpc-probe.js";
 import { readPiStartupModelArg } from "./piStartupModel.js";
 import type {
@@ -46,6 +47,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let detachReader: (() => void) | null = null;
   let startToken = 0;
   let activeSession = 0;
+  let stopTaskOperation: { session: number } | undefined;
   let resumedConversation = false;
   let untouchedConversation = false;
   let commandNames: ReadonlySet<string> = new Set();
@@ -518,6 +520,18 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     } };
   };
 
+  const waitForTaskSettlement = (remaining: () => number): Promise<void> => new Promise(resolve => {
+    const timer = setTimeout(() => { listeners.delete(listener); resolve(); }, remaining());
+    const listener = (event: RuntimeEvent): void => {
+      if (event.kind !== "runtime_error"
+        && !((event.kind === "agent_settled" || event.kind === "command_handled") && !occupancy.sending())) return;
+      clearTimeout(timer);
+      listeners.delete(listener);
+      resolve();
+    };
+    listeners.add(listener);
+  });
+
   return {
     start,
     checkpointRestart,
@@ -540,8 +554,10 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     setFeedbackHandler(handler) { feedbackHandler = handler; handler(feedback.snapshot()); },
     setInteractionHandler(handler) { interactionHandler = handler; },
     setApprovalHandler(handler) { approvalHandler = handler; },
-    async abortTask() {
+    async abortTask(onQueueCleared) {
       const session = activeSession;
+      if (!session || stopTaskOperation?.session === session) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
+      const operation = stopTaskOperation = { session };
       const deadline = performance.now() + STOP_TIMEOUT_MS;
       const remaining = (): number => {
         const budget = deadline - performance.now();
@@ -549,23 +565,18 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         return budget;
       };
       occupancy.beginStopping();
-      for (const id of occupancy.approvalIds()) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
-      occupancy.clearApprovals();
       try {
+        for (const id of occupancy.approvalIds()) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
+        occupancy.clearApprovals();
         const clear = await invokeRpc({type:'clear_queue'}, remaining());
-        if (!clear.success) throw new Error();
+        remaining(); // A late successful clear response is not timely recovery evidence.
+        const recalled = clear.success ? parseQueuedTextSnapshot(clear.data) : undefined;
+        if (!recalled) throw new Error();
+        onQueueCleared?.(recalled); // Host retains this before any abort result or failure.
+        if (session !== activeSession) throw new Error("Runtime changed during recall.");
         const abort = await invokeRpc({type:'abort'}, remaining());
         if (!abort.success) throw new Error();
-        if (occupancy.sending()) {
-          await new Promise<void>(resolve => {
-            const timer = setTimeout(() => { unsubscribe(); resolve(); }, remaining());
-            const unsubscribe = (() => {
-              const listener = (event: RuntimeEvent): void => { if (event.kind === 'runtime_error' || ((event.kind === 'agent_settled' || event.kind === 'command_handled') && !occupancy.sending())) { clearTimeout(timer); listeners.delete(listener); resolve(); } };
-              listeners.add(listener);
-              return () => listeners.delete(listener);
-            })();
-          });
-        }
+        if (occupancy.sending()) await waitForTaskSettlement(remaining);
         if (!session || session !== activeSession) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
         if (occupancy.sending()) {
           await faultStop();
@@ -575,8 +586,10 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         occupancy.clearStopping();
         return {ok:true};
       } catch {
-        await faultStop();
+        if (session === activeSession) await faultStop();
         return {ok:false,detail:environment.process.describeFailure("stop-failed")};
+      } finally {
+        if (stopTaskOperation === operation) stopTaskOperation = undefined;
       }
     },
     getSession: () => activeSession,

@@ -18,7 +18,7 @@ async function transportFixture(writeFault?: "throw") {
         stdout.write(JSON.stringify({ type: "response", id: message.id, command: "get_state", success: true, data: { sessionId: "fixture-session", sessionFile: "/private-store/fixture.jsonl" } }) + "\n");
       });
       if (message.type === "prompt") { lastPrompt = frame; writes++; callback = done; promptId = message.id; if (writeFault === "throw") throw new Error("synthetic write fault"); return false; }
-      if (message.type === "clear_queue" || message.type === "abort") queueMicrotask(() => { if (message.type === "abort") stdout.write('{"type":"agent_settled"}\n'); stdout.write(JSON.stringify({ type: "response", id: message.id, command: message.type, success: true }) + "\n"); });
+      if (message.type === "clear_queue" || message.type === "abort") queueMicrotask(() => { if (message.type === "abort") stdout.write('{"type":"agent_settled"}\n'); stdout.write(JSON.stringify({ type: "response", id: message.id, command: message.type, success: true, ...(message.type === "clear_queue" ? { data: { steering: [], followUp: [] } } : {}) }) + "\n"); });
       done?.(); return true;
     });
     return connection;

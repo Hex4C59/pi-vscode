@@ -39,7 +39,7 @@ function fixture(initializationError = false, startupDialog = false) {
       });
       if (request.type === "get_commands") queueMicrotask(() => output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, data: { commands: [{ name: "sysprompt", source: "extension" }] } }) + "\n"));
       if (request.type === "clear_queue" || request.type === "abort") {
-        const respond = () => output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true }) + "\n");
+        const respond = () => output.write(JSON.stringify({ type: "response", id: request.id, command: request.type, success: true, ...(request.type === "clear_queue" ? { data: { steering: [], followUp: [] } } : {}) }) + "\n");
         if (stopRpcDelay) setTimeout(respond, stopRpcDelay);
         else queueMicrotask(respond);
       }

@@ -26,7 +26,8 @@ function fixture() {
         });
         const data = request.type === "get_state" ? { sessionId: "saved-id", sessionFile: "/private-store/saved.jsonl" }
           : request.type === "get_available_models" ? { models: [] }
-          : request.type === "get_available_thinking_levels" ? { levels: [] } : undefined;
+          : request.type === "get_available_thinking_levels" ? { levels: [] }
+          : request.type === "clear_queue" ? { steering: [], followUp: [] } : undefined;
         transport.frame({ type: "response", id: request.id, command: request.type, success: true, data, ...override?.(request.type) });
       });
       if (request.type === "prompt" && stallPromptWrite) { completeWrite = done; return false; }
@@ -49,6 +50,129 @@ function fixture() {
     start: () => runtime.start({ cwd: "/project", projectTrust: "no-approve" }),
   };
 }
+
+// Stop/recall failure modes written before implementation: discarded clear data,
+// callback after abort, failed abort erasing recall, malformed/oversized data,
+// duplicate clear on concurrent Stop, expired observation and late retired ACK.
+for (const abortFails of [false, true]) test(`Stop preserves confirmed clear text before abort, including abort failure=${abortFails}`, async () => {
+  const f = fixture();
+  const recalled: unknown[] = [];
+  const queue = { steering: ["same 中", "same 中"], followUp: ["later"] };
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.override(command => command === "clear_queue" ? { data: queue }
+      : command === "abort" && abortFails ? { success: false } : undefined);
+    const result = await f.runtime.abortTask?.(snapshot => {
+      assert.equal(f.commands.some(command => command.type === "abort"), false);
+      recalled.push(snapshot);
+    });
+    assert.equal(result?.ok, !abortFails);
+    assert.deepEqual(recalled, [queue]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue", "abort"]);
+    assert.equal(f.memory.endCalls, 0);
+    const output = path.resolve("dist/wi077-stop-recall");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, abortFails ? "abort-failure.json" : "success.json"), JSON.stringify({
+      schemaVersion: 1, status: "passed", evidence: "injected-memory-JSONL-transport",
+      beforeAbort: true, retainedAfterAbortFailure: abortFails, records: 3,
+      limits: ["callback fixture only; host ledger and UI not integrated", "not real runtime or installed VSIX"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); }
+});
+
+for (const [name, data] of [
+  ["missing data", undefined], ["null", null], ["missing queue", { steering: [] }],
+  ["invalid text", { steering: [7], followUp: [] }],
+  ["excess records", { steering: Array(33).fill("a"), followUp: [] }],
+  ["excess bytes", { steering: ["中".repeat(87382)], followUp: [] }],
+] as const) test(`Stop refuses ${name} clear result without callback, abort or fabricated recall`, async () => {
+  const f = fixture();
+  let saved = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.override(command => command === "clear_queue" ? { data } : undefined);
+    assert.equal((await f.runtime.abortTask?.(() => { saved++; }))?.ok, false);
+    assert.equal(saved, 0);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.equal(f.runtime.getSession(), 0);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.equal(f.memory.endCalls, 0);
+  } finally { await f.runtime.stop(); }
+});
+
+test("concurrent Stop cannot clear twice or deliver a callback to the losing request", async () => {
+  const f = fixture();
+  let first: Promise<unknown> | undefined;
+  let second: Promise<unknown> | undefined;
+  const saved: string[] = [];
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.hold("clear_queue");
+    first = f.runtime.abortTask?.(() => { saved.push("first"); });
+    f.connection.frame({ type: "agent_settled" }); // Settlement is not completion of an in-flight clear.
+    assert.equal((await f.runtime.prompt("must not enter while Stop clears")).ok, false);
+    second = f.runtime.abortTask?.(() => { saved.push("second"); });
+    const clears = f.commands.filter(command => command.type === "clear_queue");
+    assert.equal(clears.length, 1);
+    assert.equal(((await second) as { ok: boolean }).ok, false);
+    f.connection.frame({ type: "response", id: clears[0].id, command: "clear_queue", success: true, data: { steering: ["kept"], followUp: [] } });
+    assert.equal(((await first) as { ok: boolean }).ok, true);
+    assert.deepEqual(saved, ["first"]);
+  } finally { await f.runtime.stop(); await Promise.allSettled([first, second]); }
+});
+
+test("clear callback failure preserves its saved text but prevents abort and replay", async () => {
+  const f = fixture();
+  const saved: unknown[] = [];
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.override(command => command === "clear_queue" ? { data: { steering: ["kept"], followUp: [] } } : undefined);
+    assert.equal((await f.runtime.abortTask?.(snapshot => { saved.push(snapshot); throw new Error("synthetic private failure"); }))?.ok, false);
+    assert.deepEqual(saved, [{ steering: ["kept"], followUp: [] }]);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.doesNotMatch(JSON.stringify(f.events), /private failure/);
+  } finally { await f.runtime.stop(); }
+});
+
+test("expired clear ACK cannot save text or continue abort", async context => {
+  const f = fixture();
+  let time = 0;
+  context.mock.method(performance, "now", () => time);
+  let saved = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.hold("clear_queue");
+    const stopping = f.runtime.abortTask?.(() => { saved++; });
+    const request = f.commands.at(-1)!;
+    time = 5001;
+    f.connection.frame({ type: "response", id: request.id, command: "clear_queue", success: true, data: { steering: ["too late"], followUp: [] } });
+    assert.equal((await stopping)?.ok, false);
+    assert.equal(saved, 0);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+  } finally { await f.runtime.stop(); }
+});
+
+test("disconnected clear and old-session ACK cannot deliver recovery to replacement", async () => {
+  const f = fixture();
+  let saved = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.hold("clear_queue");
+    const stopping = f.runtime.abortTask?.(() => { saved++; });
+    const request = f.commands.at(-1)!;
+    const old = f.connection;
+    old.lose();
+    assert.equal((await stopping)?.ok, false);
+    assert.equal((await f.runtime.recoverOwnedRuntime?.())?.ok, true);
+    assert.equal((await f.start()).ok, true);
+    old.frame({ type: "response", id: request.id, command: "clear_queue", success: true, data: { steering: ["old"], followUp: [] } });
+    assert.equal(saved, 0);
+    assert.equal(f.commands.filter(command => command.type === "abort").length, 0);
+    assert.notEqual(f.runtime.getSession(), 0);
+  } finally { await f.runtime.stop(); }
+});
 
 // WI-077 failure modes before implementation: lost multiplicity/Unicode, ACK or
 // queue removal treated as settlement, malformed or excessive text made empty,
