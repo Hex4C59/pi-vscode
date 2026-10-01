@@ -42,6 +42,8 @@
 
 **控制／model 与传输边界（局部 adapter）：** Stop／recall 的 clear 观察在途时，model／thinking mutation 保持 fence，即使任务自然结束；控制结束后恢复准入。两项 composition 先复现旧行为过早 mutation，再验证既有控制 fence 纳入 model 准入（`dist/wi077-queued-send/` 下 `stop-model-fence.json`、`recall-model-fence.json`）。另做既有行为 characterization：idle／settled／stale-session／空白／超长／invalid mode 不触发 attempt callback 或 idle fallback，8000 UTF-16 Unicode 原文接受，token 消耗后拒绝复用，RPC 拒绝、command／success 畸形、stream throw／callback error／error event。生成不含 prompt／raw error 的 `admission-*`、`protocol-*`、`stream-*` JSON 报告。仅 public adapter 加注入 transport，不是 host draft／容量／敏感文字准入、真实 pi 或 UI 验收；多数 characterization 边界在改行为前已 pass。
 
+**本地 host delivery 保留（局部，未接线）：** `QueuedTextDelivery` 接受未来 draft coordinator 提交的 session-scoped 纯文字，在一次性 callback／write 前同步预留本地记录与 UTF-8 bytes；pending、ACKed、rejected／unknown 本地文字共用 32 条／256 KiB，ACK 不释放记录。容量拒绝不提交 draft callback、不 write／驱逐；可识别凭据复用既有共享 detector，leading slash、invalid／空白／超长文字或 mode 在保留前拒绝。Adapter 在 callback 前拒绝只释放未提交预留；callback 后 `not-sent` 仍保留原文，因为草稿可能已提交。Host-only snapshot 不是 wire DTO。Host→真实 adapter 配注入内存 JSONL composition 在 `dist/wi077-host-delivery/` 生成安全报告。Provider／DraftSubmission 接线、外部队列／clear 预留、归属、显式 recovery use／discard 和 commit 后 session-handoff 清理仍缺失；该保守本地保留不是完整 ledger 或产品验收。
+
 **证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）
