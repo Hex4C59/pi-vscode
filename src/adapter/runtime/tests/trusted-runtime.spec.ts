@@ -793,3 +793,37 @@ test("runtime discovery suppresses private labels and path-bearing descriptions 
     assert.equal(JSON.stringify(catalogue).includes("password=x"), false);
   } finally { await f.runtime.stop(); }
 });
+
+// Actual 0.86.1 RPC differs from its rpc.md example: sourceInfo replaces path/location.
+// Failures: all real rows become unavailable; nested paths leak; temporary scope is
+// mislabeled project; malformed metadata is silently accepted.
+test("runtime discovery projects the actual public SourceInfo shape without exposing metadata", async () => {
+  const f = fixture();
+  try {
+    f.setCommands({ commands: [
+      { name: "llama", source: "extension", sourceInfo: { path: "<inline:llama.cpp>", source: "inline", scope: "temporary", origin: "top-level" } },
+      { name: "discover", source: "prompt", description: "Fixture prompt", sourceInfo: { path: "/private/project/discover.md", baseDir: "/private/project", source: "auto", scope: "project", origin: "top-level" } },
+      { name: "skill:discovery", source: "skill", description: "Uses /private/user/SKILL.md", sourceInfo: { path: "/private/user/SKILL.md", source: "npm:private-package", scope: "user", origin: "package" } },
+    ] });
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "approve" })).ok, true);
+    assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "ready", rows: [
+      { name: "llama", source: "extension" },
+      { name: "discover", source: "prompt", description: "Fixture prompt", location: "project" },
+      { name: "skill:discovery", source: "skill", location: "user" },
+    ] });
+    assert.ok(!JSON.stringify(f.runtime.getCommandCatalogue?.()).includes("private"));
+  } finally { await f.runtime.stop(); }
+});
+
+test("runtime discovery refuses malformed SourceInfo rather than guessing its location", async () => {
+  const f = fixture();
+  try {
+    for (const sourceInfo of [null, { path: "/private", source: "auto", scope: "other", origin: "top-level" },
+      { path: "/private", source: "auto", scope: "project", origin: "top-level", unknown: true }]) {
+      f.setCommands({ commands: [{ name: "discover", source: "prompt", sourceInfo }] });
+      assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "approve" })).ok, true);
+      assert.deepEqual(f.runtime.getCommandCatalogue?.(), { status: "unavailable" });
+      await f.runtime.stop();
+    }
+  } finally { await f.runtime.stop(); }
+});

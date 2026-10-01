@@ -2,9 +2,22 @@ import { containsCredentialLikeText, redactCredentialLikeText, type CommandCatal
 
 const COMMAND_SOURCES = new Set(["extension", "prompt", "skill"]);
 const COMMAND_LOCATIONS = new Set(["user", "project", "path"]);
-const COMMAND_KEYS = new Set(["name", "description", "source", "location", "path"]);
+const COMMAND_KEYS = new Set(["name", "description", "source", "location", "path", "sourceInfo"]);
 
 export type { CommandCatalogue, CommandCatalogueRow };
+
+/** Public pi SourceInfo is host-only; only its non-temporary scope is projected. */
+function commandSourceInfo(value: unknown): { path: string; location?: "user" | "project" } | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return;
+  const info = value as Record<string, unknown>;
+  const allowed = new Set(["path", "source", "scope", "origin", "baseDir"]);
+  if (Object.keys(info).some(key => !allowed.has(key))) return;
+  if (typeof info.path !== "string" || typeof info.source !== "string") return;
+  if (info.baseDir !== undefined && typeof info.baseDir !== "string") return;
+  if (info.origin !== "package" && info.origin !== "top-level") return;
+  if (info.scope !== "user" && info.scope !== "project" && info.scope !== "temporary") return;
+  return { path: info.path, ...(info.scope !== "temporary" ? { location: info.scope } : {}) };
+}
 
 function presentCommandRow(item: unknown): CommandCatalogueRow | undefined {
   if (!item || typeof item !== "object" || Array.isArray(item)) return;
@@ -13,12 +26,15 @@ function presentCommandRow(item: unknown): CommandCatalogueRow | undefined {
   const { name, source } = command;
   if (typeof name !== "string" || !name || Buffer.byteLength(name) > 200 || /[\s/]/.test(name) || containsCredentialLikeText(name)) return;
   if (typeof source !== "string" || !COMMAND_SOURCES.has(source)) return;
+  const metadata = command.sourceInfo !== undefined ? commandSourceInfo(command.sourceInfo) : undefined;
+  if (command.sourceInfo !== undefined && !metadata) return;
   const row: CommandCatalogueRow = { name, source: source as CommandCatalogueRow["source"] };
   if (command.description !== undefined) {
     if (typeof command.description !== "string") return;
     // Optional copy is withheld rather than projecting embedded filesystem paths.
     const describesPath = /(?:^|[\s"'`([{=:])(?:\/|~\/)/.test(command.description)
-      || (typeof command.path === "string" && command.path.length > 0 && command.description.includes(command.path));
+      || (typeof command.path === "string" && command.path.length > 0 && command.description.includes(command.path))
+      || (metadata !== undefined && metadata.path.length > 0 && command.description.includes(metadata.path));
     const description = redactCredentialLikeText(command.description).slice(0, 500);
     if (!describesPath && description) row.description = description;
   }
@@ -27,6 +43,7 @@ function presentCommandRow(item: unknown): CommandCatalogueRow | undefined {
     row.location = command.location as CommandCatalogueRow["location"];
   }
   if (command.path !== undefined && typeof command.path !== "string") return;
+  if (metadata?.location) row.location = metadata.location;
   return row;
 }
 
