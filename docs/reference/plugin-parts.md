@@ -94,7 +94,7 @@ The row under the input is the **composer toolbar**.
 
 **命令发现菜单 (command discovery menu)** opens above the message composer when the draft starts with `/` and the caret is in its first token. It shows the current host snapshot's extension commands, prompt templates and skills, with optional descriptions and coarse source locations; it is not a package inventory or TUI built-in list. Arrow keys select; Enter/Tab complete the acknowledged draft without sending, and Escape closes it without clearing text. Empty, unavailable and no matches have distinct notices.
 
-WI-078 has mounted, browser, actual-runtime, macOS F5 and installed-VSIX discovery/completion evidence. Closure is pending on the PRD trailing-space rule; see [ACTIVE](../../ACTIVE.md) and the [message contract](webview-messages.md#wi-078-composer-command-discovery). Existing numbered screenshots predate this addition.
+WI-078 closed on 2026-10-02 under the continuing goal with mounted, browser, actual-runtime, macOS F5 and installed-VSIX discovery/completion evidence, including uniform bare-completion spacing. See [acceptance and limits](../archive/2026-10-02-wi-078-acceptance.md) and the [message contract](webview-messages.md#wi-078-composer-command-discovery). Loaded-context reporting remains parked. Existing numbered screenshots predate this addition.
 
 ## Model picker
 

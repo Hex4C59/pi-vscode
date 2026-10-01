@@ -103,6 +103,7 @@
 | WI-075 | DOC-ORG-03 文档维护 | 2026-10-01 Agent 依本轮 /goal；gate／ADR 不变 | [记录](2026-10-01-wi-075-acceptance.zh.md); [方案](2026-10-01-wi-075-approved-proposal.zh.md); [评估](2026-10-01-wi-075-guide-placement-evaluation.zh.md) |
 | WI-076 | 公开队列 RPC 前置证据 | 2026-10-01 agent /goal; runtime-only, no product acceptance | [record](2026-10-01-wi-076-acceptance.zh.md); [proposal](2026-10-01-wi-076-approved-proposal.zh.md) |
 | WI-077 | 文字 steering／follow-up、队列展示、取回与 Stop 恢复（PI-GAP-01 文字切片） | 2026-10-02 Agent /goal；F5＋安装 VSIX；剩余范围停车 | [记录](2026-10-02-wi-077-acceptance.zh.md); [方案](2026-10-02-wi-077-approved-proposal.zh.md) |
+| WI-078 | 作曲区 slash 发现与已确认补全（PI-GAP-02 菜单切片） | 2026-10-02 Agent /goal；浏览器、真实 pi、F5／安装 VSIX；加载报告余量停车 | [验收](2026-10-02-wi-078-acceptance.zh.md)；[方案](2026-10-02-wi-078-approved-proposal.zh.md) |
 
 
 ## 不在本索引

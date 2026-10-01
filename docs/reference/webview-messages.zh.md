@@ -52,7 +52,7 @@
 
 ## WI-078 作曲区命令发现
 
-**实现为 Living；WI 验收待完成。** 已批准 REQ-004／009 切片见 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。v3 类型、校验器、宿主投影、草稿 owner、浏览器 parser／client 与生产 composer 菜单已成对接线。已有 mounted 与真实 Chrome 预览证据；实际 pi 0.86.1 启动／替换快照已验证；macOS F5 与安装 VSIX 也已有发现／补全证据。续跑 goal 已批准裸补全统一空格规则；新行为的重验见 [ACTIVE](../../ACTIVE.md)。设置页不准入 chat 补全意图。
+**Living；菜单切片于 2026-10-02 依据持续 goal 接受。** [限定验收与限制](../archive/2026-10-02-wi-078-acceptance.zh.md)含 composition、浏览器、真实 pi、macOS F5／安装 VSIX 的裸／后缀补全。已批准 REQ-004／009 行为仍归 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。设置页不准入 chat 补全，PI-GAP-02 实际加载报告仍停车。
 
 - 版本特定来源：实际 pi 0.86.1 RPC 与公开 `SlashCommandInfo`／`SourceInfo` 类型使用 `sourceInfo`，`extensions.md` 已说明（安装的 `rpc.md` 示例仍写 `path/location`）。adapter 校验仅宿主持有的元数据，将 `scope: user | project` 映射为粗粒度位置；`temporary` 不猜成自定义路径而省略位置。旧文档形状 `path/location` 仍可解析。`sourceInfo`、`baseDir`、包来源和资源路径均不跨 Webview 边界。RPC 实际返回的 inline 注册命令（如 `llama`）不是虚构 TUI 命令。隔离真实 runtime 已验证 Controlled 拒绝／同意资源、Trusted 显式夹具注册和替换回拒绝；四个子进程退出与夹具删除均已观察，没有供应商调用。随后显式 prompt 给无副作用夹具命令已 RPC-accepted 并保留参数；发现本身没有执行该 handler。
 
@@ -64,6 +64,16 @@
 - 机密与隐私：绝对路径、AGENTS.md 正文与凭据留在宿主。日志不得打印目录路径或 prompt 正文。Webview 只收上述展示 DTO。
 - 作曲区交互：文字以 `/` 开头且光标在首个 token 内时打开有界 listbox；输入过滤已发布快照。方向键导航；Enter／Tab 仅补全已确认草稿，菜单打开时不发送；Escape 关闭且不清文字。忽略 composition／IME Enter。空列表、不可用与零匹配分开显示。命令与模型／权限弹出层互斥。打开或选择一项不代表命令已执行。
 - 维护者于 2026-10-01 UTC 通过续跑 goal 批准推荐的统一空格规则。宿主变更、client 预期确认与合成预览应用同一格式规则，并以往返 composition 测试验证。Webview 的 contracts 导入保持仅类型，不共享宿主运行时代码到 UI。名称成员、revision、忙碌、大小与世代检查仍归原有 owner。
+
+## WI-079 只读用量（Outline；未实现）
+
+行为／验收归 [PRD WI-079](../product-requirements.zh.md#wi-079-已批准切片--只读会话上下文用量pi-gap-03)，实现／证据归 [ACTIVE](../../ACTIVE.md)。本节是设计契约，不是 Living 能力。
+
+- 仅 chat 入站 refreshSessionUsage 除精确 v3 信封无载荷。要求当前身份／世代与空闲 ready session，settings／过期／busy 拒绝，不抓取不改草稿。打开本地用量不启动 pi；ready／settlement 可走同一宿主刷新，无周期轮询。
+- 计划 sessionUsageState：当前信封、单调 revision；status 为 loading／ready／unavailable／no-session，可空有界 usage，无路径／正文。ready usage 分累计 tokens（input、output、cacheRead、cacheWrite、total）、context（可空；tokens／percent 可空，contextWindow 为数字）、可空 cost。缺／无效值不猜零；非 ready 不携带 ready 快照。UI 可保留同会话明确标旧的 busy 快照，替换不可沿用。
+- Adapter 公开 get_state／get_session_stats 校验当前会话与有限非负数字，context percent 有界，null 未知。sessionFile、身份元数据与模型定价只留宿主。未知／全零定价使零费用未知，不当免费；报告费用是估算，不是账单。
+- 宿主每 runtime／session 只有一个在途刷新，合并调用，有界 RPC deadline。固定 unavailable 不送原始错误；替换／dispose 失效 owner token、清旧快照、忽略迟到。只读显式重试可恢复，无模型／会话文件／持久化。New／restore 不发布旧累计。
+- UI 仅投影、键盘可达面板与 allowlisted Refresh。保留一次一张，Escape 恢复焦点且不丢草稿；中英无会话／加载／未知／不可用／旧快照、浏览器／原生检查是要求，还不是证据。
 
 ## 编辑区设置界面（WI-026）
 

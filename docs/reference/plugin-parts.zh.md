@@ -99,7 +99,7 @@ flowchart LR
 
 **命令发现菜单（command discovery menu）**：草稿以 `/` 开头且光标在首个 token 内时，显示在消息编辑区上方。只列当前宿主快照中的扩展命令、提示词模板和技能，并展示可选描述与粗粒度来源位置；不是包清单或 TUI 内置命令列表。方向键选择；Enter／Tab 补全已确认草稿而不发送，Escape 关闭且不清文字。空列表、不可用和无匹配各有提示。
 
-WI-078 已有 mounted、浏览器、实际 runtime、macOS F5 与安装 VSIX 发现／补全证据。关闭仍待 PRD 尾随空格规则确认；见 [ACTIVE](../../ACTIVE.md) 与[消息契约](webview-messages.zh.md#wi-078-作曲区命令发现)。既有编号截图早于本次新增。
+WI-078 于 2026-10-02 依据持续 goal 关闭，具有 mounted、浏览器、实际 runtime、macOS F5 与安装 VSIX 发现／补全证据，含裸补全统一空格。见[验收与限制](../archive/2026-10-02-wi-078-acceptance.zh.md)和[消息契约](webview-messages.zh.md#wi-078-作曲区命令发现)。实际加载报告仍停车。既有编号截图早于本次新增。
 
 ## 模型选择器
 

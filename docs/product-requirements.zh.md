@@ -249,7 +249,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 #### WI-078 已批准切片 — 作曲区 `/` 命令发现（PI-GAP-02）
 
-**范围批准：** 同一 2026-10-01 持续产品切片授权允许本 REQ-004／009 增补在 Prepare 后推进。维护者于 2026-10-01 UTC 通过续跑 goal 批准裸补全统一空格规则。尚未交付或接受；[ACTIVE](../ACTIVE.md)维护 Build 与证据。既有自用验收和 WI-077 不认证此增补。
+**范围批准：** 同一 2026-10-01 持续产品切片授权允许本 REQ-004／009 增补在 Prepare 后推进。维护者于 2026-10-01 UTC 通过续跑 goal 批准裸补全统一空格规则。Agent 于 2026-10-02 依据该 goal 关闭菜单切片；[验收与限制](archive/2026-10-02-wi-078-acceptance.zh.md)。既有自用验收与 WI-077 不认证实际加载报告余量。
 
 - 消息输入框聚焦且用户把 `/` 打成当前 token 开头时，展示公开 `get_commands` 当前返回的**命令菜单**（扩展命令、prompt templates、skills）。选中一项仅把已确认草稿的首部 slash token 替换为 `/name`。没有既有后缀时统一追加恰好一个空格；已有参数／空白后缀则原样保留。公开 `get_commands` 没有是否需要参数的元数据，不猜测具体命令的参数需求。补全不发送、不入队、不在 Webview 展开模板、不执行 RPC。
 - 每行显示命令名、可选描述、来源（`extension`／`prompt`／`skill`）和粗粒度位置（`user`／`project`／`path`；扩展命令可省略）。绝不把绝对文件系统 `path`、文件正文、AGENTS.md 内容或凭据送入 Webview。内置仅 TUI 命令（`/settings`、`/hotkeys` 等）保持省略，因为 `get_commands` 不含它们，经 `prompt` 也不会执行。
@@ -258,6 +258,17 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 - 发送已补全的 `/name` 走既有空闲 `prompt`。WI-077 队列准入继续拒绝首部 slash；本切片不把 slash 加入 steer／follow-up。扩展命令 handler lease 与标准交互仍属 ADR 0002。无包安装、reload、AGENTS.md 实际加载报告或任意扩展兼容承诺。
 
 **验收：** 验证 `/` 仅在前导 token 打开、列表为当前 `get_commands` 行且含来源／位置不含路径、补全写入草稿但不发送、空／错误／过期状态、配置差异、键盘／IME／互斥，以及发送已补全扩展命令仍走既有 prompt 准入。保留 WI-077 对 slash 的队列拒绝、附件与普通 Send。运行 compile／lint／tests、浏览器中英窄屏／主题／键盘、真实 pi＋隔离合成 provider 及至少一份目录夹具、macOS F5 与安装 VSIX，生成可重复工件并分层记录。PI-GAP-02 实际加载 AGENTS.md／上下文报告仍是未实现候选。
+
+#### WI-079 已批准切片 — 只读会话／上下文用量（PI-GAP-03）
+
+**范围批准：** 2026-10-02 依据持续 in-bound 产品切片 goal 完成 Prepare。本 REQ-004／009 增补在中英行同步后授权 Build，尚未交付／验收。[ACTIVE](../ACTIVE.md)维护范围与证据。不接受整份 Draft，不新增信任／存储决定。
+
+- chat 提供键盘可达的**用量**面板，区别于模型与命令菜单。当前上下文 token 估算、容量、百分比与整会话累计 input／output／cache-read／cache-write／total token、上游报告的估算美元费用分别展示。明确累计／当前估算，不当实际账单或精确 provider 计数。
+- 只读公开 get_session_stats，必要时公开 get_state 的有界身份／模型元数据；向 Webview 投影前丢弃会话路径及原响应。缺上下文、压缩后 null、缺失／无效数字、不可用定价显示未知，不编造零值。不可用／仅零定价下的报告零费用不证明调用免费。
+- runtime ready、任务稳定结束与显式空闲刷新时获取；loading、无 live session、不可用、忙碌时旧快照明确。合并刷新，有界单一 owner，不轮询、不新增 provider 调用。替换／新建／恢复／迟到回包不串会话；失败可恢复且保留未发草稿。
+- 面板只读：不加 compact／导出／会话文件读取／模型执行／凭据访问／持久化用量库／自算费用。保留 Stop、流式、文字队列、附件与弹出层互斥，提供中英与键盘关闭／焦点规则。
+
+**验收：** 代码前失败方式；host→adapter→validated client→mounted 面板闭环用可区分累计／上下文、null／损坏／零定价、不可用／超时／替换迟到与 cleanup。隔离合成 provider＋真实 pi 0.86.1 公开统计；浏览器 280／320／400、中英、暗／亮／高对比与键盘；macOS F5／安装 VSIX 打开→真实数字→刷新→新会话不串数据。留报告／截图；compile／lint／npm test／docs:verify，关闭 docs:health。这些是新切片要求，不是通过证据。
 
 ### REQ-005 — 停止与恢复
 
@@ -457,7 +468,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-068 | REQ-001 拒绝项目资源后的持续提示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-068-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-068-acceptance.zh.md)。 |
 | WI-069 | REQ-002 活跃模型身份使用供应商／模型 id，不用显示名 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-069-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-069-acceptance.zh.md)。 |
 | WI-077 | REQ-004／005 文字 steering／follow-up、诚实队列与显式恢复（PI-GAP-01） | 2026-10-02 Agent 依据持续产品切片 goal 关闭；[验收](archive/2026-10-02-wi-077-acceptance.zh.md)。排除附件和命令／模板展开。 |
-| WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-01 持续产品切片 goal 授权范围；Build／证据见 [ACTIVE](../ACTIVE.md)。尚未交付；排除实际加载报告。 |
+| WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-02 Agent 依据持续 goal 关闭；[验收](archive/2026-10-02-wi-078-acceptance.zh.md)。实际加载报告仍停车。 |
+| WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-02 持续 goal 下完成 Prepare／授权范围；Build／证据见 [ACTIVE](../ACTIVE.md)。未交付；无 compact／存储／账单承诺。 |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
