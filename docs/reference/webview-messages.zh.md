@@ -46,6 +46,8 @@
 
 **Host ledger 容量与归属（局部，未接线）：** `QueuedTextLedger` 拥有本地保留（经 `QueuedTextDelivery`）、上游 `queue_updated` 待处理投影与 clear 恢复共用的内存额度。clear 预留相对已保留本地／恢复文字同步加算；容量拒绝不改记录，也不 clear、write 或驱逐。两队列同时出现相同文字，或一次消费对应多条本地匹配时，本地归属标 unknown 并保留重复数量。未匹配的上游待处理文字标 external，不声称由 UI 发送。凭据类 clear 输出仅宿主保留为不可复用（`unavailable`），恢复投影省略原文；普通 clear 文字仍可复用。Composition 报告在 `dist/wi077-host-ledger/`。DraftSubmission 准入、provider Stop／recall 接线、use／discard 恢复意图、view／generation／session 交接与生产 UI 仍缺失。
 
+**草稿准入与 clear 串行（局部，未接线）：** `DraftSubmission.admitQueuedText` 同步准入精确已确认 revision，不设第二草稿 owner。拒绝过期／忙碌草稿、附件、空白／超长、首部 slash 与可识别凭据；`commitAttempt` 仅在该 revision 仍当前时清除，较新编辑得以保留。`QueuedTextCoordinator` 将该准入与共享 ledger、单一 clear owner 组合：queue 发送、recall 与 Stop 互斥 mutation 阶段；recall 期间重叠 Stop 以 busy 拒绝，不第二次 clear／abort。clear 前预留容量；确认 clear 后提交恢复。Composition 报告在 `dist/wi077-draft-queue/`。Provider 消息处理、生产 UI 意图与真实宿主验收仍缺失。
+
 **证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）

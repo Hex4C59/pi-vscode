@@ -150,6 +150,11 @@ export class QueuedTextLedger {
     };
   }
 
+  /** Host-only observed upstream snapshot used for clear reservation; not a Webview DTO. */
+  observedPending(): QueuedTextSnapshot {
+    return { steering: [...this.pending.steering], followUp: [...this.pending.followUp] };
+  }
+
   recoveryProjection(): ReadonlyArray<{ id: string; mode: QueueMode; reuse: Reuse; text?: string }> {
     return this.recovered.map(({ id, mode, reuse, text }) => (
       reuse === "reusable" ? { id, mode, reuse, text } : { id, mode, reuse }

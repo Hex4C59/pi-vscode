@@ -2,6 +2,7 @@ import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import type { PiRuntimeLifecycle } from "../contracts/index.js";
 import type { WebviewMessage, AttachmentStateMessage, AttachmentHistoryEntry, AttachmentDetails, SelectionRange } from "../contracts/index.js";
+import { containsCredentialLikeText } from "../contracts/index.js";
 import { AttachmentFailure, captureFile, captureSelection, revalidateFile, validateEditorSnapshot, selectionSourceRevision, sameSelectionSource, validateSelectionDocument, type SelectionSourceRevision, type AttachmentCode, type FileSnapshot } from "./fileAttachment.js";
 
 import type { DraftContext, DraftSubmissionEvents } from "./types.js";
@@ -54,6 +55,38 @@ export class DraftSubmission implements vscode.Disposable {
   }
   get revision(): number { return this.draftRevision; }
   get awaitingAcknowledgement(): boolean { return this.awaitingAck; }
+
+  /**
+   * Synchronous queue admission for the exact acknowledged draft revision.
+   * Clears only on commitAttempt when that revision is still current, so a later edit is kept.
+   */
+  admitQueuedText(expectedRevision: number):
+    | { kind: "ok"; text: string; commitAttempt: () => void }
+    | { kind: "refused"; reason: "stale" | "busy" | "invalid-text" | "attachments" } {
+    if (this.disposed || this.draftRevision === Number.MAX_SAFE_INTEGER || expectedRevision !== this.draftRevision) {
+      return { kind: "refused", reason: "stale" };
+    }
+    if (this.awaitingAck || this.preparation !== "idle") return { kind: "refused", reason: "busy" };
+    if (this.attachments.length) return { kind: "refused", reason: "attachments" };
+    const text = this.draftText;
+    if (typeof text !== "string" || !text.trim() || text.length > 8000 || text.trimStart().startsWith("/")
+      || containsCredentialLikeText(text)) {
+      return { kind: "refused", reason: "invalid-text" };
+    }
+    const revision = this.draftRevision;
+    return {
+      kind: "ok",
+      text,
+      commitAttempt: () => {
+        if (this.disposed || this.draftRevision !== revision) return;
+        this.draftText = "";
+        this.attachments = [];
+        this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
+        this.attachmentResult = null;
+        this.publish();
+      },
+    };
+  }
   private attachmentEligible(): boolean { const context = this.context(); return !this.disposed && !context.disposed && context.eligible && !!context.cwd && !this.awaitingAck; }
   private attachmentEnvelope<T extends string>(type: T) {
     const { generation, viewId } = this.context();
