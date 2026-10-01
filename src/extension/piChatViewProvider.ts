@@ -14,6 +14,7 @@ import { PluginInventorySettings, selectTrustedExtension, trustedInventoryApply 
 import type { ExtensionExecutionProfile, ExecutionProfileProjection, ExtensionFeedback } from "./contracts/index.js";
 import { createInteractionCoordinator } from "./interactions/index.js";
 import { DraftSubmission } from "./draft/index.js";
+import { QueuedTextSession } from "./queue/queuedTextSession.js";
 
 const opaqueId = () => randomBytes(16).toString("hex");
 // Display metadata is not a filesystem capability; keep the real local cwd unchanged.
@@ -76,6 +77,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private readonly interactions = createInteractionCoordinator();
   private interactionReset: Promise<boolean> = Promise.resolve(true);
   private readonly draft: DraftSubmission;
+  private queue: QueuedTextSession | undefined;
   private readonly tools: EditorTools;
   private readonly savedHistory: SavedHistory;
   private sessionOperation: AbortController | undefined;
@@ -212,18 +214,43 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.settledOutcome = undefined;
     this.state = { ...this.state, messages: [], activities:[], execution:'idle', chatBusy: false, chatError: null };
     this.runtimeSession = 0;
+    this.queue = undefined;
+    this.lastQueueProjection = "";
+  }
+
+  private ensureQueueSession(): QueuedTextSession | undefined {
+    const session = this.runtimeSession;
+    if (!session || this.state.runtime !== "ready") { this.queue = undefined; return undefined; }
+    if (!this.queue || this.queue.runtimeSession !== session) {
+      this.queue = new QueuedTextSession(this.runtime, this.draft, session);
+    }
+    return this.queue;
+  }
+
+  private lastQueueProjection = "";
+  private publishQueueState(force = false): void {
+    if (!this.view || this.disposed || !this.queue) return;
+    const message = this.queue.projection(this.envelope("queuedTextState"));
+    const key = JSON.stringify(message);
+    if (!force && key === this.lastQueueProjection) return;
+    this.lastQueueProjection = key;
+    this.post(this.view, message);
   }
 
   private handleRuntimeEvent(event: RuntimeEvent): void {
     if (this.disposed) return;
     this.refresh();
     if (event.session !== this.runtimeSession || this.state.runtime !== "ready") return;
+    if (this.queue?.runtimeSession === event.session && this.queue.observe(event)) {
+      this.publishQueueState(true); return;
+    }
     if (event.kind === 'runtime_error') {
       void this.interactions.stop();
       void this.refreshOwnership();
       this.resetSavedSessions(); this.publishSessions();
       this.tools.reset();
       this.draft.runtimeLost();
+      this.queue = undefined;
       this.stoppingTask=false;
       this.models.cancelPending(); this.promptToken++;
       this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:this.settledOutcome ?? 'failed',activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
@@ -402,6 +429,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         runtimeDetail: null,
         messages: preserveMessages ? this.state.messages : [],
       };
+      this.ensureQueueSession();
       void this.loadStartupModels(token, result.modelLabel);
     }
     if (!result.ok) await this.refreshOwnership();
@@ -632,8 +660,13 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const session = this.runtimeSession; const generation = this.state.generation;
     this.stoppingTask = true; this.state = { ...this.state, execution: "stopping" }; this.tools.cancelApprovals(); this.publish();
     const interactionStop = this.interactions.stop();
+    const queue = this.ensureQueueSession();
     const operation = (async () => {
-      const result = await this.runtime.abortTask?.().catch(() => ({ ok: false as const, detail: "Could not stop task." }));
+      const useQueueStop = !!(queue && this.runtime.abortTask);
+      const queuedStop = useQueueStop ? await queue.stopWithRecall() : undefined;
+      const result = useQueueStop
+        ? { ok: queuedStop?.kind === "stopped" && queuedStop.abortOk === true }
+        : await this.runtime.abortTask?.().catch(() => ({ ok: false as const, detail: "Could not stop task." }));
       if (session !== this.runtimeSession || generation !== this.state.generation || this.disposed) return { ok: false, preparationRevision };
       await interactionStop;
       if (session !== this.runtimeSession || generation !== this.state.generation || this.disposed) return { ok: false, preparationRevision };
@@ -645,8 +678,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         this.settledOutcome ??= "failed";
         this.draft.settle(false, this.settledOutcome === "failed");
         this.draft.runtimeLost();
+        this.queue = undefined;
         this.tools.reset(); this.models.cancelPending();
-        this.state = { ...this.state, runtime: "error", execution: this.settledOutcome, chatBusy: false, chatError: result?.detail ?? "Stop is unavailable." };
+        const detail = useQueueStop && queuedStop?.kind === "refused" ? "Stop is unavailable." : (result && "detail" in result ? result.detail : undefined);
+        this.state = { ...this.state, runtime: "error", execution: this.settledOutcome, chatBusy: false, chatError: detail ?? "Stop is unavailable." };
         void this.refreshOwnership();
       }
       this.publish(); return { ok: result?.ok === true, preparationRevision };
@@ -726,6 +761,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const providers = { ...this.envelope("providerConfigState"), ...this.providerConfig.snapshot };
     const providerKey = JSON.stringify(providers);
     if (forceExtensions || providerKey !== this.lastProviderConfigProjection) { this.lastProviderConfigProjection = providerKey; this.post(this.view, providers); }
+    this.publishQueueState();
     this.post(this.view, { ...this.state, ...this.models.snapshot });
   }
 
@@ -810,6 +846,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (toolOperation) { await toolOperation; return; }
     const draftOperation = this.draft.handle(view, message);
     if (draftOperation) { await draftOperation; return; }
+    const queueOperation = this.ensureQueueSession()?.handle(message);
+    if (queueOperation) { await queueOperation; this.draft.publish(); this.publishQueueState(true); this.publish(); return; }
     if (message.type === "getSavedSessions") { await this.listSavedSessions(message.page); return; }
     if (message.type === "newConversation" || message.type === "resumeConversation") { await this.changeConversation(view, message.type === "resumeConversation" ? message.id : undefined); return; }
     if (message.type === "stopChat") { await this.stopCurrentTask(); return; }
