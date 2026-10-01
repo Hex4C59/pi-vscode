@@ -47,7 +47,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let detachReader: (() => void) | null = null;
   let startToken = 0;
   let activeSession = 0;
-  let stopTaskOperation: { session: number } | undefined;
+  let queueControlOperation: { session: number } | undefined;
   let resumedConversation = false;
   let untouchedConversation = false;
   let commandNames: ReadonlySet<string> = new Set();
@@ -520,6 +520,42 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     } };
   };
 
+  const clearQueuedText = async (session: number, remaining: () => number,
+    onQueueCleared: Parameters<NonNullable<PiRuntimeLifecycle["abortTask"]>>[0]): Promise<void> => {
+    const clear = await invokeRpc({ type: "clear_queue" }, remaining());
+    remaining(); // Late ACK is not timely recovery evidence, even if its timer has not run.
+    const recalled = clear.success ? parseQueuedTextSnapshot(clear.data) : undefined;
+    if (!recalled || session !== activeSession) throw new Error("Clear was not confirmed.");
+    onQueueCleared?.(recalled);
+    if (session !== activeSession) throw new Error("Runtime changed during recall.");
+  };
+
+  const recallQueuedText: NonNullable<PiRuntimeLifecycle["recallQueuedText"]> = async (session, onQueueCleared) => {
+    if (!session || session !== activeSession || !gateReady || queueControlOperation?.session === session
+      || typeof onQueueCleared !== "function") return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
+    const operation = queueControlOperation = { session };
+    const deadline = performance.now() + STOP_TIMEOUT_MS;
+    const remaining = (): number => {
+      const budget = deadline - performance.now();
+      if (budget <= 0) throw new Error("Recall observation deadline expired.");
+      return budget;
+    };
+    occupancy.beginStopping(); // Admission fence only: never changes live-task occupancy or sends abort.
+    try {
+      await clearQueuedText(session, remaining, onQueueCleared);
+      remaining();
+      return { ok: true };
+    } catch {
+      if (session === activeSession) await faultStop();
+      return { ok: false, detail: environment.process.describeFailure("stop-failed") };
+    } finally {
+      if (queueControlOperation === operation) {
+        queueControlOperation = undefined;
+        if (session === activeSession) occupancy.clearStopping();
+      }
+    }
+  };
+
   const waitForTaskSettlement = (remaining: () => number): Promise<void> => new Promise(resolve => {
     const timer = setTimeout(() => { listeners.delete(listener); resolve(); }, remaining());
     const listener = (event: RuntimeEvent): void => {
@@ -545,6 +581,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       return result;
     },
     preparePrompt,
+    recallQueuedText,
     invalidateInteractions() {
       if (!child) return;
       const session = activeSession;
@@ -556,8 +593,8 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     setApprovalHandler(handler) { approvalHandler = handler; },
     async abortTask(onQueueCleared) {
       const session = activeSession;
-      if (!session || stopTaskOperation?.session === session) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
-      const operation = stopTaskOperation = { session };
+      if (!session || queueControlOperation?.session === session) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
+      const operation = queueControlOperation = { session };
       const deadline = performance.now() + STOP_TIMEOUT_MS;
       const remaining = (): number => {
         const budget = deadline - performance.now();
@@ -568,12 +605,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       try {
         for (const id of occupancy.approvalIds()) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
         occupancy.clearApprovals();
-        const clear = await invokeRpc({type:'clear_queue'}, remaining());
-        remaining(); // A late successful clear response is not timely recovery evidence.
-        const recalled = clear.success ? parseQueuedTextSnapshot(clear.data) : undefined;
-        if (!recalled) throw new Error();
-        onQueueCleared?.(recalled); // Host retains this before any abort result or failure.
-        if (session !== activeSession) throw new Error("Runtime changed during recall.");
+        await clearQueuedText(session, remaining, onQueueCleared); // Retain recalled text before abort.
         const abort = await invokeRpc({type:'abort'}, remaining());
         if (!abort.success) throw new Error();
         if (occupancy.sending()) await waitForTaskSettlement(remaining);
@@ -589,7 +621,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         if (session === activeSession) await faultStop();
         return {ok:false,detail:environment.process.describeFailure("stop-failed")};
       } finally {
-        if (stopTaskOperation === operation) stopTaskOperation = undefined;
+        if (queueControlOperation === operation) queueControlOperation = undefined;
       }
     },
     getSession: () => activeSession,

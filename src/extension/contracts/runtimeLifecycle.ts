@@ -83,6 +83,8 @@ export interface PiRuntimeLifecycle {
   recoverOwnedRuntime?(): Promise<PromptResult>;
   /** Startup handoff for a run a previous host left behind; never touches a live owner. */
   handoffRetainedRuntime?(): Promise<RetainedRunHandoff>;
+  /** Host must reserve recovery capacity first. Clear both queues without aborting the task; no implicit retry. */
+  recallQueuedText?(expectedSession: number, onQueueCleared: (snapshot: QueuedTextSnapshot) => void): Promise<PromptResult>;
   /** Stop current task; deliver validated clear text synchronously before abort, even if abort later fails. */
   abortTask?(onQueueCleared?: (snapshot: QueuedTextSnapshot) => void): Promise<PromptResult>;
   /** Fail closed without treating transport revocation as child termination. */

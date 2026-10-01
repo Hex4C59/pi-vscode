@@ -51,6 +51,79 @@ function fixture() {
   };
 }
 
+// Explicit recall failure modes before implementation: aborting the task,
+// releasing prompt occupancy, duplicate clear with Stop, stale session writes,
+// malformed clear fabricating recovery, and unbounded failed observation.
+test("explicit recall clears text without aborting or releasing the running task", async () => {
+  const f = fixture();
+  const saved: unknown[] = [];
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" });
+    const snapshot = { steering: ["same", "same"], followUp: ["next 中"] };
+    f.override(command => command === "clear_queue" ? { data: snapshot } : undefined);
+    assert.equal((await f.runtime.recallQueuedText?.(f.runtime.getSession(), value => { saved.push(value); }))?.ok, true);
+    assert.deepEqual(saved, [snapshot]);
+    assert.equal((await f.runtime.prompt("still occupied")).ok, false);
+    assert.equal(f.commands.filter(command => command.type === "abort").length, 0);
+    f.connection.frame({ type: "agent_settled" });
+    assert.equal((await f.runtime.prompt("now available")).ok, true);
+    const output = path.resolve("dist/wi077-explicit-recall");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "report.json"), JSON.stringify({ schemaVersion: 1,
+      status: "passed", evidence: "injected-memory-JSONL-transport", noAbort: true,
+      taskOccupancyPreserved: true, multiplicityPreserved: true,
+      limits: ["no host capacity reservation or recovery UI", "not real runtime or installed VSIX"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); }
+});
+
+test("explicit recall rejects stale session before destructive clear", async () => {
+  const f = fixture();
+  let calls = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.recallQueuedText?.(f.runtime.getSession() + 1, () => { calls++; }))?.ok, false);
+    assert.equal(calls, 0);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state"]);
+  } finally { await f.runtime.stop(); }
+});
+
+test("recall and Stop share one clear owner without duplicate destructive requests", async () => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined;
+  const saved: unknown[] = [];
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.hold("clear_queue");
+    pending = f.runtime.recallQueuedText?.(f.runtime.getSession(), value => { saved.push(value); });
+    assert.equal((await f.runtime.abortTask?.())?.ok, false);
+    assert.equal((await f.runtime.recallQueuedText?.(f.runtime.getSession(), () => undefined))?.ok, false);
+    const request = f.commands.at(-1)!;
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "clear_queue"]);
+    f.connection.frame({ type: "response", id: request.id, command: "clear_queue", success: true, data: { steering: [], followUp: ["kept"] } });
+    assert.deepEqual(await pending, { ok: true });
+    assert.deepEqual(saved, [{ steering: [], followUp: ["kept"] }]);
+    f.resume("clear_queue");
+    assert.equal((await f.runtime.abortTask?.())?.ok, true);
+  } finally { await f.runtime.stop(); await pending; }
+});
+
+for (const data of [undefined, { steering: ["x"], followUp: [false] }]) test("explicit recall rejects malformed clear without fabricating an empty recovery", async () => {
+  const f = fixture();
+  let saved = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    f.override(command => command === "clear_queue" ? { data } : undefined);
+    assert.equal((await f.runtime.recallQueuedText?.(f.runtime.getSession(), () => { saved++; }))?.ok, false);
+    assert.equal(saved, 0);
+    assert.equal(f.runtime.getSession(), 0);
+    assert.equal(f.commands.filter(command => command.type === "abort").length, 0);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+  } finally { await f.runtime.stop(); }
+});
+
 // Stop/recall failure modes written before implementation: discarded clear data,
 // callback after abort, failed abort erasing recall, malformed/oversized data,
 // duplicate clear on concurrent Stop, expired observation and late retired ACK.
