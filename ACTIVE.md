@@ -41,9 +41,9 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 | 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-077 REQ-004／005 和本次持续批准；不扩附件／命令，不接受整个候选。 |
 | 12–14 安全／数据／隐私 | pass（设计）：沿用信任／凭据规则，内存 ledger 不新增存储；不记录 prompt 或 raw frame 到日志。gap（实现）：敏感上游队列投影拒收与复用拒绝先验证。 |
 | 15 性能／背压 | pass（设计）：32 条／256 KiB 与已有单条限制、one-attempt write／drain 预算；clear 前容量预留。gap：边界与外部不可归属队列拒绝须验证，不造无限恢复缓存。 |
-| 16–17 验证／构建 | gap：合成 composition 已有；浏览器／真实 runtime／macOS F5／安装 VSIX 分层验收仍缺，各自留工件；pin 与构建策略不变。 |
+| 16–17 验证／构建 | gap：合成 composition 与 preview 队列演示已有；浏览器 en／窄宽／dark 队列闭环部分取证，zh 浏览器截图与真实 runtime／macOS F5／安装 VSIX 仍缺；pin 与构建策略不变。 |
 | 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3，新意图只准 chat；旧 viewId 拒绝，升级后重载旧页面。无持久 schema 迁移。 |
-| 19 UX／可访问性 | gap：UI 已挂载；en／zh、280／320／400 三主题与 keyboard 实际渲染未验。 |
+| 19 UX／可访问性 | gap：UI 已挂载；浏览器 en／280 dark／light 队列闭环部分取证，zh 标签 jsdom 有、浏览器截图未取；320／400、高对比与 keyboard 未验。 |
 
 ### 验收
 
@@ -55,7 +55,7 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider 与 production UI（Steer／Follow-up／pending／recall／recovery）已接线；jsdom 挂载证据在 `dist/wi077-queued-ui/`。下一步：preview 合成队列演示、浏览器 en／zh／窄宽／主题／键盘，以及真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider、production UI 与 preview 合成队列已接线；jsdom／浏览器部分证据在 `dist/wi077-queued-ui/`（Steer 清空草稿、Follow-up pending、Stop→recovery、Use in draft 恢复）。下一步：补 zh／高对比／keyboard 浏览器证据，以及真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -145,13 +145,13 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-01 — WI-077 Build 第十三步：preview 队列与浏览器闭环修复
+
+实现 `14be1cc`／`3d24f3b` 不含 ACTIVE。preview-bridge 合成 queue／recall／Stop→recovery；`queueChat` 成功后清空本地草稿；`useRecoveredText` 后空 composer 采纳 host draft，避免空 `updateDraft` 抹掉恢复。浏览器 Approval@280：Steer／Follow-up pending、Stop→Recalled、Use in draft 恢复已取证（`dist/wi077-queued-ui/`）；zh 浏览器截图与真实 pi／F5／VSIX 仍缺。lint／1140 tests 通过。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+
 ### 2026-10-01 — WI-077 Build 第十二步：production 队列 UI
 
 实现 `1fdd692`／挂载测试 `f284b7f` 不含 ACTIVE。Client 镜像 `queuedTextState`、busy 时 `queueChat`／recall／use／discard；composer 挂载 Steer／Follow-up 与 pending／recovery 面板（en／zh）；composition `dist/wi077-queued-ui/`（含 client intents 与 mounted composer）。双语契约改为已挂载 UI、验收未完成。compile／lint／1139 tests、docs:verify 0 错误，ADR 0010 两提示保留。下一步 preview 队列演示、浏览器与真实宿主分层验收；不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
-
-### 2026-10-01 — WI-077 Build 第十一步：provider 队列会话接线
-
-实现 `2f27b83` 不含 ACTIVE。新增 `QueuedTextSession`；provider 在 runtime ready 后创建／发布 `queuedTextState`，四意图走 draft 同款「未匹配同步返回 undefined」以免 Stop 前 await 微任务；Stop 仅在 `abortTask` 存在时走 clear→abort，否则保留原 abort 路径。`queued-text-provider` composition 与 client DTO 列表更新；compile／lint／1137 tests 通过。下一步 production UI 与真实环境闭环。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
 
 ## 已完成 WI 索引
 
