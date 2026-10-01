@@ -58,6 +58,19 @@ test("busy composer mounts Steer/Follow-up, pending queues and recovery actions"
     assert.equal(chineseUi["Follow up after task"], "任务结束后跟进");
     assert.equal(chineseUi["Recall pending text"], "取回待处理文字");
 
+    const textarea = h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]');
+    const beforeEnter = h.sent.length;
+    await act(async () => {
+      textarea.dispatchEvent(new h.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    });
+    assert.equal(
+      h.sent.slice(beforeEnter).some(message => message.type === "sendChat" || message.type === "queueChat"),
+      false,
+      "Enter in a busy composer must not send or queue",
+    );
+    assert.ok(steer.tabIndex >= 0);
+    assert.ok(follow.tabIndex >= 0);
+
     const before = h.sent.length;
     await act(async () => { steer.click(); });
     const queued = h.sent.slice(before).find(message => message.type === "queueChat");
@@ -80,6 +93,8 @@ test("busy composer mounts Steer/Follow-up, pending queues and recovery actions"
       recallPosted: true,
       useBlockedWhenDraftOccupied: true,
       chineseLabelsPresent: true,
+      enterWhileBusyDoesNotSend: true,
+      queueButtonsKeyboardReachable: true,
     });
   } finally {
     await h.close();
