@@ -16,6 +16,20 @@
 
 > 连通性、工作区选择、宿主拥有的 pi RPC 子进程（WI-007）、纯文本聊天（WI-004）、模型／thinking 设置（WI-008／WI-009）及受控执行（WI-010）。不暴露密钥、Webview 内 pi SDK、文件系统访问或通用宿主操作。三项信任／会话 gates 已在 ADR0004 的明确证据与排除项内接受。
 
+## WI-077 文字队列增补（Outline；未实现）
+
+已批准 REQ-004／005 切片见 [PRD](../product-requirements.zh.md#wi-077-已批准切片--文字-steeringfollow-up-与取回pi-gap-01)。本节是实现目标；拥有类型、校验器和消费者成对更新前，不扩张今日 Living 白名单。
+
+- 仅 chat 命名意图：`queueChat {draftRevision, mode: "steering" | "follow-up"}`、`recallQueuedText {queueRevision}`、`useRecoveredText {id, draftRevision}`、`discardRecoveredText {id}`。沿用精确 v3 字段、generation／view／不透明 ID 校验；设置页拒绝全部四项。宿主读取已确认草稿，不接受 UI 提供 prompt 或 RPC 名。每次 ledger／快照发布变化推进 queue revision，阻止过期 clear。
+- 宿主 `queuedTextState` 使用当前信封、单调 revision、变更阶段（`idle | submitting | recalling | stopping`）、固定错误码、公开待处理快照（`steering`、`followUp`）和有界本地恢复项（不透明 ID、mode、literal text、status）。投影沿用凭据展示保护；拒绝／敏感上游文字标不可用，不暴露原文，也不提供改写后的恢复文字。不适合展示／复用的完整无损文字仅留宿主。
+- 宿主草稿 owner 在队列准入时同步读取／预留／清除精确已确认 revision，不设第二草稿 owner。迟到投递不清除较新编辑。协调器拥有执行／身份／Stop，组合有界内存 queue ledger；adapter 拥有公开 `steer`、`follow_up`、`clear_queue`、`queue_update` 和已消费 user message 翻译。无通用 RPC、session 文件读取或持久 ledger。
+- 队列发送使用一次性 token、单次 write、expected runtime session，沿用五秒 write／drain 和三十秒 ACK 预算。不复用普通 prompt occupancy：队列 ACK 不能释放活动任务。write 前任务已结束则拒绝该尝试，不隐式改为 idle prompt。Stop 同步封闭新发送，在既有共享五秒观察预算内等待在途尝试结束后 clear。超时进入既有不确定 runtime 恢复，不新增无界等待或重试。
+- `queue_update` 是两组 string arrays 的公开待处理快照，不是消费回执。校验 text content 后才翻译匹配的公开 user `message_start`，按本 live session 的重复数量关联。ACK、队列移除与消费分别记录。文字关联有歧义（含两队列相同文字）时本地归属保留未知；外部／不可归属项明确标注，不声称由 UI 发送。未知／损坏／超大数据不得伪造空队列或取回成功；固定诊断 fail closed，不在日志记录文字。
+- 显式取回与 Stop 共用一个 clear owner。根据有界已观察快照，在破坏性 clear 前预留无损恢复容量；容量／不可归属数据缺口拒绝显式取回。Stop 容量失败不静默丢弃恢复，而是显示未确认 Stop 与既有安全恢复。校验 clear 两数组后才记录确认取回；clear 期间的空 `queue_update` 不把文字标消费。先保留确认 clear 内容再 abort，后者失败不抹掉前者。clear 超时保留本地文字未知，迟到旧 session 回包不改新 runtime。
+- 视图重建重新投影 ledger，关闭视图只取消未提交的 view 工作。断线保留本 generation 本地恢复与未知事实。New／Restore／profile／资源替换补 PRD 丢失警告，仅提交交接后清理。工作区身份变化沿用草稿失效规则，撤销旧能力，不把旧队列文字投影到新项目。Provider dispose 释放 ledger／订阅／计时器，无自动重发。
+
+**仍需实现证据：** 精确 parser／projection 验证、adapter transport 交错、host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据。本 Outline 不新增已交付能力或 gate 接受。
+
 ## 编辑区设置界面（WI-026）
 
 `openSettings` 无额外字段，仅当前聊天视图可发送，打开／揭示单实例编辑区面板。`setUiLanguage` 只携带 `locale: "en" | "zh-CN"`；宿主仅内存保存，并向各视图投影带标准宿主信封与 locale 的 `uiLanguageState`。
