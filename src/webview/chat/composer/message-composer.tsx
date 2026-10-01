@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
-import type { AttachmentHistoryEntry, AttachmentStateMessage, ExecutionProfileProjection, ProviderConfigProjection, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
+import type { AttachmentHistoryEntry, AttachmentStateMessage, ExecutionProfileProjection, ProviderConfigProjection, QueuedTextStateMessage, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
 import { ModelPickerView, SessionGrants, useChatPreview, useUiText, type AttachmentPreview } from "../../components/index.js";
 import { CandidateContext } from "./candidate-context.js";
 import { ComposerIcon } from "./composer-icon.js";
+import { QueuedTextPanel } from "./queued-text-panel.js";
 import { ExecutionProfileControls } from "../execution/extension-interactions.js";
 
 type ComposerProps = {
@@ -10,6 +11,7 @@ type ComposerProps = {
   error: string | null;
   workspace: WorkspaceStateMessage | null;
   attachments: AttachmentStateMessage | null;
+  queuedText: QueuedTextStateMessage | null;
   history: AttachmentHistoryEntry[];
   historyOpen: boolean;
   historyPage: number | null;
@@ -24,12 +26,18 @@ type ComposerProps = {
   showStop: boolean;
   stopping: boolean;
   sendBlocked: boolean;
+  queueDisabled: boolean;
+  recallDisabled: boolean;
   attachmentDisabled: boolean;
   settingsDisabled: boolean;
   sessionTransitioning: boolean;
   submit: () => void;
   onEdit: (text: string) => void;
   onStop: () => void;
+  onQueueChat: (mode: "steering" | "follow-up") => void;
+  onRecallQueuedText: () => void;
+  onUseRecoveredText: (id: string) => void;
+  onDiscardRecoveredText: (id: string) => void;
   onAddAttachment: () => void;
   onAddSelection: () => void;
   onRemoveAttachment: (attachmentId: string) => void;
@@ -79,9 +87,10 @@ function useComposerChrome(identity: string | null): ComposerChrome {
 
 /** Layout and input behavior; send, stop, draft and attachment intents are bound by the page. */
 export function MessageComposer({
-  text, error, workspace, attachments, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
-  input, canPrepare, canBrowse, canCompose, readableRuntimeError, showStop, stopping, sendBlocked, attachmentDisabled,
-  settingsDisabled, sessionTransitioning, submit, onEdit, onStop, onAddAttachment, onAddSelection, onRemoveAttachment,
+  text, error, workspace, attachments, queuedText, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
+  input, canPrepare, canBrowse, canCompose, readableRuntimeError, showStop, stopping, sendBlocked, queueDisabled, recallDisabled,
+  attachmentDisabled, settingsDisabled, sessionTransitioning, submit, onEdit, onStop, onQueueChat, onRecallQueuedText,
+  onUseRecoveredText, onDiscardRecoveredText, onAddAttachment, onAddSelection, onRemoveAttachment,
   onConfirmAttachment, onToggleHistory, onNavigateHistory, onRequestPreview, onClosePreview, onSetDefaultModel,
   onSetDefaultThinking, onSetChatModel, onSetThinking, onChooseExecutionProfile, onEndOwnedRuntime,
   onRecoverControlledRuntime, onRevokeGrant, onRequireWorkspace, onSettings,
@@ -90,11 +99,14 @@ export function MessageComposer({
   const previewMode = useChatPreview();
   const identity = workspace ? workspace.viewId + ":" + workspace.generation : null;
   const chrome = useComposerChrome(identity);
+  const taskRunning = !!workspace?.chatBusy;
   useLayoutEffect(() => {
     const node = input.current;
     if (node) { node.style.height = "auto"; node.style.height = `${Math.min(node.scrollHeight, 140)}px`; }
   }, [text, input]);
-  return <form className="candidate__composer" onSubmit={event => { event.preventDefault(); submit(); }}>
+  return <form className="candidate__composer" onSubmit={event => { event.preventDefault(); if (!taskRunning) submit(); }}>
+    <QueuedTextPanel state={queuedText} draftEmpty={!text.trim() && !(attachments?.draft.attachments.length)}
+      recallDisabled={recallDisabled} onRecall={onRecallQueuedText} onUse={onUseRecoveredText} onDiscard={onDiscardRecoveredText} />
     <CandidateContext onRequireWorkspace={onRequireWorkspace} historyDisabled={!canBrowse || sessionTransitioning} key={identity} pageSize={16} history={history} historyOpen={historyOpen} historyPage={historyPage} onHistory={onToggleHistory} onHistoryPage={onNavigateHistory} state={attachments} disabled={attachmentDisabled} onAdd={onAddAttachment} onAddSelection={onAddSelection} onRemove={onRemoveAttachment} onConfirm={onConfirmAttachment} onPreview={onRequestPreview} onClosePreview={onClosePreview} preview={preview}>{({ actions, content }) => <>
     {content}
     <textarea ref={input} aria-label={t("Message")} placeholder={t("Ask pi anything…")} rows={2} maxLength={8000} value={text}
@@ -102,8 +114,15 @@ export function MessageComposer({
       disabled={!!error || (canPrepare ? !!workspace?.busy : (!canCompose && !readableRuntimeError) || !attachments)}
       onChange={event => onEdit(event.currentTarget.value)}
       onKeyDown={event => {
-        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); }
+        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+          event.preventDefault();
+          if (!taskRunning) submit();
+        }
       }} />
+    {taskRunning && <div className="candidate__composer-queue" role="group" aria-label={t("Queued text")}>
+      <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("steering")}>{t("Steer current task")}</button>
+      <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("follow-up")}>{t("Follow up after task")}</button>
+    </div>}
     <div className="candidate__composer-actions">
       {actions}
       <div className="candidate__model">

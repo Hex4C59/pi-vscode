@@ -166,12 +166,16 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
       {state?.chatError && state.runtime !== "error" && <p className="candidate__error" role="status">{state.chatError}</p>}
       </div>
       <MessageComposer text={snapshot.text} error={snapshot.error} workspace={state} attachments={snapshot.attachments}
+        queuedText={snapshot.queuedText}
         history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} preview={snapshot.preview}
         providerConfig={snapshot.providerConfig} executionProfile={snapshot.executionProfile} input={input}
         canPrepare={canPrepare} canBrowse={canBrowse} canCompose={canCompose} readableRuntimeError={readableRuntimeError}
         showStop={controls.showStop} stopping={controls.stopping} sendBlocked={sendBlocked}
+        queueDisabled={controls.queueDisabled} recallDisabled={controls.recallDisabled}
         attachmentDisabled={controls.attachmentDisabled} settingsDisabled={controls.settingsDisabled}
         sessionTransitioning={controls.sessionTransitioning} submit={submit} onEdit={client.edit} onStop={client.stop}
+        onQueueChat={client.queueChat} onRecallQueuedText={client.recallQueuedText}
+        onUseRecoveredText={client.useRecoveredText} onDiscardRecoveredText={client.discardRecoveredText}
         onAddAttachment={client.addAttachment} onAddSelection={client.addSelection} onRemoveAttachment={client.removeAttachment}
         onConfirmAttachment={client.confirmAttachment} onToggleHistory={client.toggleHistory} onNavigateHistory={client.navigateHistory}
         onRequestPreview={client.requestPreview} onClosePreview={client.closePreview}

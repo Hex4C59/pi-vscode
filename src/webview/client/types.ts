@@ -1,6 +1,6 @@
 import type {
   AttachmentHistoryEntry, AttachmentStateMessage, ChangeReviewStateMessage,
-  HostMessage, SavedHistoryStateMessage, SessionStateMessage, InteractionStateMessage, ExecutionProfileStateMessage,
+  HostMessage, QueuedTextStateMessage, SavedHistoryStateMessage, SessionStateMessage, InteractionStateMessage, ExecutionProfileStateMessage,
   ProviderConfigStateMessage,
   WebviewMessage, WorkspaceStateMessage,
 } from "../../extension/contracts/index.js";
@@ -38,6 +38,7 @@ export type ClientSnapshot = SavedHistorySnapshot & {
   executionProfile: ExecutionProfileStateMessage | null;
   providerConfig: ProviderConfigStateMessage | null;
   attachments: AttachmentStateMessage | null;
+  queuedText: QueuedTextStateMessage | null;
   sessions: SessionStateMessage | null;
   changeReview: ChangeReviewStateMessage | null;
   changeReviewOpen: boolean;

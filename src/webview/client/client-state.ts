@@ -11,6 +11,10 @@ export function availability(s: ClientSnapshot) {
   const ready = !!w && w.runtime === "ready" && !w.busy && !extensionBlocked;
   const sessionTransitioning = s.sessions?.phase === "confirming" || s.sessions?.phase === "switching";
   const chatDisabled = !ready || !!w?.chatBusy || !!w?.modelBusy || stopping || !!s.error || sessionTransitioning;
+  const draftBlocked = s.synchronizing || s.submitting || s.attachments?.preparation !== "idle"
+    || !!s.attachments?.draft.attachments.length || !s.text.trim();
+  const queuePhaseBusy = !!s.queuedText && s.queuedText.phase !== "idle";
+  const pendingCount = (s.queuedText?.pending.steering.length ?? 0) + (s.queuedText?.pending.followUp.length ?? 0);
   return {
     stopping,
     sessionTransitioning,
@@ -18,5 +22,7 @@ export function availability(s: ClientSnapshot) {
     sendDisabled: chatDisabled || !w?.chatModel || !!s.attachments?.draft.attachments.some(a => ["unavailable", "confirmation-required"].includes(a.state)) || s.synchronizing || s.submitting || s.attachments?.preparation !== "idle" || !s.text.trim(),
     attachmentDisabled: chatDisabled || s.synchronizing || s.submitting || s.attachments?.preparation !== "idle",
     showStop: !!w?.chatBusy || stopping || (!!s.attachments && s.attachments.preparation !== "idle"),
+    queueDisabled: !ready || !w?.chatBusy || !!w?.modelBusy || stopping || !!s.error || sessionTransitioning || draftBlocked || queuePhaseBusy,
+    recallDisabled: !ready || stopping || !!s.error || sessionTransitioning || queuePhaseBusy || pendingCount === 0 || !s.queuedText,
   };
 }

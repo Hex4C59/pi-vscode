@@ -14,6 +14,7 @@
 @import "./chat/conversation/candidate-conversation.css";
 @import "./chat/composer/message-composer.css";
 @import "./chat/composer/candidate-context.css";
+@import "./chat/composer/queued-text-panel.css";
 @import "./chat/sessions/session-navigation.css";
 @import "./chat/sessions/candidate-sessions.css";
 @import "./chat/execution/candidate-review.css";

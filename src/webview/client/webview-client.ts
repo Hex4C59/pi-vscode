@@ -26,6 +26,10 @@ function blockedDuringSessionSwitch(intent: Intent): boolean {
     case "getSavedHistory":
     case "getSavedHistoryPreview":
     case "sendChat":
+    case "queueChat":
+    case "recallQueuedText":
+    case "useRecoveredText":
+    case "discardRecoveredText":
     case "addFileAttachment":
     case "addSelectionAttachment":
     case "removeAttachment":
@@ -61,7 +65,7 @@ export class WebviewClient {
     },
     intent => this.action(intent), snapshot => this.update(snapshot), error => this.update({ error }),
   );
-  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, sessions: null, text: "", synchronizing: true, submitting: false,
+  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, sessions: null, text: "", synchronizing: true, submitting: false,
     ...this.savedHistory.snapshot,
     changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   constructor(private readonly bridge: WebviewBridge) {}
@@ -121,6 +125,27 @@ export class WebviewClient {
     if (!controls.showStop || controls.stopping) return;
     this.update({ stopRequested: true });
     this.action({ type: "stopChat" });
+  };
+  queueChat = (mode: "steering" | "follow-up"): void => {
+    const draft = this.snapshot.attachments?.draft;
+    if (!draft || availability(this.snapshot).queueDisabled) return;
+    this.action({ type: "queueChat", draftRevision: draft.revision, mode });
+  };
+  recallQueuedText = (): void => {
+    const queue = this.snapshot.queuedText;
+    if (!queue || availability(this.snapshot).recallDisabled) return;
+    this.action({ type: "recallQueuedText", queueRevision: queue.revision });
+  };
+  useRecoveredText = (id: string): void => {
+    const draft = this.snapshot.attachments?.draft;
+    const entry = this.snapshot.queuedText?.recovery.find(item => item.id === id);
+    if (!draft || !entry || entry.status !== "recalled" || this.snapshot.text.trim() || draft.attachments.length
+      || availability(this.snapshot).sessionTransitioning || this.snapshot.error) return;
+    this.action({ type: "useRecoveredText", id, draftRevision: draft.revision });
+  };
+  discardRecoveredText = (id: string): void => {
+    if (!this.snapshot.queuedText?.recovery.some(item => item.id === id) || this.snapshot.error) return;
+    this.action({ type: "discardRecoveredText", id });
   };
   addAttachment = (): void => { this.beginAttachment("file"); };
   addSelection = (): void => { this.beginAttachment("selection"); };
@@ -246,6 +271,9 @@ export class WebviewClient {
       case "attachmentState":
         this.applyAttachmentState(message);
         return;
+      case "queuedTextState":
+        this.update({ queuedText: message });
+        return;
       case "attachmentHistory":
         this.applyAttachmentHistory(message);
         return;
@@ -271,7 +299,7 @@ export class WebviewClient {
     this.pending = null;
     this.submitted = null;
     this.update({
-      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, sessions: null,
+      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, sessions: null,
       ...this.savedHistory.reset(),
       changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
       ...(committedHandoff ? { text: "" } : {}),
