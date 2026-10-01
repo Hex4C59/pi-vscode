@@ -11,6 +11,8 @@ import type {
   HostMessage,
   ProviderConfigProjection,
   PluginInventoryProjection,
+  QueuedRecoveryEntry,
+  QueuedTextStateMessage,
   SavedHistoryPreviewMessage,
   SavedHistoryStateMessage,
   SessionStateMessage,
@@ -116,6 +118,7 @@ export class PreviewBridge implements WebviewBridge {
   private readonly savedHistoryPreviews = new Map<string, string>();
   private workspace: WorkspaceStateMessage;
   private attachment: AttachmentStateMessage;
+  private queued: QueuedTextStateMessage;
   private session: SessionStateMessage;
   private savedHistory: SavedHistoryStateMessage;
   private sessionOperationToken = 0;
@@ -142,6 +145,10 @@ export class PreviewBridge implements WebviewBridge {
     bridgeNumber += 1;
     this.viewId = `preview-view-${bridgeNumber}`;
     this.workspace = { ...baseWorkspace(scenario), viewId: this.viewId };
+    this.queued = {
+      version: 3, type: "queuedTextState", viewId: this.viewId, generation: this.workspace.generation,
+      revision: 0, phase: "idle", error: null, pending: { steering: [], followUp: [] }, recovery: [],
+    };
     this.providerConfig = providerConfigFor(previewOptions?.settings);
     if (previewOptions?.resourcesPending) {
       this.workspace = { ...this.workspace, status: "eligible", folder: READY_FOLDER, choice: null, runtime: "not-started", chatModel: null, availableModels: [], thinkingLevel: null, thinkingLevels: [], messages: [] };
@@ -193,6 +200,7 @@ export class PreviewBridge implements WebviewBridge {
     if (message.type === "getWorkspaceState") {
       this.emitWorkspace();
       this.emitAttachment();
+      this.emitQueue();
       this.emitReview();
       this.emitSettings();
       if (this.previewOptions?.locale) this.emit({ version: 3, type: "uiLanguageState", viewId: this.viewId, generation: this.workspace.generation, locale: this.previewOptions.locale });
@@ -227,6 +235,18 @@ export class PreviewBridge implements WebviewBridge {
         break;
       case "sendChat":
         this.sendChat(message);
+        break;
+      case "queueChat":
+        this.queueChat(message);
+        break;
+      case "recallQueuedText":
+        this.recallQueuedText(message);
+        break;
+      case "useRecoveredText":
+        this.useRecoveredText(message);
+        break;
+      case "discardRecoveredText":
+        this.discardRecoveredText(message);
         break;
       case "stopChat":
         this.stopChat();
@@ -508,10 +528,15 @@ export class PreviewBridge implements WebviewBridge {
     this.preparationToken++;
     this.workspace = { ...baseWorkspace("empty"), viewId: this.viewId, generation: this.workspace.generation, messages: this.workspace.messages };
     this.attachment = { ...this.attachment, preparation: "idle", result: null };
+    this.queued = {
+      version: 3, type: "queuedTextState", viewId: this.viewId, generation: this.workspace.generation,
+      revision: this.queued.revision + 1, phase: "idle", error: null, pending: { steering: [], followUp: [] }, recovery: [],
+    };
     this.interactions = { active: null, queuedCount: 0, phase: "idle", errorCode: null, feedback: [], omittedFeedback: 0 };
     this.executionProfile = { profile: "controlled", displayName: null, phase: "idle", errorCode: null, canSwitch: true, canEnd: false, canRecover: false };
     this.emitWorkspace();
     this.emitAttachment();
+    this.emitQueue();
     this.emitInteractions();
     this.emitProfile();
   }
@@ -572,6 +597,10 @@ export class PreviewBridge implements WebviewBridge {
 
   private emitAttachment(): void {
     this.emit({ ...this.attachment, viewId: this.viewId });
+  }
+
+  private emitQueue(): void {
+    this.emit({ ...this.queued, viewId: this.viewId, generation: this.workspace.generation });
   }
 
   private emitSession(): void {
@@ -829,6 +858,108 @@ export class PreviewBridge implements WebviewBridge {
     this.emitAttachment();
   }
 
+  private queueChat(message: Extract<WebviewMessage, { type: "queueChat" }>): void {
+    const draft = this.attachment.draft;
+    const text = draft.text;
+    if (!this.workspace.chatBusy || this.workspace.runtime !== "ready" || this.attachment.preparation !== "idle"
+      || draft.attachments.length || !text.trim() || /^\s*\//.test(text) || this.queued.phase !== "idle") {
+      this.queued = { ...this.queued, error: draft.attachments.length ? "attachments" : !text.trim() || /^\s*\//.test(text) ? "invalid-text" : "busy" };
+      this.emitQueue();
+      return;
+    }
+    const modeKey = message.mode === "steering" ? "steering" : "followUp";
+    this.attachment = {
+      ...this.attachment,
+      draft: { ...draft, revision: draft.revision + 1, text: "", acceptedEditSequence: draft.acceptedEditSequence },
+      result: null,
+    };
+    this.queued = {
+      ...this.queued,
+      revision: this.queued.revision + 1,
+      phase: "idle",
+      error: null,
+      pending: {
+        ...this.queued.pending,
+        [modeKey]: [...this.queued.pending[modeKey], { attribution: "local" as const, reusable: true as const, text }],
+      },
+    };
+    this.emitAttachment();
+    this.emitQueue();
+  }
+
+  private recallQueuedText(message: Extract<WebviewMessage, { type: "recallQueuedText" }>): void {
+    if (message.queueRevision !== this.queued.revision || this.queued.phase !== "idle") {
+      this.queued = { ...this.queued, error: message.queueRevision !== this.queued.revision ? "stale" : "busy" };
+      this.emitQueue();
+      return;
+    }
+    const recovered = this.pendingToRecovery();
+    if (!recovered.length) {
+      this.queued = { ...this.queued, error: null };
+      this.emitQueue();
+      return;
+    }
+    this.queued = {
+      ...this.queued,
+      revision: this.queued.revision + 1,
+      error: null,
+      pending: { steering: [], followUp: [] },
+      recovery: [...this.queued.recovery, ...recovered],
+    };
+    this.emitQueue();
+  }
+
+  private pendingToRecovery(): QueuedRecoveryEntry[] {
+    const entries: QueuedRecoveryEntry[] = [];
+    for (const mode of ["steering", "follow-up"] as const) {
+      const key = mode === "steering" ? "steering" : "followUp";
+      for (const item of this.queued.pending[key]) {
+        entries.push(item.reusable
+          ? { id: `preview-recovery-${++this.snapshotSequence}`, mode, status: "recalled", text: item.text }
+          : { id: `preview-recovery-${++this.snapshotSequence}`, mode, status: "unavailable" });
+      }
+    }
+    return entries;
+  }
+
+  private useRecoveredText(message: Extract<WebviewMessage, { type: "useRecoveredText" }>): void {
+    const draft = this.attachment.draft;
+    const entry = this.queued.recovery.find(item => item.id === message.id);
+    if (!entry || entry.status !== "recalled" || draft.text.trim() || draft.attachments.length || this.attachment.preparation !== "idle") {
+      this.queued = { ...this.queued, error: !entry || entry.status !== "recalled" ? "unavailable" : "draft-not-empty" };
+      this.emitQueue();
+      return;
+    }
+    this.attachment = {
+      ...this.attachment,
+      draft: { ...draft, revision: draft.revision + 1, text: entry.text },
+      result: null,
+    };
+    this.queued = {
+      ...this.queued,
+      revision: this.queued.revision + 1,
+      error: null,
+      recovery: this.queued.recovery.filter(item => item.id !== message.id),
+    };
+    this.emitAttachment();
+    this.emitQueue();
+  }
+
+  private discardRecoveredText(message: Extract<WebviewMessage, { type: "discardRecoveredText" }>): void {
+    if (!this.queued.recovery.some(item => item.id === message.id)) {
+      this.queued = { ...this.queued, error: "unavailable" };
+      this.emitQueue();
+      return;
+    }
+    this.queued = {
+      ...this.queued,
+      revision: this.queued.revision + 1,
+      error: null,
+      recovery: this.queued.recovery.filter(item => item.id !== message.id),
+    };
+    this.emitQueue();
+  }
+
   private sendChat(message: WebviewMessage & { type: "sendChat" | "addFileAttachment" }): void {
     if (message.draftRevision !== this.attachment.draft.revision) {
       this.attachment = { ...this.attachment, result: { code: "stale" } };
@@ -1074,8 +1205,19 @@ export class PreviewBridge implements WebviewBridge {
       chatError: null,
     };
     this.attachment = { ...this.attachment, result: this.attachment.preparation === "idle" ? this.attachment.result : { code: "preparation-cancelled" }, draft: { ...this.attachment.draft, revision: this.attachment.draft.revision + (this.attachment.preparation === "idle" ? 0 : 1) }, preparation: "idle" };
+    const recovered = this.pendingToRecovery();
+    if (recovered.length) {
+      this.queued = {
+        ...this.queued,
+        revision: this.queued.revision + 1,
+        error: null,
+        pending: { steering: [], followUp: [] },
+        recovery: [...this.queued.recovery, ...recovered],
+      };
+    }
     this.emitWorkspace();
     this.emitAttachment();
+    this.emitQueue();
     this.schedule(() => {
       this.workspace = {
         ...this.workspace,

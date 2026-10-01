@@ -55,6 +55,7 @@ export class WebviewClient {
   private sequence = 0;
   private pending: number | null = null;
   private submitted: { revision: number; sequence: number; text: string } | null = null;
+  private queuedSubmit: { revision: number; text: string } | null = null;
   private previewCounter = 0;
   private disposed = false;
   readonly savedHistory = new SavedHistoryClient(
@@ -129,6 +130,7 @@ export class WebviewClient {
   queueChat = (mode: "steering" | "follow-up"): void => {
     const draft = this.snapshot.attachments?.draft;
     if (!draft || availability(this.snapshot).queueDisabled) return;
+    this.queuedSubmit = { revision: draft.revision, text: this.snapshot.text };
     this.action({ type: "queueChat", draftRevision: draft.revision, mode });
   };
   recallQueuedText = (): void => {
@@ -272,6 +274,7 @@ export class WebviewClient {
         this.applyAttachmentState(message);
         return;
       case "queuedTextState":
+        if (message.error && this.queuedSubmit) this.queuedSubmit = null;
         this.update({ queuedText: message });
         return;
       case "attachmentHistory":
@@ -298,6 +301,7 @@ export class WebviewClient {
     const committedHandoff = message.type === "sessionState" && message.phase === "switching";
     this.pending = null;
     this.submitted = null;
+    this.queuedSubmit = null;
     this.update({
       workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, sessions: null,
       ...this.savedHistory.reset(),
@@ -326,6 +330,12 @@ export class WebviewClient {
       this.submitted = null;
     } else if (message.preparation === "idle" && (message.result || (this.submitted && message.draft.revision > this.submitted.revision))) {
       this.submitted = null;
+    }
+    if (this.queuedSubmit && message.draft.revision > this.queuedSubmit.revision && message.draft.text === "") {
+      if (text === this.queuedSubmit.text) text = "";
+      this.queuedSubmit = null;
+    } else if (this.queuedSubmit && message.draft.revision > this.queuedSubmit.revision) {
+      this.queuedSubmit = null;
     }
     if (this.pending !== null && (message.draft.acceptedEditSequence >= this.pending || message.result?.code === "stale")) this.pending = null;
     this.sequence = Math.max(this.sequence, message.draft.acceptedEditSequence);
