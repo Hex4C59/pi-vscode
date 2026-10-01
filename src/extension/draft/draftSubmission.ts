@@ -123,7 +123,7 @@ export class DraftSubmission implements vscode.Disposable {
     // No insertion into prose or attachment-only drafts; preserve all arguments literally.
     const leading = /^\/[^\s/]*(?=\s|$)/.exec(this.draftText);
     if (!leading) { this.rejectStale(); return; }
-    const text = `/${name}${this.draftText.slice(leading[0].length)}`;
+    const text = `/${name}${this.draftText.slice(leading[0].length) || " "}`;
     if (text.length > 8000) { this.attachmentResult = "text-too-large"; this.publish(); return; }
     if (text === this.draftText) return;
     this.draftText = text;

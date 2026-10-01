@@ -71,3 +71,29 @@ test("discovery intents and DTOs reject extra path fields, unsafe names and inco
   assert.equal(parseHostMessage({ ...catalogue, status: "empty" }), undefined);
   assert.equal(parseHostMessage({ ...catalogue, rows: [...catalogue.rows, ...catalogue.rows] }), undefined);
 });
+
+// Approved-rule failures: bare completion lacks a delimiter; existing tabs/newlines
+// are normalized; repeating completion appends another space or submits the draft.
+test("host completion appends one bare-command space and preserves every existing suffix", async () => {
+  const { r, h, v } = await readySettings();
+  r.runtime.getCommandCatalogue = () => ({ status: "ready", rows: [{ name: "fix-tests", source: "prompt" }] });
+  try {
+    let sequence = 0;
+    for (const [input, expected] of [["/fi", "/fix-tests "], ["/fi ", "/fix-tests "],
+      ["/fi\targ\nnext", "/fix-tests\targ\nnext"]]) {
+      v.action("updateDraft", { draftRevision: v.attachments().draft.revision, editSequence: ++sequence, text: input });
+      v.action("completeCommand", { draftRevision: v.attachments().draft.revision, name: "fix-tests" });
+      assert.equal(v.attachments().draft.text, expected);
+      const revision = v.attachments().draft.revision;
+      v.action("completeCommand", { draftRevision: revision, name: "fix-tests" });
+      assert.equal(v.attachments().draft.revision, revision);
+      assert.equal(v.attachments().draft.text, expected);
+    }
+    assert.equal(r.calls.includes("prompt"), false);
+    const output = path.resolve("dist/wi078-command-catalogue");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "completion-space.json"), JSON.stringify({ status: "passed",
+      evidence: "provider-draft-composition", bare: "/fix-tests ", suffixPreserved: true,
+      repeatedCompletionNoOp: true, noSend: true }, null, 2));
+  } finally { h.provider.dispose(); }
+});

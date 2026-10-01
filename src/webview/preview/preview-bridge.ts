@@ -626,7 +626,7 @@ export class PreviewBridge implements WebviewBridge {
     const draft = this.attachment.draft;
     const leading = /^\/[^\s/]*(?=\s|$)/.exec(draft.text);
     if (!leading) return;
-    const text = `/${message.name}${draft.text.slice(leading[0].length)}`;
+    const text = `/${message.name}${draft.text.slice(leading[0].length) || " "}`;
     if (text.length > 8000 || text === draft.text) return;
     this.attachment = { ...this.attachment, result: null, draft: { ...draft, revision: draft.revision + 1, text } };
     this.emitAttachment();

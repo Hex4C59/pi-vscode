@@ -51,6 +51,8 @@ test("production slash menu lists snapshot sources, navigates and completes with
     assert.equal(completion?.type, "completeCommand");
     if (completion?.type === "completeCommand") assert.equal(completion.name, "fix-tests");
     assert.equal(h.sent.slice(before).some(m => m.type === "sendChat" || m.type === "queueChat"), false);
+    await h.receive(attachmentState({ draft: { revision: 2, text: "/fix-tests ", acceptedEditSequence: 1, attachments: [] } }));
+    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "/fix-tests ");
     assert.equal(h.root.querySelector('[role="listbox"]'), null);
     await report("mounted-discovery", ["three sources", "keyboard completion", "IME no side effect", "no send"]);
   } finally { await h.close(); }

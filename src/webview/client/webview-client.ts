@@ -147,7 +147,7 @@ export class WebviewClient {
       || (snapshot.executionProfile && snapshot.executionProfile.phase !== "idle") || snapshot.interactions?.active) return;
     const leading = /^\/[^\s/]*(?=\s|$)/.exec(snapshot.text);
     if (!leading) return;
-    const after = `/${name}${snapshot.text.slice(leading[0].length)}`;
+    const after = `/${name}${snapshot.text.slice(leading[0].length) || " "}`;
     if (after === snapshot.text || after.length > MAX_DRAFT_CHARACTERS) return;
     this.commandCompletion = { revision: draft.revision, sequence: this.sequence, before: snapshot.text, after };
     this.action({ type: "completeCommand", draftRevision: draft.revision, name });

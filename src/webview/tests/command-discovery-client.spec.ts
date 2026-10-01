@@ -37,8 +37,8 @@ test("client and provider complete an acknowledged command without sending or re
     assert.ok(held);
     v.attachments(); // Same-revision bootstrap must not retire a still-pending completion.
     v.receive.fire(held);
-    assert.equal(client.getSnapshot().text, "/fix-tests");
-    assert.equal(v.attachments().draft.text, "/fix-tests");
+    assert.equal(client.getSnapshot().text, "/fix-tests ");
+    assert.equal(v.attachments().draft.text, "/fix-tests ");
 
     client.edit("/fi"); hold = true;
     client.completeCommand("fix-tests");
@@ -79,6 +79,9 @@ test("preview bridge discovers and completes synthetic commands without starting
     client.edit("/fi retain arguments");
     client.completeCommand("fix-tests");
     assert.equal(client.getSnapshot().text, "/fix-tests retain arguments");
+    client.edit("/fi");
+    client.completeCommand("fix-tests");
+    assert.equal(client.getSnapshot().text, "/fix-tests ");
     assert.equal(client.getSnapshot().workspace?.chatBusy, false);
   } finally { client.dispose(); bridge.dispose(); }
 });
