@@ -25,7 +25,9 @@ type RecoveredRecord = {
   bytes: number;
 };
 
-type PendingEntry = { text: string; attribution: Attribution; reusable: boolean };
+type PendingEntry =
+  | { attribution: Attribution; reusable: true; text: string }
+  | { attribution: Attribution; reusable: false };
 
 export type QueuedTextSendOutcome =
   | { kind: "refused"; reason: "capacity" | "runtime-unavailable" | "invalid-text" }
@@ -46,11 +48,14 @@ export class QueuedTextLedger {
   private bytes = 0;
   private pending: QueuedTextSnapshot = { steering: [], followUp: [] };
   private clearReservation: { count: number; bytes: number } | undefined;
+  private queueRevision = 0;
 
   constructor(
     private readonly runtime: Pick<PiRuntimeLifecycle, "getSession" | "prepareQueuedText">,
     private readonly session: number,
   ) {}
+
+  get revision(): number { return this.queueRevision; }
 
   async send(text: string, mode: QueueMode, onAttempt: () => void): Promise<QueuedTextSendOutcome> {
     if (!this.session || this.runtime.getSession() !== this.session || !this.runtime.prepareQueuedText) {
@@ -65,16 +70,18 @@ export class QueuedTextLedger {
     const record: LocalRecord = {
       id: randomBytes(16).toString("hex"), text, mode, bytes, delivery: "pending", attribution: "local", attempted: false,
     };
-    this.locals.set(record.id, record); this.bytes += bytes;
+    this.locals.set(record.id, record); this.bytes += bytes; this.bumpRevision();
     try {
       const token = this.runtime.prepareQueuedText(text, mode, this.session);
       const result = await token.send(() => { record.attempted = true; onAttempt(); });
       if (!record.attempted && result.delivery === "not-sent") return this.refuseUnattempted(record);
       record.delivery = result.delivery;
+      this.bumpRevision();
       return { kind: "observed", id: record.id, result };
     } catch {
       if (!record.attempted) return this.refuseUnattempted(record);
       record.delivery = "unknown";
+      this.bumpRevision();
       return { kind: "observed", id: record.id, result: { delivery: "unknown", code: "runtime-lost" } };
     }
   }
@@ -82,6 +89,7 @@ export class QueuedTextLedger {
   observeQueueUpdated(session: number, snapshot: QueuedTextSnapshot): void {
     if (session !== this.session) return;
     this.pending = { steering: [...snapshot.steering], followUp: [...snapshot.followUp] };
+    this.bumpRevision();
   }
 
   observeUserStarted(session: number, text: string | null): void {
@@ -91,10 +99,13 @@ export class QueuedTextLedger {
     if (steeringHits + followUpHits === 0) return;
     const ambiguous = (steeringHits > 0 && followUpHits > 0)
       || [...this.locals.values()].filter(record => record.text === text).length > 1;
+    let changed = false;
     for (const record of this.locals.values()) {
       if (record.text !== text) continue;
-      record.attribution = ambiguous ? "unknown" : "local";
+      const next = ambiguous ? "unknown" : "local";
+      if (record.attribution !== next) { record.attribution = next; changed = true; }
     }
+    if (changed) this.bumpRevision();
   }
 
   reserveClear(snapshot: QueuedTextSnapshot): ClearReserveResult {
@@ -106,7 +117,6 @@ export class QueuedTextLedger {
   }
 
   commitClear(snapshot: QueuedTextSnapshot): void {
-    const needed = this.clearReservation ?? this.clearCapacityNeed(snapshot);
     this.clearReservation = undefined;
     for (const [mode, texts] of [["steering", snapshot.steering], ["follow-up", snapshot.followUp]] as const) {
       for (const text of texts) {
@@ -122,11 +132,36 @@ export class QueuedTextLedger {
         this.bytes += bytes;
       }
     }
-    void needed;
+    this.pending = { steering: [], followUp: [] };
+    this.bumpRevision();
   }
 
   abandonClearReservation(): void {
     this.clearReservation = undefined;
+  }
+
+  takeRecovered(id: string): { kind: "ok"; text: string; mode: QueueMode } | { kind: "refused"; reason: "stale" | "unavailable" } {
+    const peeked = this.peekRecovered(id);
+    if (peeked.kind === "refused") return peeked;
+    return this.discardRecovered(id).kind === "ok"
+      ? { kind: "ok", text: peeked.text, mode: peeked.mode }
+      : { kind: "refused", reason: "stale" };
+  }
+
+  peekRecovered(id: string): { kind: "ok"; text: string; mode: QueueMode } | { kind: "refused"; reason: "stale" | "unavailable" } {
+    const record = this.recovered.find(item => item.id === id);
+    if (!record) return { kind: "refused", reason: "stale" };
+    if (record.reuse !== "reusable") return { kind: "refused", reason: "unavailable" };
+    return { kind: "ok", text: record.text, mode: record.mode };
+  }
+
+  discardRecovered(id: string): { kind: "ok" } | { kind: "refused"; reason: "stale" } {
+    const index = this.recovered.findIndex(record => record.id === id);
+    if (index < 0) return { kind: "refused", reason: "stale" };
+    const [record] = this.recovered.splice(index, 1);
+    this.bytes -= record.bytes;
+    this.bumpRevision();
+    return { kind: "ok" };
   }
 
   capacitySnapshot(): {
@@ -163,14 +198,15 @@ export class QueuedTextLedger {
 
   private projectPending(text: string, mode: QueueMode): PendingEntry {
     const reusable = !containsCredentialLikeText(text);
+    const attribution = this.pendingAttribution(text, mode);
+    return reusable ? { attribution, reusable: true, text } : { attribution, reusable: false };
+  }
+
+  private pendingAttribution(text: string, mode: QueueMode): Attribution {
     const localMatch = [...this.locals.values()].filter(record => record.text === text);
-    if (localMatch.length === 0) return { text, attribution: "external", reusable };
-    if (localMatch.some(record => record.attribution === "unknown")) {
-      return { text, attribution: "unknown", reusable };
-    }
-    const sameMode = localMatch.filter(record => record.mode === mode);
-    if (sameMode.length === 0) return { text, attribution: "unknown", reusable };
-    return { text, attribution: "local", reusable };
+    if (localMatch.length === 0) return "external";
+    if (localMatch.some(record => record.attribution === "unknown")) return "unknown";
+    return localMatch.some(record => record.mode === mode) ? "local" : "unknown";
   }
 
   private clearCapacityNeed(snapshot: QueuedTextSnapshot): { count: number; bytes: number } {
@@ -192,6 +228,11 @@ export class QueuedTextLedger {
 
   private refuseUnattempted(record: LocalRecord): QueuedTextSendOutcome {
     this.locals.delete(record.id); this.bytes -= record.bytes;
+    this.bumpRevision();
     return { kind: "refused", reason: "runtime-unavailable" };
+  }
+
+  private bumpRevision(): void {
+    this.queueRevision = Math.min(Number.MAX_SAFE_INTEGER, this.queueRevision + 1);
   }
 }

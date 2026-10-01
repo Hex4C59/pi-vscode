@@ -16,12 +16,12 @@
 
 > 连通性、工作区选择、宿主拥有的 pi RPC 子进程（WI-007）、纯文本聊天（WI-004）、模型／thinking 设置（WI-008／WI-009）及受控执行（WI-010）。不暴露密钥、Webview 内 pi SDK、文件系统访问或通用宿主操作。三项信任／会话 gates 已在 ADR0004 的明确证据与排除项内接受。
 
-## WI-077 文字队列增补（Outline；未实现）
+## WI-077 文字队列增补（Living 意图 + 局部宿主；UI 未完成）
 
-已批准 REQ-004／005 切片见 [PRD](../product-requirements.zh.md#wi-077-已批准切片--文字-steeringfollow-up-与取回pi-gap-01)。本节是实现目标；拥有类型、校验器和消费者成对更新前，不扩张今日 Living 白名单。
+已批准 REQ-004／005 切片见 [PRD](../product-requirements.zh.md#wi-077-已批准切片--文字-steeringfollow-up-与取回pi-gap-01)。Chat-only 意图与 `queuedTextState` 已进入 Living v3 白名单（类型、宿主校验器与浏览器 host-message 解析）。Provider 处理与生产 UI 仍未完成。
 
-- 仅 chat 命名意图：`queueChat {draftRevision, mode: "steering" | "follow-up"}`、`recallQueuedText {queueRevision}`、`useRecoveredText {id, draftRevision}`、`discardRecoveredText {id}`。沿用精确 v3 字段、generation／view／不透明 ID 校验；设置页拒绝全部四项。宿主读取已确认草稿，不接受 UI 提供 prompt 或 RPC 名。每次 ledger／快照发布变化推进 queue revision，阻止过期 clear。
-- 宿主 `queuedTextState` 使用当前信封、单调 revision、变更阶段（`idle | submitting | recalling | stopping`）、固定错误码、公开待处理快照（`steering`、`followUp`）和有界本地恢复项（不透明 ID、mode、literal text、status）。投影沿用凭据展示保护；拒绝／敏感上游文字标不可用，不暴露原文，也不提供改写后的恢复文字。不适合展示／复用的完整无损文字仅留宿主。
+- 仅 chat 命名意图：`queueChat {draftRevision, mode: "steering" | "follow-up"}`、`recallQueuedText {queueRevision}`、`useRecoveredText {id, draftRevision}`、`discardRecoveredText {id}`。沿用精确 v3 字段、generation／view／不透明 ID 校验；设置页忽略全部四项且无副作用。宿主读取已确认草稿，不接受 UI 提供 prompt 或 RPC 名。每次 ledger／快照发布变化推进 queue revision，阻止过期 clear。
+- 宿主 `queuedTextState` 使用当前信封、单调 revision、变更阶段（`idle | submitting | recalling | stopping`）、固定错误码、公开待处理快照（含 attribution／reusable 的 `steering`、`followUp`）和有界本地恢复项（不透明 ID、mode、status、可选 literal text）。投影沿用凭据展示保护；拒绝／敏感上游文字标不可用，不暴露原文，也不提供改写后的恢复文字。不适合展示／复用的完整无损文字仅留宿主。
 - 宿主草稿 owner 在队列准入时同步读取／预留／清除精确已确认 revision，不设第二草稿 owner。迟到投递不清除较新编辑。协调器拥有执行／身份／Stop，组合有界内存 queue ledger；adapter 拥有公开 `steer`、`follow_up`、`clear_queue`、`queue_update` 和已消费 user message 翻译。无通用 RPC、session 文件读取或持久 ledger。
 - 队列发送使用一次性 token、单次 write、expected runtime session，沿用五秒 write／drain 和三十秒 ACK 预算。不复用普通 prompt occupancy：队列 ACK 不能释放活动任务。write 前任务已结束则拒绝该尝试，不隐式改为 idle prompt。Stop 同步封闭新发送，在既有共享五秒观察预算内等待在途尝试结束后 clear。超时进入既有不确定 runtime 恢复，不新增无界等待或重试。
 - `queue_update` 是两组 string arrays 的公开待处理快照，不是消费回执。校验 text content 后才翻译匹配的公开 user `message_start`，按本 live session 的重复数量关联。ACK、队列移除与消费分别记录。文字关联有歧义（含两队列相同文字）时本地归属保留未知；外部／不可归属项明确标注，不声称由 UI 发送。未知／损坏／超大数据不得伪造空队列或取回成功；固定诊断 fail closed，不在日志记录文字。
@@ -46,9 +46,9 @@
 
 **Host ledger 容量与归属（局部，未接线）：** `QueuedTextLedger` 拥有本地保留（经 `QueuedTextDelivery`）、上游 `queue_updated` 待处理投影与 clear 恢复共用的内存额度。clear 预留相对已保留本地／恢复文字同步加算；容量拒绝不改记录，也不 clear、write 或驱逐。两队列同时出现相同文字，或一次消费对应多条本地匹配时，本地归属标 unknown 并保留重复数量。未匹配的上游待处理文字标 external，不声称由 UI 发送。凭据类 clear 输出仅宿主保留为不可复用（`unavailable`），恢复投影省略原文；普通 clear 文字仍可复用。Composition 报告在 `dist/wi077-host-ledger/`。DraftSubmission 准入、provider Stop／recall 接线、use／discard 恢复意图、view／generation／session 交接与生产 UI 仍缺失。
 
-**草稿准入与 clear 串行（局部，未接线）：** `DraftSubmission.admitQueuedText` 同步准入精确已确认 revision，不设第二草稿 owner。拒绝过期／忙碌草稿、附件、空白／超长、首部 slash 与可识别凭据；`commitAttempt` 仅在该 revision 仍当前时清除，较新编辑得以保留。`QueuedTextCoordinator` 将该准入与共享 ledger、单一 clear owner 组合：queue 发送、recall 与 Stop 互斥 mutation 阶段；recall 期间重叠 Stop 以 busy 拒绝，不第二次 clear／abort。clear 前预留容量；确认 clear 后提交恢复。Composition 报告在 `dist/wi077-draft-queue/`。Provider 消息处理、生产 UI 意图与真实宿主验收仍缺失。
+**草稿准入与 clear 串行（局部，未接线）：** `DraftSubmission.admitQueuedText` 同步准入精确已确认 revision，不设第二草稿 owner。拒绝过期／忙碌草稿、附件、空白／超长、首部 slash 与可识别凭据；`commitAttempt` 仅在该 revision 仍当前时清除，较新编辑得以保留。`applyRecoveredText` 仅把可复用恢复写入无附件空草稿。`QueuedTextCoordinator` 将该准入与共享 ledger、单一 clear owner 组合：queue 发送、recall 与 Stop 互斥 mutation 阶段；recall 期间重叠 Stop 以 busy 拒绝，不第二次 clear／abort。clear 前预留容量；确认 clear 后提交恢复；`useRecovered`／`discardRecovered` 与 `queuedTextState` 投影已具备宿主侧能力。Living 解析与设置页无副作用证据在 `dist/wi077-draft-queue/`。Provider 消息处理与生产 UI 仍缺失。
 
-**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
+**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。Living 意图解析／设置页证据在 `dist/wi077-draft-queue/`。Provider 接线、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）
 
@@ -76,6 +76,10 @@
 | chooseResources | choice: allow／decline；只能显式选择，不接收trust boolean |
 | updateDraft | draftRevision、editSequence、text（最多8000 UTF-16单元） |
 | sendChat／addFileAttachment／addSelectionAttachment | draftRevision；host自行取得已确认草稿／原生选择，不接收prompt路径或附件正文 |
+| queueChat | draftRevision 加 mode `steering`｜`follow-up`；仅 chat；宿主读取已确认草稿，不接受 UI 提供的 prompt |
+| recallQueuedText | 与最近发布的 `queuedTextState` 匹配的 queueRevision；仅 chat |
+| useRecoveredText | 不透明恢复 id 加 draftRevision；将可复用文字移入无附件空草稿 |
+| discardRecoveredText | 不透明恢复 id；丢弃一条宿主恢复记录且不发送 |
 | removeAttachment | draftRevision、attachmentId |
 | confirmFileAttachment／confirmSelectionAttachment | draftRevision、attachmentId、snapshotId |
 | getAttachmentPreview | requestId、snapshotId、offset |

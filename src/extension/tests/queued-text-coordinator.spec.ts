@@ -9,7 +9,9 @@ import { QueuedTextLedger } from "../queue/queuedTextLedger.js";
 import { QueuedTextCoordinator } from "../queue/queuedTextCoordinator.js";
 import { createPiRpcRuntime } from "../../adapter/runtime/pi-rpc-runtime.js";
 import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "../../adapter/runtime/tests/memory-process.js";
-import { hostFixture } from "./harness.js";
+import { hostFixture, readySettings, tick } from "./harness.js";
+import { parseWebviewMessage } from "../bridge/webviewMessages.js";
+import { parseHostMessage } from "../../webview/client/parse-host-message.js";
 
 async function report(name: string, body: Record<string, unknown>): Promise<void> {
   const output = path.resolve("dist/wi077-draft-queue");
@@ -104,7 +106,7 @@ test("coordinator serializes queue send, recall and Stop around one clear owner"
     assert.equal(draftHost.snapshot().draft.text, "");
 
     ledger.observeQueueUpdated(session, { steering: ["queued"], followUp: [] });
-    const recall = coordinator.recall();
+    const recall = coordinator.recall(ledger.revision);
     assert.equal(coordinator.phase(), "recalling");
     const stopDuringRecall = await coordinator.stopWithRecall();
     assert.deepEqual(stopDuringRecall, { kind: "refused", reason: "busy" });
@@ -114,11 +116,53 @@ test("coordinator serializes queue send, recall and Stop around one clear owner"
     assert.equal(rt.commands.filter(command => command.type === "abort").length, 0);
     assert.equal(coordinator.phase(), "idle");
     assert.equal(ledger.recoveryProjection().some(item => item.text === "queued"), true);
+    const reused = coordinator.useRecovered(ledger.recoveryProjection()[0].id, draftHost.draft.revision);
+    assert.deepEqual(reused, { kind: "ok" });
+    assert.equal(draftHost.snapshot().draft.text, "queued");
+    assert.equal(ledger.recoveryProjection().length, 0);
     await report("coordinator-serial", {
-      queueCommittedDraft: true, overlappingStopRefused: true, clearCommands: 1, abortCommands: 0,
+      queueCommittedDraft: true, overlappingStopRefused: true, clearCommands: 1, abortCommands: 0, recoveredIntoEmptyDraft: true,
     });
   } finally {
     draftHost.draft.dispose();
     await rt.runtime.stop();
   }
+});
+
+// Failure modes: stale queueRevision still clears; non-empty draft overwrites;
+// unavailable sensitive recovery offered for reuse; settings acts on chat queue intents.
+test("Living queue intents parse exactly and settings ignore them without side effects", async () => {
+  const envelope = { version: 3, generation: 1, viewId: "chat-view" };
+  assert.ok(parseWebviewMessage({ ...envelope, type: "queueChat", draftRevision: 1, mode: "steering" }));
+  assert.ok(parseWebviewMessage({ ...envelope, type: "recallQueuedText", queueRevision: 2 }));
+  assert.ok(parseWebviewMessage({ ...envelope, type: "useRecoveredText", id: "rec-1", draftRevision: 0 }));
+  assert.ok(parseWebviewMessage({ ...envelope, type: "discardRecoveredText", id: "rec-1" }));
+  assert.equal(parseWebviewMessage({ ...envelope, type: "queueChat", draftRevision: 1, mode: "steer" }), undefined);
+  assert.equal(parseWebviewMessage({ ...envelope, type: "queueChat", draftRevision: 1, mode: "steering", text: "no" }), undefined);
+  assert.equal(parseWebviewMessage({ ...envelope, type: "recallQueuedText", queueRevision: -1 }), undefined);
+  assert.equal(parseWebviewMessage({ ...envelope, type: "useRecoveredText", id: "../x", draftRevision: 0 }), undefined);
+
+  const { h, v } = await readySettings();
+  try {
+    const draft = v.attachments().draft;
+    v.action("updateDraft", { draftRevision: draft.revision, editSequence: draft.acceptedEditSequence + 1, text: "Keep this draft" });
+    v.action("openSettings");
+    const panel = h.panels[0];
+    panel.receive.fire({ version: 3, type: "getWorkspaceState" });
+    const state = parseHostMessage(panel.sent[0]); assert.ok(state);
+    const settingsEnvelope = { version: 3, viewId: state.viewId, generation: state.generation };
+    for (const intent of [
+      { type: "queueChat", draftRevision: v.attachments().draft.revision, mode: "steering" },
+      { type: "recallQueuedText", queueRevision: 0 },
+      { type: "useRecoveredText", id: "rec-1", draftRevision: v.attachments().draft.revision },
+      { type: "discardRecoveredText", id: "rec-1" },
+    ]) {
+      const message = { ...settingsEnvelope, ...intent };
+      assert.ok(parseWebviewMessage(message), `${intent.type} must parse`);
+      panel.receive.fire(message);
+    }
+    await tick();
+    assert.equal(v.attachments().draft.text, "Keep this draft");
+    await report("living-parse-settings", { parsed: true, settingsIgnoredQueueIntents: true });
+  } finally { h.provider.dispose(); }
 });

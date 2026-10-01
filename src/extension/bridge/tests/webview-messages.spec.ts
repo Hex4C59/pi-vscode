@@ -7,6 +7,8 @@ test("v3 exact actions reject old pages, accessors, paths and invalid identities
   const actions = [
     { type: "openFolder" }, { type: "manageTrust" }, { type: "stopChat" }, { type: "getAttachmentHistory" },
     { type: "chooseResources", choice: "allow" }, { type: "sendChat", draftRevision: 0 },
+    { type: "queueChat", draftRevision: 0, mode: "follow-up" }, { type: "recallQueuedText", queueRevision: 0 },
+    { type: "useRecoveredText", id: "rec-1", draftRevision: 0 }, { type: "discardRecoveredText", id: "rec-1" },
     { type: "addFileAttachment", draftRevision: 0 }, { type: "addSelectionAttachment", draftRevision: 0 }, { type: "removeAttachment", draftRevision: 0, attachmentId: "a" },
     { type: "confirmFileAttachment", draftRevision: 0, attachmentId: "a", snapshotId: "s" },
     { type: "confirmSelectionAttachment", draftRevision: 0, attachmentId: "a", snapshotId: "s" },

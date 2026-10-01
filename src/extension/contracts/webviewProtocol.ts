@@ -34,6 +34,10 @@ export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceStat
     | { type: "chooseResources"; choice: ResourceChoice }
     | { type: "sendChat" | "addFileAttachment"; draftRevision: number }
     | { type: "addSelectionAttachment"; draftRevision: number }
+    | { type: "queueChat"; draftRevision: number; mode: "steering" | "follow-up" }
+    | { type: "recallQueuedText"; queueRevision: number }
+    | { type: "useRecoveredText"; id: string; draftRevision: number }
+    | { type: "discardRecoveredText"; id: string }
     | { type: "updateDraft"; draftRevision: number; editSequence: number; text: string }
     | { type: "removeAttachment"; draftRevision: number; attachmentId: string }
     | { type: "confirmFileAttachment" | "confirmSelectionAttachment"; draftRevision: number; attachmentId: string; snapshotId: string }
@@ -96,12 +100,29 @@ export type AttachmentPreviewMessage = HostEnvelope & { type: "attachmentPreview
   { code: AttachmentCode } |
   { snapshotId: string; offset: number; nextOffset: number; done: boolean; text: string }
 );
+export type QueuedTextErrorCode =
+  | "busy" | "stale" | "capacity" | "invalid-text" | "attachments"
+  | "runtime-unavailable" | "unconfirmed" | "unavailable" | "draft-not-empty";
+export type QueuedPendingEntry =
+  | { attribution: "local" | "external" | "unknown"; reusable: true; text: string }
+  | { attribution: "local" | "external" | "unknown"; reusable: false };
+export type QueuedRecoveryEntry =
+  | { id: string; mode: "steering" | "follow-up"; status: "recalled"; text: string }
+  | { id: string; mode: "steering" | "follow-up"; status: "unavailable" };
+export type QueuedTextStateMessage = HostEnvelope & {
+  type: "queuedTextState";
+  revision: number;
+  phase: "idle" | "submitting" | "recalling" | "stopping";
+  error: QueuedTextErrorCode | null;
+  pending: { steering: QueuedPendingEntry[]; followUp: QueuedPendingEntry[] };
+  recovery: QueuedRecoveryEntry[];
+};
 export type InteractionStateMessage = HostEnvelope & ExtensionInteractionProjection & { type: "interactionState" };
 export type ExecutionProfileStateMessage = HostEnvelope & ExecutionProfileProjection & { type: "executionProfileState" };
 export type ProviderConfigStateMessage = HostEnvelope & ProviderConfigProjection & { type: "providerConfigState" };
 export type PluginInventoryStateMessage = HostEnvelope & PluginInventoryProjection & { type: "pluginInventoryState" };
 export type UiLanguageStateMessage = HostEnvelope & { type: "uiLanguageState"; locale: "en" | "zh-CN" };
-export type HostMessage = UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage
+export type HostMessage = UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage | QueuedTextStateMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

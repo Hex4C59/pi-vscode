@@ -28,6 +28,8 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
     stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
     decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
     sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
+    queueChat: ["draftRevision", "mode"], recallQueuedText: ["queueRevision"],
+    useRecoveredText: ["id", "draftRevision"], discardRecoveredText: ["id"],
     updateDraft: ["draftRevision", "editSequence", "text"], removeAttachment: ["draftRevision", "attachmentId"],
     getAttachmentPreview: ["requestId", "snapshotId", "offset"],
     confirmFileAttachment: ["draftRevision", "attachmentId", "snapshotId"],
@@ -40,7 +42,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   for (const key of ["viewId", "attachmentId", "snapshotId", "requestId", "id"]) {
     if (expected.includes(key) && (typeof message[key] !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(message[key]))) return undefined;
   }
-  for (const key of ["draftRevision", "editSequence", "offset", "page"]) {
+  for (const key of ["draftRevision", "editSequence", "offset", "page", "queueRevision"]) {
     if (expected.includes(key) && (!Number.isSafeInteger(message[key]) || (message[key] as number) < 0)) return undefined;
   }
   if (fields.length !== expected.length || fields.some((key) => typeof key !== "string" || !expected.includes(key))) return undefined;
@@ -51,6 +53,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   }
   if (message.type === "chooseResources" && message.choice !== "allow" && message.choice !== "decline") return undefined;
   if (message.type === "setUiLanguage" && message.locale !== "en" && message.locale !== "zh-CN") return undefined;
+  if (message.type === "queueChat" && message.mode !== "steering" && message.mode !== "follow-up") return undefined;
   if (message.type === "updateDraft" && (typeof message.text !== "string" || message.text.length > MAX_CHAT_MESSAGE_CHARS)) return undefined;
   if ((message.type === "setThinkingLevel" || message.type === "setDefaultThinkingLevel")) {
     if (typeof message.level !== "string" || !isValidThinkingLevel(message.level)) return undefined;

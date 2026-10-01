@@ -87,6 +87,29 @@ export class DraftSubmission implements vscode.Disposable {
       },
     };
   }
+
+  /**
+   * Move recovered queue text into an empty, attachment-free draft.
+   * Refuses non-empty drafts so recovery never silently overwrites unsent text.
+   */
+  applyRecoveredText(expectedRevision: number, text: string):
+    | { kind: "ok" }
+    | { kind: "refused"; reason: "stale" | "busy" | "draft-not-empty" | "invalid-text" } {
+    if (this.disposed || this.draftRevision === Number.MAX_SAFE_INTEGER || expectedRevision !== this.draftRevision) {
+      return { kind: "refused", reason: "stale" };
+    }
+    if (this.awaitingAck || this.preparation !== "idle") return { kind: "refused", reason: "busy" };
+    if (this.attachments.length || this.draftText.trim()) return { kind: "refused", reason: "draft-not-empty" };
+    if (typeof text !== "string" || !text.trim() || text.length > 8000 || text.trimStart().startsWith("/")
+      || containsCredentialLikeText(text)) {
+      return { kind: "refused", reason: "invalid-text" };
+    }
+    this.draftText = text;
+    this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
+    this.attachmentResult = null;
+    this.publish();
+    return { kind: "ok" };
+  }
   private attachmentEligible(): boolean { const context = this.context(); return !this.disposed && !context.disposed && context.eligible && !!context.cwd && !this.awaitingAck; }
   private attachmentEnvelope<T extends string>(type: T) {
     const { generation, viewId } = this.context();

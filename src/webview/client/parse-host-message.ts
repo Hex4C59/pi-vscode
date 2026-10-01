@@ -336,6 +336,34 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
       } as unknown as HostMessage;
     }
 
+    case "queuedTextState": {
+      const errors = ["busy", "stale", "capacity", "invalid-text", "attachments", "runtime-unavailable", "unconfirmed", "unavailable", "draft-not-empty"] as const;
+      if (!hasFields(message, [...envelope, "revision", "phase", "error", "pending", "recovery"])
+        || !integer(message.revision)
+        || !oneOf(message.phase, ["idle", "submitting", "recalling", "stopping"])
+        || !(message.error === null || oneOf(message.error, errors))) return;
+      const pending = exactRecord(message.pending, ["steering", "followUp"]);
+      if (!pending) return;
+      const parsePending = (value: unknown) => {
+        const reusable = exactRecord(value, ["attribution", "reusable", "text"]);
+        if (reusable && oneOf(reusable.attribution, ["local", "external", "unknown"]) && reusable.reusable === true && string(reusable.text, 8000)) return reusable;
+        const hidden = exactRecord(value, ["attribution", "reusable"]);
+        return hidden && oneOf(hidden.attribution, ["local", "external", "unknown"]) && hidden.reusable === false ? hidden : undefined;
+      };
+      const steering = list(pending.steering, 32, parsePending);
+      const followUp = list(pending.followUp, 32, parsePending);
+      if (!steering || !followUp || steering.length + followUp.length > 32) return;
+      const recovery = list(message.recovery, 32, item => {
+        const recalled = exactRecord(item, ["id", "mode", "status", "text"]);
+        if (recalled && id(recalled.id) && oneOf(recalled.mode, ["steering", "follow-up"]) && recalled.status === "recalled" && string(recalled.text, 8000)) return recalled;
+        const unavailable = exactRecord(item, ["id", "mode", "status"]);
+        return unavailable && id(unavailable.id) && oneOf(unavailable.mode, ["steering", "follow-up"]) && unavailable.status === "unavailable"
+          ? unavailable : undefined;
+      });
+      return recovery && new Set(recovery.map(item => item.id)).size === recovery.length
+        ? { ...message, pending: { steering, followUp }, recovery } as unknown as HostMessage : undefined;
+    }
+
     case "attachmentHistory": {
       const required = [...envelope, "entries"];
       if (!hasFields(message, required)) return;

@@ -79,6 +79,7 @@ test("ambiguous equal texts stay unknown and duplicate multiplicity is preserved
     const pending = ledger.pendingProjection();
     assert.deepEqual(pending.steering.map(item => item.attribution), ["unknown"]);
     assert.deepEqual(pending.followUp.map(item => item.attribution), ["unknown"]);
+    assert.equal(pending.steering.every(item => item.reusable === true), true);
     ledger.observeQueueUpdated(f.runtime.getSession(), { steering: [], followUp: [text] });
     ledger.observeQueueUpdated(f.runtime.getSession(), { steering: [], followUp: [] });
     const locals = ledger.capacitySnapshot().records;
@@ -89,7 +90,8 @@ test("ambiguous equal texts stay unknown and duplicate multiplicity is preserved
     const external = ledger.pendingProjection().steering;
     assert.equal(external.length, 1);
     assert.equal(external[0].attribution, "external");
-    assert.equal(external[0].text, "external only");
+    assert.equal(external[0].reusable, true);
+    assert.equal(external[0].reusable === true ? external[0].text : undefined, "external only");
     await report("attribution-multiplicity", {
       ambiguousMarkedUnknown: true, preservedLocalRecords: 2, externalAttribution: "external",
     });
