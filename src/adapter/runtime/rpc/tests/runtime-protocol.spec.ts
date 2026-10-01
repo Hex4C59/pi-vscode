@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { RuntimeEvent } from "../../../../extension/contracts/index.js";
+import type { PromptResult, RuntimeEvent } from "../../../../extension/contracts/index.js";
 import { createPiRpcRuntime } from "../../pi-rpc-runtime.js";
 import { createMemoryConnection, createMemoryProcess, type MemoryConnection } from "../../tests/memory-process.js";
 
@@ -236,6 +236,103 @@ test("releasing a settled task with queue ACK pending retains uncertain ownershi
     assert.equal(f.memory.endCalls, 0);
     assert.equal(f.connection.stdin.listenerCount("drain"), 0);
   } finally { await f.runtime.stop(); await pending; }
+});
+
+// Failure modes: reply watch consumed by early ACK leaves write observer alive;
+// disconnect then waits five seconds, leaks drain listeners or faults replacement.
+for (const phase of ["before-ack", "after-ack"] as const) test(`queue disconnect ${phase} immediately retires write observation without harming replacement`, async context => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" }); f.hold("steer"); f.stallQueue();
+    context.mock.timers.enable({ apis: ["setTimeout"] });
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession());
+    assert.ok(token);
+    let observed: unknown;
+    pending = token.send(() => undefined).then(result => { observed = result; return result; });
+    const request = f.commands.at(-1)!;
+    const ack = { type: "response", id: request.id, command: "steer", success: true };
+    const retired = f.connection;
+    if (phase === "after-ack") retired.frame(ack);
+    retired.lose();
+    await Promise.resolve();
+    assert.deepEqual(observed, { delivery: "unknown", code: "runtime-lost" });
+    assert.equal(retired.stdin.listenerCount("drain"), 0);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.equal((await f.runtime.recoverOwnedRuntime?.())?.ok, true);
+    assert.equal((await f.start()).ok, true);
+    const session = f.runtime.getSession(); const eventCount = f.events.length;
+    retired.frame(ack); f.finishWrite(); context.mock.timers.tick(30000);
+    assert.equal(f.runtime.getSession(), session);
+    assert.equal(f.events.length, eventCount);
+    assert.equal(f.memory.endCalls, 0);
+    const output = path.resolve("dist/wi077-queued-send");
+    await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, `disconnect-${phase}.json`), JSON.stringify({ schemaVersion: 1, status: "passed", phase,
+      evidence: "injected-memory-JSONL-transport", immediateRetirement: true, replacementPreserved: true,
+      limits: ["mock setTimeout scheduler", "not host recovery/UI or real runtime"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); context.mock.timers.tick(30000); await pending; }
+});
+
+for (const phase of ["write", "ack"] as const) test(`queue ${phase} scheduled timer retires once without retry or process end`, async context => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined;
+  let time = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" }); f.hold("steer");
+    if (phase === "write") f.stallQueue();
+    context.mock.method(performance, "now", () => time);
+    context.mock.timers.enable({ apis: ["setTimeout"] });
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession()); assert.ok(token);
+    let observed: unknown;
+    pending = token.send(() => undefined).then(result => { observed = result; return result; });
+    const budget = phase === "write" ? 5000 : 30000;
+    time = budget - 1; context.mock.timers.tick(budget - 1); await Promise.resolve();
+    assert.equal(observed, undefined);
+    time = budget; context.mock.timers.tick(1);
+    assert.deepEqual(await pending, { delivery: "unknown", code: phase === "write" ? "write-failed" : "ack-timeout" });
+    assert.equal((await token.send(() => undefined)).delivery, "not-sent");
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    assert.deepEqual(f.memory.releases, ["uncertain"]);
+    assert.equal(f.memory.endCalls, 0);
+    assert.equal(f.connection.stdin.listenerCount("drain"), 0);
+  } finally { await f.runtime.stop(); context.mock.timers.tick(30000); await pending; }
+});
+
+test("Stop queue-wait timer expires within its control budget without destructive clear or abort", async context => {
+  const f = fixture();
+  let pending: Promise<unknown> | undefined; let stopping: Promise<PromptResult> | undefined;
+  let time = 0;
+  try {
+    assert.equal((await f.start()).ok, true);
+    assert.equal((await f.runtime.prompt("running")).ok, true);
+    f.connection.frame({ type: "agent_start" }); f.hold("steer");
+    context.mock.method(performance, "now", () => time);
+    context.mock.timers.enable({ apis: ["setTimeout"] });
+    const token = f.runtime.prepareQueuedText?.("queued", "steering", f.runtime.getSession()); assert.ok(token);
+    pending = token.send(() => undefined);
+    let callbacks = 0;
+    stopping = f.runtime.abortTask?.(() => { callbacks++; });
+    time = 4999; context.mock.timers.tick(4999); await Promise.resolve();
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    time = 5000; context.mock.timers.tick(1);
+    const stopped = await stopping; assert.ok(stopped);
+    assert.equal(stopped.ok, false);
+    assert.deepEqual(await pending, { delivery: "unknown", code: "runtime-lost" });
+    assert.equal(callbacks, 0);
+    assert.deepEqual(f.commands.map(command => command.type), ["get_state", "prompt", "steer"]);
+    assert.deepEqual(f.memory.releases, ["uncertain"]); assert.equal(f.memory.endCalls, 0);
+    const output = path.resolve("dist/wi077-queued-send"); await mkdir(output, { recursive: true });
+    await writeFile(path.join(output, "stop-budget.json"), JSON.stringify({ schemaVersion: 1, status: "passed",
+      evidence: "injected-memory-JSONL-transport", controlBudgetMs: 5000, clearOrAbortWrites: 0, recoveryCallbacks: 0,
+      limits: ["mock monotonic clock and setTimeout scheduler", "not wall-clock/host recovery/UI or real runtime"],
+    }, null, 2) + "\n");
+  } finally { await f.runtime.stop(); context.mock.timers.tick(30000); await Promise.allSettled([pending, stopping]); }
 });
 
 // Explicit recall failure modes before implementation: aborting the task,

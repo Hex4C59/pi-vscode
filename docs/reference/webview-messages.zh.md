@@ -38,6 +38,8 @@
 
 **队列生命周期 guard（局部 adapter）：** 在同步宿主 `onAttempt` 后、physical write 前再次校验自有 session／活动 agent。任务结束以 `not-sent` 拒绝；runtime 撤销后不再向退役 stream write。在途队列观察有独立 connection／session owner 的 fence：`agent_settled` 不放开尚待 queue ACK 时的直接／prepared 普通 prompt、model mutation 或 checkpoint restart；完成只移除 queue fence，不把 agent／task 标结束。该连接在 queue 观察未完成时 release，即使任务已结束也保留 uncertain，不记录 idle handoff。Transport composition 生成 `dist/wi077-queued-send/fence-report.json`；仅合成准入证据，不是 provider recovery 或产品验收。
 
+**断线与 scheduled timer 证据（局部 adapter）：** queue observer 的 retirement hook 独立于一次性 reply watch。Release 按自有 connection 身份捕获它（loss 可能已清零 active session），先 detach 再退役 callback／drain／ACK 观察。因此 ACK 前或早期 ACK 后断线都立即返回 unknown 并清理 listener／timer；旧 callback、ACK 与 timer tick 不会 fault 替换后的 runtime。Composition 生成 `dist/wi077-queued-send/disconnect-before-ack.json` 与 `disconnect-after-ack.json`。另用受控时钟执行五秒 write／三十秒 ACK timer handler；Stop 五秒 queue-wait 过期不 clear、不 abort，不伪造 recovery callback（`stop-budget.json`）。这些仅注入内存 transport 和 mocked monotonic／setTimeout schedule，不是实际耗时、host ledger／UI 或真实 pi 验收。Stop／clear 全期间的既有 model mutation 准入仍须单独验证。
+
 **证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。上方命名 UI 意图仍 Outline／未实现；host 准入／Stop／草稿／交接组合、production mount 恢复控件、当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
 
 ## 编辑区设置界面（WI-026）

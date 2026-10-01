@@ -15,7 +15,7 @@ type QueueSendContext = {
   canWrite(): boolean;
   watch(settle: (reply: RpcReplyResult) => void): void;
   drop(): void;
-  track(pending: Promise<AttachmentPromptResult>): void;
+  track(pending: Promise<AttachmentPromptResult>, retire: () => void): void;
   onUnknown(): void;
 };
 
@@ -37,7 +37,7 @@ class QueuedWriteAttempt {
 
   send(onAttempt: () => void): Promise<AttachmentPromptResult> {
     const pending = new Promise<AttachmentPromptResult>(resolve => { this.resolve = resolve; });
-    this.context.track(pending); // Publish ownership before the host admission callback can request Stop.
+    this.context.track(pending, this.retire); // Publish ownership before the host admission callback can request Stop.
     this.start(onAttempt);
     return pending;
   }
@@ -64,6 +64,8 @@ class QueuedWriteAttempt {
     } catch { this.lost(); }
   }
 
+  // The runtime invokes this only after detaching the owned session: no recursive loss report.
+  private retire = (): void => this.finish("unknown", "runtime-lost");
   private lost = (): void => this.finish("unknown", "write-failed");
   private drain = (): void => { this.drained = true; this.check(); };
 

@@ -50,7 +50,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let startToken = 0;
   let activeSession = 0;
   let queueControlOperation: { session: number } | undefined;
-  let queuedSend: { session: number; pending: Promise<AttachmentPromptResult> } | undefined;
+  let queuedSend: { session: number; connection: RuntimeLink; pending: Promise<AttachmentPromptResult>; retire(): void } | undefined;
   let resumedConversation = false;
   let untouchedConversation = false;
   let commandNames: ReadonlySet<string> = new Set();
@@ -183,6 +183,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   const release = async (uncertain = false, failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => {
     const owned = child;
     const reason = occupancy.classifyRelease({ forcedUncertain: uncertain, sessionActive: activeSession !== 0 });
+    const queuedObserver = queuedSend?.connection === owned ? queuedSend : undefined;
     const cancelling = [...occupancy.approvalIds()];
     dialogs?.invalidate(); dialogs = undefined;
     occupancy.reset();
@@ -199,6 +200,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     }
     detachLost?.(); detachLost = undefined;
     for (const id of cancelling) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
+    queuedObserver?.retire(); // Detach first; an early ACK may already have consumed its reply watch.
     replies.failAll(failure);
     await environment.process.release(reason);
   };
@@ -542,9 +544,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       canWrite: () => child === owned && session === activeSession && occupancy.agentRunning(),
       watch: settle => replies.watch(requestId, command, settle),
       drop: () => replies.drop(requestId),
-      track(pending) {
-        if (child !== owned || session !== activeSession) return;
-        const attempt = queuedSend = { session, pending };
+      track(pending, retire) {
+        if (!owned || child !== owned || session !== activeSession) return;
+        const attempt = queuedSend = { session, connection: owned, pending, retire };
         occupancy.beginQueuedWrite();
         void pending.then(() => {
           if (queuedSend !== attempt) return;
