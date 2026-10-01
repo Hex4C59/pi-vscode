@@ -27,7 +27,7 @@
 
 ### 方案与架构核对
 
-[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。本轮核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照，当前 adapter decoder 忽略；user message_start 前队列会更新，当前 decoder 丢弃 user content；Stop 丢弃 clear 返回 data。这三条是实现缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
+[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。Prepare 核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照、user message_start 前队列更新。Build 第一步已在 adapter 投影两种 host-only 事件并验证队列额度／user 关联文字／退役 reader；Stop 丢弃 clear 返回 data、一次性队列发送、host ledger 和 UI 仍是实现缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
 
 Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世代与有界 ledger，DraftSubmission 仍唯一拥有已确认草稿；UI 仅命名意图／状态。两数组快照、ACK 与 user 消费事件分别投影，重复文字保留 multiplicity；无法准确归属尝试时标未知，不把队列减少当完成。总额度为 32 条未释放本地文字／256 KiB UTF-8，单条 8000 UTF-16；写入与 clear 前预留，不淘汰／截断。拒绝附件、首部 slash／skills／模板和既有可识别凭据，保留原草稿。取回进入独立恢复区，显式移入无附件空草稿并校验 revision，不发送、不覆盖。Stop 关闭准入，在原共享五秒预算内串行在途 write→clear→abort；确认 clear 结果即保留，abort 失败不抹掉。未知 ACK 不重发；断线保留本地未知文字；明确替换确认丢失，commit 后清理，不跨项目带入。详情与命名 DTO 见[双语契约 Outline](docs/reference/webview-messages.zh.md#wi-077-文字队列增补outline未实现)。无新依赖、进程策略、存储或信任决定。
 
@@ -55,7 +55,7 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环，Prepare／中英 PRD／契约 Outline 已完成，按持续授权继续，不等待点名。下一步先写 provider／adapter／production-mounted 闭环失败验证，再实现；优先补 queue_update／消费事件和保留 clear 输出，不以此技术阶段宣称交付。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环，Prepare／中英 PRD／契约 Outline 已完成，按持续授权继续，不等待点名。adapter queue_update／user 消费事实已完成 test-first 局部验证；下一步先写一次性队列发送／clear 输出／Stop 交错 transport 验证，再接 host ledger／唯一 draft owner 和 production-mounted 恢复 UI，不以此技术阶段宣称交付。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -145,11 +145,11 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
-### 2026-10-01 — WI-077 Prepare 完成，进入 Build（本轮仅范围／契约）
+### 2026-10-01 — WI-077 Build 第一步：队列／消费 host-only 事件
 
-核对当前公开 queue_update 与 user message_start 顺序，定位 adapter 忽略队列／消费文字、Stop 丢弃 clear data 的缺口。中英 PRD 新增独立 WI-077／REQ-004／005 范围／验收／追溯，双语契约新增明确 Outline；本提案记录额度、并发、恢复、拒绝与架构各维度，不改变 Living 实现／Accepted ADR 状态。当前实际 compile／lint／1064 tests（0 fail／skip）基线通过；docs:verify／docs:health 0 错误，保留 ADR 0010 两条提示。尚无新产品测试、UI、真实 runtime／F5／安装验收，不关闭 WI。
+Prepare 范围／双语 PRD 提交 `126f41a`、Build 记录 `186b76d`；本轮实现 `0592491` 不含 ACTIVE。先写 [transport composition 测试](src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)，旧代码新增 14 项均失败，再实现 queue_updated／user_message_started，保持 ACK／队列快照／进入对话／任务结束分别取证；32 条／256 KiB 原子验证、文字关联不截断、混合／超长 user text 为 null、损坏帧进入不确定恢复、迟到 reader 不污染新 session。变更函数均小于 50 行；双语契约保留 UI Outline，并记录局部实现与证据界限。全 spec 37 tests 与完整 npm test 1078 tests（0 fail／skip）通过；compile／lint、docs:verify／docs:health、diff／commit check 通过，保留 ADR 0010 两条提示。
 
-具体下一步：先在现有 adapter transport／host provider／production-mounted seams 写闭环测试，列出的失败方式先于源码实现；queue_update snapshot 与 user content 消费验证先 red→green，再接一次性 steer／follow_up、clear 结果保留和唯一 draft owner 准入，最后 UI／真实 runtime／宿主分层验收。可用现有隔离 loopback 夹具观测实际事件，但不能用 WI-076 旧报告代替本产品工件。PRD／契约提交 `126f41a`，ACTIVE 记录单独提交；无 push。WI-077 及 PI-GAP-01 余项未交付，goal 保持 active，不重新询问常规授权。
+工件：`dist/wi077-queue-transport/report.json` 由 npm test 主场景重建，仅注入内存 JSONL transport，不是 runtime／F5／安装或用户闭环验收。无新发送／clear API、host recovery、UI 或本轮真实宿主证据；不关闭 WI，不关闭 PI-GAP-01。下一步先在 adapter transport 测试一次性 steer／follow_up 与 Stop／clear ACK／并发／损坏返回，再实现可保存的 clear 输出（必须先保存再 abort，不能靠最终 Stop ok 才恢复）；fixture 的 clear 回复须补真实两数组形状，不能以 undefined data 通过。随后 host ledger／DraftSubmission 唯一准入、view／generation／session 迟到与恢复区 composition，再 UI／真实 pi／浏览器／macOS F5／安装分层验收。无 push，goal 保持 active，接续无需重问常规授权。
 
 ### 2026-10-01 — WI-076 关闭；自动晋升 WI-077 Prepare
 
