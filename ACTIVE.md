@@ -27,9 +27,9 @@
 
 ### 方案与架构核对
 
-[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。Prepare 核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照、user message_start 前队列更新。Build 第一步已在 adapter 投影两种 host-only 事件并验证队列额度／user 关联文字／退役 reader；Stop adapter 已新增校验后、abort 前的同步取回 callback；adapter 已补 session-bound 显式 recall（与 Stop 共用 clear lease，竞争请求明确拒绝）；adapter 已补一次性队列发送／独立 write-drain-ACK owner 与 Stop 在途等待（局部 tracer 通过）；已补 onAttempt 后 fresh write guard 和 task settlement 后独立 queue observation fence／uncertain release；已补 connection-bound observer retirement（ACK 后断线也立即清理）、受控 write／ACK／Stop queue-wait timer handler 证据；已补 Stop／recall 在 clear 在途且任务自然结束后的 model／thinking fence，发送准入／RPC／stdin failure matrix 已有 synthetic transport 证据；host 已补本地 delivery 保留、共享 ledger 容量／归属／敏感恢复投影、DraftSubmission 队列准入与 QueuedTextCoordinator clear 串行，Living v3 四意图／`queuedTextState`，以及 provider `QueuedTextSession` 接线。production-mounted 恢复 UI 仍是实现缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
+[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。Prepare 核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照、user message_start 前队列更新。Build 第一步已在 adapter 投影两种 host-only 事件并验证队列额度／user 关联文字／退役 reader；Stop adapter 已新增校验后、abort 前的同步取回 callback；adapter 已补 session-bound 显式 recall（与 Stop 共用 clear lease，竞争请求明确拒绝）；adapter 已补一次性队列发送／独立 write-drain-ACK owner 与 Stop 在途等待（局部 tracer 通过）；已补 onAttempt 后 fresh write guard 和 task settlement 后独立 queue observation fence／uncertain release；已补 connection-bound observer retirement（ACK 后断线也立即清理）、受控 write／ACK／Stop queue-wait timer handler 证据；已补 Stop／recall 在 clear 在途且任务自然结束后的 model／thinking fence，发送准入／RPC／stdin failure matrix 已有 synthetic transport 证据；host 已补本地 delivery 保留、共享 ledger 容量／归属／敏感恢复投影、DraftSubmission 队列准入与 QueuedTextCoordinator clear 串行，Living v3 四意图／`queuedTextState`，provider `QueuedTextSession`，以及 production-mounted Steer／Follow-up／pending／recall／recovery UI。浏览器与真实宿主分层验收仍是缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
 
-Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世代与有界 ledger，DraftSubmission 仍唯一拥有已确认草稿；UI 仅命名意图／状态。两数组快照、ACK 与 user 消费事件分别投影，重复文字保留 multiplicity；无法准确归属尝试时标未知，不把队列减少当完成。总额度为 32 条未释放本地文字／256 KiB UTF-8，单条 8000 UTF-16；写入与 clear 前预留，不淘汰／截断。拒绝附件、首部 slash／skills／模板和既有可识别凭据，保留原草稿。取回进入独立恢复区，显式移入无附件空草稿并校验 revision，不发送、不覆盖。Stop 关闭准入，在原共享五秒预算内串行在途 write→clear→abort；确认 clear 结果即保留，abort 失败不抹掉。未知 ACK 不重发；断线保留本地未知文字；明确替换确认丢失，commit 后清理，不跨项目带入。详情与命名 DTO 见[双语契约](docs/reference/webview-messages.zh.md#wi-077-文字队列增补)。无新依赖、进程策略、存储或信任决定。Host provider 已接线 `QueuedTextSession`（ready 后发布、四意图路由、Stop／queue 事件）；production-mounted 恢复／Steer／Follow-up UI 仍缺。
+Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世代与有界 ledger，DraftSubmission 仍唯一拥有已确认草稿；UI 仅命名意图／状态。两数组快照、ACK 与 user 消费事件分别投影，重复文字保留 multiplicity；无法准确归属尝试时标未知，不把队列减少当完成。总额度为 32 条未释放本地文字／256 KiB UTF-8，单条 8000 UTF-16；写入与 clear 前预留，不淘汰／截断。拒绝附件、首部 slash／skills／模板和既有可识别凭据，保留原草稿。取回进入独立恢复区，显式移入无附件空草稿并校验 revision，不发送、不覆盖。Stop 关闭准入，在原共享五秒预算内串行在途 write→clear→abort；确认 clear 结果即保留，abort 失败不抹掉。未知 ACK 不重发；断线保留本地未知文字；明确替换确认丢失，commit 后清理，不跨项目带入。详情与命名 DTO 见[双语契约](docs/reference/webview-messages.zh.md#wi-077-文字队列增补)。无新依赖、进程策略、存储或信任决定。Host provider 与 production-mounted Steer／Follow-up／pending／recall／recovery UI 已接线；浏览器与真实宿主分层验收仍缺。
 
 ### 架构检查（Prepare 结论：implement now；Decision none；设计 Implementable，尚非 Verifiable）
 
@@ -41,9 +41,9 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 | 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-077 REQ-004／005 和本次持续批准；不扩附件／命令，不接受整个候选。 |
 | 12–14 安全／数据／隐私 | pass（设计）：沿用信任／凭据规则，内存 ledger 不新增存储；不记录 prompt 或 raw frame 到日志。gap（实现）：敏感上游队列投影拒收与复用拒绝先验证。 |
 | 15 性能／背压 | pass（设计）：32 条／256 KiB 与已有单条限制、one-attempt write／drain 预算；clear 前容量预留。gap：边界与外部不可归属队列拒绝须验证，不造无限恢复缓存。 |
-| 16–17 验证／构建 | gap：尚未新增产品闭环验证；沿用 npm test composition、真实 runtime 及浏览器／macOS F5／安装 VSIX，各自留工件；pin 与构建策略不变。 |
+| 16–17 验证／构建 | gap：合成 composition 已有；浏览器／真实 runtime／macOS F5／安装 VSIX 分层验收仍缺，各自留工件；pin 与构建策略不变。 |
 | 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3，新意图只准 chat；旧 viewId 拒绝，升级后重载旧页面。无持久 schema 迁移。 |
-| 19 UX／可访问性 | gap：独立动作／状态／恢复冲突已规定，但 en／zh、280／320／400 三主题与 keyboard 实际渲染未验。 |
+| 19 UX／可访问性 | gap：UI 已挂载；en／zh、280／320／400 三主题与 keyboard 实际渲染未验。 |
 
 ### 验收
 
@@ -55,7 +55,7 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider 已接线 `QueuedTextSession` 与 Stop／queue 事件；下一步 production UI（Steer／Follow-up／pending／recall／recovery）、浏览器与真实环境闭环。技术 probe 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider 与 production UI（Steer／Follow-up／pending／recall／recovery）已接线；下一步浏览器 en／zh／窄宽／主题／键盘与真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -145,13 +145,13 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-01 — WI-077 Build 第十二步：production 队列 UI
+
+实现 `1fdd692` 不含 ACTIVE。Client 镜像 `queuedTextState`、busy 时 `queueChat`／recall／use／discard；composer 挂载 Steer／Follow-up 与 pending／recovery 面板（en／zh）；composition `dist/wi077-queued-ui/`。双语契约改为已挂载 UI、验收未完成。compile／lint／1138 tests、docs:verify 0 错误，ADR 0010 两提示保留。下一步浏览器与真实宿主分层验收；不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+
 ### 2026-10-01 — WI-077 Build 第十一步：provider 队列会话接线
 
 实现 `2f27b83` 不含 ACTIVE。新增 `QueuedTextSession`；provider 在 runtime ready 后创建／发布 `queuedTextState`，四意图走 draft 同款「未匹配同步返回 undefined」以免 Stop 前 await 微任务；Stop 仅在 `abortTask` 存在时走 clear→abort，否则保留原 abort 路径。`queued-text-provider` composition 与 client DTO 列表更新；compile／lint／1137 tests 通过。下一步 production UI 与真实环境闭环。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
-
-### 2026-10-01 — WI-077 Build 第十步：Living 四意图／queuedTextState 契约
-
-实现 `d2f39d3` 不含 ACTIVE。成对落地 `queueChat`／`recallQueuedText`／`useRecoveredText`／`discardRecoveredText` 与 `queuedTextState`（类型、宿主 validator、浏览器 parse-host-message）；ledger 增加单调 revision、peek／discard 恢复；DraftSubmission `applyRecoveredText` 仅写入空草稿；coordinator 按 queueRevision 取回、use／discard 与 stateProjection。设置页忽略四意图无副作用；composition 扩 `dist/wi077-draft-queue/living-parse-settings.json`。compile／lint／1136 tests、docs:verify／docs:health 0 错误，ADR 0010 两提示保留。下一步 provider 接线 Stop／queue 事件与 production UI。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
 
 ## 已完成 WI 索引
 
