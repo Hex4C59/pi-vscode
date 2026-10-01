@@ -35,11 +35,11 @@
 |---|---|
 | 1–3 分解／接口／依赖 | pass（设计）：adapter 翻译 `get_commands`；宿主拥有快照／generation／补全准入；UI 只打开菜单与过滤。沿用 [host capability](docs/architecture/vscode-extension-architecture.md#internal-host-capability-modules) 与 `DraftSubmission`。实现时核对 imports。 |
 | 4 契约 | pass（Outline）：[命令发现契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现outline未实现)定义数据、前置、错误、额度、顺序与隐私。Build 须成对类型／validator／消费者。 |
-| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。gap（验证）：先写空／失败／过期／未知 name 的 composition tests。 |
+| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。pass（composition）：空／失败与 Stop 迟到回包、未知 name／草稿与 generation 过期用例已通过；真实 runtime／宿主仍待验证。 |
 | 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-078 与本次持续批准；不扩加载报告／包管理，不接受整个候选。 |
-| 12–14 安全／数据／隐私 | pass（设计）：路径与文件正文留宿主；描述打码；不新增持久化。gap（实现）：投影拒收 path 字段先验证。 |
+| 12–14 安全／数据／隐私 | pass（设计）：路径与文件正文留宿主；描述打码；不新增持久化。pass（composition）：adapter 丢弃 path，浏览器 parser 拒收附加 path 字段；菜单前仍须复核名称／描述内隐私边界，不把字段过滤等同完整隐私验收。 |
 | 15 性能／背压 | pass（设计）：最多 512 行、名称／描述上限；过滤在已发布快照上本地进行。 |
-| 16–17 验证／构建 | gap：尚无菜单 UI／真实宿主证据。 |
+| 16–17 验证／构建 | partial：adapter／provider／DraftSubmission／client 贯通，compile／lint／npm test 1150 通过；gap：菜单 UI、真实 runtime／浏览器／F5／安装 VSIX。 |
 | 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3；新意图只准 chat；旧 viewId 拒绝。 |
 | 19 UX／可访问性 | gap：键盘／IME／与模型选择器互斥、中英空／错误态待实现与取证。 |
 
@@ -53,7 +53,7 @@
 
 ## 当前焦点与未决项
 
-WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：先写失败用例与宿主目录投影，再挂菜单。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
+WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：复核目录名称／描述隐私，先写 mounted 菜单失败用例，再挂 `/` 菜单与键盘／IME／弹出层互斥，随后逐层取证。adapter／宿主／草稿／client 已贯通但尚未交付可操作菜单。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -143,9 +143,9 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
-### 2026-10-02 — WI-078 Prepare 完成并进入 Build
+### 2026-10-02 — WI-078 adapter／宿主／client 子步，仍 Build
 
-关闭 WI-077 后按持续授权晋升 PI-GAP-02 的作曲区 `/` 发现切片为 WI-078。中英 PRD 与契约 Outline 已同步。下一步：失败用例与宿主 `get_commands` 投影（不把 path 送入 Webview），再挂菜单。不关闭 PI-GAP-02 整体，无 push，goal 保持 active。
+实现提交 `ff7b69f`（两种 profile 的 `get_commands` 有界快照）与 `b9f7242`（v3 命名补全、宿主 projection、草稿 owner、browser parser／client 往返），均不含 ACTIVE。先红后绿复现并修复 Stop 与快照 continuation 的竞态，以及同 revision bootstrap 提前退休待确认补全；保留参数、不发送、不覆盖较新编辑、旧目录 revision 与断开清理均有 composition 证据。当前 compile／lint 通过，`npm test` 1150 全通过。可重复工件：`dist/wi078-command-catalogue/{rpc-startup,host-completion,client-host-roundtrip}.json`；只是模拟 transport／VS Code seams，不是真实 pi／浏览器／F5／安装 VSIX。下一步：名称／描述隐私复核，mounted `/` 菜单先失败，键盘／IME／模型菜单互斥后再逐层取证。目录契约仍 Outline，WI 不关闭、PI-GAP-02 不整体完成；本 Goal 保持 active，无 push／amend／rebase／force。
 
 ### 2026-10-02 — WI-077 关闭：F5 与安装 VSIX 文字队列闭环
 
