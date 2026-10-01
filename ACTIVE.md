@@ -55,7 +55,7 @@ Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世�
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider、production UI 与 preview 合成队列已接线；jsdom／浏览器部分证据在 `dist/wi077-queued-ui/`（Steer 清空草稿、Follow-up pending、Stop→recovery、Use in draft 恢复）。下一步：补 zh／高对比／keyboard 浏览器证据，以及真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider、production UI 与 preview 合成队列已接线；jsdom／浏览器部分证据在 `dist/wi077-queued-ui/`（en／zh-CN@280 Steer 清空草稿、Follow-up、Stop→recovery、Use in draft）。下一步：高对比／keyboard，以及真实 pi／macOS F5／安装 VSIX 分层验收，再关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -147,7 +147,7 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ### 2026-10-01 — WI-077 Build 第十三步：preview 队列与浏览器闭环修复
 
-实现 `14be1cc`／`3d24f3b` 不含 ACTIVE。preview-bridge 合成 queue／recall／Stop→recovery；`queueChat` 成功后清空本地草稿；`useRecoveredText` 后空 composer 采纳 host draft，避免空 `updateDraft` 抹掉恢复。浏览器 Approval@280：Steer／Follow-up pending、Stop→Recalled、Use in draft 恢复已取证（`dist/wi077-queued-ui/`）；zh 浏览器截图与真实 pi／F5／VSIX 仍缺。lint／1140 tests 通过。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+实现 `14be1cc`／`3d24f3b`／`0879402` 不含 ACTIVE。preview-bridge 合成 queue／recall／Stop→recovery；`queueChat` 成功后清空本地草稿；`useRecoveredText` 后空 composer 采纳 host draft；preview 工具栏补语言切换。浏览器 Approval@280：en Steer／Follow-up／Stop→Use in draft 与 zh-CN「引导／跟进／取回／引导中」已取证（`dist/wi077-queued-ui/`）；高对比／keyboard 与真实 pi／F5／VSIX 仍缺。lint／1140 tests 通过。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
 
 ### 2026-10-01 — WI-077 Build 第十二步：production 队列 UI
 
