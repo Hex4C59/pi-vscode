@@ -125,6 +125,14 @@ function renderToolbar(): void {
     document.documentElement.style.setProperty("--preview-sidebar-width", `${width.value}px`);
   });
 
+  const locales = ["en", "zh-CN"] as const;
+  const locale = selectControl(locales, item => item === "zh-CN" ? "简体中文" : "English", language.getSnapshot().locale === "zh-CN" ? "zh-CN" : "en");
+  locale.setAttribute("aria-label", "Language");
+  locale.addEventListener("change", () => {
+    language.select(locale.value);
+    reset(scenario.value as PreviewScenario);
+  });
+
   const resetButton = document.createElement("button");
   resetButton.className = "preview-toolbar__reset";
   resetButton.type = "button";
@@ -156,8 +164,9 @@ function renderToolbar(): void {
   const scenarioLabel = controlLabel("Scenario", scenario);
   const themeLabel = controlLabel("Theme", theme);
   const widthLabel = controlLabel("Sidebar", width);
+  const localeLabel = controlLabel("Language", locale);
   fields.append(
-    scenarioLabel, themeLabel, widthLabel,
+    scenarioLabel, themeLabel, widthLabel, localeLabel,
     resetButton,
     recoverButton, sourceButton, ...simulationButtons.map(item => item.button),
   );
@@ -166,13 +175,15 @@ function renderToolbar(): void {
   options.append(optionsSummary, fields);
   toolbarRoot.append(title, options);
   const localize = () => {
-    const { locale, text: t } = language.getSnapshot();
-    document.documentElement.lang = locale;
+    const { locale: currentLocale, text: t } = language.getSnapshot();
+    document.documentElement.lang = currentLocale;
+    locale.value = currentLocale === "zh-CN" ? "zh-CN" : "en";
     for (const { label, button } of simulationButtons) button.textContent = t(label);
     note.textContent = t("Synthetic host · candidate preview");
     optionsSummary.textContent = t("Preview controls");
     const labels: [HTMLSelectElement, HTMLLabelElement, UiText, UiText][] = [
-      [scenario, scenarioLabel, "Scenario", "Scenario"], [theme, themeLabel, "Theme", "Theme"], [width, widthLabel, "Sidebar", "Sidebar width"],
+      [scenario, scenarioLabel, "Scenario", "Scenario"], [theme, themeLabel, "Theme", "Theme"],
+      [width, widthLabel, "Sidebar", "Sidebar width"], [locale, localeLabel, "Language", "Language"],
     ];
     for (const [control, label, caption, accessible] of labels) {
       if (label.firstElementChild) label.firstElementChild.textContent = t(caption);
@@ -180,6 +191,7 @@ function renderToolbar(): void {
     }
     for (const option of scenario.options) option.textContent = t(scenarioLabels[option.value as PreviewScenario]) + (option.disabled ? t(" (later slice)") : "");
     for (const option of theme.options) option.textContent = t(option.value === "high-contrast" ? "High contrast" : option.value === "light" ? "Light" : "Dark");
+    for (const option of locale.options) option.textContent = option.value === "zh-CN" ? "简体中文" : "English";
     sourceButton.textContent = t("Simulate source edit");
     resetButton.textContent = t("Reset"); recoverButton.textContent = t("Simulate recovery");
   };
