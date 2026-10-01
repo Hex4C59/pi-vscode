@@ -39,6 +39,7 @@ WI records are historical, including old pending/open wording; current work and 
 ## Runtime prerequisite evidence
 
 - [Queued-input public RPC proof — WI-076](2026-10-01-wi-076-acceptance.md); synthetic provider, not product acceptance.
+- [Text queue product slice — WI-077](2026-10-02-wi-077-acceptance.md); F5 and installed VSIX with synthetic provider; PI-GAP-01 remainder parked.
 
 ## Superseded proposals and investigations
 

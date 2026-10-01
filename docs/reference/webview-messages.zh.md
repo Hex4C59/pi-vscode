@@ -16,9 +16,9 @@
 
 > 连通性、工作区选择、宿主拥有的 pi RPC 子进程（WI-007）、纯文本聊天（WI-004）、模型／thinking 设置（WI-008／WI-009）及受控执行（WI-010）。不暴露密钥、Webview 内 pi SDK、文件系统访问或通用宿主操作。三项信任／会话 gates 已在 ADR0004 的明确证据与排除项内接受。
 
-## WI-077 文字队列增补（Living 意图 + 宿主 provider + 已挂载 UI；验收未完成）
+## WI-077 文字队列增补（Living；已记录 F5 与安装 VSIX）
 
-已批准 REQ-004／005 切片见 [PRD](../product-requirements.zh.md#wi-077-已批准切片--文字-steeringfollow-up-与取回pi-gap-01)。Chat-only 意图与 `queuedTextState` 已进入 Living v3 白名单（类型、宿主校验器与浏览器 host-message 解析）。Chat provider 在 runtime ready 后接线 `QueuedTextSession`。生产 UI 在任务运行中挂载 Steer／Follow-up、pending／recovery 面板与 recall／use／discard 意图。浏览器主题／键盘与真实宿主／F5／安装验收仍未完成。
+已批准 REQ-004／005 切片见 [PRD](../product-requirements.zh.md#wi-077-已批准切片--文字-steeringfollow-up-与取回pi-gap-01)。Chat-only 意图与 `queuedTextState` 已进入 Living v3 白名单（类型、宿主校验器与浏览器 host-message 解析）。Chat provider 在 runtime ready 后接线 `QueuedTextSession`。生产 UI 在任务运行中挂载 Steer／Follow-up、pending／recovery 面板与 recall／use／discard 意图。浏览器 280 px en／zh／主题／键盘，以及隔离安装 VSIX 与 macOS F5 的 Steer→Stop→Use in draft 已记录；[WI-077 验收](../archive/2026-10-02-wi-077-acceptance.zh.md)。
 
 - 仅 chat 命名意图：`queueChat {draftRevision, mode: "steering" | "follow-up"}`、`recallQueuedText {queueRevision}`、`useRecoveredText {id, draftRevision}`、`discardRecoveredText {id}`。沿用精确 v3 字段、generation／view／不透明 ID 校验；设置页忽略全部四项且无副作用。宿主读取已确认草稿，不接受 UI 提供 prompt 或 RPC 名。每次 ledger／快照发布变化推进 queue revision，阻止过期 clear。
 - 宿主 `queuedTextState` 使用当前信封、单调 revision、变更阶段（`idle | submitting | recalling | stopping`）、固定错误码、公开待处理快照（含 attribution／reusable 的 `steering`、`followUp`）和有界本地恢复项（不透明 ID、mode、status、可选 literal text）。投影沿用凭据展示保护；拒绝／敏感上游文字标不可用，不暴露原文，也不提供改写后的恢复文字。不适合展示／复用的完整无损文字仅留宿主。
@@ -48,7 +48,18 @@
 
 **草稿准入与 clear 串行（经 provider session 接线）：** `DraftSubmission.admitQueuedText` 同步准入精确已确认 revision，不设第二草稿 owner。拒绝过期／忙碌草稿、附件、空白／超长、首部 slash 与可识别凭据；`commitAttempt` 仅在该 revision 仍当前时清除，较新编辑得以保留。`applyRecoveredText` 仅把可复用恢复写入无附件空草稿。`QueuedTextCoordinator` 将该准入与共享 ledger、单一 clear owner 组合：queue 发送、recall 与 Stop 互斥 mutation 阶段；recall 期间重叠 Stop 以 busy 拒绝，不第二次 clear／abort。clear 前预留容量；确认 clear 后提交恢复；`useRecovered`／`discardRecovered` 与 `queuedTextState` 投影已具备宿主侧能力。Living 解析与设置页无副作用证据在 `dist/wi077-draft-queue/`。Provider 与生产挂载队列控件已接线；浏览器／真实宿主验收仍未完成。
 
-**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。主队列／消费／占用场景在 `dist/wi077-queue-transport/` 生成可重复报告，不是 queue send／recall、host recovery 或真实 runtime 证据。Stop 组合在 `dist/wi077-stop-recall/` 分别生成成功／abort 失败报告，只证明 callback 顺序与夹具保留文字，不证明 provider 恢复。Living 意图解析／设置页证据在 `dist/wi077-draft-queue/`。Provider 队列会话接线证据在 `dist/wi077-provider-queue/`。Client 队列意图镜像在 `dist/wi077-queued-ui/`。当前真实 runtime 消费／clear 顺序、浏览器／F5／安装证据仍待完成。不接受产品切片或 gate。
+**证据与余项：** [传输组合测试](../../src/adapter/runtime/rpc/tests/runtime-protocol.spec.ts)在旧实现先失败，再用注入内存传输验证这些事件／边界。Living 意图、provider 接线与生产挂载 Steer／Follow-up／recall／recovery UI 已交付。2026-10-02 已记录浏览器 280 px en／zh／主题／键盘、隔离安装 VSIX 与 macOS F5 的 Steer→Stop→Use in draft（锁定 pi 0.86.1＋合成 provider）；[WI-077 验收](../archive/2026-10-02-wi-077-acceptance.zh.md)。这些宿主未单独点击 Follow-up；活断线与 320／400 宽度未再取证。附件与 slash 展开仍在本切片之外。不接受 gate。
+
+## WI-078 作曲区命令发现（Outline，未实现）
+
+已批准 REQ-004／009 切片见 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。仅 chat 的命名操作与宿主目录投影；设置页忽略且无副作用。Build 须成对落地类型／校验器／消费者后才能视为 Living。
+
+- 宿主在 Controlled 与 Trusted 配置下 runtime ready 后，以及提交的 runtime／session 替换后，从公开 `get_commands` 刷新有界快照。Adapter 翻译 RPC；宿主拥有校验、世代与展示过滤。UI 不调用 RPC、不发明名称。
+- 入站仅 chat 意图（精确 v3 信封）：`completeCommand {draftRevision, name}` 把 `/name` 插入已确认草稿（已知带参数时加尾随空格）。宿主只对照当前快照匹配 `name`；未知／过期名称拒绝且不改较新编辑。补全不发送、不入队、不展开。打开／过滤菜单是对最近已发布投影的本地 UI；可选 `refreshCommands` 必须幂等、仅 chat、受 generation 守卫。
+- 宿主 `commandCatalogueState` 使用当前信封与单调 revision：`status: loading | ready | empty | unavailable`、可选固定错误码、最多 512 行 `{name, description?, source: extension | prompt | skill, location?: user | project | path}`。名称非空、≤200 UTF-8、无空白或 `/`。描述可选、≤500 UTF-16，按既有宿主规则打码凭据。**绝不**投影 `path` 或文件正文。`get_commands` 没有的仅 TUI 命令保持缺席。
+- 前置：当前 chat 视图、匹配 generation、runtime ready。非法：设置页、过期 generation、名称不在快照、草稿忙碌／过期 revision、插入后超长。空快照是 `empty`，不发明内置列表。失败／损坏的 `get_commands` 为 `unavailable`，固定诊断且无行；提交替换后不得保留上一世代行。
+- 顺序：先发布目录，菜单才能声称 ready。补全是 `DraftSubmission` 下一次草稿变更。超时沿用既有 RPC start／control 预算；不静默重试以免混目录。取消／替换丢弃在途回包。同一 revision 对同一 name 的幂等补全，若草稿已以 `/name` 开头则 no-op。
+- 机密与隐私：绝对路径、AGENTS.md 正文与凭据留在宿主。日志不得打印目录路径或 prompt 正文。Webview 只收上述展示 DTO。
 
 ## 编辑区设置界面（WI-026）
 

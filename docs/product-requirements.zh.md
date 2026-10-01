@@ -235,7 +235,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 #### WI-077 已批准切片 — 文字 steering、follow-up 与取回（PI-GAP-01）
 
-**范围批准：** 维护者 2026-10-01 持续产品切片授权允许本 REQ-004／005 增补在 Prepare 后推进。尚未交付或接受；[ACTIVE](../ACTIVE.md)维护 Build 与证据。既有自用验收不认证此增补。
+**范围批准：** 维护者 2026-10-01 持续产品切片授权允许本 REQ-004／005 增补在 Prepare 后推进。Agent 于 2026-10-02 依据该 goal 关闭文字切片；[验收与限制](archive/2026-10-02-wi-077-acceptance.zh.md)。既有自用验收不认证附件、slash 展开或整份 Draft PRD。
 
 - 任务运行中提供独立的 **Steer current task／调整当前任务** 和 **Follow up after task／任务结束后跟进** 动作，分别使用公开 `steer` 与 `follow_up`，不重置当前任务。准入时任务已结束不得隐式改为 idle prompt。普通空闲 Send 与下一轮模型／thinking 规则保持。
 - 只接受已同步、非空纯文字，最多 8000 UTF-16 单位。附件及首部 slash 命令（含 skills／模板）明确拒绝，保留完整草稿／附件列表。按既有宿主规则拒绝可识别凭据文本，不静默打码后发送另一条指令；无新增密钥处理例外。
@@ -245,7 +245,19 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 - 返回文字进入独立 literal 恢复项。**放入草稿** 是显式动作，只把一条移入已同步、无附件的空草稿，不发送。草稿变化或非空时保留双方并解释冲突。未知记录提供带重复投递警告的显式复制／复用，不提供重试按钮。显式丢弃只删除该恢复项。
 - 宿主内存记录跨视图重建和同会话 Stop 保留。断线把未决项标未知，保留本地文字供显式恢复，不能证明上游文字已取回。New／Restore／profile／资源替换须明确确认丢失，取消保留记录；提交替换后清理旧 ledger，不跨项目带入或自动重放。宿主重启丢失内存恢复项，主动替换前披露；不新增持久化或 session 文件访问。
 
-**验收：** 覆盖可见发送→分开的待处理队列→消费／取回闭环、重复／不明确归属、Stop 与断线恢复、较新草稿冲突、附件／slash／凭据拒绝、额度、重复动作、view／runtime／session 变化后的迟到 ACK／事件拒收。保留模型／profile 交接、任务／审批与普通 Send 回归。运行 compile／lint／tests、浏览器中英窄屏／主题／键盘、隔离合成 provider 下真实 pi、macOS F5 与安装 VSIX，并生成可重复工件，各证据层分别记录。PI-GAP-01 附件和命令／模板展开仍是未实现候选，不因文字切片完成而关闭。
+**验收：** 覆盖可见发送→分开的待处理队列→消费／取回闭环、重复／不明确归属、Stop 与断线恢复、较新草稿冲突、附件／slash／凭据拒绝、额度、重复动作、view／runtime／session 变化后的迟到 ACK／事件拒收。保留模型／profile 交接、任务／审批与普通 Send 回归。运行 compile／lint／tests、浏览器中英窄屏／主题／键盘、隔离合成 provider 下真实 pi、macOS F5 与安装 VSIX，并生成可重复工件，各证据层分别记录。2026-10-02 已记录：jsdom、浏览器 280 px en／zh／主题／键盘、安装 VSIX 与 macOS F5 的 Steer→Stop→Use in draft（合成 provider）。这些宿主未单独点击 Follow-up；活断线与 320／400 宽度未再取证。PI-GAP-01 附件和命令／模板展开仍是未实现候选，不因文字切片完成而关闭。
+
+#### WI-078 已批准切片 — 作曲区 `/` 命令发现（PI-GAP-02）
+
+**范围批准：** 同一 2026-10-01 持续产品切片授权允许本 REQ-004／009 增补在 Prepare 后推进。尚未交付或接受；[ACTIVE](../ACTIVE.md)维护 Build 与证据。既有自用验收和 WI-077 不认证此增补。
+
+- 消息输入框聚焦且用户把 `/` 打成当前 token 开头时，展示公开 `get_commands` 当前返回的**命令菜单**（扩展命令、prompt templates、skills）。选中一项把 `/name` 插入已确认草稿（需要参数时加尾随空格）。补全不发送、不入队、不在 Webview 展开模板、不执行 RPC。
+- 每行显示命令名、可选描述、来源（`extension`／`prompt`／`skill`）和粗粒度位置（`user`／`project`／`path`；扩展命令可省略）。绝不把绝对文件系统 `path`、文件正文、AGENTS.md 内容或凭据送入 Webview。内置仅 TUI 命令（`/settings`、`/hotkeys` 等）保持省略，因为 `get_commands` 不含它们，经 `prompt` 也不会执行。
+- 空目录、RPC 失败、runtime／session 替换后的过期世代、过滤后零结果须明确说明。不把未出现在当前已校验快照中的清单／磁盘／市场项列为可执行。受控与 Trusted 都可能有 prompts／skills；Trusted 可另列扩展命令。不可确认项标未知，不可执行。
+- 键盘：方向键、Enter 补全、Escape 关闭；IME 组合 `/` 不得抢走中文输入。菜单与模型选择器、添加上下文菜单、执行配置卡片互斥（同 WI-067 一次只开一张）。窄侧栏裁切与空／错误文案需中英。
+- 发送已补全的 `/name` 走既有空闲 `prompt`。WI-077 队列准入继续拒绝首部 slash；本切片不把 slash 加入 steer／follow-up。扩展命令 handler lease 与标准交互仍属 ADR 0002。无包安装、reload、AGENTS.md 实际加载报告或任意扩展兼容承诺。
+
+**验收：** 验证 `/` 仅在前导 token 打开、列表为当前 `get_commands` 行且含来源／位置不含路径、补全写入草稿但不发送、空／错误／过期状态、配置差异、键盘／IME／互斥，以及发送已补全扩展命令仍走既有 prompt 准入。保留 WI-077 对 slash 的队列拒绝、附件与普通 Send。运行 compile／lint／tests、浏览器中英窄屏／主题／键盘、真实 pi＋隔离合成 provider 及至少一份目录夹具、macOS F5 与安装 VSIX，生成可重复工件并分层记录。PI-GAP-02 实际加载 AGENTS.md／上下文报告仍是未实现候选。
 
 ### REQ-005 — 停止与恢复
 
@@ -444,7 +456,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-067 | REQ-002／REQ-006 作曲区模型选择器与执行配置互斥 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-067-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-067-acceptance.zh.md)。 |
 | WI-068 | REQ-001 拒绝项目资源后的持续提示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-068-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-068-acceptance.zh.md)。 |
 | WI-069 | REQ-002 活跃模型身份使用供应商／模型 id，不用显示名 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-069-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-069-acceptance.zh.md)。 |
-| WI-077 | REQ-004／005 文字 steering／follow-up、诚实队列与显式恢复（PI-GAP-01） | 2026-10-01 持续产品切片 goal 授权范围；Build／证据见 [ACTIVE](../ACTIVE.md)。尚未交付或接受，排除附件和命令／模板展开。 |
+| WI-077 | REQ-004／005 文字 steering／follow-up、诚实队列与显式恢复（PI-GAP-01） | 2026-10-02 Agent 依据持续产品切片 goal 关闭；[验收](archive/2026-10-02-wi-077-acceptance.zh.md)。排除附件和命令／模板展开。 |
+| WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-01 持续产品切片 goal 授权范围；Build／证据见 [ACTIVE](../ACTIVE.md)。尚未交付；排除实际加载报告。 |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
@@ -461,8 +474,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | REQ-001 | 执行前显示项目和信任状态；阻断不合格工作区 | 工作区／启动切片已单独验收；WI-068 拒绝资源提示 |
 | REQ-002 | 显示并选择可用模型／thinking；忙碌时明确下一轮意图 | WI-008／WI-009；WI-030／ADR 0005 真实 OAuth 交互与自定义端点；WI-066 作曲区芯片展示；WI-069 规范活跃身份；自用已 Accepted；额外供应商／生态仍排除 |
 | REQ-003 | 显式附加、预览及移除工作区文本／选区 | WI-014 已按委托接受批准范围 T014-01～05；WI-027 覆盖双语预览失败句，不合并不同表面的措辞。WI-032 共用凭据文本拒收于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。旧的 T014-02 Build／待办文字现为历史状态。范围及限制见[归档](archive/2026-09-28-wi-014-attachment-acceptance.zh.md)。自用已 Accepted；额外附件类型仍排除。 |
-| REQ-004 | 展示流式文本、真实活动及有界错误；区分受理与完成 | WI-004 最小切片；WI-009 thinking；WI-010 原受控／Stop 切片；WI-021 retry／compaction 与可靠终态切片按委托接受。WI-032 共用活动与助手文本打码于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。更广泛 session-streaming gate 由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 单独接受。自用已 Accepted。 |
-| REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。WI-035 覆盖下次激活时的遗留交接；WI-036 覆盖该宿主丢失时的精确 child 清理。三个 gate 已由 ADR 0004 单独接受。自用 macOS 已 Accepted；跳过审批与额外 OS 仍排除。 |
+| REQ-004 | 展示流式文本、真实活动及有界错误；区分受理与完成 | WI-004 最小切片；WI-009 thinking；WI-010 原受控／Stop 切片；WI-021 retry／compaction 与可靠终态切片按委托接受。WI-032 共用活动与助手文本打码于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。WI-077 于 2026-10-02 接受文字 steering／follow-up／取回切片，[限制](archive/2026-10-02-wi-077-acceptance.zh.md)。WI-078 作曲区 `/` 发现已授权、尚未交付。更广泛 session-streaming gate 由 [ADR 0004](decisions/0004-trust-and-lifecycle.zh.md) 单独接受。自用已 Accepted。 |
+| REQ-005 | 停止排队和活动工作，展示停止中及最终结果，保留草稿 | WI-010 原受控切片及 WI-013 选定标准交互／自有 runtime 恢复边界；准确范围见上方归档。WI-035 覆盖下次激活时的遗留交接；WI-036 覆盖该宿主丢失时的精确 child 清理。WI-077 Stop 先 clear 再 abort，F5／安装 VSIX 可见取回；[限制](archive/2026-10-02-wi-077-acceptance.zh.md)。三个 gate 已由 ADR 0004 单独接受。自用 macOS 已 Accepted；跳过审批与额外 OS 仍排除。 |
 | REQ-006 | 覆盖范围内审批；受控默认、显式可信配置及仅空闲切换／失败恢复 | WI-010 原受控切片；WI-013 按 ADR 0002 接受有界可信加载、工具覆盖及自有 runtime 恢复目标；WI-027 覆盖双语扩展交互与执行配置界面文案。WI-032 共用审批拒绝于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。WI-035／036 覆盖遗留交接与 owner-loss 精确 child 清理；WI-058 后来接受每窗口独立域。自用 macOS 已 Accepted；跳过审批仍排除。三个架构 gate 已由 ADR 0004 单独接受。 |
 | REQ-007 | 对可识别受控写入保护脏编辑器，诚实审阅已应用 diff | WI-016限定委托接受；[证据](archive/2026-09-28-wi-016-review-acceptance.zh.md)。WI-032 共用审阅正文不可用于 2026-09-30 按最终委托接受；见[限定记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。 |
 | REQ-008 | 列出当前项目已保存会话，主动恢复、顺序交接及重新授权 | WI-017限定委托接受；[证据](archive/2026-09-28-wi-017-session-acceptance.zh.md) |

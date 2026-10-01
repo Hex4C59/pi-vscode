@@ -99,6 +99,7 @@ The History column keeps the original acceptance/closure link and adds standalon
 | WI-074 | DOC-NAV-02 documentation maintenance | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-074-acceptance.md); [proposal](2026-10-01-wi-074-approved-proposal.md) |
 | WI-075 | DOC-ORG-03 documentation maintenance | 2026-10-01 agent /goal; no gate or ADR change | [record](2026-10-01-wi-075-acceptance.md); [proposal](2026-10-01-wi-075-approved-proposal.md); [evaluation](2026-10-01-wi-075-guide-placement-evaluation.md) |
 | WI-076 | Public queued-input RPC prerequisite | 2026-10-01 agent /goal; runtime-only, no product acceptance | [record](2026-10-01-wi-076-acceptance.md); [proposal](2026-10-01-wi-076-approved-proposal.md) |
+| WI-077 | Text steering/follow-up, queue display, recall and Stop recovery (PI-GAP-01 text slice) | 2026-10-02 agent /goal; F5 + installed VSIX; remainder parked | [record](2026-10-02-wi-077-acceptance.md); [proposal](2026-10-02-wi-077-approved-proposal.md) |
 
 
 ## Not in this index

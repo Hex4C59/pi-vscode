@@ -15,47 +15,45 @@
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-077（PI-GAP-01：文字 steering／follow-up 与取回闭环） |
-| **阶段** | Build（Prepare 核对完成；2026-10-01 持续授权批准本次文字切片，中英 PRD／Outline 已同步；先验证后实现） |
+| **ID** | WI-078（PI-GAP-02：作曲区 `/` 命令发现） |
+| **阶段** | Build（Prepare 核对完成；2026-10-01 持续授权批准本次发现切片，中英 PRD／Outline 已同步；先验证后实现） |
 | **Gate ID** | none（沿用既有 runtime／Webview 信任边界，不声明新 gate 关闭） |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：已同步中英 PRD WI-077／REQ-004／005 范围与追溯行；新增切片仅批准范围，尚未交付／接受 |
+| **PRD 判定** | 用户可见：已同步中英 PRD WI-078／REQ-004／009 范围与追溯行；新增切片仅批准范围，尚未交付／接受 |
 
 ### 目标与范围
 
-按 PI-GAP-01 交付可观察的纯文字闭环：运行中明确选择「Steer current task」或「Follow up after task」，区分 ACK、待处理与已消费／结果未知；展示已确认队列与不确定状态；通过公开 clear_queue 取回全部尚待处理的文字。Stop 先 clear 再 abort，取回内容可恢复且不覆盖现有草稿；失败、断线与切换不能静默丢失或自动重发。文字切片不含附件及扩展 slash 命令／模板展开；禁用时解释原因，原草稿／附件保留。PI-GAP-01 的剩余扩展范围继续停车，不标整个 ID 完成。
+按 PI-GAP-02 交付可观察的作曲区 `/` 发现闭环：消息输入框前导 `/` 打开命令菜单，列出公开 `get_commands` 当前返回的扩展命令、prompt templates 与 skills；展示名称、可选描述、来源与粗粒度位置；选中补全写入已确认草稿且不发送。空列表、RPC 失败、过期世代与过滤零结果可解释。不把未在当前快照中的清单／磁盘／市场项显示为可执行，不承诺任意扩展兼容，不把绝对路径或 AGENTS.md 正文送入 Webview。PI-GAP-02 的实际加载报告（已登记 vs 已加载的 AGENTS.md／上下文）继续停车，不标整个 ID 完成。
 
 ### 方案与架构核对
 
-[WI-076 证据](docs/archive/2026-10-01-wi-076-acceptance.zh.md)验证当前 pi 0.86.1 公开 steer／follow_up、clear_queue 与 clear→abort。Prepare 核对安装包公开 rpc.md：另有 `queue_update {steering, followUp}` 权威文字快照、user message_start 前队列更新。Build 第一步已在 adapter 投影两种 host-only 事件并验证队列额度／user 关联文字／退役 reader；Stop adapter 已新增校验后、abort 前的同步取回 callback；adapter 已补 session-bound 显式 recall（与 Stop 共用 clear lease，竞争请求明确拒绝）；adapter 已补一次性队列发送／独立 write-drain-ACK owner 与 Stop 在途等待（局部 tracer 通过）；已补 onAttempt 后 fresh write guard 和 task settlement 后独立 queue observation fence／uncertain release；已补 connection-bound observer retirement（ACK 后断线也立即清理）、受控 write／ACK／Stop queue-wait timer handler 证据；已补 Stop／recall 在 clear 在途且任务自然结束后的 model／thinking fence，发送准入／RPC／stdin failure matrix 已有 synthetic transport 证据；host 已补本地 delivery 保留、共享 ledger 容量／归属／敏感恢复投影、DraftSubmission 队列准入与 QueuedTextCoordinator clear 串行，Living v3 四意图／`queuedTextState`，provider `QueuedTextSession`，以及 production-mounted Steer／Follow-up／pending／recall／recovery UI。浏览器与真实宿主分层验收仍是缺口，不是新 runtime 能力／架构决策。缺失 sibling `../pi` 不作为依赖；使用已安装精确版本公开文档及只读 source 核对。
-
-Adapter 隔离公开 RPC，host coordinator 拥有 runtime／session／view 世代与有界 ledger，DraftSubmission 仍唯一拥有已确认草稿；UI 仅命名意图／状态。两数组快照、ACK 与 user 消费事件分别投影，重复文字保留 multiplicity；无法准确归属尝试时标未知，不把队列减少当完成。总额度为 32 条未释放本地文字／256 KiB UTF-8，单条 8000 UTF-16；写入与 clear 前预留，不淘汰／截断。拒绝附件、首部 slash／skills／模板和既有可识别凭据，保留原草稿。取回进入独立恢复区，显式移入无附件空草稿并校验 revision，不发送、不覆盖。Stop 关闭准入，在原共享五秒预算内串行在途 write→clear→abort；确认 clear 结果即保留，abort 失败不抹掉。未知 ACK 不重发；断线保留本地未知文字；明确替换确认丢失，commit 后清理，不跨项目带入。详情与命名 DTO 见[双语契约](docs/reference/webview-messages.zh.md#wi-077-文字队列增补)。无新依赖、进程策略、存储或信任决定。Host provider 与 production-mounted Steer／Follow-up／pending／recall／recovery UI 已接线；浏览器与真实宿主分层验收仍缺。
+安装包公开 rpc.md（pi 0.86.1）定义 `get_commands`：`source` 为 `extension`／`prompt`／`skill`，可选 `location` 与 `path`。生产 adapter 目前只在 Trusted 启动校验扩展命令名；本切片须在 Controlled 与 Trusted 的 runtime ready／替换后刷新有界展示快照。宿主过滤路径与凭据，UI 只渲染投影。补全走 `DraftSubmission` 一次草稿变更；发送仍走既有 idle `prompt`。WI-077 队列继续拒绝首部 slash。内置仅 TUI 命令不在 `get_commands` 中，不得发明。无新依赖、进程策略、存储或信任决定。契约 Outline 见[双语契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现outline未实现)。
 
 ### 架构检查（Prepare 结论：implement now；Decision none；设计 Implementable，尚非 Verifiable）
 
 | 维度 | 状态／证据与下一检查 |
 |---|---|
-| 1–3 分解／接口／依赖 | pass（设计）：沿用[架构 host capability](docs/architecture/vscode-extension-architecture.md#internal-host-capability-modules)与 host-owned contracts，adapter／host／UI 各守 owner；Outline 命名四意图，无 generic bridge。实现时核对实际 imports。 |
-| 4 契约 | pass（Outline）：[文字队列契约](docs/reference/webview-messages.zh.md#wi-077-文字队列增补outline未实现)定义数据、前置、准入、额度、错误、一次 write、超时与 clear／Stop 顺序；Build 须成对类型／validator／消费者。 |
-| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：DraftSubmission 单一草稿 owner，coordinator 管 ledger／Stop，adapter 仅翻译；设计已规定 session／generation／revision 防迟到、失联保留、commit 清理。gap（验证）：消费→clear 与 late ACK interleaving 先写 composition tests。 |
-| 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-077 REQ-004／005 和本次持续批准；不扩附件／命令，不接受整个候选。 |
-| 12–14 安全／数据／隐私 | pass（设计）：沿用信任／凭据规则，内存 ledger 不新增存储；不记录 prompt 或 raw frame 到日志。gap（实现）：敏感上游队列投影拒收与复用拒绝先验证。 |
-| 15 性能／背压 | pass（设计）：32 条／256 KiB 与已有单条限制、one-attempt write／drain 预算；clear 前容量预留。gap：边界与外部不可归属队列拒绝须验证，不造无限恢复缓存。 |
-| 16–17 验证／构建 | gap：合成 composition、preview 队列、浏览器 en／zh／窄宽／dark／高对比／keyboard 部分取证已有；隔离安装 VSIX＋真实 pi＋合成 provider 队列闭环已取证。macOS F5 仍缺。 |
-| 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3，新意图只准 chat；旧 viewId 拒绝，升级后重载旧页面。无持久 schema 迁移。 |
-| 19 UX／可访问性 | gap：UI 已挂载；浏览器 en／zh／280 dark／light／高对比与 busy-Enter／Steer 可达已取证；320／400 未验。 |
+| 1–3 分解／接口／依赖 | pass（设计）：adapter 翻译 `get_commands`；宿主拥有快照／generation／补全准入；UI 只打开菜单与过滤。沿用 [host capability](docs/architecture/vscode-extension-architecture.md#internal-host-capability-modules) 与 `DraftSubmission`。实现时核对 imports。 |
+| 4 契约 | pass（Outline）：[命令发现契约](docs/reference/webview-messages.zh.md#wi-078-作曲区命令发现outline未实现)定义数据、前置、错误、额度、顺序与隐私。Build 须成对类型／validator／消费者。 |
+| 5、7–11 所有权／身份／状态／并发／恢复／清理 | pass（设计）：单一目录 owner 在宿主；补全不另设草稿 owner。世代守卫替换后的迟到回包。gap（验证）：先写空／失败／过期／未知 name 的 composition tests。 |
+| 6 范围 | pass：[中英 PRD](docs/product-requirements.zh.md) WI-078 与本次持续批准；不扩加载报告／包管理，不接受整个候选。 |
+| 12–14 安全／数据／隐私 | pass（设计）：路径与文件正文留宿主；描述打码；不新增持久化。gap（实现）：投影拒收 path 字段先验证。 |
+| 15 性能／背压 | pass（设计）：最多 512 行、名称／描述上限；过滤在已发布快照上本地进行。 |
+| 16–17 验证／构建 | gap：尚无菜单 UI／真实宿主证据。 |
+| 18 版本兼容 | pass（设计）：host／bundled UI 成对演进 v3；新意图只准 chat；旧 viewId 拒绝。 |
+| 19 UX／可访问性 | gap：键盘／IME／与模型选择器互斥、中英空／错误态待实现与取证。 |
 
 ### 验收
 
-实现前安排现有 owner-local／端到端测试并列失败方式：两种语义串线；ACK 当执行；忙碌／空闲准入竞态；重复点击／late ACK；取回与消费竞争；Stop clear／abort 失败；草稿修改后异步覆盖；view／runtime／session／model／profile 世代污染；额度拒绝丢失文字；未知状态自动重发。可观察验收须覆盖发送→显示→消费／取回、Stop 与断线恢复，现有任务不被重置，附件／命令拒绝保留输入。compile／lint／npm test、适用浏览器与真实 runtime e2e；当前 macOS 真实宿主／安装 VSIX 按最终 PRD 验收生成可复现工件，模拟／runtime／F5／安装分别记录。docs:verify，关闭 docs:health；不以底层 ACK probe 代替产品验收。
+实现前并列失败方式：把清单项显示为可执行；把 path 送入 Webview；发明 TUI 命令；补全即发送；忙碌时经 WI-077 队列发送 slash；替换后展示过期目录；空列表当加载中；IME 抢走中文；菜单与模型选择器同时打开。可观察验收：`/` 打开→列表与来源→补全写入草稿不发送→空／错误／过期、配置差异、键盘／IME／互斥。compile／lint／npm test、适用浏览器与真实 runtime；macOS F5／安装 VSIX 分层取证。docs:verify，关闭 docs:health。
 
 ### 范围外与批准边界
 
-2026-10-01 持续 /goal 对既有 PI-GAP 内合规独立切片提供 Prepare→Build 范围确认，无需逐次点名。本 WI 只做 PI-GAP-01 上述文字闭环；本轮 Prepare 完成后按持续授权批准 Build，中英 PRD 已同步，不代表已通过验证或已验收。保留 Accepted PRD／强制 playbook／安全与重大架构审批，不改 Draft ADR 0010，不 push。仍排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳过审批、公开发布。实现提交不含 ACTIVE，关闭／晋升单独 docs(active)。
+2026-10-01 持续 /goal 对既有 PI-GAP 内合规独立切片提供 Prepare→Build 范围确认，无需逐次点名。本 WI 只做 PI-GAP-02 上述 `/` 发现闭环；中英 PRD 已同步，不代表已通过验证或已验收。保留 Accepted PRD／强制 playbook／安全与重大架构审批，不改 Draft ADR 0010，不 push。仍排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳过审批、公开发布。实现提交不含 ACTIVE，关闭／晋升单独 docs(active)。
 
 ## 当前焦点与未决项
 
-WI-076 真实公开队列 RPC 前置已验证关闭；当前 WI-077 Build 产品文字闭环。Host provider、production UI、preview 与隔离安装 VSIX 队列闭环已接线。jsdom／浏览器证据在 `dist/wi077-queued-ui/`；安装宿主证据在 `dist/wi077-queued-host/`（Steer pending、Stop→Recalled、Use in draft 恢复，真实 pi 0.86.1＋合成 provider）。下一步：macOS F5 分层验收后关闭 WI。技术／合成 composition 不代表产品候选完成；WI-073–075 不重做；Draft ADR 0010 保持 Draft。
+WI-077 文字队列切片已关闭。当前 WI-078 Build：作曲区 `/` 发现。下一步：先写失败用例与宿主目录投影，再挂菜单。WI-077 不重做；Draft ADR 0010 保持 Draft。PI-GAP-01 附件／命令展开与 PI-GAP-02 实际加载报告仍停车。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 当前 macOS 安装包矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)。Webview 目录见 [WI-071](docs/archive/2026-10-01-wi-071-acceptance.zh.md)。REQ-008／中文 REQ-009 文档漂移不当作新实现任务。
 
@@ -89,8 +87,8 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 | ID／建议优先级 | 差距与候选范围 | 完成标准／边界 |
 |---|---|---|
-| PI-GAP-01／优先 | 运行中追加指令：steering／follow-up、队列展示与取回。 | 两种发送语义可区分，按上游边界投递；取回、Stop、失败与恢复不丢失或重复发送。明确附件范围，不把 clear_queue 当作完整队列体验。 |
-| PI-GAP-02／优先 | 命令／资源发现：输入框 `/` 菜单，发现已加载扩展命令、skills、prompt templates 并补全。 | 展示实际可用资源及来源；空列表、失效与错误可解释，不把未加载资源显示为可执行，不承诺任意扩展兼容。 另补实际加载报告：区分已登记／可发现与实际加载，展示经公开 API／可靠证据确认的 AGENTS.md、skills、模板和扩展；不可确认项标未知，不读取敏感上下文全文到 Webview。 |
+| PI-GAP-01／优先 | 运行中追加指令：steering／follow-up、队列展示与取回。 | 两种发送语义可区分，按上游边界投递；取回、Stop、失败与恢复不丢失或重复发送。明确附件范围，不把 clear_queue 当作完整队列体验。**文字切片已由 [WI-077](docs/archive/2026-10-02-wi-077-acceptance.zh.md) 关闭；附件与 slash／模板展开仍停车。** |
+| PI-GAP-02／优先 | 命令／资源发现：输入框 `/` 菜单，发现已加载扩展命令、skills、prompt templates 并补全。 | 展示实际可用资源及来源；空列表、失效与错误可解释，不把未加载资源显示为可执行，不承诺任意扩展兼容。 另补实际加载报告：区分已登记／可发现与实际加载，展示经公开 API／可靠证据确认的 AGENTS.md、skills、模板和扩展；不可确认项标未知，不读取敏感上下文全文到 Webview。**当前 WI-078 只做 `/` 菜单切片；实际加载报告仍停车。** |
 | PI-GAP-03／其次 | 上下文用量面板：上下文占用、token、缓存及费用。 | 来自公开 API 实际数据，区分累计值与当前上下文；未知费用明确标注，不伪造数据；刷新和会话切换不串数据。 |
 | PI-GAP-04／其次 | 手动压缩：compact 入口及可选自定义压缩指令。 | 复用上游压缩；运行、完成、失败／取消可观察，与发送、Stop、切换规则明确；说明压缩有损，保留既有自动压缩与重试。 |
 | PI-GAP-05／后续 | 图片输入：选择／粘贴／拖入图片并发送给支持的模型。 | 批准具体输入方式与格式／数量／大小边界；预览、移除、错误恢复；不支持图片的模型不静默降级，明确历史与敏感内容范围。 |
@@ -145,14 +143,14 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
-### 2026-10-01 — WI-077 Build 第十四步：键盘与隔离安装宿主闭环
+### 2026-10-02 — WI-078 Prepare 完成并进入 Build
 
-实现提交 `14be1cc`／`3d24f3b`／`0879402`／`65498d9` 不含 ACTIVE。忙碌 composer 的 Enter 不发送；Steer／Follow-up 可键盘到达。隔离安装 VSIX `dist/wi077-queued-host/pi-vscode.vsix`（SHA-256 `98d240bf127d84b84af1894552751ae706382545ce79a3bbaef01ad5ebcf7557`）在真实 pi 0.86.1＋合成 provider 上：Steer 进入 pending、composer 清空、Stop→Recalled、Use in draft 恢复。工件 `dist/wi077-queued-host/report.json` 与 `installed-steer.png`／`installed-recall.png`／`installed-use-in-draft.png`。macOS F5 仍缺，不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+关闭 WI-077 后按持续授权晋升 PI-GAP-02 的作曲区 `/` 发现切片为 WI-078。中英 PRD 与契约 Outline 已同步。下一步：失败用例与宿主 `get_commands` 投影（不把 path 送入 Webview），再挂菜单。不关闭 PI-GAP-02 整体，无 push，goal 保持 active。
 
-### 2026-10-01 — WI-077 Build 第十三步：preview 队列与浏览器闭环修复
+### 2026-10-02 — WI-077 关闭：F5 与安装 VSIX 文字队列闭环
 
-实现 `14be1cc`／`3d24f3b`／`0879402` 不含 ACTIVE。preview-bridge 合成 queue／recall／Stop→recovery；`queueChat` 成功后清空本地草稿；`useRecoveredText` 后空 composer 采纳 host draft；preview 工具栏补语言切换。浏览器 Approval@280：en Steer／Follow-up／Stop→Use in draft 与 zh-CN「引导／跟进／取回／引导中」已取证（`dist/wi077-queued-ui/`）；高对比／keyboard 与真实 pi／F5／VSIX 仍缺。lint／1140 tests 通过。不关闭 WI／PI-GAP-01，无 push，goal 保持 active。
+Agent 依据持续 /goal 关闭，不是维护者亲测。[验收](docs/archive/2026-10-02-wi-077-acceptance.zh.md)。macOS F5 Extension Development Host：Steering `WI077_STEER_from_f5` → Stop Recalled → Use in draft 恢复精确文字（`dist/wi077-queued-host/f5-*.png`，`phase: queue-f5`）。安装 VSIX 与浏览器 280 证据仍有效。关闭时 lint 通过、`npm test` 1140、docs:verify／health 0 错误（保留 Draft ADR 0010 两条提示）。PI-GAP-01 附件／命令展开继续停车。实现提交不含本次 ACTIVE。
 
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-076。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-077。

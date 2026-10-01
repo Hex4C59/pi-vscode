@@ -43,6 +43,7 @@ WI 记录保留旧 pending／open 等历史状态；当前工作与决定见 [AC
 ## Runtime 前置证据
 
 - [公开队列 RPC 证据 — WI-076](2026-10-01-wi-076-acceptance.zh.md)；合成 provider，不是产品验收。
+- [文字队列产品切片 — WI-077](2026-10-02-wi-077-acceptance.zh.md)；F5 与安装 VSIX＋合成 provider；PI-GAP-01 剩余范围停车。
 
 ## 被替代的方案与调查
 
