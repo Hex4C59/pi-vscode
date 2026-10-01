@@ -52,9 +52,9 @@
 
 ## WI-078 作曲区命令发现
 
-**实现为 Living；WI 验收待完成。** 已批准 REQ-004／009 切片见 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。v3 类型、校验器、宿主投影、草稿 owner、浏览器 parser／client 与生产 composer 菜单已成对接线。已有 mounted 与真实 Chrome 预览证据；实际 pi 0.86.1 启动／替换快照已验证；macOS F5 与安装 VSIX 验收仍待完成，见 [ACTIVE](../../ACTIVE.md)。设置页不准入 chat 补全意图。
+**实现为 Living；WI 验收待完成。** 已批准 REQ-004／009 切片见 [PRD](../product-requirements.zh.md#wi-078-已批准切片--作曲区--命令发现pi-gap-02)。v3 类型、校验器、宿主投影、草稿 owner、浏览器 parser／client 与生产 composer 菜单已成对接线。已有 mounted 与真实 Chrome 预览证据；实际 pi 0.86.1 启动／替换快照已验证；macOS F5 与安装 VSIX 也已有发现／补全证据。WI 关闭仍待 [ACTIVE](../../ACTIVE.md) 中 PRD 尾随空格规则确认。设置页不准入 chat 补全意图。
 
-- 版本特定来源：实际 pi 0.86.1 RPC 与公开 `SlashCommandInfo`／`SourceInfo` 类型使用 `sourceInfo`，`extensions.md` 已说明（安装的 `rpc.md` 示例仍写 `path/location`）。adapter 校验仅宿主持有的元数据，将 `scope: user | project` 映射为粗粒度位置；`temporary` 不猜成自定义路径而省略位置。旧文档形状 `path/location` 仍可解析。`sourceInfo`、`baseDir`、包来源和资源路径均不跨 Webview 边界。RPC 实际返回的 inline 注册命令（如 `llama`）不是虚构 TUI 命令。隔离真实 runtime 已验证 Controlled 拒绝／同意资源、Trusted 显式夹具注册和替换回拒绝；四个子进程退出与夹具删除均已观察，无 prompt／供应商调用。
+- 版本特定来源：实际 pi 0.86.1 RPC 与公开 `SlashCommandInfo`／`SourceInfo` 类型使用 `sourceInfo`，`extensions.md` 已说明（安装的 `rpc.md` 示例仍写 `path/location`）。adapter 校验仅宿主持有的元数据，将 `scope: user | project` 映射为粗粒度位置；`temporary` 不猜成自定义路径而省略位置。旧文档形状 `path/location` 仍可解析。`sourceInfo`、`baseDir`、包来源和资源路径均不跨 Webview 边界。RPC 实际返回的 inline 注册命令（如 `llama`）不是虚构 TUI 命令。隔离真实 runtime 已验证 Controlled 拒绝／同意资源、Trusted 显式夹具注册和替换回拒绝；四个子进程退出与夹具删除均已观察，没有供应商调用。随后显式 prompt 给无副作用夹具命令已 RPC-accepted 并保留参数；发现本身没有执行该 handler。
 
 - 宿主在 Controlled 与 Trusted 配置下 runtime ready 后，以及提交的 runtime／session 替换后，从公开 `get_commands` 刷新有界快照。Adapter 翻译 RPC；宿主拥有校验、世代与展示过滤。UI 不调用 RPC、不发明名称。
 - 入站仅 chat 意图（精确 v3 信封）：`completeCommand {draftRevision, name}` 只替换精确已确认草稿的首部 slash token，保留参数后缀原文。`get_commands` 不提供参数元数据；补全不发明尾随参数。宿主只对照当前快照匹配 `name`；未知／过期名称拒绝且不改较新编辑。补全不发送、不入队、不展开。打开／过滤菜单是对最近已发布投影的本地 UI。没有准入 `refreshCommands` 意图；刷新发生在 ready／替换时。
@@ -63,6 +63,7 @@
 - 顺序：先发布目录，菜单才能声称 ready。补全是 `DraftSubmission` 下一次草稿变更。超时沿用既有 RPC start／control 预算；不静默重试以免混目录。取消／替换丢弃在途回包。同一 revision 对同一 name 的幂等补全，若首部 token 已精确等于 `/name` 则 no-op。
 - 机密与隐私：绝对路径、AGENTS.md 正文与凭据留在宿主。日志不得打印目录路径或 prompt 正文。Webview 只收上述展示 DTO。
 - 作曲区交互：文字以 `/` 开头且光标在首个 token 内时打开有界 listbox；输入过滤已发布快照。方向键导航；Enter／Tab 仅补全已确认草稿，菜单打开时不发送；Escape 关闭且不清文字。忽略 composition／IME Enter。空列表、不可用与零匹配分开显示。命令与模型／权限弹出层互斥。打开或选择一项不代表命令已执行。
+- 待对齐的验收差异：已批准 PRD 要求命令需要参数时加尾随空格，但公开 `get_commands` 没有参数需求元数据。当前补全只替换首部 token 并保留已有后缀，裸补全不追加空格。不得把原生检查通过当作该规则已经解决，也不静默改写批准规则；WI 关闭前须维护者确认。
 
 ## 编辑区设置界面（WI-026）
 
