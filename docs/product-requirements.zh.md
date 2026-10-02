@@ -214,6 +214,9 @@ WI-014 已批准的 T014-01～05 范围于 2026-09-28（Asia/Shanghai）按明�
 
 ### REQ-004 — 可观察的任务执行
 
+**WI-087 批准 Build 切片（八项有界执行请求；REQ-004，2026-10-02 UTC 记录）：** 安全 Mermaid flowchart／graph 与 sequence fence 闭合后可显式本地有界渲染，保留可选源码与 Copy。未支持／不安全／不完整／错误／过大明确保留源码，不伪称渲染成功。无消息配置／callback／HTML／image／资源／隐式联网，CSP／执行／local-resource 权限不变。取消／截止撤销展示权威，不冒充同步上游中断。[Prepare／预算／待 native 验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。这是批准而非验收／全 Mermaid parity。
+
+
 发送文本任务并展示流式回答与工具活动。适用时区分运行、等待审批、重试、压缩、完成、停止和失败状态。展示工具名称、目标及结果，限制输出体积并保护密钥。请求被接受不等于任务完成；排队续跑或自动重试尚未结束时不得显示完成。
 
 **WI-032 Build 切片（2026-09-29，维护者已授权）：** 活动、工具输出和助手文本使用同一条打码规则。周围的普通文字保留。遇到私钥标记时隐藏整段展示文本。Bearer 和凭据字段的值被替换，字段标签保留。长度限制仍在打码之后生效。这种过滤是尽力识别，不能证明秘密绝不会进入 Webview。批准切片于 2026-09-30 按最终委托接受；见 [WI-032 记录](archive/2026-09-30-wi-032-macos-evaluation.zh.md)。
@@ -506,6 +509,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-084 | REQ-004／009 工作区文件补全（PI-GAP-06） | 有界 goal 批准；[Prepare／待验收](discussions/2026-10-03-wi-084-file-completion.zh.md)。 |
 | WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-085-model-cycling.zh.md)。 |
 | WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
+| WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |

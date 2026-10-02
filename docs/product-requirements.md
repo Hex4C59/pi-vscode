@@ -209,6 +209,9 @@ At the original intermediate T014-01 stage, latest-file confirmation, fixed sele
 
 ### REQ-004 — Observable task execution
 
+**WI-087 approved Build slice (bounded eight-gap execution request; REQ-004, recorded 2026-10-02 UTC):** Safe Mermaid flowchart/graph and sequence fences offer explicit bounded local rendering after a closing fence, retaining selectable source and existing Copy. Unsupported, unsafe, incomplete, invalid or over-budget diagrams clearly retain source rather than imply rendered success. No message-controlled configuration, callbacks, HTML/images/resources or implicit networking; unchanged CSP/execution/local-resource permissions. Rendering cancellation/deadline revokes display authority without pretending to interrupt synchronous upstream work. [Prepare, budgets and pending native acceptance](discussions/2026-10-02-wi-087-mermaid.md). This is approval, not acceptance or whole-Mermaid parity.
+
+
 Send a text task and render streamed responses and tool activity. Distinguish running, awaiting approval, retrying, compacting, completed, stopped and failed states when relevant. Show tool identity, target and result with bounded output and protected secrets. An accepted prompt is not a completed task; do not display completion while queued continuation or automatic retry remains.
 
 **WI-032 Build slice (2026-09-29, maintainer authorized):** Activity, tool output and assistant text use one redaction rule. Ordinary surrounding text stays. A private-key marker hides the whole display string. Bearer and credential-field values are replaced and their labels stay. Limits still apply after redaction. This filtering is best-effort and is not proof that a secret never reaches the Webview. The approved slice was accepted under final delegation on 2026-09-30; see the [WI-032 record](archive/2026-09-30-wi-032-macos-evaluation.md).
@@ -501,6 +504,7 @@ A release direction may span future WIs; [collaboration §4](guides/agent-collab
 | WI-084 | REQ-004/009 workspace file completion (PI-GAP-06) | Bounded goal approved; [Prepare/pending acceptance](discussions/2026-10-03-wi-084-file-completion.md). |
 | WI-085 | REQ-002/004 available model/thinking cycling (PI-GAP-14) | Bounded goal approved; [Prepare/pending acceptance](discussions/2026-10-02-wi-085-model-cycling.md). |
 | WI-086 | REQ-008/009 current-project catalogue search (PI-GAP-24) | Bounded goal approved; [Prepare/pending evidence](discussions/2026-10-02-wi-086-session-search.md). |
+| WI-087 | REQ-004 safe bounded Mermaid reply diagrams (PI-GAP-21) | Bounded goal approved; [Prepare/pending acceptance](discussions/2026-10-02-wi-087-mermaid.md). |
 | WI-079 | REQ-004/009 read-only current-context and cumulative session usage (PI-GAP-03) | 2026-10-03 Scoped personal macOS acceptance completed by agent-run F5/installed VSIX; layered evidence and limits in [WI-079](archive/2026-10-02-wi-079-team.md). |
 | WI-070 | REQ-009 current macOS five-category evidence | Accepted on 2026-10-01 by the agent under the complete-ACTIVE `/goal`; [proposal](archive/2026-10-01-wi-070-approved-proposal.md); [acceptance](archive/2026-10-01-wi-070-acceptance.md). |
 | WI-037 | REQ-004 bounded thinking streaming and complete quoted credential-value redaction (RUNTIME-01/02) | Accepted on 2026-09-30 by the agent under the maintainer's explicit native-evidence-and-close delegation; [actual macOS F5/isolated installed evidence and limits](archive/2026-09-30-wi-037-macos-acceptance.md). No whole-PRD, gate or ADR acceptance. |
