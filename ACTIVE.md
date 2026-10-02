@@ -30,7 +30,7 @@
 
 [八项Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界批准；无新网络／下载／市场／升级。02／04／06／14／21／24／26本地native未完成；26上传仍未批准。
 
-**进度与下一步：** Prepare完成，下一步预写组合red再Build；尚无版本报告／验收。
+**进度与下一步：** d3ff0ea实现已提交；干净候选compile／lint／最终1267／文档／打包、最新真实RPC／SDK与archive英中通过。两次未改history断言失败log保留。八项native均因隔离Code绑定缺口未验收；须用户保存关闭原Code或工具安全PID／window绑定，未Goal完成／归档。
 
 ## 待完成
 

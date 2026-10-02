@@ -22,3 +22,10 @@
 起点 `bc1a2d7`，分支 `master`。已声明／安装 pi 均为 `0.86.1`。暂存区为空。ACTIVE 与功能差距讨论英中两份既有未提交修改视作用户所有，不能顺带提交。原始补丁和状态保存在 Git 忽略的 `dist/goal-eight/startup/`；这是本地恢复工件，不是产品证据。
 
 先做 [WI-082 / PI-GAP-02](2026-10-03-wi-082-resource-report.zh.md)，后续按依赖考虑 04、06、14、24、21、26、27；未调查项的可行性和验收均未证明。当前状态和未完成边界只在 ACTIVE 维护，已关闭记录经归档索引检索。
+
+
+## 八切片实现检查点——验收未完成（2026-10-02 UTC）
+
+八项批准实现均有本地提交，均未本轮代理验收／关闭：PI02 d03d7c4+0633e9f；PI04 77ca3c2；PI06 fa1d18d；PI14 66ba52b；PI24 4bb653c；PI21 4eb8d38；PI26本地5f2135f；PI27 d3ff0ea。最终干净d3ff0ea检查及真实RPC／SDK见WI089，两次history断言失败分留。浏览器仍模拟宿主，非native。26上传／敏感收集未批准且待完成；用户分组／gap改动未暂存。
+
+实现后阻碍audit1：Goal turn01a0fdf1-76fa-7a42-b37c-2ec4e5947748。原用户Code存在，无安全隔离CUA PID／window绑定，无其他独立批准实现剩余。最小解锁为用户保存关闭原Code或工具安全绑定。Goal保持active，非complete；仅不同后续Goal turn增加audit，不计压缩或重复工具。连续三turn且无法有意义推进时按规则blocked；用户resume重启audit。当前WI089及前七native阻碍仍在ACTIVE。

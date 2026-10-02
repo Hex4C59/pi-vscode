@@ -33,3 +33,15 @@
 REQ-009本地支持信息，无架构／ADR／gate或重大trust／data取舍。本轮有界Goal批准Prepare后Build。预计host version-information／公共接线／command／package files、预写组合及打包notes断言、双语README／PRD／WI。先写生产组合失败：实际精确版本、不同版本／Unreleased排除、unknown／缺失／重复／巨大／截断／不可读、纯字面文档、dispose／重叠／open重试／不调用runtime；真实固定notes及archive证据与模拟native API分开。干净5f2135f1261基线通过。然后compile／lint／行为／文档、审查提交、干净候选／打包；native英中只读与安装显示独立必需。隔离Code绑定仍阻碍则不验收／关闭，八项目标native全部保留待完成。
 
 有界方案Prepare完成，下一步预写组合red再实现。此点无版本报告／native验收。
+
+
+六项生产组合先于应用代码编写，red因缺少公开version-information entry失败。重复检测限于扫描的有界前缀，不审计整份历史日志；当前完整章节后有下一heading即可用，即使旧尾部很大。不完整／前缀之外／过大明确unavailable。下一步focused与标准检查，无候选／native验收。
+
+
+## 提交后候选与外部阻碍
+
+实现 d3ff0ea4144280f32d2b14ffb4f5648f1195e3db 已审查，与ACTIVE分开提交。干净隔离候选compile／lint通过；前两次完整行为失败于未改的frozen-history全局last-message断言。修正generated bundle诊断插桩后replay通过，随后标准npm test重建未插桩bundle、1267通过。根因未确证，失败／诊断／最终标准log分留，不改history断言／行为。开发const／control-regex lint已修正。docs:verify（两个既有ADR warning）／docs:health／package:vsix通过。最终候选真实公开pi RPC资源报告／压缩／模型轮换及真实SDK／生产worker会话搜索通过，零真实／付费inference或账户；loopback压缩仅模拟inference。
+
+实际archive包含固定根／上游notes。生产version owner配替代native APIs验证实际插件／pi0.86.1、对应插件说明缺失（既有打包映射不变）、精确上游0.86.1、无其他版本／Unreleased回退、英中有界output。可重复probe：node dist/goal-eight/wi089/verify-version-archive.mjs <clean candidate> <output>，须curated隔离env。candidate-identity.json／candidate-evidence保留身份／log／报告，提取非安装。前端Git tree自4eb8d38相同，旧浏览器矩阵仍为模拟宿主而非native。
+
+八项native F5／安装验收仍阻塞。原用户Code存在（仅binary inventory，不读用户正文）；macOS CUA无法按PID／window安全绑定隔离实例。未退出／使用用户实例，不放宽签名／library validation。最小解锁：用户保存关闭原Code以绑定隔离签名实例，或工具增加安全PID／window绑定。未WI关闭／归档／Goal完成。
