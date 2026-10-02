@@ -237,7 +237,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     });
   }
 
-
   private clearChat(preserveSessionTransition = false): void {
     this.interactionFailureReported = false;
     this.interactionReset = this.interactions.reset({ generation: this.state.generation, viewId: this.state.viewId });
@@ -379,7 +378,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     return;
   }
 
-
   private finishSettledTask(): void {
     this.promptToken += 1;
     const hasAssistant = this.state.messages.some((entry) => entry.role === "assistant" && entry.text.length > 0);
@@ -498,7 +496,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.interactionFailureReported = false;
     this.untouchedControlledConversation = false;
   }
-
 
   private commitRuntimeStart(result: Awaited<ReturnType<PiRuntimeLifecycle["start"]>>, token: number, resume: { id: string; path: string } | undefined, preserveMessages: boolean): void {
     if (!result.ok) {
@@ -1100,7 +1097,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       if (!this.disposed && view === this.view) this.publish();
     }
   }
-
 
   private setUiLanguage(locale: "en" | "zh-CN"): void {
     this.uiLocale = locale;
