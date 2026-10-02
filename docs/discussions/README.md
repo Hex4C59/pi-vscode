@@ -19,7 +19,7 @@ Use `docs/discussions/` for **exploratory notes** that are not yet decisions or 
 | Put it in… | Instead of discussions when… |
 |------------|------------------------------|
 | [`ACTIVE.md`](../../ACTIVE.md) **Parking lot** | It is a one-line idea for a future WI |
-| [`ACTIVE.md`](../../ACTIVE.md) **Last session** | It is the handoff for the current WI |
+| [`ACTIVE.md`](../../ACTIVE.md) **Last session** | It is the lead's total handoff; linked per-WI team proposals/evidence may remain here while active |
 | [`decisions/`](../decisions/) | The maintainer **confirmed** an ADR-worthy choice (Accepted only after required verification) |
 | [`product-requirements.md`](../product-requirements.md) | It defines **user-visible** scope ready for acceptance |
 | [`archive/`](../archive/) | The content is **superseded** but worth keeping |
@@ -62,6 +62,14 @@ The [feature-gap comparison](2026-10-01-pi-feature-gaps.md) remains a candidate 
 - [Settings redesign research](2026-09-29-settings-redesign-research.md)
 - [ARCH-08 streaming and history preview cost](2026-09-30-arch-08-streaming-history-cost.md)
 - [Resource and timeout measurement](2026-09-30-resource-timeout-measurement.md)
+
+### Active team task records
+
+- [WI-079 usage — Prepare, evidence and handoff](2026-10-02-wi-079-team.md)
+- [WI-080 current-session rename — Prepare, evidence and handoff](2026-10-02-wi-080-team.md)
+- [WI-081 reply copy — Prepare, evidence and handoff](2026-10-02-wi-081-team.md)
+
+These records describe their authorized slices; ACTIVE owns the current approval/status registry and PRD owns behavior. Native acceptance remains pending until observed.
 
 ### Code audits and verification evidence
 
