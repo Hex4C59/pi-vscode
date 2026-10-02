@@ -9,7 +9,7 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-086 |
-| **阶段** | Build（Prepare 完成；尚未编码） |
+| **阶段** | Build（Prepare 完成） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-008/009 catalogue 搜索／筛选／排序 |
@@ -30,7 +30,7 @@ host ephemeral criteria；具名 intent／显式 Search／Enter／Clear，刷新
 
 [八项有界 Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)批准本项实施／实际验证／代理验收／本地提交；不扩大 session 目录或资源／权限，不真实账户／付费／push。PI-GAP-02／04／06／14 原生验收未完成。
 
-**进度与下一步：** Prepare 完成；下一步编码前组合场景。
+**进度与下一步：** 实现与六项组合转绿；隔离 HOME／空 auth 下 compile／lint／1248 检查通过。真实公开 SDK／worker 与 18 份浏览器暂存条件视觉工件保留，native 未验收。下一步 scoped 提交与干净候选。
 
 ## 待完成
 
