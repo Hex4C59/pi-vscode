@@ -68,6 +68,8 @@ npm run preview:webview
 
 受控配置在覆盖范围内的操作前询问，仅自动允许 canonical 路径位于工作区内的普通文件读取。资源同意与工具授权独立。Stop 请求取消，不撤销已完成的修改；扩展不是沙箱。具体限制见[已批准的执行切片](docs/product-requirements.zh.md#req-006--执行审批策略)。
 
+通过命令面板运行 **pi: Show Resource Loading Report** 查看只读加载报告。模板／skill 定义和扩展命令来自当前 runtime 的公开目录；AGENTS.md、skill 正文和全部扩展文件的加载若无法证明则标未知。清单登记／启用不等于已加载，报告不启动 runtime 或联网。
+
 ## 开发与验证
 
 按改动范围运行检查：

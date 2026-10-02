@@ -70,6 +70,11 @@
     },
     "commands": [
       {
+        "command": "pi-vscode.showResourceReport",
+        "title": "pi: Show Resource Loading Report",
+        "category": "pi"
+      },
+      {
         "command": "pi-vscode.focusChat",
         "title": "pi: Focus Chat",
         "category": "pi",

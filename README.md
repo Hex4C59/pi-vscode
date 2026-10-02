@@ -63,6 +63,8 @@ Open one trusted local folder and choose whether to allow project-local pi resou
 
 The controlled profile asks before covered actions, with an automatic allowance for canonical in-workspace regular-file reads. Resource consent is separate from tool approval. Stop requests cancellation; it does not undo completed changes. The extension is not a sandbox. See the [approved execution slice](docs/product-requirements.md#req-006--execution-approval-strategies) for the precise limits.
 
+Run **pi: Show Resource Loading Report** from the Command Palette for a read-only live report. Template/skill definitions and extension commands come from the current runtime catalogue; AGENTS.md, skill bodies and the full set of extension files remain unknown when loading cannot be proved. Inventory registration/enabling is not loading. The report does not start a runtime or make network requests.
+
 ## Development and verification
 
 Use the checks that match the change:

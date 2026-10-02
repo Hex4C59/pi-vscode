@@ -2,7 +2,7 @@ import { unavailableSessionBackend, type SessionBackend, type SavedSession, type
 import { redactCredentialLikeText, type CommandCatalogueStateMessage, type SessionStateMessage, type SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
-import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel } from "./bridge/index.js";
+import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel, ResourceReport } from "./bridge/index.js";
 import { ModelSettings, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
@@ -40,6 +40,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private view: vscode.WebviewView | undefined;
   private viewSubscriptions: vscode.Disposable[] = [];
   private disposed = false;
+  private readonly resourceReport: ResourceReport;
+  private reportInventoryReady = false;
   private identity = "";
   private operation: object | undefined;
   private workspaceUpdatePending = false;
@@ -128,9 +130,13 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.pluginInventory = new PluginInventorySettings(
       this.inventoryStorage,
       () => this.pickInventoryEntry(),
-      () => this.settingsPanel.publish(),
+      () => { this.settingsPanel.publish(); this.resourceReport?.publish(); },
     );
     this.settingsPanel = this.createSettingsPanel();
+    this.resourceReport = new ResourceReport(api, () => ({
+      locale: this.uiLocale, runtime: this.state.runtime, catalogue: this.commandProjection(),
+      inventory: this.reportInventoryReady ? this.pluginInventory.snapshot : null,
+    }));
     this.savedHistory = this.createSavedHistory(sessionBackend);
     this.tools = this.createEditorTools(toolOptions);
     this.draft = this.createDraftSubmission();
@@ -157,6 +163,14 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       api.workspace.onDidGrantWorkspaceTrust(() => { this.refresh(); this.publish(); this.draft.publish(); }),
     ];
     this.startRetainedHandoff();
+  }
+
+  async showResourceReport(): Promise<void> {
+    if (this.disposed) return;
+    await this.pluginInventory.reload(() => !this.disposed);
+    if (this.disposed) return;
+    this.reportInventoryReady = true;
+    await this.resourceReport.open();
   }
 
   private createModels(runtime: PiRuntimeLifecycle): ModelSettings {
@@ -883,6 +897,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   private publish(forceExtensions = false): void {
     this.usage.flushPending();
+    this.resourceReport?.publish();
     if (!this.disposed) this.settingsPanel?.publish(forceExtensions);
     if (!this.view || this.disposed) return;
     const interactions = { ...this.envelope("interactionState"), ...this.interactions.snapshot(), ...this.extensionFeedback };
@@ -1102,6 +1117,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.uiLocale = locale;
     if (this.view) this.post(this.view, { ...this.envelope("uiLanguageState"), locale });
     this.settingsPanel.publish(true);
+    this.resourceReport.publish();
   }
 
   private async pickInventoryEntry(): Promise<string | undefined> {
@@ -1170,6 +1186,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (this.disposed) return;
     this.disposed = true;
     this.usage.dispose();
+    this.resourceReport.dispose();
     this.settingsPanel.dispose();
     this.reconcileToken += 1;
     this.unsubscribeRuntime();
