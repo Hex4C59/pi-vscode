@@ -14,6 +14,7 @@ import { PluginInventorySettings, selectTrustedExtension, trustedInventoryApply 
 import type { ExtensionExecutionProfile, ExecutionProfileProjection, ExtensionFeedback } from "./contracts/index.js";
 import { createInteractionCoordinator } from "./interactions/index.js";
 import { DraftSubmission } from "./draft/index.js";
+import { SessionUsageOwner } from "./session-usage/sessionUsageOwner.js";
 import { QueuedTextSession } from "./queue/queuedTextSession.js";
 
 const opaqueId = () => randomBytes(16).toString("hex");
@@ -45,6 +46,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private reconcileToken = 0;
   private readonly models: ModelSettings;
   private readonly savedDefaultApply: SavedDefaultApply;
+  private readonly usage = new SessionUsageOwner(() => this.runtime, () => ({
+    generation: this.state.generation, session: this.runtimeSession, disposed: this.disposed,
+    ready: this.state.runtime === "ready" && this.state.status === "eligible" && this.runtimeSession !== 0,
+    busy: this.state.chatBusy || this.state.busy || this.models?.snapshot.modelBusy || this.sessionTransitionBusy()
+      || this.profilePhase !== "idle" || this.interactions?.snapshot().phase !== "idle",
+  }), () => this.publishUsage());
   private runtimeSession = 0;
   private promptToken = 0;
   private stoppingTask = false;
@@ -323,7 +330,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         ? this.state.chatError
         : "No assistant response. In pi, use /model and Ctrl+S to save a startup model, then restart runtime here.",
     };
-    void this.models.applyPending();
+    void this.models.applyPending().then(() => this.usage.refreshWhenIdle()).catch(() => undefined);
     this.publish();
   }
 
@@ -432,6 +439,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         messages: preserveMessages ? this.state.messages : [],
       };
       this.ensureQueueSession();
+      this.usage.refreshWhenIdle();
       void this.loadStartupModels(token, result.modelLabel);
     }
     if (!result.ok) await this.refreshOwnership();
@@ -746,12 +754,13 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       this.sessionProjection = { ...this.sessionProjection, phase: "idle", error: null };
       if (resume && history) this.savedHistory.restore(resume.id, anchor, history);
     } catch { if (current()) fail("unavailable"); }
-    finally { if (this.sessionOperation === operation) { if (this.sessionCommit === operation) this.sessionCommit = undefined; if (!committed && (this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching")) fail("cancelled"); this.sessionOperation = undefined; this.publishSessions(); } }
+    finally { if (this.sessionOperation === operation) { if (this.sessionCommit === operation) this.sessionCommit = undefined; if (!committed && (this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching")) fail("cancelled"); this.sessionOperation = undefined; this.publishSessions(); if (committed && this.sessionProjection.phase === "idle") this.usage.refreshWhenIdle(); } }
   }
 
   private envelope<T extends string>(type: T) { return { version: 3 as const, type, generation: this.state.generation, viewId: this.state.viewId }; }
 
   private publish(forceExtensions = false): void {
+    this.usage.flushPending();
     if (!this.disposed) this.settingsPanel?.publish(forceExtensions);
     if (!this.view || this.disposed) return;
     const interactions = { ...this.envelope("interactionState"), ...this.interactions.snapshot(), ...this.extensionFeedback };
@@ -765,7 +774,18 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (forceExtensions || providerKey !== this.lastProviderConfigProjection) { this.lastProviderConfigProjection = providerKey; this.post(this.view, providers); }
     this.publishQueueState();
     this.publishCommands(forceExtensions);
+    this.publishUsage(forceExtensions);
     this.post(this.view, { ...this.state, ...this.models.snapshot });
+  }
+
+  private lastUsageProjection = "";
+  private publishUsage(force = false): void {
+    const projection = { ...this.envelope("sessionUsageState"), ...this.usage.snapshot() };
+    const key = JSON.stringify(projection);
+    if (this.view && !this.disposed && (force || key !== this.lastUsageProjection)) {
+      this.lastUsageProjection = key;
+      this.post(this.view, projection);
+    }
   }
 
   private commandProjection(): Omit<CommandCatalogueStateMessage, "revision"> {
@@ -878,6 +898,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const toolGeneration = this.state.generation; const session = this.runtimeSession;
     const toolOperation = this.tools.handle(message, () => !this.disposed && this.view === view && toolGeneration === this.state.generation && session === this.runtimeSession);
     if (toolOperation) { await toolOperation; return; }
+    if (message.type === "refreshSessionUsage") { await this.usage.refresh(); this.publishUsage(); return; }
     if (message.type === "completeCommand") { this.completeCommand(message); return; }
     const draftOperation = this.draft.handle(view, message);
     if (draftOperation) { await draftOperation; return; }
@@ -1013,6 +1034,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.usage.dispose();
     this.settingsPanel.dispose();
     this.reconcileToken += 1;
     this.unsubscribeRuntime();

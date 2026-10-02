@@ -82,7 +82,7 @@ test("settings page uses categories, icon refresh and separate provider details"
 test("narrow composer keeps model, permissions and send in one non-wrapping flow instead of stacking over the input", async t => {
   const h = await styledEmptySession(t);
   const toolbar = h.get(".candidate__composer-actions");
-  assert.deepEqual([...toolbar.children].map(child => child.classList[0]), ["candidate-context__actions", "candidate__model", "candidate-permissions", "candidate__send"]);
+  assert.deepEqual([...toolbar.children].map(child => child.classList[0]), ["candidate-context__actions", "candidate__model", "candidate-permissions", "session-usage", "candidate__send"]);
   const style = (element: Element) => h.dom.window.getComputedStyle(element);
   assert.equal(style(toolbar).display, "flex");
   assert.notEqual(style(toolbar).flexWrap, "wrap", "toolbar stays on one row while the model name truncates");

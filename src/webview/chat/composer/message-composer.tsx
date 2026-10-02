@@ -4,10 +4,14 @@ import { ModelPickerView, SessionGrants, useChatPreview, useUiText, type Attachm
 import { CommandInput } from "./command-input.js";
 import { CandidateContext } from "./candidate-context.js";
 import { ComposerIcon } from "./composer-icon.js";
+import { UsagePanel } from "./usage-panel.js";
+import type { SessionUsageStateMessage } from "../../../extension/contracts/index.js";
 import { QueuedTextPanel } from "./queued-text-panel.js";
 import { ExecutionProfileControls } from "../execution/extension-interactions.js";
 
 type ComposerProps = {
+  sessionUsage?: SessionUsageStateMessage | null;
+  onRefreshUsage?: () => void;
   text: string;
   error: string | null;
   workspace: WorkspaceStateMessage | null;
@@ -63,6 +67,8 @@ type ComposerProps = {
 };
 
 type ComposerChrome = {
+  usageOpen: boolean;
+  setUsageOpen: (next: boolean) => void;
   modelOpen: boolean;
   setModelOpen: (next: boolean) => void;
   permissionsOpen: boolean;
@@ -75,21 +81,25 @@ function useComposerChrome(identity: string | null): ComposerChrome {
   const permissions = useRef<HTMLDetailsElement>(null);
   const [modelOpen, setModelOpenState] = useState(false);
   const [permissionsOpen, setPermissionsOpen] = useState(false);
-  useEffect(() => {
-    setModelOpenState(false); setPermissionsOpen(false);
+  const [usageOpen, setUsageOpenState] = useState(false);
+  const closePopovers = () => {
+    setModelOpenState(false); setPermissionsOpen(false); setUsageOpenState(false);
     if (permissions.current) permissions.current.open = false;
-  }, [identity]);
+  };
+  useEffect(closePopovers, [identity]);
   return {
-    modelOpen, permissionsOpen,
-    closePopovers: () => { setModelOpenState(false); setPermissionsOpen(false); if (permissions.current) permissions.current.open = false; },
-    permissions,
-    setModelOpen: (next: boolean) => {
-      if (next && permissions.current) { permissions.current.open = false; setPermissionsOpen(false); }
+    modelOpen, permissionsOpen, usageOpen, closePopovers, permissions,
+    setUsageOpen: next => {
+      if (next) closePopovers();
+      setUsageOpenState(next);
+    },
+    setModelOpen: next => {
+      if (next) closePopovers();
       setModelOpenState(next);
     },
     onPermissionsToggle: event => {
       setPermissionsOpen(event.currentTarget.open);
-      if (event.currentTarget.open) setModelOpenState(false);
+      if (event.currentTarget.open) { setModelOpenState(false); setUsageOpenState(false); }
     },
   };
 }
@@ -129,6 +139,7 @@ function ComposerModel({ workspace, canPrepare, providerConfig, error, settingsD
 
 /** Layout and input behavior; send, stop, draft and attachment intents are bound by the page. */
 export function MessageComposer({
+  sessionUsage, onRefreshUsage,
   text, error, workspace, attachments, queuedText, commandCatalogue, onCompleteCommand, commandCompletionDisabled, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
   input, canPrepare, canBrowse, canCompose, readableRuntimeError, showStop, stopping, sendBlocked, queueDisabled, recallDisabled,
   attachmentDisabled, settingsDisabled, sessionTransitioning, submit, onEdit, onStop, onQueueChat, onRecallQueuedText,
@@ -173,6 +184,9 @@ export function MessageComposer({
           {canBrowse && workspace && <SessionGrants grants={workspace.grants} disabled={stopping || !!error} onRevoke={onRevokeGrant} />}
         </div>
       </details>}
+      <UsagePanel state={sessionUsage ?? null} open={chrome.usageOpen} onOpen={chrome.setUsageOpen}
+        busy={taskRunning} disabled={!canCompose || taskRunning || sessionTransitioning || settingsDisabled}
+        onRefresh={() => onRefreshUsage?.()} />
       {showStop
         ? <button className="candidate__send candidate__send--stop" type="button" aria-label={t("Stop current task")} disabled={stopping} onClick={onStop}><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5.5" y="5.5" width="9" height="9" rx="1.5" /></svg></button>
         : <button className="candidate__send" type="submit" aria-label={t("Send message")} disabled={sendBlocked}><ComposerIcon name="arrow-up" /></button>}

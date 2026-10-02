@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="UTF-8"><title>WI079 production UI synthetic evidence</title></head><body><div id="app" style="display:flex;width:320px;height:640px"></div><script type="module">
+import RefreshRuntime from '/@react-refresh';
+RefreshRuntime.injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => type => type;
+window.__vite_plugin_react_preamble_installed__ = true;
+</script><script type="module">
+import '../../src/webview/styles.css';
+import '../../src/webview/preview/preview.css';
+import { mountChat } from '../../src/webview/chat/index.ts';
+import { createUiLanguage } from '../../src/webview/i18n/ui-language.ts';
+import { PreviewBridge } from '../../src/webview/preview/preview-bridge.ts';
+const base = new PreviewBridge('empty');
+const listeners = new Set();
+const language = createUiLanguage();
+window.usageEvidence = { refreshes: 0, prompts: 0, status: 'ready', context: { tokens: 321, contextWindow: 8192, percent: 3.918 } };
+window.usageLanguage = language;
+let revision = 0;
+const bridge = {
+  postMessage(message) {
+    if (message.type === 'refreshSessionUsage') {
+      window.usageEvidence.refreshes++;
+      const status = window.usageEvidence.status;
+      const projection = { version: 3, type: 'sessionUsageState', viewId: message.viewId, generation: message.generation, revision: ++revision, status,
+        usage: status === 'ready' ? { context: window.usageEvidence.context, tokens: { input: 1111, output: 222, cacheRead: 333, cacheWrite: 444, total: 2110 }, cost: 0.000157 } : null };
+      for (const listener of listeners) listener(projection);
+    } else {
+      if (message.type === 'sendChat' || message.type === 'queueChat') window.usageEvidence.prompts++;
+      base.postMessage(message);
+    }
+  },
+  subscribe(listener) { listeners.add(listener); const unsubscribe = base.subscribe(listener); return () => { listeners.delete(listener); unsubscribe(); }; },
+};
+window.disposeUsageEvidence = mountChat(document.getElementById('app'), bridge, { language });
+</script></body></html>

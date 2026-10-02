@@ -165,7 +165,8 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
       <TaskStatus execution={state?.execution} chatBusy={!!state?.chatBusy} stopping={controls.stopping} />
       {state?.chatError && state.runtime !== "error" && <p className="candidate__error" role="status">{state.chatError}</p>}
       </div>
-      <MessageComposer text={snapshot.text} error={snapshot.error} workspace={state} attachments={snapshot.attachments}
+      <MessageComposer sessionUsage={snapshot.sessionUsage} onRefreshUsage={() => client.action({ type: "refreshSessionUsage" })}
+        text={snapshot.text} error={snapshot.error} workspace={state} attachments={snapshot.attachments}
         queuedText={snapshot.queuedText} commandCatalogue={snapshot.commandCatalogue}
         onCompleteCommand={client.completeCommand} commandCompletionDisabled={snapshot.synchronizing || snapshot.submitting || !!snapshot.error || controls.stopping || !!controls.sessionTransitioning || snapshot.attachments?.preparation !== "idle"}
         history={snapshot.history} historyOpen={snapshot.historyOpen} historyPage={snapshot.historyPage} preview={snapshot.preview}

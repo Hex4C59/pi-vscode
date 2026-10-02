@@ -68,7 +68,7 @@ export class WebviewClient {
     },
     intent => this.action(intent), snapshot => this.update(snapshot), error => this.update({ error }),
   );
-  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, commandCatalogue: null, sessions: null, text: "", synchronizing: true, submitting: false,
+  private snapshot: ClientSnapshot = { workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, commandCatalogue: null, sessionUsage: null, sessions: null, text: "", synchronizing: true, submitting: false,
     ...this.savedHistory.snapshot,
     changeReview: null, changeReviewOpen: false, changeReviewPage: 0, stopRequested: false, history: [], historyOpen: false, historyPage: 0, preview: null, error: null };
   constructor(private readonly bridge: WebviewBridge) {}
@@ -292,6 +292,9 @@ export class WebviewClient {
       case "attachmentState":
         this.applyAttachmentState(message);
         return;
+      case "sessionUsageState":
+        if (this.snapshot.sessionUsage && message.revision < this.snapshot.sessionUsage.revision) return;
+        this.update({ sessionUsage: message }); return;
       case "commandCatalogueState": return this.applyCommandCatalogue(message);
       case "queuedTextState":
         if (message.error && this.queuedSubmit) this.queuedSubmit = null;
@@ -328,7 +331,7 @@ export class WebviewClient {
     this.submitted = null;
     this.queuedSubmit = null;
     this.update({
-      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, commandCatalogue: null, sessions: null,
+      workspace: null, interactions: null, executionProfile: null, providerConfig: null, attachments: null, queuedText: null, commandCatalogue: null, sessionUsage: null, sessions: null,
       ...this.savedHistory.reset(),
       changeReview: null, changeReviewPage: 0, synchronizing: true, submitting: false, stopRequested: false, history: [], historyOpen: false, preview: null,
       ...(committedHandoff ? { text: "" } : {}),

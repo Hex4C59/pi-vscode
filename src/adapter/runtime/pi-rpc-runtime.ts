@@ -1,3 +1,4 @@
+import { sessionUsageIdentity, sessionUsageNumbers } from "./session-usage.js";
 import { createExtensionFeedback } from "./extension-feedback.js";
 import { extensionCommandNames, dispatchedExtensionCommand, presentCommandCatalogue } from "./command-classification.js";
 import { createInteractionWriter } from "./rpc/interaction-writer.js";
@@ -50,6 +51,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let detachReader: (() => void) | null = null;
   let startToken = 0;
   let activeSession = 0;
+  let usageConversation: { id: string; path: string } | undefined;
   let queueControlOperation: { session: number } | undefined;
   let queuedSend: { session: number; connection: RuntimeLink; pending: Promise<AttachmentPromptResult>; retire(): void } | undefined;
   let resumedConversation = false;
@@ -358,6 +360,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
     }
     activeSession = token;
+    usageConversation = sessionUsageIdentity(data);
     occupancy.setSession(token);
     resumedConversation = resume !== undefined;
     untouchedConversation = !resumedConversation;
@@ -376,6 +379,34 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
         name: typeof data.sessionName === "string" ? data.sessionName.slice(0, 160) : null,
       },
     };
+  };
+
+  const getSessionUsage: NonNullable<PiRuntimeLifecycle["getSessionUsage"]> = async expectedSession => {
+    const unavailable = { ok: false as const, detail: "Session usage is unavailable." };
+    const current = () => expectedSession !== 0 && expectedSession === activeSession && gateReady && occupancy.allowsRestart();
+    const deadline = Date.now() + 5000;
+    const read = (type: "get_state" | "get_session_stats") => {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new Error("Usage deadline expired.");
+      return invokeRpc({ type }, remaining);
+    };
+    try {
+      if (!current()) return unavailable;
+      const before = await read("get_state");
+      const identity = sessionUsageIdentity(before.data);
+      if (!current() || !before.success || !identity || !usageConversation || identity.id !== usageConversation.id
+        || !sameNativePath(identity.path, usageConversation.path)) return unavailable;
+      const response = await read("get_session_stats");
+      const statsIdentity = sessionUsageIdentity(response.data);
+      if (!current() || !response.success || !statsIdentity || statsIdentity.id !== identity.id
+        || !sameNativePath(statsIdentity.path, identity.path)) return unavailable;
+      const after = await read("get_state");
+      const afterIdentity = sessionUsageIdentity(after.data);
+      if (!current() || !after.success || !afterIdentity || afterIdentity.id !== identity.id
+        || !sameNativePath(afterIdentity.path, identity.path)) return unavailable;
+      const usage = sessionUsageNumbers(response.data, before.data);
+      return usage ? { ok: true, usage } : unavailable;
+    } catch { return unavailable; }
   };
 
   const checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
@@ -718,6 +749,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       }
     },
     getSession: () => activeSession,
+    getSessionUsage,
     getCommandCatalogue: () => commandCatalogue,
     subscribe(listener) {
       listeners.add(listener);

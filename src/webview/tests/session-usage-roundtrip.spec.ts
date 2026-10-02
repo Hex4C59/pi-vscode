@@ -39,10 +39,11 @@ test("user opens current-context and session totals, refreshes them and keeps an
     assert.match(panel.textContent ?? "", /2[, ]?110/);
     assert.match(panel.textContent ?? "", /0\.125/);
     usage = { ...usage, context: { ...usage.context, tokens: 654 },
-      tokens: { ...usage.tokens, output: 999, total: 2887 } };
+      tokens: { ...usage.tokens, output: 999, total: 2887 }, cost: 0.000157 };
     await ui.click('button[aria-label="Refresh usage"]'); await pump();
     assert.match(panel.textContent ?? "", /654/);
     assert.match(panel.textContent ?? "", /2[, ]?887/);
+    assert.match(panel.textContent ?? "", /\$0\.000157/);
     assert.equal(ui.get<HTMLTextAreaElement>("textarea").value, "keep this unsent draft");
     assert.equal(r.calls.includes("prompt"), false);
     passed = true;
