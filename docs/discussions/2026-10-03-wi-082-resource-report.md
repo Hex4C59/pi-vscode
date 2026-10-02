@@ -3,7 +3,7 @@
 English | [中文](2026-10-03-wi-082-resource-report.zh.md)
 
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-03
 - Authority: bounded PI-GAP-02 Prepare, Build and verification record
 
@@ -28,3 +28,11 @@ Inventory mistaken for loading; skill discovery mistaken for body loading; no ex
 Prepare cross-layer behavior checks through the existing host entry before implementation; do not add unit tests after code. Exercise four evidence categories, inventory separation, empty/error/stale identity, both languages, limits, open failure and disposal with reproducible TAP/JSON. Actual pi uses isolated HOME/agent/project fixtures containing known template, skill and extension commands, without paid model calls; retain observed-exit evidence. Separately run the native command in macOS F5 and installed VSIX, observing read-only report, keyboard/readability/close/refresh with screenshots/logs/source identity. Run compile, lint, npm test, docs:verify and docs:health at close. Candidate evidence uses an independently clean committed source after commit; the pre-existing dirty tree is not clean evidence.
 
 Artifact root: `dist/goal-eight/wi082/`. Implemented, acceptance pending. Development compile, lint, 1224 standard behavior checks, three pre-code report composition scenarios and docs:verify passed (two existing ADR 0010 notices retained). Isolated actual pi controlled/trusted catalogue and observed-exit checks passed without model calls. The first regression exposed premature native provider registration affecting an existing path; lazy first-open registration restored the full pass. The source tree includes pre-existing user changes, so these are development results only. Next: independently committed clean candidate, F5/installed VSIX and delegated acceptance; closure conditions are not yet met.
+
+## Current blocker and serial handoff (2026-10-03)
+
+Local commits: Prepare/authorization `712abb9`, implementation `d03d7c4`, inventory-race guard `0633e9f`, verifier refinements `796de78`/`33a13d5`. Independent candidate `33a13d5d38e8e64225da185be88620b38c8bcb4f` (base `bc1a2d7b9c5174434036445db6c5f85624072a72`) has clean source; compile, lint, 1224 tests, docs:verify, isolated actual pi and packaging each passed. Historical local artifacts were mounted for link validation only, not current evidence. The final zsh wrapper failed because `status` is readonly; individual passes are supported by the successful package reached through the `&&` chain and each log, not the wrapper exit code. Artifacts copied to `dist/goal-eight/wi082/candidate-evidence/`; original candidate path is in `candidate-path.txt`.
+
+F5/installed VSIX acceptance is missing: initial fixture launch failed because its Unix socket path was too long, then shortened. Current CUA could not bind the running isolated Code instance; a relabeled copy failed signature/dynamic-library validation. An unchanged signed copy of the installed app starts, but CUA binding still times out. No synthetic resource-consent click, report visual acceptance or installed-package pass exists. Task-owned test instances were ended without touching user Code. Do not loosen signature/execution permissions to remove this condition.
+
+Minimum unlock: bind an actual Code window using isolated user data, exercise project consent and the native command, then complete F5/installed-VSIX report and visual/keyboard observation. This WI remains unclosed/unarchived without delegated acceptance. After recording this blocker, switch the current focus to independent PI-GAP-04 (WI-083) under collaboration rules; revisit the native environment later. All eight goal closure conditions remain intact.
