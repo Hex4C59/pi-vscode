@@ -2,6 +2,20 @@ import { createContext, useContext } from "react";
 
 /** Source-language UI identifiers only; never pass host/user content through this Interface. */
 export type UiText =
+  | "Criteria not applied yet. Results use the previous search."
+  | "Catalogue exceeds 5000 sessions. No partial search is shown."
+  | "Clear"
+  | "Search names and first-message previews"
+  | "Named only"
+  | "Session sort order"
+  | "Most recent first"
+  | "Oldest first"
+  | "Name order"
+  | "Apply session search"
+  | "Clear session search"
+  | "Search"
+  | "Names and previews only."
+  | "No saved conversations match these criteria."
   | "Close usage"
   | "Usage" | "Refresh usage" | "Current context" | "Session total" | "Context tokens" | "Context capacity" | "Context used"
   | "Input tokens" | "Output tokens" | "Cache read tokens" | "Cache write tokens" | "Total tokens" | "Estimated cost (USD)"

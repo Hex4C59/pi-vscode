@@ -28,3 +28,17 @@
   .candidate__session[aria-current="true"]:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
   .candidate__session:disabled { color: GrayText; opacity: 1; }
 }
+/* Staged criteria stay in bounded native-looking controls above the scroll list. */
+.candidate__session-search { display: grid; flex: none; min-width: 0; gap: var(--ui-space-2); padding: 0 var(--ui-space-2) var(--ui-space-2); color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.candidate__session-search > label { min-width: 0; overflow-wrap: anywhere; }
+.candidate__session-search > input, .candidate__session-search select { width: 100%; min-width: 0; height: 28px; padding: 0 var(--ui-space-2); color: var(--ui-fg); background: var(--ui-input); border: 1px solid var(--ui-border); border-radius: var(--ui-radius); font: inherit; }
+.candidate__session-search-options { display: flex; align-items: center; gap: var(--ui-space-2); min-width: 0; }
+.candidate__session-search-options label { display: inline-flex; flex: none; align-items: center; gap: var(--ui-space-1); }
+.candidate__session-search-options input { margin: 0; accent-color: var(--ui-fg); }
+.candidate__session-search-options select { flex: 1; }
+.candidate__session-search-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ui-space-2); }
+.candidate__session-search-actions button { min-height: 28px; padding: 0 var(--ui-space-2); color: var(--ui-fg); background: var(--ui-accent); border: 1px solid var(--ui-border); border-radius: var(--ui-radius); font: inherit; cursor: pointer; }
+.candidate__session-search-actions button:hover:not(:disabled) { background: var(--ui-accent-hover); }
+.candidate__session-search input:focus-visible, .candidate__session-search select:focus-visible, .candidate__session-search button:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
+.candidate__session-search :disabled { opacity: .45; cursor: default; }
+@media (forced-colors: active) { .candidate__session-search :disabled { color: GrayText; opacity: 1; } }

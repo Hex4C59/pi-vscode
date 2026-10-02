@@ -167,10 +167,9 @@ async function runWorker(workerPath: string, request: SessionWorkerRequest, sign
   try { return JSON.parse(stdout) as unknown; } catch { return localFailure("unavailable"); }
 }
 
-export function createPiSessionBackend(workerPath: string, environment: PiSessionBackendEnvironment = {}): SessionBackend {
-  const resolvedWorkerPath = typeof workerPath === "string" && workerPath.length > 0 ? path.resolve(workerPath) : "";
+function createWorkerCaller(resolvedWorkerPath: string, environment: PiSessionBackendEnvironment) {
   let blockedClose: Promise<void> | undefined;
-  const call = async (request: SessionWorkerRequest, signal: AbortSignal): Promise<unknown | LocalFailure> => {
+  return async (request: SessionWorkerRequest, signal: AbortSignal): Promise<unknown | LocalFailure> => {
     if (blockedClose) return localFailure("unavailable");
     let spawned = false;
     let resolveClose!: () => void;
@@ -189,10 +188,15 @@ export function createPiSessionBackend(workerPath: string, environment: PiSessio
     }
     return result;
   };
+}
+
+export function createPiSessionBackend(workerPath: string, environment: PiSessionBackendEnvironment = {}): SessionBackend {
+  const resolvedWorkerPath = typeof workerPath === "string" && workerPath.length > 0 ? path.resolve(workerPath) : "";
+  const call = createWorkerCaller(resolvedWorkerPath, environment);
 
   return {
-    async list(cwd, page, signal) {
-      const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "list" as const, root: cwd, page };
+    async list(cwd, page, signal, search) {
+      const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "list" as const, root: cwd, page, ...(search ? { search } : {}) };
       if (!resolvedWorkerPath || !isSessionWorkerRequest(request)) return { ok: false, code: "unavailable" };
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
@@ -205,7 +209,7 @@ export function createPiSessionBackend(workerPath: string, environment: PiSessio
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
       const parsed = parseSessionWorkerResponse(response, request);
-      return !parsed.ok ? parsed : parsed.kind === "inspect" ? { ok: true, session: parsed.session, history: parsed.history, anchor: parsed.anchor } : { ok: false, code: "unavailable" };
+      return !parsed.ok ? { ok: false, code: parsed.code === "catalogue-too-large" ? "unavailable" : parsed.code } : parsed.kind === "inspect" ? { ok: true, session: parsed.session, history: parsed.history, anchor: parsed.anchor } : { ok: false, code: "unavailable" };
     },
     async history(cwd, id, anchor, page, signal) {
       const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "history" as const, root: cwd, id, anchor, page };
@@ -213,7 +217,7 @@ export function createPiSessionBackend(workerPath: string, environment: PiSessio
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
       const parsed = parseSessionWorkerResponse(response, request);
-      return !parsed.ok ? parsed : parsed.kind === "history" ? { ok: true, history: parsed.history } : { ok: false, code: "unavailable" };
+      return !parsed.ok ? { ok: false, code: parsed.code === "catalogue-too-large" ? "unavailable" : parsed.code } : parsed.kind === "history" ? { ok: true, history: parsed.history } : { ok: false, code: "unavailable" };
     },
     async preview(cwd, id, anchor, index, offset, signal) {
       const request = { version: SESSION_WORKER_PROTOCOL_VERSION, action: "preview" as const, root: cwd, id, anchor, index, offset };
@@ -221,7 +225,7 @@ export function createPiSessionBackend(workerPath: string, environment: PiSessio
       const response = await call(request, signal);
       if (isLocalFailure(response)) return publicFailure(response);
       const parsed = parseSessionWorkerResponse(response, request);
-      return !parsed.ok ? parsed : parsed.kind === "preview" ? { ok: true, preview: parsed.preview } : { ok: false, code: "unavailable" };
+      return !parsed.ok ? { ok: false, code: parsed.code === "catalogue-too-large" ? "unavailable" : parsed.code } : parsed.kind === "preview" ? { ok: true, preview: parsed.preview } : { ok: false, code: "unavailable" };
     },
   };
 }

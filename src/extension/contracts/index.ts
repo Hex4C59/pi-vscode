@@ -8,7 +8,7 @@ export type {
 } from "./runtimeLifecycle.js";
 export { noopPiRuntimeLifecycle } from "./runtimeLifecycle.js";
 export type {
-  SessionBackend, SessionBackendFailure, SavedSession,
+  SessionBackend, SessionBackendFailure, SessionBackendListFailure, SavedSession,
   SavedHistoryPage, SavedHistoryPreview,
 } from "./sessionBackend.js";
 export { unavailableSessionBackend } from "./sessionBackend.js";
@@ -38,3 +38,5 @@ export { containsCredentialLikeText, redactCredentialLikeText } from "./credenti
 
 /** Host-authoritative syntax validator; never grants filesystem access. */
 export { fileReferenceToken } from "./fileReference.js";
+
+export { DEFAULT_SESSION_SEARCH, isSavedSessionSearch } from "./sessionSearch.js";

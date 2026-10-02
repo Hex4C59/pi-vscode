@@ -1,6 +1,7 @@
 import path from "node:path";
 
-import type { SavedHistoryPage, SavedHistoryPreview, SavedSession } from "../../extension/contracts/index.js";
+import { isSavedSessionSearch } from "../../extension/contracts/index.js";
+import type { SavedSessionSearch, SavedHistoryPage, SavedHistoryPreview, SavedSession } from "../../extension/contracts/index.js";
 
 export const SESSION_WORKER_ARG = "--pi-vscode-session-worker";
 export const SESSION_WORKER_PROTOCOL_VERSION = 1;
@@ -19,12 +20,12 @@ export const SESSION_WORKER_MAX_HISTORY_TEXT_LENGTH = 8_000;
 export const SESSION_WORKER_MAX_HISTORY_TOTAL_BYTES = 128 * 1024;
 export const SESSION_WORKER_MAX_PREVIEW_TEXT_LENGTH = 8_192;
 
-export type SessionWorkerListRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "list"; root: string; page: number };
+export type SessionWorkerListRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "list"; root: string; page: number; search?: SavedSessionSearch };
 export type SessionWorkerInspectRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "inspect"; root: string; id: string };
 export type SessionWorkerHistoryRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "history"; root: string; id: string; anchor: string; page: number };
 export type SessionWorkerPreviewRequest = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; action: "preview"; root: string; id: string; anchor: string; index: number; offset: number };
 export type SessionWorkerRequest = SessionWorkerListRequest | SessionWorkerInspectRequest | SessionWorkerHistoryRequest | SessionWorkerPreviewRequest;
-export type SessionWorkerFailureCode = "unavailable" | "wrong-project" | "stale";
+export type SessionWorkerFailureCode = "unavailable" | "wrong-project" | "stale" | "catalogue-too-large";
 export type SessionWorkerFailure = { version: typeof SESSION_WORKER_PROTOCOL_VERSION; ok: false; code: SessionWorkerFailureCode };
 export type SessionWorkerSuccess =
   | { version: typeof SESSION_WORKER_PROTOCOL_VERSION; ok: true; action: "list"; entries: SavedSession[]; page: number; total: number }
@@ -37,7 +38,7 @@ type ParsedSessionWorkerResponse =
   | { ok: true; kind: "inspect"; session: SavedSession; history: SavedHistoryPage; anchor: string | null }
   | { ok: true; kind: "history"; history: SavedHistoryPage }
   | { ok: true; kind: "preview"; preview: SavedHistoryPreview }
-  | { ok: false; code: "unavailable" | "stale" | "wrong-project" };
+  | { ok: false; code: "unavailable" | "stale" | "wrong-project" | "catalogue-too-large" };
 
 export function sessionWorkerFailure(code: SessionWorkerFailureCode = "unavailable"): SessionWorkerFailure {
   return { version: SESSION_WORKER_PROTOCOL_VERSION, ok: false, code };
@@ -72,7 +73,8 @@ function isSessionWorkerPage(value: unknown, pageSize: number): value is number 
 
 export function isSessionWorkerRequest(value: unknown): value is SessionWorkerRequest {
   if (!isSessionWorkerRecord(value) || value.version !== SESSION_WORKER_PROTOCOL_VERSION || !isSessionWorkerRoot(value.root)) return false;
-  if (value.action === "list") return hasExactKeys(value, ["version", "action", "root", "page"]) && isSessionWorkerPage(value.page, SESSION_PAGE_SIZE);
+  if (value.action === "list") return hasExactKeys(value, value.search === undefined ? ["version", "action", "root", "page"] : ["version", "action", "root", "page", "search"])
+    && (value.search === undefined || isSavedSessionSearch(value.search)) && isSessionWorkerPage(value.page, SESSION_PAGE_SIZE);
   if (value.action === "inspect") return hasExactKeys(value, ["version", "action", "root", "id"]) && isSessionWorkerId(value.id);
   if (value.action === "history") return hasExactKeys(value, ["version", "action", "root", "id", "anchor", "page"]) && isSessionWorkerId(value.id) && isSessionWorkerId(value.anchor) && isSessionWorkerPage(value.page, HISTORY_PAGE_SIZE);
   return value.action === "preview"
@@ -176,7 +178,7 @@ export function parseSessionWorkerResponse(value: unknown, request: SessionWorke
   if (!isSessionWorkerRecord(value) || value.version !== SESSION_WORKER_PROTOCOL_VERSION || typeof value.ok !== "boolean") return unavailable();
   if (!value.ok) {
     if (!hasExactKeys(value, ["version", "ok", "code"])) return unavailable();
-    if (value.code === "wrong-project" || value.code === "stale") return { ok: false, code: value.code };
+    if (value.code === "wrong-project" || value.code === "stale" || value.code === "catalogue-too-large") return { ok: false, code: value.code };
     return unavailable();
   }
 
@@ -186,10 +188,11 @@ export function parseSessionWorkerResponse(value: unknown, request: SessionWorke
       || !Array.isArray(value.entries)
       || value.entries.length > SESSION_PAGE_SIZE
       || !isSessionWorkerPage(value.page, SESSION_PAGE_SIZE)
-      || (value.page as number) !== request.page
       || !Number.isSafeInteger(value.total)
       || (value.total as number) < 0
-      || (value.total as number) < value.entries.length) return unavailable();
+      || (value.total as number) < value.entries.length
+      || (value.page as number) !== (request.search ? Math.min(request.page, Math.max(0, Math.ceil((value.total as number) / SESSION_PAGE_SIZE) - 1)) : request.page)
+      || (request.search && value.entries.length !== Math.min(SESSION_PAGE_SIZE, (value.total as number) - (value.page as number) * SESSION_PAGE_SIZE))) return unavailable();
     const entries = value.entries.filter(isSavedSession);
     if (entries.length !== value.entries.length || new Set(entries.map((entry) => entry.id)).size !== entries.length) return unavailable();
     return { ok: true, kind: "list", entries, page: value.page as number, total: value.total as number };

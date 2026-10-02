@@ -1,3 +1,4 @@
+import { searchSessionMetadata } from "./session-search-projection.js";
 import { stat as fsStat, realpath as fsRealpath } from "node:fs/promises";
 import path from "node:path";
 import { sameNativePath } from "../index.js";
@@ -95,8 +96,13 @@ async function defaultSessionManager(): Promise<SessionManagerApi> {
 }
 async function loadMetadata(request: SessionWorkerRequest, manager: SessionManagerApi, projectRoot: string, fileSystem: FileSystemApi, signal: AbortSignal): Promise<{ ok: true; metadata: SavedSession[] } | SessionWorkerFailure> {
   if (signal.aborted) return failure();
-  const progress: SessionListProgress = () => undefined;
-  const values = await manager.list(request.root, undefined, progress, signal);
+  const boundedSearch = request.action === "list" && !!request.search;
+  const budget = new AbortController();
+  const progress: SessionListProgress = (loaded, total) => { if (boundedSearch && (loaded > 5000 || total > 5000)) budget.abort(); };
+  let values: readonly SessionInfoLike[];
+  try { values = await manager.list(request.root, undefined, progress, boundedSearch ? AbortSignal.any([signal, budget.signal]) : signal); }
+  catch (error) { if (budget.signal.aborted) return failure("catalogue-too-large"); throw error; }
+  if (budget.signal.aborted || (boundedSearch && Array.isArray(values) && values.length > 5000)) return failure("catalogue-too-large");
   if (signal.aborted || !Array.isArray(values)) return failure();
   const metadata: SavedSession[] = [];
   for (const value of values) {
@@ -171,8 +177,10 @@ export async function runSessionWorkerRequest(requestValue: unknown, environment
     if (request.action === "list") {
       const result = await loadMetadata(request, manager, projectRoot, fileSystem, signal);
       if (!result.ok) return result;
-      const start = request.page * SESSION_PAGE_SIZE;
-      return { version: SESSION_WORKER_PROTOCOL_VERSION, ok: true, action: "list", entries: result.metadata.slice(start, start + SESSION_PAGE_SIZE), page: request.page, total: result.metadata.length };
+      const metadata = request.search ? searchSessionMetadata(result.metadata, request.search) : result.metadata;
+      const page = request.search ? Math.min(request.page, Math.max(0, Math.ceil(metadata.length / SESSION_PAGE_SIZE) - 1)) : request.page;
+      const start = page * SESSION_PAGE_SIZE;
+      return { version: SESSION_WORKER_PROTOCOL_VERSION, ok: true, action: "list", entries: metadata.slice(start, start + SESSION_PAGE_SIZE), page, total: metadata.length };
     }
 
     const selected = await selectSession(request, manager, projectRoot, fileSystem, signal);

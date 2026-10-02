@@ -428,11 +428,18 @@ function parseChangeReviewStateMessage(message: DataRecord, envelope: readonly s
           ? { ...message, entries } as unknown as HostMessage : undefined;
 }
 
+function validSessionSearch(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const search = value as DataRecord;
+  return hasFields(search, ["query", "namedOnly", "sort"]) && string(search.query, 256)
+    && typeof search.namedOnly === "boolean" && oneOf(search.sort, ["recent", "oldest", "name"]);
+}
+
 function parseSessionStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
   const required = [...envelope, "phase", "current", "loaded", "entries", "page", "total", "error"];
-  if (!hasFields(message, required) || !oneOf(message.phase, ["idle", "listing", "confirming", "switching", "error"])
+  if (!hasFields(message, required, ["search"]) || (message.search !== undefined && !validSessionSearch(message.search)) || !oneOf(message.phase, ["idle", "listing", "confirming", "switching", "error"])
           || typeof message.loaded !== "boolean" || !integer(message.page) || !integer(message.total)
-          || (message.error !== null && !oneOf(message.error, ["unavailable", "cancelled", "stale", "wrong-project", "stop-failed", "restore-failed"]))) return;
+          || (message.error !== null && !oneOf(message.error, ["unavailable", "cancelled", "stale", "wrong-project", "stop-failed", "restore-failed", "catalogue-too-large"]))) return;
   const current = message.current === null ? null : parseSessionCurrent(message.current);
   const entries = list(message.entries, 16, parseSessionEntry);
   if (message.current !== null && !current || !entries || new Set(entries.map(entry => entry.id)).size !== entries.length) return;

@@ -1,3 +1,4 @@
+import type { SavedSessionSearch } from "../../extension/contracts/index.js";
 import { fileReferenceToken } from "./file-reference.js";
 import { SavedHistoryClient } from "./saved-history-client.js";
 import { availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE, type ClientSnapshot, type Intent } from "./client-state.js";
@@ -21,6 +22,7 @@ function sessionActionsBlocked(snapshot: ClientSnapshot): boolean {
 
 function blockedDuringSessionSwitch(intent: Intent): boolean {
   switch (intent.type) {
+    case "searchSavedSessions":
     case "getSavedSessions":
     case "newConversation":
     case "resumeConversation":
@@ -205,6 +207,10 @@ export class WebviewClient {
   };
   openSessions = (): void => {
     if (!this.snapshot.sessions?.loaded) this.getSavedSessions(0);
+  };
+  searchSavedSessions = (search: SavedSessionSearch): void => {
+    if (sessionActionsBlocked(this.snapshot) || search.query.length > 256) return;
+    this.action({ type: "searchSavedSessions", ...search });
   };
   getSavedSessions = (page: number): void => {
     if (!Number.isSafeInteger(page) || page < 0 || sessionActionsBlocked(this.snapshot)) return;

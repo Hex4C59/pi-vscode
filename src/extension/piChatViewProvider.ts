@@ -1,3 +1,4 @@
+import { DEFAULT_SESSION_SEARCH, type SavedSessionSearch } from "./contracts/index.js";
 import { NativeCompaction } from "./compaction/nativeCompaction.js";
 import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/index.js";
 import { redactCredentialLikeText, type CommandCatalogueStateMessage, type SessionStateMessage, type SessionError } from "./contracts/index.js";
@@ -822,12 +823,18 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.sessionRename.cancelInput();
     this.sessionOperation?.abort(); this.sessionOperation = undefined; this.sessionCommit = undefined; this.sessionCatalog.clear();
     this.savedHistory.reset();
-    this.sessionProjection = { phase: "idle", current: null, loaded: false, entries: [], page: 0, total: 0, error: null };
+    this.sessionProjection = { phase: "idle", current: null, loaded: false, entries: [], page: 0, total: 0, error: null, search: { ...DEFAULT_SESSION_SEARCH } };
   }
   private publishSessions(): void {
     if (this.view && !this.disposed) this.post(this.view, { ...this.envelope("sessionState"), ...this.sessionProjection });
   }
   private sessionEligible(): boolean { return !this.disposed && this.state.status === "eligible" && this.state.choice !== null && !this.state.busy; }
+  private async searchSavedSessions(search: SavedSessionSearch): Promise<void> {
+    if (!this.sessionEligible() || this.sessionOperation || this.sessionTransitionBusy()) return;
+    this.sessionCatalog.clear();
+    this.sessionProjection = { ...this.sessionProjection, search, entries: [], page: 0, total: 0, loaded: false, error: null };
+    await this.listSavedSessions(0);
+  }
   private async listSavedSessions(page: number): Promise<void> {
     if (!this.sessionEligible() || this.sessionOperation) return;
     const operation = new AbortController(); this.sessionOperation = operation;
@@ -839,7 +846,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       await backend.previous;
       await this.savedHistory.waitForSettlement();
       if (!current()) return;
-      const result = await this.sessionBackend.list(folder, page, operation.signal); if (!current()) return;
+      const result = await this.sessionBackend.list(folder, page, operation.signal, this.sessionProjection.search ?? DEFAULT_SESSION_SEARCH); if (!current()) return;
       if (!result.ok) { this.sessionProjection = { ...this.sessionProjection, phase: "error", error: result.code }; return; }
       this.sessionCatalog.clear();
       const entries = result.entries.map(entry => { const id = opaqueId(); this.sessionCatalog.set(id, entry); return { id, title: (entry.name?.trim() || entry.firstMessage || "Untitled conversation").slice(0, 160), excerpt: entry.firstMessage.slice(0, 256), modified: entry.modified.slice(0, 40) }; });
@@ -1111,6 +1118,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (draftOperation) { await draftOperation; return; }
     const queueOperation = this.ensureQueueSession()?.handle(message);
     if (queueOperation) { await queueOperation; this.draft.publish(); this.publishQueueState(true); this.publish(); return; }
+    if (message.type === "searchSavedSessions") { await this.searchSavedSessions({ query: message.query, namedOnly: message.namedOnly, sort: message.sort }); return; }
     if (message.type === "getSavedSessions") { await this.listSavedSessions(message.page); return; }
     if (message.type === "newConversation" || message.type === "resumeConversation") { await this.changeConversation(view, message.type === "resumeConversation" ? message.id : undefined); return; }
     if (message.type === "stopChat") { await this.stopCurrentTask(); return; }

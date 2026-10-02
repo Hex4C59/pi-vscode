@@ -2,6 +2,20 @@ import type { UiText } from "../components/index.js";
 
 /** UI copy only. Synthetic response bodies and upstream diagnostics are intentionally not translated. */
 export const chineseUi = {
+  "Criteria not applied yet. Results use the previous search.": "条件尚未应用，结果仍使用上一次搜索。",
+  "Catalogue exceeds 5000 sessions. No partial search is shown.": "目录超过 5000 项，不展示不完整搜索。",
+  "Clear": "清空",
+  "Search names and first-message previews": "搜索名称与首条消息预览",
+  "Named only": "仅命名会话",
+  "Session sort order": "会话排序",
+  "Most recent first": "最近修改优先",
+  "Oldest first": "最早修改优先",
+  "Name order": "按名称排序",
+  "Apply session search": "应用会话搜索",
+  "Clear session search": "清空会话搜索",
+  "Search": "搜索",
+  "Names and previews only.": "仅名称与预览。",
+  "No saved conversations match these criteria.": "没有符合条件的已保存会话。",
   "Close usage": "关闭用量",
   "Unknown": "未知", "Close": "关闭", "Refresh": "刷新",
   "Usage": "用量", "Refresh usage": "刷新用量", "Current context": "当前上下文", "Session total": "会话累计",

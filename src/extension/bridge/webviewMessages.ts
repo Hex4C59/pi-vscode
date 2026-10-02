@@ -2,12 +2,14 @@ export const WEBVIEW_MESSAGE_VERSION = 3;
 export type * from "../contracts/index.js";
 import type { PingMessage, PongMessage, WebviewMessage } from "../contracts/index.js";
 
+import { isSavedSessionSearch } from "../contracts/index.js";
 import { MAX_CHAT_MESSAGE_CHARS } from "./chatBounds.js";
 import { isValidModelRef, isValidProviderId, isValidThinkingLevel, isCustomModelId, isEndpointDisplayName, isPublicHttpUrl } from "../contracts/index.js";
 
 
 
 const actions: Record<string, string[]> = {
+  searchSavedSessions: ["query", "namedOnly", "sort"],
   openSettings: [], setUiLanguage: ["locale"],
   newConversation: [], refreshSessionUsage: [], renameSession: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
   chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
@@ -30,6 +32,7 @@ const actions: Record<string, string[]> = {
 };
 
 function validateActionPayload(message: Record<string, unknown>): boolean {
+  if (message.type === "searchSavedSessions" && !isSavedSessionSearch({ query: message.query, namedOnly: message.namedOnly, sort: message.sort })) return false;
   if (message.type === 'decideApproval' || message.type === 'revokeGrant') {
 
     if (message.type === 'decideApproval' && (typeof message.decision !== 'string' || !['once','session','deny'].includes(message.decision))) return false;

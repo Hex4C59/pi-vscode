@@ -1,7 +1,7 @@
 import type {
   WorkspaceStateMessage, ApprovalDecision, AttachmentHistoryEntry,
   AttachmentStateMessage, ChangeReviewStateMessage, SessionStateMessage,
-  SavedHistoryStateMessage, ProviderConfigProjection,
+  SavedHistoryStateMessage, ProviderConfigProjection, SavedSessionSearch,
 } from "../../extension/contracts/index.js";
 import type { SavedHistoryPreview } from "../index.js";
 
@@ -73,6 +73,7 @@ export type ModelPickerViewProps = {
 };
 
 export interface SessionsProps {
+  onSearch?: (search: SavedSessionSearch) => void;
   pageSize: number;
   state: SessionStateMessage | null;
   onOpen: () => void;

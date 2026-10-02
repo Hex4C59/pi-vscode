@@ -1,9 +1,10 @@
+import { SessionSearch } from "./session-search.js";
 import type { ReactElement, RefObject } from "react";
 import { SessionIcon } from "./session-icon.js";
 import { useUiText } from "../../components/index.js";
 import type { SessionsProps } from "../../components/index.js";
 
-type HistoryProps = Pick<SessionsProps, "state" | "pageSize" | "onPage" | "onRefresh" | "onResume"> & {
+type HistoryProps = Pick<SessionsProps, "state" | "pageSize" | "onPage" | "onRefresh" | "onResume" | "onSearch"> & {
   open: boolean;
   id: string;
   back: RefObject<HTMLButtonElement | null>;
@@ -11,7 +12,7 @@ type HistoryProps = Pick<SessionsProps, "state" | "pageSize" | "onPage" | "onRef
 };
 
 /** Owns the history surface; the page owns visibility, reading position and cross-region focus. */
-export function CandidateSessions({ state, pageSize, onPage, onRefresh, onResume, open, id, back, onBack }: HistoryProps): ReactElement {
+export function CandidateSessions({ state, pageSize, onPage, onRefresh, onResume, onSearch, open, id, back, onBack }: HistoryProps): ReactElement {
   const { locale, text: t } = useUiText();
   const dateFormat = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "2-digit", timeZone: "UTC" });
   const loading = !state || state.phase === "listing" || (!state.loaded && !state.error);
@@ -29,11 +30,8 @@ export function CandidateSessions({ state, pageSize, onPage, onRefresh, onResume
           <SessionIcon name="refresh-cw" />
         </button>
       </header>
-      {(state?.error || loading || !state?.entries.length) && <div className="candidate__catalogue-feedback">
-        {state?.error && <p role="alert">{t("Saved conversations: {error}. Refresh or retry the handoff. No conversation switch was made.", { error: state.error })}</p>}
-        {loading && <p role="status">{t("Loading saved conversations…")}</p>}
-        {!loading && !state?.error && !state?.entries.length && <p role="status">{t("No saved conversations in this project.")}</p>}
-      </div>}
+      {onSearch && <SessionSearch search={state?.search} busy={busy} onSearch={onSearch} />}
+      {(state?.error || loading || !state?.entries.length) && <CatalogueFeedback state={state} loading={loading} />}
       <ul className="candidate__session-list">
         {state?.entries.slice(0, pageSize).map(entry => {
           const modified = new Date(entry.modified);
@@ -60,5 +58,14 @@ export function CandidateSessions({ state, pageSize, onPage, onRefresh, onResume
         </button>
       </nav>
     </section>
+  </div>;
+}
+
+function CatalogueFeedback({ state, loading }: { state: HistoryProps["state"]; loading: boolean }): ReactElement {
+  const { text: t } = useUiText();
+  return <div className="candidate__catalogue-feedback">
+    {state?.error && <p role="alert">{state.error === "catalogue-too-large" ? t("Catalogue exceeds 5000 sessions. No partial search is shown.") : t("Saved conversations: {error}. Refresh or retry the handoff. No conversation switch was made.", { error: state.error })}</p>}
+    {loading && <p role="status">{t("Loading saved conversations…")}</p>}
+    {!loading && !state?.error && !state?.entries.length && <p role="status">{t(state?.search?.query.trim() || state?.search?.namedOnly ? "No saved conversations match these criteria." : "No saved conversations in this project.")}</p>}
   </div>;
 }

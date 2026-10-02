@@ -31,6 +31,7 @@ export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceStat
     | { type: "decideApproval"; id: string; decision: ApprovalDecision }
     | { type: "revokeGrant" | "openReviewDiff" | "openReviewSource" | "resumeConversation"; id: string }
     | { type: "getSavedSessions" | "getSavedHistory"; page: number }
+    | ({ type: "searchSavedSessions" } & SavedSessionSearch)
     | { type: "getSavedHistoryPreview"; id: string; requestId: string; offset: number }
     | { type: "chooseResources"; choice: ResourceChoice }
     | { type: "sendChat" | "addFileAttachment"; draftRevision: number }
@@ -165,14 +166,15 @@ export type ChangeReviewStateMessage = HostEnvelope & {
 };
 
 /** Session catalogue metadata only; storage paths stay in host/adapter. */
-export type SessionError = "unavailable" | "cancelled" | "stale" | "wrong-project" | "stop-failed" | "restore-failed";
+export type SavedSessionSearch = { query: string; namedOnly: boolean; sort: "recent" | "oldest" | "name" };
+export type SessionError = "unavailable" | "cancelled" | "stale" | "wrong-project" | "stop-failed" | "restore-failed" | "catalogue-too-large";
 export type SessionStateMessage = HostEnvelope & {
   type: "sessionState";
   phase: "idle" | "listing" | "confirming" | "switching" | "error";
   current: { id: string; name: string | null } | null;
   loaded: boolean;
   entries: { id: string; title: string; excerpt: string; modified: string }[];
-  page: number; total: number;
+  page: number; total: number; search?: SavedSessionSearch;
   error: SessionError | null;
 };
 

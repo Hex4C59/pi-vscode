@@ -143,7 +143,7 @@ function renderCandidateNavigation(view: CandidateView): ReactElement {
 function renderCandidateSessions(view: CandidateView): ReactElement {
   const { client, snapshot, historyOpen, historyId, back, setHistoryOpen } = view;
   return <CandidateSessions open={historyOpen} id={historyId} back={back} onBack={() => setHistoryOpen(false)}
-    state={snapshot.sessions} pageSize={SESSION_PAGE_SIZE} onResume={client.resumeConversation} onPage={client.navigateSessions} onRefresh={() => client.getSavedSessions(0)} />;
+    state={snapshot.sessions} pageSize={SESSION_PAGE_SIZE} onSearch={client.searchSavedSessions} onResume={client.resumeConversation} onPage={client.navigateSessions} onRefresh={() => client.getSavedSessions(0)} />;
 }
 
 function renderCandidateTranscript(view: CandidateView): ReactElement {

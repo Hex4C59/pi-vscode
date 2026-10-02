@@ -401,3 +401,8 @@ Stop先关闭准入、撤销／取消未答form与covered approval，包括取�
 ## WI-084 文件发现意图
 
 `completeFileReference {draftRevision, caret}` 是具名 v3 chat-only 操作，继承 generation／view 身份；caret 为 0–8000 整数，仅允许这些字段，不接受 path／query／RPC。Host 从已确认草稿独立推导光标处独立 @ token，再使用既有附件准备占用。原生发现不读正文，返回仅 host 持有的 URI，仍经 captureFile 和全部敏感／大小／变化检查。成功原子附加整文件且仅移除该 token；取消／失败／失效保留草稿与附件。设置页无处理器，浏览器无文件系统能力。[WI-084](../discussions/2026-10-03-wi-084-file-completion.zh.md)保留待完成原生验收。
+
+
+### WI-086 当前项目 metadata 搜索
+
+v3 新具名 intent：searchSavedSessions { query, namedOnly, sort }。host 验证 exact keys、query 字符串 <=256 UTF-16／无控制字符、boolean 与 recent／oldest／name 枚举，并重验 view／generation／会话准入；不接收存储路径或正文能力。host 拥有临时 applied criteria，新搜索清旧行、取 page0；getSavedSessions／刷新／rename 刷新保持 criteria。SessionState 增加可选 search metadata／catalogue-too-large 错误。worker v1 list 接受可选已验证 search；无该对象保留旧请求语义，有则对完整有界当前项目既有 metadata 先筛排后分页，核对计数／页、clamp 页。公开 SessionManager 取消／15 秒 worker 截止不变；>5000 明确拒绝而非截断。无全文／持久／全局／自动恢复，原恢复确认／串行交接不变。browser 独立验证投影，只按类型 import 合同。[WI-086](../discussions/2026-10-02-wi-086-session-search.zh.md)拥有待完成 native 验收。
