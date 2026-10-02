@@ -16,7 +16,7 @@ export type AttachmentCode = "no-editor" | "empty-selection" | "multiple-selecti
 export type ResourceChoice = "allow" | "decline";
 export type WorkspaceStatus = "no-folder" | "multi-root" | "remote" | "non-file" | "untrusted" | "eligible";
 export type ChatRole = "user" | "assistant";
-export type ChatLine = { role: ChatRole; text: string; id?: string };
+export type ChatLine = { role: ChatRole; text: string; id?: string; bodyCopyEligible?: true };
 export type PingMessage = { version: 3; type: "ping" };
 export type PongMessage = { version: 3; type: "pong" };
 type Action = { version: 3; generation: number; viewId: string };
@@ -27,7 +27,7 @@ export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceStat
   | Action & (
     | { type: "openSettings" }
     | { type: "setUiLanguage"; locale: "en" | "zh-CN" }
-    | { type: "stopChat" | "openFolder" | "manageTrust" | "getAttachmentHistory" | "getChangeReview" | "newConversation" }
+    | { type: "stopChat" | "openFolder" | "manageTrust" | "getAttachmentHistory" | "getChangeReview" | "newConversation" | "refreshSessionUsage" | "renameSession" }
     | { type: "decideApproval"; id: string; decision: ApprovalDecision }
     | { type: "revokeGrant" | "openReviewDiff" | "openReviewSource" | "resumeConversation"; id: string }
     | { type: "getSavedSessions" | "getSavedHistory"; page: number }
@@ -132,7 +132,21 @@ export type CommandCatalogueStateMessage = Action & {
   rows: readonly CommandCatalogueRow[];
 };
 
-export type HostMessage = CommandCatalogueStateMessage | UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage | QueuedTextStateMessage
+export type SessionUsage = {
+  tokens: { input: number; output: number; cacheRead: number; cacheWrite: number; total: number };
+  context: { tokens: number | null; contextWindow: number; percent: number | null } | null;
+  cost: number | null;
+};
+export type SessionUsageStateMessage = HostEnvelope & { type: "sessionUsageState"; revision: number } & (
+  | { status: "ready"; usage: SessionUsage }
+  | { status: "loading" | "unavailable" | "no-session"; usage: null }
+);
+
+export type SessionRenameStateMessage = HostEnvelope & {
+  type: "sessionRenameState"; revision: number; status: "unavailable" | "ready" | "renaming";
+};
+
+export type HostMessage = SessionRenameStateMessage | SessionUsageStateMessage | CommandCatalogueStateMessage | UiLanguageStateMessage | InteractionStateMessage | ExecutionProfileStateMessage | ProviderConfigStateMessage | PluginInventoryStateMessage | SavedHistoryStateMessage | SavedHistoryPreviewMessage | SessionStateMessage | ChangeReviewStateMessage | WorkspaceStateMessage | AttachmentStateMessage | AttachmentHistoryMessage | AttachmentPreviewMessage | QueuedTextStateMessage
   | HostEnvelope & { type: "pong" };
 
 /** Bounded review metadata only. Before/after text stays in host-owned readonly documents. */

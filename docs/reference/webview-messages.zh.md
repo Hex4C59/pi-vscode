@@ -73,7 +73,20 @@
 - 计划 sessionUsageState：当前信封、单调 revision；status 为 loading／ready／unavailable／no-session，可空有界 usage，无路径／正文。ready usage 分累计 tokens（input、output、cacheRead、cacheWrite、total）、context（可空；tokens／percent 可空，contextWindow 为数字）、可空 cost。缺／无效值不猜零；非 ready 不携带 ready 快照。UI 可保留同会话明确标旧的 busy 快照，替换不可沿用。
 - Adapter 公开 get_state／get_session_stats 校验当前会话与有限非负数字，context percent 有界，null 未知。sessionFile、身份元数据与模型定价只留宿主。未知／全零定价使零费用未知，不当免费；报告费用是估算，不是账单。
 - 宿主每 runtime／session 只有一个在途刷新，合并调用，有界 RPC deadline。固定 unavailable 不送原始错误；替换／dispose 失效 owner token、清旧快照、忽略迟到。只读显式重试可恢复，无模型／会话文件／持久化。New／restore 不发布旧累计。
+- 仅 schema 里程碑：类型与 receiving validator 准入 `refreshSessionUsage` 和判别数字 `sessionUsageState`；不声明 provider／runtime／面板已接线。tokens 为非负安全整数，contextWindow 为正安全整数，percent 为 [0,100] 有限数或 null，cost 为 [0,Number.MAX_SAFE_INTEGER] 有限数或 null。ready 必须 usage object，其他 status 必须 null。嵌套字段精确，排除 raw metadata／accessor。可选 runtime seam `getSessionUsage(expectedSession)` 返回 `{ok:true,usage}` 或 `{ok:false,detail}`（固定有界仅宿主诊断）；身份验证与既有 deadline 归 adapter／host。
 - UI 仅投影、键盘可达面板与 allowlisted Refresh。保留一次一张，Escape 恢复焦点且不丢草稿；中英无会话／加载／未知／不可用／旧快照、浏览器／原生检查是要求，还不是证据。
+
+## WI-080 当前会话重命名（Outline；仅 schema 已验证）
+
+`renameSession` 仅 chat，只有精确 v3 action 信封，无 payload。host 拥有原生输入框；browser 不提供名称、session id／path 或 RPC。`sessionRenameState` 携带 host 信封、非负安全整数 `revision` 和 `status: unavailable | ready | renaming`。receiving parser 接受该 schema；contract-only 变更不实现 provider／runtime／UI 接线。既有 `sessionState.current.name` 仍是标题权威。
+
+可选 host-owned runtime capability 为 `renameSession(name, expectedSession): Promise<RuntimeSessionRenameResult>`。host trim 名称，要求非空、最多 200 UTF-16、无控制字符。原生输入／mutation 共用 one-flight，捕获 generation 与 runtime／session 身份；输入后及 RPC 后重查。adapter 公开 `get_state`、`set_session_name`、再经验证 `get_state`，同身份且名称匹配后才成功。返回 `{ok:true,conversation:{id,name,path}}` 或 `{ok:false,detail}`，detail 固定有界，path 仅宿主。取消保留标题；unavailable／非法／busy／stale 不 mutation。超时不证明 mutation 失败，不自动重试。确认成功更新当前标题、刷新已保存目录；替换／dispose 失效迟到回复与输入 owner。原生、runtime、browser 验收待完成。
+
+## WI-081 完整正文复制元数据（Outline；仅 schema 已验证）
+
+`ChatLine` 与仅宿主 `RuntimeEvent.message_final` 可带 `bodyCopyEligible?: true`，缺失代表未验证／不可复制。browser 仅接受非空 assistant 正文的 literal true，拒绝 false／其他值和 user 行字段。saved-history DTO 不准入该字段：尚无可靠完整／完成来源。无新增 host intent 或 clipboard authority。
+
+仅公开 `stopReason === "stop"`、raw joined text 非空且最多 65,536 UTF-16、display projection 与 raw 一致且未打码／截断时 producer 才可标 true。缺 stop reason、tool continuation、length／error／aborted、隐藏／打码／截断保持不可复制。host 随同一 final body 转发事实，后续 text delta 移除资格。全局 chat idle 不证明单条完成。schema-only 变更不实现 producer 资格、控件或验收，C 拥有相应功能 hunk。
 
 ## 编辑区设置界面（WI-026）
 
@@ -98,6 +111,7 @@
 | 动作 | 额外字段／准入 |
 |---|---|
 | openFolder／manageTrust／stopChat／newConversation／getAttachmentHistory／getChangeReview | 无；分别走工作区、Stop、会话及只读投影资格 |
+| refreshSessionUsage／renameSession | 无；仅 chat、匹配 generation／view；功能准入／接线仍 Outline |
 | chooseResources | choice: allow／decline；只能显式选择，不接收trust boolean |
 | updateDraft | draftRevision、editSequence、text（最多8000 UTF-16单元） |
 | sendChat／addFileAttachment／addSelectionAttachment | draftRevision；host自行取得已确认草稿／原生选择，不接收prompt路径或附件正文 |

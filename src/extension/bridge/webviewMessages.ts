@@ -19,7 +19,7 @@ export function parseWebviewMessage(value: unknown): WebviewMessage | undefined 
   if (message.version !== WEBVIEW_MESSAGE_VERSION) return undefined;
   const actions: Record<string, string[]> = {
     openSettings: [], setUiLanguage: ["locale"],
-    newConversation: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
+    newConversation: [], refreshSessionUsage: [], renameSession: [], resumeConversation: ["id"], getSavedSessions: ["page"], getSavedHistory: ["page"], getSavedHistoryPreview: ["id", "requestId", "offset"],
     chooseExecutionProfile: ["profile"], answerInteraction: ["id", "answer"], cancelInteraction: ["id"], endOwnedRuntime: [], recoverControlledRuntime: [],
     openProviderApiKey: ["providerId"], openProviderOAuth: ["providerId"], logoutProvider: ["providerId"],
     addCustomEndpoint: ["displayName", "baseUrl", "modelId"], removeCustomEndpoint: ["providerId"],

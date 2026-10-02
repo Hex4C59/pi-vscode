@@ -96,9 +96,12 @@ function parseFolder(value: unknown): DataRecord | undefined {
 }
 
 function parseChatLine(value: unknown): DataRecord | undefined {
-  const line = exactRecord(value, ["role", "text"], ["id"]);
-  return line && oneOf(line.role, ["user", "assistant"]) && string(line.text)
-    && (!Object.hasOwn(line, "id") || string(line.id, 200)) ? line : undefined;
+  const line = exactRecord(value, ["role", "text"], ["id", "bodyCopyEligible"]);
+  if (!line || !oneOf(line.role, ["user", "assistant"]) || !string(line.text)
+    || (Object.hasOwn(line, "id") && !string(line.id, 200))) return;
+  if (Object.hasOwn(line, "bodyCopyEligible")
+    && (line.bodyCopyEligible !== true || line.role !== "assistant" || !line.text.trim())) return;
+  return line;
 }
 
 function parseSavedHistoryLine(value: unknown): DataRecord | undefined {
@@ -218,6 +221,22 @@ function parseFeedback(value: unknown): DataRecord | undefined {
     && oneOf(item.level, ["info", "warning", "error"]) && utf8Text(item.text, 32768) ? item : undefined;
 }
 
+function parseUsage(value: unknown): DataRecord | undefined {
+  const usage = exactRecord(value, ["tokens", "context", "cost"]);
+  if (!usage) return;
+  const tokens = exactRecord(usage.tokens, ["input", "output", "cacheRead", "cacheWrite", "total"]);
+  if (!tokens || !Object.values(tokens).every(integer)) return;
+  const cost = usage.cost;
+  if (!(cost === null || (typeof cost === "number" && Number.isFinite(cost) && cost >= 0 && cost <= Number.MAX_SAFE_INTEGER))) return;
+  if (usage.context === null) return { tokens, context: null, cost };
+  const context = exactRecord(usage.context, ["tokens", "contextWindow", "percent"]);
+  if (!context || !(context.tokens === null || integer(context.tokens))
+    || !integer(context.contextWindow) || context.contextWindow === 0
+    || !(context.percent === null || (typeof context.percent === "number" && Number.isFinite(context.percent)
+      && context.percent >= 0 && context.percent <= 100))) return;
+  return { tokens, context, cost };
+}
+
 /** Narrow and copy the complete v3 DTO before the browser consumes host data. */
 export function parseHostMessage(value: unknown): HostMessage | undefined {
   const message = snapshotRecord(value);
@@ -225,6 +244,16 @@ export function parseHostMessage(value: unknown): HostMessage | undefined {
   const envelope = ["version", "type", "generation", "viewId"];
 
   switch (message.type) {
+    case "sessionRenameState":
+      return hasFields(message, [...envelope, "revision", "status"]) && integer(message.revision)
+        && oneOf(message.status, ["unavailable", "ready", "renaming"]) ? message as unknown as HostMessage : undefined;
+    case "sessionUsageState": {
+      if (!hasFields(message, [...envelope, "revision", "status", "usage"]) || !integer(message.revision)
+        || !oneOf(message.status, ["loading", "ready", "unavailable", "no-session"])) return;
+      if (message.status !== "ready") return message.usage === null ? message as unknown as HostMessage : undefined;
+      const usage = parseUsage(message.usage);
+      return usage ? { ...message, usage } as unknown as HostMessage : undefined;
+    }
     case "uiLanguageState":
       return hasFields(message, [...envelope, "locale"]) && oneOf(message.locale, ["en", "zh-CN"]) ? message as unknown as HostMessage : undefined;
     case "interactionState": {
