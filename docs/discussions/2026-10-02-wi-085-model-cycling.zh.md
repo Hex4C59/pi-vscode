@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-02
 - Type: Discussion
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-02
 - Authority: PI-GAP-14 有界 Prepare 与待完成证据
 - Related: [ACTIVE](../../ACTIVE.md)、[有界 Goal](2026-10-03-eight-gap-goal.zh.md)、[需求](../product-requirements.zh.md)
@@ -36,3 +36,8 @@
 编码前准备七项 provider-to-ModelSettings-to-runtime 组合，red 为缺少方法；现均通过：身份／首尾、初始／确认空／取消／单项、pending next-turn／settlement、实际级别／空、失败读回／成员移除、失效／dispose／重叠、替换／picker 错误。替换 fixture 改用真实 chooseResources decline／allow 而非未声明 restart 消息，失败 fixture 补齐 detail。未在代码后补单元测试。compile、lint、1242 标准检查、docs:verify、docs:health 通过。
 
 真实 pi 0.86.1 公开 RPC 使用隔离 HOME／agent／project，验证重名合成模型修改／读回、high／off／medium 思考读回、缺失模型拒绝且旧模型不变、观察 child 关闭。推理请求／真实模型调用／凭据均为零。命令 node scripts/spikes/spike-model-cycling.mjs；工件 dist/goal-eight/wi085/（red.log、green.log、compile.log、lint.log、tests.log、docs.log、docs-health.log、runtime.log、runtime-model-cycling.json）。F5／安装 VSIX 受隔离窗口绑定阻碍未验证，无验收或关闭。下一步 scoped 本地实现提交／干净候选。本记录采用 2026 年 10 月 2 日 UTC；此前 10 月 3 日文件名为机器 Asia/Shanghai 当地日期，不是未来证据。
+
+
+## 干净候选与保留阻碍
+
+提交 `66ba52b0112bbbf72e98f5db55c6e6ff36c0055b` 在隔离干净候选执行 compile／lint／1242 检查／docs:verify／docs:health、真实 pi RPC 和 VSIX 打包通过，前后源码状态为空。工件 dist/goal-eight/wi085/candidate-evidence/ 与 candidate-identity.json；目录后续复用以保存身份为准。native 多选／键盘／英中 F5 及安装 VSIX 受既有隔离 Code 绑定阻碍未验证，无代理验收或关闭。保留 PI-GAP-14 未完成；下一独立重点 WI-086／PI-GAP-24。

@@ -3,7 +3,7 @@
 English | [中文](2026-10-02-wi-085-model-cycling.zh.md)
 
 - Type: Discussion
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-02
 - Authority: bounded PI-GAP-14 Prepare and pending evidence
 - Related: [ACTIVE](../../ACTIVE.md), [bounded goal](2026-10-03-eight-gap-goal.md), [requirements](../product-requirements.md)
@@ -32,3 +32,8 @@ Before application code, prepare provider→ModelSettings→runtime composition 
 Seven provider-to-ModelSettings-to-runtime composition scenarios were prepared before application code; red showed missing methods. All seven now pass: exact identity/wrap, initial/confirmed empty/cancel/singleton, pending next-turn/settlement, actual levels/empty, failure/readback/removed members, stale/disposed/overlap, replacement/picker error. Corrected the replacement fixture to real chooseResources decline/allow, not an undeclared restart message, and supplied required failure detail. No post-code unit tests were added. Compile, lint, all 1242 standard checks, docs:verify and docs:health passed.
 
 Actual pi 0.86.1 public RPC in isolated HOME/agent/project verified synthetic duplicate-label model mutations/readback, high/off/medium level readback, missing model refusal preserving the old model and observed child close. Zero inference requests, real model calls or credentials. Command: node scripts/spikes/spike-model-cycling.mjs. Artifacts: dist/goal-eight/wi085/ (red.log, green.log, compile.log, lint.log, tests.log, docs.log, docs-health.log, runtime.log, runtime-model-cycling.json). Native F5/installed VSIX remain unverified under the isolated-window binding blocker; no acceptance or closure. Next: scoped local implementation commit and clean candidate checks. This record uses October 2, 2026 UTC; earlier October 3 filenames use the machine's Asia/Shanghai local day, not future evidence.
+
+
+## Clean candidate and retained blocker
+
+Commit `66ba52b0112bbbf72e98f5db55c6e6ff36c0055b` passed isolated clean compile/lint/1242 checks/docs:verify/docs:health, actual pi public-RPC probe and VSIX packaging. Before/after source status empty. Evidence: dist/goal-eight/wi085/candidate-evidence/ and candidate-identity.json; the checkout may later be reused, so saved identity governs this run. Native multi-select/keyboard/English-Chinese F5 and installed VSIX remain unverified under the existing isolated-Code binding blocker. No delegated acceptance or closure. Retain PI-GAP-14 unfinished; next independent focus WI-086 / PI-GAP-24.

@@ -288,6 +288,8 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **WI-085 批准切片（2026-10-02；PI-GAP-14，REQ-002/004）：** 可绑定 native 命令选择当前工作区／runtime session 的仅内存、初始为空轮换子集，轮换上／下一个实际可用模型与思考级别。保留选择器／默认值和忙碌 next-turn 规则；取消保留集合，空／不可用／失效明确提示，以 provider/modelId 为身份，失败不伪报应用。无新持久化、provider 调用、权限或默认快捷键。[WI-085](discussions/2026-10-02-wi-085-model-cycling.zh.md)拥有 Prepare 与待完成组合／原生证据。
 
+**WI-086 批准切片（2026-10-02；PI-GAP-24，REQ-008/009）：** 对完整批准当前项目 catalogue 的既有有界标题／名称／首条消息预览搜索后分页，支持 named-only、recent／oldest／name 排序、稳定 tie 与页 clamp。host 拥有临时已应用 criteria，显式 Search／Enter／Clear、刷新／分页一致；完整枚举限 5000 项／15 秒，超限／不确定扫描明确失败，不静默截断。无全文搜索／全局发现／持久化／自动恢复／资源扩大，保留恢复确认与顺序交接。[WI-086](discussions/2026-10-02-wi-086-session-search.zh.md)拥有待完成证据。
+
 ### REQ-005 — 停止与恢复
 
 提供停止全部操作，清除排队续跑并请求取消活动任务。在运行时稳定结束或报告关闭失败前显示停止中。取消不会撤销已完成的副作用。运行时断开／崩溃后明确显示中断，保留未发送输入，不自动重复可能有副作用的任务。重启／重试须由用户明确操作。
@@ -503,6 +505,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-083 | REQ-004／005／009 手动上下文压缩（PI-GAP-04） | 本次有界 goal 批准；[Prepare／待验收](discussions/2026-10-03-wi-083-manual-compaction.zh.md)。 |
 | WI-084 | REQ-004／009 工作区文件补全（PI-GAP-06） | 有界 goal 批准；[Prepare／待验收](discussions/2026-10-03-wi-084-file-completion.zh.md)。 |
 | WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-085-model-cycling.zh.md)。 |
+| WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
