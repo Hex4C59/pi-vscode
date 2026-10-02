@@ -18,12 +18,14 @@
 | 任务 ID | 阶段 | 槽位 | 执行者／所有者 | 分支／worktree | 范围／依赖 |
 |---|---|---|---|---|---|
 | WI-079 | Build | 1 | Agent A | team/wi079-usage / ../pi-vscode-worktrees/team-wi079-usage | 只读用量；A 先交付公共协议；已有红测仅归 A |
-| WI-080 | Prepare | 2 | Agent B | team/wi080-rename / ../pi-vscode-worktrees/team-wi080-rename | PI-GAP-12 当前已打开会话重命名；依赖 A 公共契约 |
-| WI-081 | Prepare | 3 | Agent C | team/wi081-copy / ../pi-vscode-worktrees/team-wi081-copy | PI-GAP-20 已完成 assistant 正文复制；保留代码块复制 |
+| WI-080 | Build | 2 | Agent B | team/wi080-rename / ../pi-vscode-worktrees/team-wi080-rename | PI-GAP-12 当前已打开会话重命名；依赖 A 公共契约 |
+| WI-081 | Build | 3 | Agent C | team/wi081-copy / ../pi-vscode-worktrees/team-wi081-copy | PI-GAP-20 已完成 assistant 正文复制；保留代码块复制 |
 
 基线：master `dd33b5d` 干净，暂存及 ACTIVE 未提交差异为空；六个登记旧 worktree 均干净，全部保留。旧 `0412459` 的 mounted usage 红测由 A 单独带入；旧并行入口校验器与测试由主 agent 仅复用相关文件，先观察 3 项失败再实现，13 项通过。没有所需未提交基线。旧 CI／PR／隔离规则提交不整批并入本轮。
 
 共享文件：A 独占初始 usage／rename／copy eligibility host-owned 协议／runtime 类型及 validator 契约，B 先发送重命名提案，再等统一契约本地提交；C 不新增宿主权限。共同 coordinator／i18n 文件按功能 hunk 分开，各分支独立修改，主 agent 按 A→B→C 顺序审查集成。PRD 总体变更主 agent 维护。F5／安装 VSIX 由主 agent 排队，执行 agent 不自行占用。
+
+初始共同契约 `5e52663` 经主 agent 源码核对、B Standards／C Spec 两轴只读审查后已批准分发，主分支集成 `0c12359`；B／C 按同一提交进入 Build。contract-only 四项 receiving 行为先红后绿，A 1164 tests 与主分支 compile／lint 通过，不代表功能已交付。已发现既有 receiving parser 修改后的 >50 行函数限制待 A 单独保序提取；组合 coordinator／Candidate 同类结构检查由主 agent 集成后处理，不自授规则豁免。
 
 ## 任务提案
 
@@ -32,7 +34,7 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-079 |
-| **阶段** | Build（Prepare 已完成；公共契约依赖中，功能未验收） |
+| **阶段** | Build（Prepare 与初始共同契约已审；功能未验收） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-004／009、PI-GAP-03，双语 PRD 已批准 |
@@ -58,7 +60,7 @@ host→adapter→validated client→production mount 先红／绿 JSON；真实 
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-080 |
-| **阶段** | Prepare（Prepare 已完成；公共契约依赖中，功能未验收） |
+| **阶段** | Build（Prepare 与初始共同契约已审；功能未验收） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-008、PI-GAP-12，双语 PRD 已批准 |
@@ -84,7 +86,7 @@ B Prepare 已审，依赖 A task-4 公共契约；no-payload renameSession、具
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-081 |
-| **阶段** | Prepare（Prepare 已完成；公共契约依赖中，功能未验收） |
+| **阶段** | Build（Prepare 与初始共同契约已审；功能未验收） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-004、PI-GAP-20，双语 PRD 已批准 |
