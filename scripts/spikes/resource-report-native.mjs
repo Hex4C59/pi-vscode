@@ -10,7 +10,8 @@ const repo = fileURLToPath(new URL('../../', import.meta.url));
 const mode = process.argv[2];
 assert.ok(mode === 'f5' || mode === 'installed', 'Use f5 or installed [VSIX]');
 assert.equal(process.platform, 'darwin', 'This evidence lane is macOS only');
-const electron = '/Applications/Visual Studio Code.app/Contents/MacOS/Code';
+const app = process.env.PI_REPORT_CODE_APP ?? '/Applications/Visual Studio Code.app';
+const electron = path.join(app, 'Contents/MacOS/Code');
 const root = await realpath(await mkdtemp('/tmp/pi-resource-native-'));
 const evidence = path.join(repo, 'dist/goal-eight/wi082', mode);
 await mkdir(evidence, { recursive: true });
@@ -106,7 +107,7 @@ if (mode === 'f5') {
   }] }, null, 2));
 } else {
   assert.ok(process.argv[3], 'installed mode requires a VSIX path');
-  const cli = '/Applications/Visual Studio Code.app/Contents/Resources/app/out/cli.js';
+  const cli = path.join(app, 'Contents/Resources/app/out/cli.js');
   const output = execFileSync(electron, [cli, '--user-data-dir', path.join(root, 'user'), '--extensions-dir', path.join(root, 'extensions'), '--install-extension', path.resolve(process.argv[3]), '--force'], {
     env: { ...env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', windowsHide: true, timeout: 60000,
   });
