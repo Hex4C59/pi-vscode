@@ -109,7 +109,7 @@ production mount→clipboard 和public JSONL→host资格 test-first 红绿；�
 
 ## 当前焦点与未决项
 
-WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079／080／081 已集成至 master，主 agent 继续组合验收；执行分支保留以便追溯。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
+WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079／080／081 已集成至 master，主 agent 继续组合验收；执行分支已转为归档标签以便追溯，原 worktree 保持 detached HEAD 并保留工件。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 macOS 已有矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)；它不替代 WI-079 新切片分层验收。
 
@@ -202,6 +202,8 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 ### 2026-10-02 — 三项功能汇入 master，验收未关闭
 
 维护者要求核对并完成 WI-079～081、汇总分支，并明确最终分支为 `master`。本轮将本地 `master` 从 `dd33b5d` 快进至集成提交 `752992c`；删除本轮临时创建、没有独有提交的 `codex/final-wi079-081`。没有 push、历史改写或原有分支／worktree 删除。所有原有 worktree 检查时干净。三个 feature 的提交已有对应集成版本；rename 的 patch 差别为 usage 组合上下文，`git range-diff` 已核对。旧 CI／PR／隔离规则分支仍按原批准范围保留，未盲目并入；本地 master 与现存 origin/master 跟踪记录仍有分叉，未联网刷新或宣称远程同步。
+
+维护者随后要求清理非主分支：12 个本地分支均先保存为 `archive/2026-10-02/<原分支名>` 标签，核对目标提交后删除分支名；9 个原有 worktree 检查为干净后转 detached HEAD，目录及忽略的验收工件全部保留。本地只剩 `master`；远程分支未修改。可恢复映射见 [分支清理记录](dist/final-integration/branch-cleanup.json)。
 
 本轮当前 `752992c`：compile、lint、1206/1206 tests、真实 pi0.86.1 用量及重命名探针通过。rename 探针首次输出到嵌套目录导致找不到同级 approval gate，按记录的 `dist/wi080-real-runtime.cjs` 路径重建后通过；不是产品修改。重新生成 [VSIX](dist/final-integration/pi-vscode-final.vsix)，包解压／依赖／RPC／gate 验证通过；安装到本轮 `/tmp/pi-final-*` 隔离 extensions 目录成功，仅证明安装性。日志位于 [本轮工件](dist/final-integration/)。此前原生报告 `dist/team-three-wi-native/report.json` 为失败，不能当作通过；本轮原生工具仍只定位到已有用户窗口，隔离窗口未完成交互，F5／安装版完整链路继续待验。三个 WI 不关闭、不冒称最终成品验收通过。
 
