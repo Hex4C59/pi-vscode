@@ -32,3 +32,6 @@
 
 
 实现后阻碍audit2（不同自动Goal续跑 01a0fedc-fc35-7863-aed2-2c9a3431e3b2）：上一turn完成实现／候选推进。本turn重新读Goal／ACTIVE／WI089、核对Git归属与仅binary进程清单。原Code仍存在，macOS安全绑定缺口未变，无新native证据或其他独立批准实现。这是同一外部条件下无进展，非等待自有运行job。三turn blocked阈值前保持Goal active，不宣称验收／关闭。
+
+
+实现后阻碍audit3（不同自动Goal续跑 01a0fede-cadb-7393-85fa-412170a1875a）：上一turn无进展，非verified wait。重新读取Goal／ACTIVE／WI089及当前Git，binary-only清单仍有原用户Code。同一安全隔离native绑定缺口未变，无自有验证job运行，无独立批准实现剩余。连续三Goal turn确认此外部条件，已满足blocked阈值；应将Goal标blocked，不是complete。八项native验收／关闭仍未完成，26上传未批准，已有实现提交／工件／用户改动均保留。须用户保存关闭原Code或工具安全PID／window绑定后resume；blocked后resume须重新audit。
