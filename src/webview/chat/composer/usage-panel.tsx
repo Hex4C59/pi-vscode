@@ -38,7 +38,8 @@ export function UsagePanel({ state, open, busy, disabled, onOpen, onRefresh }: {
       {busy && state?.status === "ready" && <p role="status">{t("Previous snapshot while the task is running.")}</p>}
       {state?.status === "ready" ? <UsageNumbers state={state} />
         : <p role="status">{t(state?.status === "loading" ? "Loading usage…" : state?.status === "unavailable" ? "Usage unavailable. Refresh to retry." : "No active session.")}</p>}
-      <button type="button" aria-label={t("Refresh usage")} disabled={disabled || state?.status === "loading"} onClick={onRefresh}>{t("Refresh")}</button>
+      <button type="button" aria-label={t("Refresh usage")} disabled={disabled || state?.status === "loading"}
+        onClick={() => { panel.current?.focus(); onRefresh(); }}>{t("Refresh")}</button>
     </div>}
   </div>;
 }
