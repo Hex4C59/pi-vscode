@@ -16,7 +16,7 @@
 
 #### 目标与范围
 
-Composer 光标处独立 @ token 显式 Tab 打开 native 模糊／路径文件选择，再复用既有附件捕获；不在输入时读正文、不自动发送。[完整 Prepare](docs/discussions/2026-10-03-wi-084-file-completion.zh.md)已记录，尚无本项实现或验证。
+Composer 光标处独立 @ token 显式 Tab 打开 native 模糊／路径文件选择，再复用既有附件捕获；不在输入时读正文、不自动发送。[完整 Prepare](docs/discussions/2026-10-03-wi-084-file-completion.zh.md)已记录；实现与开发组合验证已完成，实际原生验收仍待完成。
 
 #### 方案与架构核对
 
@@ -30,7 +30,7 @@ Composer 光标处独立 @ token 显式 Tab 打开 native 模糊／路径文件�
 
 [八项有界 Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)批准本项 Prepare→Build、实际验证、代理验收和本地独立提交；不扫描真实用户敏感数据验证，不升级／扩大权限、不 push。PI-GAP-02／04 原生验收保留未完成。
 
-**进度与下一步：** Prepare 已完成，公开 VS Code API 和现有捕获边界已核对；下一步先准备失败场景组合验证，再实现。原生环境阻碍如实保留，不降低关闭条件。
+**进度与下一步：** 编码前 6 项组合／mounted 验证转绿，compile／lint／1235 行为检查／docs:verify 通过；18 份合成宿主真实浏览器截图已检查，未冒充 native。下一步本项独立提交与干净候选验证。原生环境阻碍如实保留，不降低关闭条件。
 
 ## 待完成
 

@@ -37,4 +37,11 @@ Composer 光标处独立 @ token 提供显式 Tab 文件发现补全，安静本
 
 代码前准备 host→draft 附件组合与 mounted composer／client 场景。验证光标 @、邮箱／IME／slash／Enter 区分、query／路径 native 模糊选择、默认排除／单文件夹边界、明确截断、选择前不读正文、敏感／越界／symlink／变化／超大拒绝、取消／失效／编辑／重复／超时／释放、原子保留草稿与继承源码变化确认。仅隔离合成文件，保留可重复 TAP／JSON，不枚举真实用户敏感文件。
 
-compile／lint／npm test／docs:verify，干净提交候选检查和打包；macOS F5／安装 VSIX 的 native picker 键盘／取消／选择／附件流程分别取证。改动提示在 280／320／400px、浅／深／高对比、英中下截图。需要真实 pi 交付时仅合成 loopback，不使用真实账户或付费模型。原生验收仍受既有隔离 Code 绑定阻碍；缺证据明确未验证。工件 dist/goal-eight/wi084/；本项尚无代码或通过证据。下一步：编码前检查，再有界实施。
+compile／lint／npm test／docs:verify，干净提交候选检查和打包；macOS F5／安装 VSIX 的 native picker 键盘／取消／选择／附件流程分别取证。改动提示在 280／320／400px、浅／深／高对比、英中下截图。需要真实 pi 交付时仅合成 loopback，不使用真实账户或付费模型。原生验收仍受既有隔离 Code 绑定阻碍；缺证据明确未验证。工件 dist/goal-eight/wi084/；Prepare 时尚无代码或通过证据，后续实现状态见下方开发检查点。
+
+
+## 开发检查点
+
+代码前准备四项 host／draft 组合和两项 mounted-production 场景，预期 red 是缺发现／Tab 意图，实现后六项通过。Compile、lint、1235 标准检查及 docs:verify 通过。完整检查发现私有跨模块导入及 browser 从 host 契约导入值；改经公开入口和独立 renderer-only 提示 parser，保留 host 权威推导，未弱化边界测试。最终提示可用性／文档重跑亦通过 compile、lint、1235 检查及 docs:verify。浏览器截图先于该可用性修订，是开发证据而非提交候选验收。
+
+真实浏览器合成宿主截图覆盖 18 组合（280／320／400、深／浅／高对比、英中）及长路径；已检查 contact sheet／geometry，无 composer 横向溢出，Send 可达，提示安静换行。部分既有欢迎动画是中间帧，不作运动证据。工件 dist/goal-eight/wi084/browser/{matrix.json,contact-sheet.jpg,*.png}。原生 picker 仍仅 host 组合证据，不是 F5／安装 VSIX，隔离 Code 绑定条件保留。搜索／选择 deadline 为 15 秒／2 分钟，失效 lease／dispose 释放控件。无验收、关闭或干净候选声明。下一步本项 diff 审查／本地提交、干净候选和原生验证。
