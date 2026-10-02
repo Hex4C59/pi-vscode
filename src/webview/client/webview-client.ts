@@ -264,6 +264,9 @@ export class WebviewClient {
     const message = parseHostMessage(value);
     if (!message || this.isStale(message)) return;
     this.adoptGeneration(message);
+    this.routeHostMessage(message);
+  }
+  private routeHostMessage(message: HostMessage): void {
     switch (message.type) {
       case "pong":
         return;
