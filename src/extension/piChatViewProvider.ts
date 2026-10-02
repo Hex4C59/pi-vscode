@@ -1,4 +1,5 @@
 import { DEFAULT_SESSION_SEARCH, type SavedSessionSearch } from "./contracts/index.js";
+import { LocalDiagnostics } from "./diagnostics/index.js";
 import { NativeCompaction } from "./compaction/nativeCompaction.js";
 import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/index.js";
 import { redactCredentialLikeText, type CommandCatalogueStateMessage, type SessionStateMessage, type SessionError } from "./contracts/index.js";
@@ -46,6 +47,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private manualContinuation = false;
   private manualAgentSettled = false;
   private readonly resourceReport: ResourceReport;
+  private readonly localDiagnostics: LocalDiagnostics;
   private reportInventoryReady = false;
   private identity = "";
   private operation: object | undefined;
@@ -120,7 +122,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private readonly extensionUri: vscode.Uri,
     private readonly     sessionBackend: SessionBackend = unavailableSessionBackend,
     toolOptions: EditorToolOptions = {},
-    hostPaths: { globalStorage?: string } = {},
+    hostPaths: { globalStorage?: string; hostVersion?: string } = {},
   ) {
     this.sessionRename = new SessionRename({ runtime, context: () => this.renameContext(),
       input: (options, signal) => this.renameInput(options, signal), changed: () => this.publish(),
@@ -143,6 +145,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       locale: this.uiLocale, runtime: this.state.runtime, catalogue: this.commandProjection(),
       inventory: this.reportInventoryReady ? this.pluginInventory.snapshot : null,
     }));
+    this.localDiagnostics = this.createLocalDiagnostics(hostPaths.hostVersion);
     this.nativeCompaction = this.createNativeCompaction();
     this.savedHistory = this.createSavedHistory(sessionBackend);
     this.tools = this.createEditorTools(toolOptions);
@@ -209,6 +212,17 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
     return true;
   }
+
+  private createLocalDiagnostics(hostVersion?: string): LocalDiagnostics {
+    return new LocalDiagnostics(this.api, this.extensionUri.fsPath, hostVersion, () => ({
+      locale: this.uiLocale, workspace: this.state.status, runtime: this.state.runtime, chatBusy: this.state.chatBusy,
+      modelBusy: this.models.snapshot.modelBusy, sessionBusy: this.sessionTransitionBusy(),
+      controlled: this.executionProfile.kind === "controlled", hostError: !!this.state.error,
+      runtimeError: !!this.state.runtimeDetail || !!this.state.chatError,
+    }));
+  }
+
+  exportLocalDiagnostics(): Promise<void> { return this.disposed ? Promise.resolve() : this.localDiagnostics.open(); }
 
   async showResourceReport(): Promise<void> {
     if (this.disposed) return;
@@ -1257,6 +1271,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.disposed = true;
     this.usage.dispose();
     this.resourceReport.dispose();
+    this.localDiagnostics.dispose();
     this.nativeCompaction.dispose();
     this.modelCycling?.dispose();
     this.settingsPanel.dispose();

@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const sessionBackend = createPiSessionBackend(path.join(extensionPath, SESSION_WORKER_BUNDLE));
   const provider = new PiChatViewProvider(
     vscode, runtime, context.extensionUri, sessionBackend, {},
-    { globalStorage: context.globalStorageUri.fsPath },
+    { globalStorage: context.globalStorageUri.fsPath, hostVersion: vscode.version },
   );
 
   context.subscriptions.push(provider);
@@ -50,6 +50,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("pi-vscode.nextThinkingLevel", () => provider.cycleThinkingLevel(1)),
     vscode.commands.registerCommand("pi-vscode.previousThinkingLevel", () => provider.cycleThinkingLevel(-1)),
     vscode.commands.registerCommand("pi-vscode.compactContext", () => provider.compactContext()),
+    vscode.commands.registerCommand("pi-vscode.exportLocalDiagnostics", () => provider.exportLocalDiagnostics()),
     vscode.commands.registerCommand("pi-vscode.showResourceReport", () => provider.showResourceReport()),
     vscode.commands.registerCommand(FOCUS_CHAT_COMMAND, async () => {
       await focusPiChat(vscode);

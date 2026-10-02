@@ -74,6 +74,10 @@ npm run preview:webview
 
 输入独立 `@` 文件 query 后按 **Tab**，打开原生工作区模糊／路径发现。显式选择后附加成功仅移除 query token。发现只读名称、保留默认文件排除，最多展示 3000 安全路径并说明截断；取消／错误／失效保留草稿。敏感来源、大小和变化确认不变；有界列表外仍可使用既有文件附件选择器。
 
+### 本地诊断导出
+
+运行 **pi: Export Local Diagnostics**，先审查实际安装版本与既有 lifecycle flags 的冻结只读 JSON；审查后才点**导出已审查快照**。Cancel／关闭通知或取消目的地均不写文件。须选择**本地新文件**，拒绝覆盖已有文件／symlink。无源码、完整会话、凭据、标识／路径、env、日志／错误正文；无上传或后台收集。缺失版本 `null` 表示未知。取消在原子发布请求前生效，已发布文件不承诺撤回；失败重新运行恢复。[WI-088](docs/discussions/2026-10-02-wi-088-local-diagnostics.zh.md)保留 native 验收限制。
+
 ### Mermaid 回复图表
 
 闭合 Mermaid flowchart／graph 与 sequence fence 可显式**渲染图表**；失败仍保留源码与**复制**。未支持、不安全、不完整或过大明确回退。沿用 CSP 本地渲染，不 source directive／callback／HTML／image／icon／隐式外部请求。限制包括 4096 UTF-16、40 行／statement、每行256、64 distinct／128 total words／40 edges；output 另有几何／element／byte 上限。取消与五秒结果截止丢弃迟到结果，不能抢占同步上游计算。图保留可读字号，可在局部可聚焦区域用方向键平移，不扩大页面；无新 host 权限／持久状态。[WI-087](docs/discussions/2026-10-02-wi-087-mermaid.zh.md)仍待原生验收。

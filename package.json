@@ -106,6 +106,10 @@
       {
         "command": "pi-vscode.previousThinkingLevel",
         "title": "pi: Previous Thinking Level"
+      },
+      {
+        "command": "pi-vscode.exportLocalDiagnostics",
+        "title": "pi: Export Local Diagnostics"
       }
     ],
     "menus": {
