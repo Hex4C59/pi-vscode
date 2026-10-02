@@ -49,6 +49,8 @@ WI records are historical, including old pending/open wording; current work and 
 
 ## Superseded handoffs and shared WI history
 
+- [ACTIVE synchronization and pending-acceptance handoff (archived 2026-10-03)](2026-10-03-active-handoff-cleanup.md)
+
 - [Closed work-item history — WI-001–007 and WI-010–012](2026-09-21-closed-wi-history.md)
 - [Goal change-review checkpoint — WI-016](2026-09-22-goal-change-review-handoff.md)
 - [Goal frontend and attachment checkpoints](2026-09-22-goal-frontend-attachment-handoffs.md)
@@ -65,7 +67,7 @@ Use the numbered lookup for **proposals** (including superseded/paused candidate
 
 If archive text conflicts with current authoritative docs, ignore archive and cite the live file.
 
-At WI close or confirmed document replacement, the agent performs affected archival under [collaboration §7](../guides/agent-collaboration.md#7-agent-obligations), without a separate save/directory question. This is not permission for bulk history cleanup. Record archival reason, historical status and replacement link (or explain why no replacement exists). Preserve still-valid requirements and unresolved questions in active documents before moving; retain a summary/link at the former entry point. Move existing translations together, repair inbound and relative links and indexes, then run `npm run docs:verify` and `npm run docs:health`. Keep ADRs in `docs/decisions/` with status and replacement links. Age or length alone does not justify archival.
+At WI close or confirmed document replacement, the agent performs affected archival under [collaboration §7](../guides/agent-collaboration.md#7-agent-obligations), without a separate save/directory question. This is not permission for bulk history cleanup. Record archival reason, historical status and replacement link (or explain why no replacement exists). Preserve still-valid requirements and unresolved questions in active documents before moving; retain a summary/link at the former entry point. For ACTIVE, retain only a generic archive-index link; completed task summaries and handoffs stay here. Move existing translations together, repair inbound and relative links and indexes, then run `npm run docs:verify` and `npm run docs:health`. Keep ADRs in `docs/decisions/` with status and replacement links. Age or length alone does not justify archival.
 
 Navigation maintenance: WI-073 — [numbered history](2026-09-29-closed-wi-index.md).
 

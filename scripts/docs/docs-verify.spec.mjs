@@ -19,10 +19,7 @@ const current = (stage, assessment = '', lineEnding = '\n') => [
   '### 验收', '', '验收。',
   '### 范围外与批准边界', '', '范围外。',
   '',
-  '## 当前焦点与未决项', '', '- next',
-  '## 停车场', '', '- later',
-  '## 最近交接', '', '### Latest', '', '- handoff',
-  '## 已完成 WI 索引', '', '| WI | 历史 |', '|---|---|',
+  '## 待完成', '', '- later',
   '',
 ].join(lineEnding);
 const prd = (trace = '| WI-003 | REQ-003 | 验收 |', requirement = '| REQ-003 | 用户可以看到工作区状态。 | Draft |') => `## Traceability\n${trace}\n## Requirements\n${requirement}\n`;
@@ -62,7 +59,7 @@ test('canonical current boundary is fail-closed and ignores fenced examples', ()
   assert.equal(parseCurrentWork(current('准备', '待定', '\r\n')).kind, 'current');
   assert.equal(parseCurrentWork('## Old heading\n').kind, 'invalid');
   assert.equal(parseCurrentWork(`${current('准备', '待定')}\n## 正在做（WIP=1）\n`).kind, 'invalid');
-  assert.equal(parseCurrentWork('```text\n## 正在做（WIP=1）\n```\n## 当前无活动 WI（WIP=0）\n').kind, 'empty');
+  assert.equal(parseCurrentWork('```text\n## 正在做（WIP=1）\n```\n## 正在做（WIP=0）\n').kind, 'empty');
 });
 
 test('historical Build text cannot satisfy the current WI gate', () => {
@@ -73,19 +70,17 @@ test('historical Build text cannot satisfy the current WI gate', () => {
 test('ACTIVE structure accepts current or explicit empty state and rejects drift', () => {
   assert.deepEqual(checkActiveStructure(current('准备', '待定')).errors, []);
   const empty = [
-    '## 当前无活动 WI（WIP=0）',
-    '## 当前焦点与未决项',
-    '## 停车场',
-    '## 最近交接',
-    '## 已完成 WI 索引',
+    '## 正在做（WIP=0）',
+    '## 待完成',
   ].join('\n');
   assert.deepEqual(checkActiveStructure(empty).errors, []);
-  assert.ok(checkActiveStructure(current('准备', '待定').replace('## 最近交接', '## Other')).errors.some((e) => e.code === 'active-section'));
+  assert.ok(checkActiveStructure(current('准备', '待定').replace('## 待完成', '## Other')).errors.some((e) => e.code === 'active-section'));
   assert.ok(checkActiveStructure(`${current('准备', '待定')}\n## 已完成（WI-002）\n`).errors.some((e) => e.code === 'active-closed-detail'));
   assert.ok(checkActiveStructure(current('准备', '待定').replace('### 验收', '### Checks')).errors.some((e) => e.code === 'active-current-detail'));
 });
 
-test('ACTIVE permits at most two recent handoffs', () => {
-  const body = current('准备', '待定').replace('### Latest\n\n- handoff', '### One\n\n- 1\n### Two\n\n- 2\n### Three\n\n- 3');
-  assert.ok(checkActiveStructure(body).errors.some((e) => e.code === 'active-handoff-count'));
+test('ACTIVE keeps completed records and old handoffs outside the task entry', () => {
+  for (const heading of ['最近交接', '已完成 WI 索引', '停车场', '当前焦点与未决项']) {
+    assert.ok(checkActiveStructure(`${current('准备', '待定')}\n## ${heading}\n`).errors.some((e) => e.code === 'active-obsolete-section'));
+  }
 });

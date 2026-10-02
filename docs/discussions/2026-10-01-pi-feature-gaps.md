@@ -7,6 +7,10 @@ English | [中文](2026-10-01-pi-feature-gaps.zh.md)
 - Created: 2026-10-01
 - Authority: source/document comparison only; no implementation approval or acceptance
 
+## Status update — 2026-10-03
+
+The comparisons below preserve the October 1 baseline, not today’s missing-feature list. Text steering/follow-up and the slash menu closed as WI-077/078; usage, current-open-session rename and complete successful current-conversation reply copy closed as WI-079/080/081. See the [acceptance index](../archive/2026-09-29-closed-wi-index.md) for approved scope and evidence limits, and [ACTIVE](../../ACTIVE.md) for remaining work. Queue attachments/slash/template expansion and the actual-loaded-context report remain parked. Unopened-session rename and historical-preview copy are excluded from the accepted slices. Other discussion candidates remain background, not implementation authorization.
+
 ## Baseline and evidence
 
 Compare the declared and installed pi coding-agent **0.86.1**, not moving upstream main. The documented sibling `../pi` is absent in this checkout. Read the installed package README and RPC documentation, and upstream [tagged README](https://github.com/earendil-works/pi/blob/v0.86.1/packages/coding-agent/README.md) and [tagged RPC contract](https://github.com/earendil-works/pi/blob/v0.86.1/packages/coding-agent/docs/rpc.md). No runtime or real-host checks were run for this discussion.

@@ -19,7 +19,7 @@ const active = (rows, proposals = [proposal('WI-079')]) => [
   '# Current', '## 任务登记（最多 3 个执行槽位）',
   '| 任务 ID | 阶段 | 槽位 | 执行者／所有者 | 分支／worktree | 范围／依赖 |',
   '|---|---|---|---|---|---|', ...rows, '## 任务提案', ...proposals,
-  '## 当前焦点与未决项', '## 停车场', '## 最近交接', '## 已完成 WI 索引',
+  '## 待完成',
 ].join('\n');
 
 function fixture(context, content, prd = '# Requirements\n') {
@@ -86,6 +86,24 @@ test('parallel ACTIVE CLI checks each Build WI PRD gate, not only the first', (c
   verify(context, 'second Build lacks trace', active(rows, [proposal('WI-079'), proposal('WI-080', '用户可见：新增行为')]), 'prd-trace-missing');
   verify(context, 'second Build traced', active(rows, [proposal('WI-079'), proposal('WI-080', '用户可见：新增行为')]), null,
     '# Requirements\n| WI-080 | REQ-080 | checks |\n| REQ-080 | approved behavior | Accepted |\n');
+});
+
+// Failure modes: a valid empty entry rejected; missing/duplicate pending section
+// accepted; closed history reintroduced; a pending row mistaken for active Build;
+// missing current-WI fields or PRD approval ignored; verification writes source.
+test('single ACTIVE CLI validates only current work and pending work', (context) => {
+  const empty = '# Current\n## 正在做（WIP=0）\n暂无。\n## 待完成\n';
+  const running = `# Current\n## 正在做（WIP=1）\n${proposal('WI-082')}\n## 待完成\n`;
+  verify(context, 'empty current and pending', empty, null);
+  verify(context, 'single current proposal', running, null);
+  verify(context, 'pending is not active Build', `${empty}| WI-099 | Build | 用户可见：未开始 |\n`, null);
+  verify(context, 'pending missing', empty.replace('## 待完成', '## Other'), 'active-section');
+  verify(context, 'pending duplicate', `${empty}\n## 待完成\n`, 'active-section');
+  verify(context, 'current identity missing', running.replace('| **ID** | WI-082 |', ''), 'active-current-field');
+  verify(context, 'Build still needs approved PRD', running.replace('纯技术：仅验证工具', '用户可见：新增功能'), 'prd-trace-missing');
+  for (const heading of ['停车场', '当前焦点与未决项', '最近交接', '已完成 WI 索引']) {
+    verify(context, `obsolete ${heading}`, `${empty}\n## ${heading}\n`, 'active-obsolete-section');
+  }
 });
 
 after(() => {

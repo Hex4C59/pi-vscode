@@ -8,7 +8,7 @@ const DECISIONS_INDEX_EN = 'docs/decisions/README.md';
 const PRD_EN = 'docs/product-requirements.md';
 const ACTIVE = 'ACTIVE.md';
 const CURRENT_HEADING = '## 正在做（WIP=1）';
-const NO_CURRENT_HEADING = '## 当前无活动 WI（WIP=0）';
+const NO_CURRENT_HEADING = '## 正在做（WIP=0）';
 const PARALLEL_HEADING = '## 任务登记（最多 3 个执行槽位）';
 
 function stripFencedBlocks(content) {
@@ -98,14 +98,14 @@ export function checkActiveStructure(active) {
     return { errors, warnings };
   }
   const clean = stripFencedBlocks(active);
-  const requiredH2 = ['## 当前焦点与未决项', '## 停车场', '## 最近交接', '## 已完成 WI 索引'];
+  const requiredH2 = ['## 待完成'];
   for (const heading of requiredH2) {
     if ((clean.match(new RegExp(`^${heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'gm')) ?? []).length !== 1) {
       errors.push({ code: 'active-section', message: `${ACTIVE}: require exactly one ${heading}` });
     }
   }
   if (/^## (?:已完成（WI-|WI-\d+\s+讨论稿)/m.test(clean)) {
-    errors.push({ code: 'active-closed-detail', message: `${ACTIVE}: closed WI detail belongs in docs/archive; keep only the completed index` });
+    errors.push({ code: 'active-closed-detail', message: `${ACTIVE}: closed WI detail and the completed index belong in docs/archive` });
   }
   if (parsed.kind === 'parallel') errors.push(...checkParallelRegistry(parsed));
   const sections = parsed.kind === 'parallel' ? parsed.sections : parsed.kind === 'current' ? [parsed.section] : [];
@@ -121,9 +121,8 @@ export function checkActiveStructure(active) {
       }
     }
   }
-  const handoff = clean.split(/^## 最近交接\s*$/m)[1]?.split(/^## /m)[0] ?? '';
-  if ((handoff.match(/^### /gm) ?? []).length > 2) {
-    errors.push({ code: 'active-handoff-count', message: `${ACTIVE}: keep at most two recent handoffs; archive older entries` });
+  if (/^## (?:当前焦点与未决项|停车场|最近交接|已完成 WI 索引)\s*$/m.test(clean)) {
+    errors.push({ code: 'active-obsolete-section', message: `${ACTIVE}: keep current and pending work only; move completed records and handoffs to docs/archive` });
   }
   const lineCount = active.split(/\r?\n/).length;
   if (lineCount > 180) warnings.push({ code: 'active-size', message: `${ACTIVE}: ${lineCount} lines exceeds the 180-line guidance; do not remove live limits merely to reduce size` });

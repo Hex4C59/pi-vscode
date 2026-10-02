@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-22
+- 最近同步：2026-10-03
 
 - 类型：参考
 - 状态：Accepted
@@ -19,7 +19,7 @@
 
 本索引是一棵路由树，不是从头读到底的清单。仓库规则与基础必读以 [`../AGENTS.zh.md`](../AGENTS.zh.md) 及其内核为准。
 
-- **当前会话：** 完整阅读 [`../ACTIVE.md`](../ACTIVE.md) 中的当前 WI（若有）、批准状态、仍有效限制与最近交接，再跟随与任务有关的链接。
+- **当前会话：** 完整阅读 [`../ACTIVE.md`](../ACTIVE.md) 中的当前 WI（若有）、批准状态、仍有效限制、进度与下一步，再跟随与任务有关的链接。
 - **对着界面说名称：** 阅读带截图的[界面名词说明](reference/plugin-parts.zh.md)。代码对应与演示用语仍看[聊天侧栏区域与组件说明](reference/sidebar-ui-anatomy.zh.md)。
 - **用户可见行为：** 阅读 [`product-requirements.zh.md`](product-requirements.zh.md) 与 [主架构](architecture/vscode-extension-architecture.zh.md)。
 - **架构或契约：** 阅读[主架构](architecture/vscode-extension-architecture.zh.md)、[Webview 消息契约](reference/webview-messages.zh.md)及 [`guides/architecture-governance.zh.md`](guides/architecture-governance.zh.md)。
