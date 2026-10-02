@@ -13,6 +13,7 @@ export const PREVIEW_SCENARIOS = [
   "loading",
   "streaming",
   "formatted",
+  "mermaid",
   "safe-output",
   "activity",
   "approval",
@@ -66,6 +67,15 @@ export const FORMATTED_STREAM_CHUNKS = [
   '&";\n  console.log(greeting);',
   '\n```\n\nRead [the guide](https://example.com/guide).\n\n> Keep the change small and reviewable.\n\nUse `npm test` to verify.',
 ];
+export const MERMAID_REPLY = [
+  '# Mermaid diagrams — synthetic',
+  'Explicit local rendering; source always remains below. Not native acceptance.',
+  '\n\n```mermaid\nflowchart TB\n A[Start] --> B{Ready?}\n B --> C[Done]\n```',
+  '\n\n```mermaid\nsequenceDiagram\n participant A as Client\n participant B as Host\n A->>B: Request\n B-->>A: Result\n```',
+  '\n\n```mermaid\nflowchart LR\n Failure[\n```',
+  '\n\n```mermaid\nflowchart LR\n A@{img: "https://example.invalid/sentinel"}\n```',
+  '\n\n```mermaid\nflowchart LR\n Partial[Unclosed]',
+].join('\n');
 export const ACTIVITY_STREAM_CHUNKS = [
   '# Activity-first reply\n\nThe tool details remain available while this reply streams.',
   '\n\nThis is a deterministic preview, not a model-generated activity summary.',
@@ -185,7 +195,7 @@ export function baseWorkspace(scenario: PreviewScenario): WorkspaceStateMessage 
     ? []
     : [
       { role: "user" as const, id: "message-user-1", text: "Inspect the current workspace and outline the next safe step." },
-      { role: "assistant" as const, id: "message-assistant-1", text: scenario === "safe-output" ? SAFETY_REPLY : "The workspace is ready. I can help inspect files, explain a change, or prepare a focused edit." },
+      { role: "assistant" as const, id: "message-assistant-1", text: scenario === "mermaid" ? MERMAID_REPLY : scenario === "safe-output" ? SAFETY_REPLY : "The workspace is ready. I can help inspect files, explain a change, or prepare a focused edit." },
     ];
   if (scenario === "activity") {
     for (let index = 0; index < 6; index++) initialMessages.push({ role: "assistant", id: `prior-${index}`, text: `Earlier preview reply ${index + 1}\n\n${"Retained conversation context. ".repeat(12)}` });

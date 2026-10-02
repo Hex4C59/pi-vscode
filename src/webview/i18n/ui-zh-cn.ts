@@ -2,6 +2,17 @@ import type { UiText } from "../components/index.js";
 
 /** UI copy only. Synthetic response bodies and upstream diagnostics are intentionally not translated. */
 export const chineseUi = {
+  "Mermaid diagrams (synthetic)": "Mermaid 图表（模拟）",
+  "Incomplete Mermaid fence — source remains available.": "Mermaid fence 未闭合，源码仍可用。",
+  "Diagram unsupported, unsafe or too large — source remains available.": "图表未支持、不安全或过大，源码仍可用。",
+  "Diagram cancelled — source remains available.": "图表已取消，源码仍可用。",
+  "Diagram timed out — late results are discarded; computation may still be settling.": "图表超时，迟到结果会丢弃；计算可能仍在结束。",
+  "Diagram unavailable — source remains available. You can retry.": "图表不可用，源码仍可用；可重试。",
+  "Render Mermaid diagram": "渲染 Mermaid 图表",
+  "Render diagram": "渲染图表",
+  "Cancel diagram rendering": "取消图表渲染",
+  "Rendering diagram…": "正在渲染图表…",
+  "Mermaid diagram — source follows below": "Mermaid 图表，下方保留源码",
   "Criteria not applied yet. Results use the previous search.": "条件尚未应用，结果仍使用上一次搜索。",
   "Catalogue exceeds 5000 sessions. No partial search is shown.": "目录超过 5000 项，不展示不完整搜索。",
   "Clear": "清空",

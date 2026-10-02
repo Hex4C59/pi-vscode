@@ -1,3 +1,4 @@
+import { MermaidDiagram, closedMermaidFence } from "../../diagrams/index.js";
 import { useChatPreview } from "../../components/index.js";
 import { useUiText, type UiText } from "../../components/index.js";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
@@ -81,7 +82,11 @@ function renderTokens(tokens: readonly Token[]): ReactNode {
         content = token.ordered ? <ol start={token.start || 1}>{items}</ol> : <ul>{items}</ul>;
         break;
       }
-      case "code": content = <CodeBlock text={token.text} lang={token.lang || undefined} />; break;
+      case "code": {
+        const block = <CodeBlock text={token.text} lang={token.lang || undefined} />;
+        content = token.lang?.trim().toLowerCase() === "mermaid" ? <MermaidDiagram source={token.text} closed={closedMermaidFence(token.raw)}>{block}</MermaidDiagram> : block;
+        break;
+      }
       case "codespan": content = <code>{token.text}</code>; break;
       case "blockquote": content = <blockquote>{renderTokens(token.tokens)}</blockquote>; break;
       case "text": content = token.tokens ? renderTokens(token.tokens) : token.text; break;

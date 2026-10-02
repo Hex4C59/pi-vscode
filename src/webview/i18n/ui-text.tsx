@@ -2,6 +2,17 @@ import { createContext, useContext } from "react";
 
 /** Source-language UI identifiers only; never pass host/user content through this Interface. */
 export type UiText =
+  | "Mermaid diagrams (synthetic)"
+  | "Incomplete Mermaid fence — source remains available."
+  | "Diagram unsupported, unsafe or too large — source remains available."
+  | "Diagram cancelled — source remains available."
+  | "Diagram timed out — late results are discarded; computation may still be settling."
+  | "Diagram unavailable — source remains available. You can retry."
+  | "Render Mermaid diagram"
+  | "Render diagram"
+  | "Cancel diagram rendering"
+  | "Rendering diagram…"
+  | "Mermaid diagram — source follows below"
   | "Criteria not applied yet. Results use the previous search."
   | "Catalogue exceeds 5000 sessions. No partial search is shown."
   | "Clear"

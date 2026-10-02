@@ -16,6 +16,7 @@ const scenarioLabels: Record<PreviewScenario, UiText> = {
   loading: "Loading",
   streaming: "Streaming",
   formatted: "Formatted reply (synthetic)",
+  mermaid: "Mermaid diagrams (synthetic)",
   "safe-output": "Untrusted output (synthetic)",
   activity: "Activity before reply (synthetic)",
   approval: "Approval",
@@ -100,7 +101,7 @@ function renderToolbar(): void {
   const note = document.createElement("span");
   const scenario = selectControl(PREVIEW_SCENARIOS, item => scenarioLabels[item], "empty");
   scenario.setAttribute("aria-label", "Scenario");
-  const supported = new Set<PreviewScenario>(["approval", "approval-queue", "change-review", "attachment-unavailable", "attachment-layout", "attachment", "source-changed", "long-history", "attachment-failure", "attachment-capacity", "attachment-uncertain", "sessions", "sessions-empty", "sessions-error", "ready", "empty", "loading", "streaming", "formatted", "safe-output", "activity", "error", "no-folder", "untrusted", "unavailable-model", "blocked"]);
+  const supported = new Set<PreviewScenario>(["approval", "approval-queue", "change-review", "attachment-unavailable", "attachment-layout", "attachment", "source-changed", "long-history", "attachment-failure", "attachment-capacity", "attachment-uncertain", "sessions", "sessions-empty", "sessions-error", "ready", "empty", "loading", "streaming", "formatted", "mermaid", "safe-output", "activity", "error", "no-folder", "untrusted", "unavailable-model", "blocked"]);
   for (const option of scenario.options) if (!supported.has(option.value as PreviewScenario)) {
     option.disabled = true;
     option.textContent += " (later slice)";

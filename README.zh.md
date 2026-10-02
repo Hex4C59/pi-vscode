@@ -74,6 +74,10 @@ npm run preview:webview
 
 输入独立 `@` 文件 query 后按 **Tab**，打开原生工作区模糊／路径发现。显式选择后附加成功仅移除 query token。发现只读名称、保留默认文件排除，最多展示 3000 安全路径并说明截断；取消／错误／失效保留草稿。敏感来源、大小和变化确认不变；有界列表外仍可使用既有文件附件选择器。
 
+### Mermaid 回复图表
+
+闭合 Mermaid flowchart／graph 与 sequence fence 可显式**渲染图表**；失败仍保留源码与**复制**。未支持、不安全、不完整或过大明确回退。沿用 CSP 本地渲染，不 source directive／callback／HTML／image／icon／隐式外部请求。限制包括 4096 UTF-16、40 行／statement、每行256、64 distinct／128 total words／40 edges；output 另有几何／element／byte 上限。取消与五秒结果截止丢弃迟到结果，不能抢占同步上游计算。图保留可读字号，可在局部可聚焦区域用方向键平移，不扩大页面；无新 host 权限／持久状态。[WI-087](docs/discussions/2026-10-02-wi-087-mermaid.zh.md)仍待原生验收。
+
 ### 已保存会话搜索
 
 在对话历史显式输入名称／首条消息预览 query、仅命名筛选及 recent／oldest／name 排序后，按 Search／Enter 应用；未应用条件会标明，旧结果与分页仍使用上一次已应用搜索。Clear 恢复默认 catalogue。对完整批准当前项目 catalogue 先筛／排序再分页，不限当前页；不是全文／跨项目搜索。超过 5000 项或扫描截止明确失败，不冒用部分结果。query／筛选仅内存；恢复任意结果仍须既有交接确认。

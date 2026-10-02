@@ -25,3 +25,5 @@
 @import "./ui/chat-dialog.css";
 @import "./chat/interface-settings.css";
 @import "./settings/settings.css";
+
+@import "./diagrams/mermaid-diagram.css";

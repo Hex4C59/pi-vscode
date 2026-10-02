@@ -1,0 +1,20 @@
+.candidate__mermaid { min-width: 0; }
+.candidate__diagram-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ui-space-2); margin: var(--ui-space-2) 0; color: var(--ui-muted); font-size: var(--ui-font-chrome); }
+.candidate__diagram-actions button { min-height: 28px; padding: 0 var(--ui-space-2); border: 1px solid var(--ui-border); border-radius: var(--ui-radius); background: var(--ui-accent); color: var(--ui-fg); font: inherit; cursor: pointer; }
+.candidate__diagram-actions button:hover:not(:disabled) { background: var(--ui-accent-hover); }
+.candidate__diagram-actions button:disabled { opacity: .45; cursor: default; }
+.candidate__diagram { max-height: 320px; overflow: auto; min-width: 0; border: 1px solid var(--ui-border); border-radius: var(--ui-radius); padding: var(--ui-space-2); }
+.candidate__diagram svg { display: block; width: auto; height: auto; max-width: none; margin-inline: auto; }
+.candidate__diagram:focus-visible, .candidate__diagram-actions button:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
+.candidate__diagram-measure { position: absolute; left: -10000px; top: 0; opacity: 0; pointer-events: none; width: 800px; }
+.candidate__diagram svg, .candidate__diagram-measure svg { font-family: var(--vscode-font-family, system-ui); color: var(--ui-fg); }
+.candidate__diagram svg text, .candidate__diagram svg tspan, .candidate__diagram-measure svg text, .candidate__diagram-measure svg tspan { fill: currentColor; font-size: 13px; }
+.candidate__diagram svg rect, .candidate__diagram svg polygon, .candidate__diagram svg circle, .candidate__diagram svg ellipse { fill: var(--ui-input); stroke: currentColor; }
+.candidate__diagram svg path, .candidate__diagram svg line, .candidate__diagram svg polyline { stroke: currentColor; fill: none; }
+.candidate__diagram svg marker path, .candidate__diagram svg marker circle { fill: currentColor; }
+.candidate__diagram svg .flowchart-link, .candidate__diagram svg .actor-line { fill: none; }
+.candidate__diagram svg .edge-pattern-dashed, .candidate__diagram svg .messageLine1, .candidate__diagram svg .actor-line { stroke-dasharray: 4; }
+.candidate__diagram svg .edge-pattern-dotted { stroke-dasharray: 2; }
+.candidate__diagram svg .node .label text, .candidate__diagram-measure svg .node .label text, .candidate__diagram svg .actor, .candidate__diagram-measure svg .actor { text-anchor: middle; }
+.candidate__diagram svg .background { fill: none; stroke: none; }
+@media (forced-colors: active) { .candidate__diagram-actions button:disabled { color: GrayText; opacity: 1; } }

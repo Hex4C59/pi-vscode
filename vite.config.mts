@@ -23,6 +23,8 @@ export default defineConfig({
       input: path.join(webviewRoot, "main.tsx"),
       output: {
         format: "es",
+        // Keep all local diagram code under the existing nonce-loaded entry.
+        inlineDynamicImports: true,
         entryFileNames: "webview.js",
         chunkFileNames: "webview-[name].js",
         assetFileNames: (asset) => asset.name?.endsWith(".css") ? "webview.css" : "webview-[name][extname]",
