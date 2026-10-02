@@ -40,7 +40,8 @@
     "dist/webview/**",
     "assets",
     "LICENSE",
-    "node_modules/**"
+    "node_modules/**",
+    "CHANGELOG.md"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -110,6 +111,10 @@
       {
         "command": "pi-vscode.exportLocalDiagnostics",
         "title": "pi: Export Local Diagnostics"
+      },
+      {
+        "command": "pi-vscode.showVersionInformation",
+        "title": "pi: Show Versions and Local Notes"
       }
     ],
     "menus": {

@@ -74,6 +74,10 @@ npm run preview:webview
 
 输入独立 `@` 文件 query 后按 **Tab**，打开原生工作区模糊／路径发现。显式选择后附加成功仅移除 query token。发现只读名称、保留默认文件排除，最多展示 3000 安全路径并说明截断；取消／错误／失效保留草稿。敏感来源、大小和变化确认不变；有界列表外仍可使用既有文件附件选择器。
 
+### 实际安装版本与本地说明
+
+运行 **pi: Show Versions and Local Notes**，只读显示实际安装插件、内置pi与VS Code版本。**不是最新版检查**，无联网／更新／下载／安装。插件与上游说明分开，仅固定本地包文档的精确版本章节，读取前缀64KiB／章节8KiB；unknown／缺失／前缀内重复／不完整／过大明确反馈，不替换Unreleased或其他版本。说明不证明插件兼容性或验收。既有验证packager将插件manifest版本映射为pi版本，报告该实际manifest；对应插件说明可能缺失，不把源码0.0.1冒充安装版本。[WI-089](docs/discussions/2026-10-02-wi-089-version-information.zh.md)保留native验收限制。
+
 ### 本地诊断导出
 
 运行 **pi: Export Local Diagnostics**，先审查实际安装版本与既有 lifecycle flags 的冻结只读 JSON；审查后才点**导出已审查快照**。Cancel／关闭通知或取消目的地均不写文件。须选择**本地新文件**，拒绝覆盖已有文件／symlink。无源码、完整会话、凭据、标识／路径、env、日志／错误正文；无上传或后台收集。缺失版本 `null` 表示未知。取消在原子发布请求前生效，已发布文件不承诺撤回；失败重新运行恢复。[WI-088](docs/discussions/2026-10-02-wi-088-local-diagnostics.zh.md)保留 native 验收限制。

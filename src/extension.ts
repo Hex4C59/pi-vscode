@@ -50,6 +50,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("pi-vscode.nextThinkingLevel", () => provider.cycleThinkingLevel(1)),
     vscode.commands.registerCommand("pi-vscode.previousThinkingLevel", () => provider.cycleThinkingLevel(-1)),
     vscode.commands.registerCommand("pi-vscode.compactContext", () => provider.compactContext()),
+    vscode.commands.registerCommand("pi-vscode.showVersionInformation", () => provider.showVersionInformation()),
     vscode.commands.registerCommand("pi-vscode.exportLocalDiagnostics", () => provider.exportLocalDiagnostics()),
     vscode.commands.registerCommand("pi-vscode.showResourceReport", () => provider.showResourceReport()),
     vscode.commands.registerCommand(FOCUS_CHAT_COMMAND, async () => {

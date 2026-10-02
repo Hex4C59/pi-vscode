@@ -1,4 +1,5 @@
 import { DEFAULT_SESSION_SEARCH, type SavedSessionSearch } from "./contracts/index.js";
+import { VersionInformation } from "./version-information/index.js";
 import { LocalDiagnostics } from "./diagnostics/index.js";
 import { NativeCompaction } from "./compaction/nativeCompaction.js";
 import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/index.js";
@@ -48,6 +49,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private manualAgentSettled = false;
   private readonly resourceReport: ResourceReport;
   private readonly localDiagnostics: LocalDiagnostics;
+  private versionInformation: VersionInformation | undefined;
   private reportInventoryReady = false;
   private identity = "";
   private operation: object | undefined;
@@ -122,7 +124,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private readonly extensionUri: vscode.Uri,
     private readonly     sessionBackend: SessionBackend = unavailableSessionBackend,
     toolOptions: EditorToolOptions = {},
-    hostPaths: { globalStorage?: string; hostVersion?: string } = {},
+    private readonly hostPaths: { globalStorage?: string; hostVersion?: string } = {},
   ) {
     this.sessionRename = new SessionRename({ runtime, context: () => this.renameContext(),
       input: (options, signal) => this.renameInput(options, signal), changed: () => this.publish(),
@@ -220,6 +222,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       controlled: this.executionProfile.kind === "controlled", hostError: !!this.state.error,
       runtimeError: !!this.state.runtimeDetail || !!this.state.chatError,
     }));
+  }
+
+  showVersionInformation(): Promise<void> {
+    if (this.disposed) return Promise.resolve();
+    this.versionInformation ??= new VersionInformation(this.api, this.extensionUri.fsPath, this.hostPaths.hostVersion, () => this.uiLocale);
+    return this.versionInformation.open();
   }
 
   exportLocalDiagnostics(): Promise<void> { return this.disposed ? Promise.resolve() : this.localDiagnostics.open(); }
@@ -1272,6 +1280,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.usage.dispose();
     this.resourceReport.dispose();
     this.localDiagnostics.dispose();
+    this.versionInformation?.dispose();
     this.nativeCompaction.dispose();
     this.modelCycling?.dispose();
     this.settingsPanel.dispose();
