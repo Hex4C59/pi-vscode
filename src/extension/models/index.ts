@@ -7,3 +7,5 @@ export { SavedDefaultApply } from "./savedDefaultApply.js";
 export type {
   SavedDefaultApplyConfig, SavedDefaultApplyContext, SavedDefaultApplyDeps, SavedDefaultApplyModels,
 } from "./savedDefaultApply.js";
+
+export { NativeModelCycling } from "./nativeModelCycling.js";

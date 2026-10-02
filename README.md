@@ -69,6 +69,10 @@ Run **pi: Compact Context** only with an idle, ready runtime. Confirm lossy summ
 
 Type a standalone `@` file query and press **Tab** to open native workspace fuzzy/path discovery. Choose one file explicitly; successful attachment removes only the query token. Discovery reads names only, respects default file exclusions and displays at most 3000 safe paths with a truncation notice. Cancel/error/stale input preserves the draft. Source sensitivity, size and change-confirmation rules remain unchanged; the existing file attachment picker stays available outside the bounded list.
 
+### Model and thinking cycling
+
+Run **pi: Choose Model Cycling Subset** to confirm a native multi-selection of actual currently available models. The subset starts empty, is memory-only and resets when the workspace/runtime session changes. Escape keeps it; accepting an empty selection clears it. The picker expires after 2 minutes or a state change. **pi: Next Model / Previous Model** rotate only still-available members in catalogue order; **pi: Next Thinking Level / Previous Thinking Level** rotate the current model's supported levels. Empty/unavailable/blocked states are explicit. Running tasks retain existing next-turn selection rules; failed application is shown, not assumed. Existing selectors and saved defaults remain unchanged. Bind these commands through VS Code keyboard settings if desired; no default shortcuts are installed.
+
 ## Development and verification
 
 Use the checks that match the change:

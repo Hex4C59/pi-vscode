@@ -86,6 +86,26 @@
       {
         "command": "pi-vscode.compactContext",
         "title": "pi: Compact Context"
+      },
+      {
+        "command": "pi-vscode.chooseModelCyclingSubset",
+        "title": "pi: Choose Model Cycling Subset"
+      },
+      {
+        "command": "pi-vscode.nextModel",
+        "title": "pi: Next Model"
+      },
+      {
+        "command": "pi-vscode.previousModel",
+        "title": "pi: Previous Model"
+      },
+      {
+        "command": "pi-vscode.nextThinkingLevel",
+        "title": "pi: Next Thinking Level"
+      },
+      {
+        "command": "pi-vscode.previousThinkingLevel",
+        "title": "pi: Previous Thinking Level"
       }
     ],
     "menus": {

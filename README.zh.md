@@ -74,6 +74,10 @@ npm run preview:webview
 
 输入独立 `@` 文件 query 后按 **Tab**，打开原生工作区模糊／路径发现。显式选择后附加成功仅移除 query token。发现只读名称、保留默认文件排除，最多展示 3000 安全路径并说明截断；取消／错误／失效保留草稿。敏感来源、大小和变化确认不变；有界列表外仍可使用既有文件附件选择器。
 
+### 模型与思考级别轮换
+
+执行 **pi: Choose Model Cycling Subset**，在 native 多选中确认当前实际可用模型子集。初始为空、仅内存，工作区／runtime session 变化后重置。Escape 保留，确认空选择清空；2 分钟或状态变化后 picker 失效。**pi: Next Model / Previous Model** 按 catalogue 顺序仅轮换仍可用成员；**pi: Next Thinking Level / Previous Thinking Level** 轮换当前模型支持级别。空／不可用／受阻状态明确反馈；运行任务保留既有 next-turn 规则，失败明确、不假定应用。选择器与保存默认值不变。可经 VS Code 键盘设置绑定命令，不安装默认快捷键。
+
 ## 开发与验证
 
 按改动范围运行检查：

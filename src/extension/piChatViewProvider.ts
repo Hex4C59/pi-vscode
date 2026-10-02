@@ -4,7 +4,7 @@ import { redactCredentialLikeText, type CommandCatalogueStateMessage, type Sessi
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel, ResourceReport } from "./bridge/index.js";
-import { ModelSettings, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
+import { ModelSettings, NativeModelCycling, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
 import type { ManualCompactionResult, PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage, WebviewMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
@@ -51,6 +51,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private workspaceUpdatePending = false;
   private reconcileToken = 0;
   private readonly models: ModelSettings;
+  private modelCycling: NativeModelCycling | undefined;
   private readonly savedDefaultApply: SavedDefaultApply;
   private readonly usage = new SessionUsageOwner(() => this.runtime, () => ({
     generation: this.state.generation, session: this.runtimeSession, disposed: this.disposed,
@@ -217,6 +218,19 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
     if (this.disposed) return;
     await this.resourceReport.open();
+  }
+
+  configureModelCycling(): Promise<void> { return this.disposed ? Promise.resolve() : this.cycling().configure(); }
+  cycleModel(direction: 1 | -1): Promise<void> { return this.disposed ? Promise.resolve() : this.cycling().model(direction); }
+  cycleThinkingLevel(direction: 1 | -1): Promise<void> { return this.disposed ? Promise.resolve() : this.cycling().thinking(direction); }
+  private cycling(): NativeModelCycling {
+    this.modelCycling ??= new NativeModelCycling(this.api, this.models, () => ({
+      generation: this.state.generation, session: this.runtimeSession, locale: this.uiLocale,
+      allowed: !this.disposed && this.state.status === "eligible" && this.runtimeSession !== 0
+        && this.runtimeSession === this.runtime.getSession() && !this.stoppingTask && !this.draft.preparing
+        && this.models.selectionAvailable,
+    }));
+    return this.modelCycling;
   }
 
   private createModels(runtime: PiRuntimeLifecycle): ModelSettings {
@@ -1236,6 +1250,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.usage.dispose();
     this.resourceReport.dispose();
     this.nativeCompaction.dispose();
+    this.modelCycling?.dispose();
     this.settingsPanel.dispose();
     this.reconcileToken += 1;
     this.unsubscribeRuntime();

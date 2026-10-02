@@ -12,6 +12,7 @@ export class ModelSettings {
   private revision = 0;
   constructor(private readonly runtime: ModelSettingsRuntime, private readonly context: () => ModelSettingsContext, private readonly changed: () => void) {}
   get snapshot(): Readonly<ModelSettingsSnapshot> { return this.value; }
+  get selectionAvailable(): boolean { return this.canSelect(this.context()); }
 
   // The coordinator publishes after the complete cross-feature transition.
   reset(): void { this.revision++; this.value = empty(); }
