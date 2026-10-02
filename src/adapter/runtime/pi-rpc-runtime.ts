@@ -47,6 +47,23 @@ const MODEL_RPC_TIMEOUT_MS = 15_000;
 const STOP_TIMEOUT_MS = 5_000;
 const RENAME_UNVERIFIED = "The conversation name could not be verified. The visible name was kept; pi may already have changed it. Explicit runtime recovery is required before retrying.";
 
+type RpcLaunchArguments = {
+  profile: ExtensionExecutionProfile;
+  gatePath: string;
+  trustArg: "--approve" | "--no-approve";
+  resume?: Parameters<PiRuntimeLifecycle["start"]>[0]["resume"];
+};
+
+function rpcLaunchArguments({ profile, gatePath, trustArg, resume }: RpcLaunchArguments): string[] {
+  // pi's --tools allowlist also filters registered extension tools out of getAllTools().
+  // Trusted inventory is instead validated and activated by the bundled approval gate.
+  const toolArgs = profile.kind === "controlled" ? ["--tools", CONTROLLED_TOOLS.join(',')] : [];
+  const args = ["--mode", "rpc", ...toolArgs, '--no-extensions', '-e', gatePath, trustArg];
+  if (profile.kind === "trusted") args.push("-e", profile.entryPath);
+  if (resume) args.push("--session", resume.path);
+  return args;
+}
+
 export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRuntimeLifecycle {
   let child: RuntimeLink | null = null;
   let detachLost: (() => void) | undefined;
@@ -224,6 +241,45 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     emit({ kind: "runtime_error", session, detail: RPC_PROTOCOL_ERROR });
   };
 
+  const attachStartupTransport = (owned: RuntimeLink, token: number): ReturnType<typeof replies.wait> => {
+    child = owned;
+    occupancy.bind({ connection: owned, session: 0 });
+    if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
+    const writeInteraction = createInteractionWriter(owned.stdin, () => child === owned);
+    dialogs = createRpcDialogs(async frame => {
+      try { await writeInteraction(frame); }
+      catch {
+        if (child === owned) {
+          const session = activeSession;
+          void faultStop();
+          emit({ kind: 'runtime_error', session, detail: environment.process.describeFailure("reply-delivery") });
+        }
+        throw new Error('Extension reply delivery is unconfirmed.');
+      }
+    });
+    const lost = (): void => {
+      if (owned !== child) return;
+      const session = activeSession;
+      const operation = renameOperation;
+      const detail = operation?.connection === owned && operation.session === session && operation.mutationIssued
+        ? RENAME_UNVERIFIED : 'Runtime disconnected. Work may be interrupted; no task was retried.';
+      activeSession = 0; gateReady = false; occupancy.disconnectSend();
+      replies.failAll();
+      if (session) emit({kind:'runtime_error',session,detail});
+      if (child === owned) {
+        void faultStop();
+      }
+    };
+    detachLost = child.onLost(lost);
+
+    attachReader(child.stdout);
+
+    const requestId = replies.startupId(token);
+    const waiting = replies.wait(requestId, "get_state", START_TIMEOUT_MS, { pauseable: executionProfile.kind === "trusted", outstanding: () => occupancy.dialogs() });
+    child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
+    return waiting;
+  };
+
   const start = async (options: {
     cwd: string;
     projectTrust: ProjectTrustFlag;
@@ -244,12 +300,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     try { await (environment.gateAccess ?? access)(gatePath); } catch { return {ok:false,detail:'Bundled approval extension is missing. Tools remain disabled.'}; }
     if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
     if (options.resume && (!/^[A-Za-z0-9_-]{1,100}$/.test(options.resume.id) || !path.isAbsolute(options.resume.path))) return { ok: false, detail: "Saved session identity is invalid." };
-    // pi's --tools allowlist also filters registered extension tools out of getAllTools().
-    // Trusted inventory is instead validated and activated by the bundled approval gate.
-    const toolArgs = executionProfile.kind === "controlled" ? ["--tools", CONTROLLED_TOOLS.join(',')] : [];
-    const args = ["--mode", "rpc", ...toolArgs, '--no-extensions', '-e', gatePath, trustArg];
-    if (executionProfile.kind === "trusted") args.push("-e", executionProfile.entryPath);
-    if (options.resume) args.push("--session", options.resume.path);
+    const args = rpcLaunchArguments({ profile: executionProfile, gatePath, trustArg, resume: options.resume });
     const startupModel = (environment.startupModel ?? readPiStartupModelArg)();
     if (startupModel) args.push("--model", startupModel);
 
@@ -259,42 +310,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       const launched = await environment.process.launch({ cwd: options.cwd, cliPath, args, env: runtimeEnv });
       if (!launched.ok) return launched;
       if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
-      child = launched.link;
-      const owned = child;
-      occupancy.bind({ connection: owned, session: 0 });
-      if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
-      const writeInteraction = createInteractionWriter(owned.stdin, () => child === owned);
-      dialogs = createRpcDialogs(async frame => {
-        try { await writeInteraction(frame); }
-        catch {
-          if (child === owned) {
-            const session = activeSession;
-            void faultStop();
-            emit({ kind: 'runtime_error', session, detail: environment.process.describeFailure("reply-delivery") });
-          }
-          throw new Error('Extension reply delivery is unconfirmed.');
-        }
-      });
-      const lost = (): void => {
-        if (owned !== child) return;
-        const session = activeSession;
-        const operation = renameOperation;
-        const detail = operation?.connection === owned && operation.session === session && operation.mutationIssued
-          ? RENAME_UNVERIFIED : 'Runtime disconnected. Work may be interrupted; no task was retried.';
-        activeSession = 0; gateReady = false; occupancy.disconnectSend();
-        replies.failAll();
-        if (session) emit({kind:'runtime_error',session,detail});
-        if (child === owned) {
-          void faultStop();
-        }
-      };
-      detachLost = child.onLost(lost);
-
-      attachReader(child.stdout);
-
-      const requestId = replies.startupId(token);
-      const waiting = replies.wait(requestId, "get_state", START_TIMEOUT_MS, { pauseable: executionProfile.kind === "trusted", outstanding: () => occupancy.dialogs() });
-      child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
+      const waiting = attachStartupTransport(launched.link, token);
       const response = requireRpcResponse(await waiting);
 
       if (token !== startToken) {
