@@ -384,9 +384,9 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   const getSessionUsage: NonNullable<PiRuntimeLifecycle["getSessionUsage"]> = async expectedSession => {
     const unavailable = { ok: false as const, detail: "Session usage is unavailable." };
     const current = () => expectedSession !== 0 && expectedSession === activeSession && gateReady && occupancy.allowsRestart();
-    const deadline = Date.now() + 5000;
+    const deadline = performance.now() + 5000;
     const read = (type: "get_state" | "get_session_stats") => {
-      const remaining = deadline - Date.now();
+      const remaining = deadline - performance.now();
       if (remaining <= 0) throw new Error("Usage deadline expired.");
       return invokeRpc({ type }, remaining);
     };

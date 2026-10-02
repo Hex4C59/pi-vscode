@@ -7,6 +7,8 @@ import { createMemoryConnection, createMemoryProcess, type MemoryConnection } fr
 function usageFixture() {
   let connection: MemoryConnection;
   let afterStats: () => void = () => undefined;
+  let afterState: () => void = () => undefined;
+  let holdStats = false;
   const frames: string[] = [];
   const identity = { sessionId: "usage-session", sessionFile: "/owned/usage.jsonl" };
   let stats: Record<string, unknown> = { ...identity, tokens: { input: 11, output: 7, cacheRead: 5, cacheWrite: 3, total: 26 },
@@ -17,17 +19,44 @@ function usageFixture() {
     connection = createMemoryConnection((text, done) => {
       const request = JSON.parse(text); frames.push(request.type);
       queueMicrotask(() => {
+        if (request.type === "get_session_stats" && holdStats) return;
         if (request.type === "get_state") connection.frame({ type: "extension_ui_request", method: "notify", message: JSON.stringify({ protocol: "pi-vscode-approval", version: 1, kind: "hello", runtime: options.env.PI_VSCODE_GATE_ID, cwd: options.cwd }) });
         const data = request.type === "get_state" ? state : request.type === "get_session_stats" ? stats : request.type === "get_commands" ? { commands: [] } : {};
         connection.frame({ type: "response", command: request.type, id: request.id, success: true, data });
         if (request.type === "get_session_stats") afterStats();
+        if (request.type === "get_state") afterState();
       });
       done(); return true;
     }); return connection;
   });
   const runtime = createPiRpcRuntime({ process: memory.process, cliPath: () => "fixture", startupModel: () => undefined, gateAccess: async () => undefined });
-  return { runtime, frames, afterStats(action: () => void) { afterStats = action; }, setStats(value: Record<string, unknown>) { stats = value; }, setState(value: Record<string, unknown>) { state = { ...state, ...value }; }, get stats() { return stats; } };
+  return { runtime, frames, afterStats(action: () => void) { afterStats = action; },
+    afterState(action: () => void) { afterState = action; }, holdStats() { holdStats = true; },
+    setStats(value: Record<string, unknown>) { stats = value; }, setState(value: Record<string, unknown>) { state = { ...state, ...value }; }, get stats() { return stats; } };
 }
+
+test("a wall-clock rollback after public state cannot extend the five-second usage deadline", async context => {
+  const f = usageFixture(); let wallClock = 100000;
+  let result: Awaited<ReturnType<NonNullable<typeof f.runtime.getSessionUsage>>> | undefined;
+  try {
+    assert.equal((await f.runtime.start({ cwd: "/project", projectTrust: "no-approve" })).ok, true);
+    context.mock.timers.enable({ apis: ["setTimeout"] });
+    context.mock.method(Date, "now", () => wallClock);
+    f.afterState(() => { wallClock -= 60000; }); f.holdStats();
+    void f.runtime.getSessionUsage?.(f.runtime.getSession()).then(value => { result = value; });
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assert.equal(f.frames.filter(type => type === "get_session_stats").length, 1);
+    context.mock.timers.tick(5001);
+    await new Promise<void>(resolve => setImmediate(resolve));
+    mkdirSync("dist/wi079-session-usage", { recursive: true });
+    writeFileSync(`dist/wi079-session-usage/clock-rollback-${result ? "green" : "red"}.json`, JSON.stringify({
+      controlledElapsedMs: 5001, wallClockRollbackMs: 60000, completed: result !== undefined, result,
+      frames: f.frames, limits: ["public byte transport", "controlled timeout scheduler and wall clock", "monotonic clock remains real"] }, null, 2));
+    assert.equal(result !== undefined, true, "usage must finish despite wall-clock rollback within its original 5s budget");
+    assert.equal(result?.ok, false); assert.equal(f.frames.includes("prompt"), false);
+    assert.equal(f.frames.filter(type => type === "get_session_stats").length, 1);
+  } finally { context.mock.timers.reset(); context.mock.restoreAll(); await f.runtime.stop(); }
+});
 
 test("public runtime statistics separates whole session from current context and removes metadata", async () => {
   const f = usageFixture();
