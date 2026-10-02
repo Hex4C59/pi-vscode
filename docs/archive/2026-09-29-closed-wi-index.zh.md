@@ -104,6 +104,9 @@
 | WI-076 | 公开队列 RPC 前置证据 | 2026-10-01 agent /goal; runtime-only, no product acceptance | [record](2026-10-01-wi-076-acceptance.zh.md); [proposal](2026-10-01-wi-076-approved-proposal.zh.md) |
 | WI-077 | 文字 steering／follow-up、队列展示、取回与 Stop 恢复（PI-GAP-01 文字切片） | 2026-10-02 Agent /goal；F5＋安装 VSIX；剩余范围停车 | [记录](2026-10-02-wi-077-acceptance.zh.md); [方案](2026-10-02-wi-077-approved-proposal.zh.md) |
 | WI-078 | 作曲区 slash 发现与已确认补全（PI-GAP-02 菜单切片） | 2026-10-02 Agent /goal；浏览器、真实 pi、F5／安装 VSIX；加载报告余量停车 | [验收](2026-10-02-wi-078-acceptance.zh.md)；[方案](2026-10-02-wi-078-approved-proposal.zh.md) |
+| WI-079 | 只读上下文／会话用量；刷新焦点修复 | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-079-team.zh.md) |
+| WI-080 | 重命名当前空闲会话 | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-080-team.zh.md) |
+| WI-081 | 复制完整 assistant Markdown；保留代码复制 | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-081-team.zh.md) |
 
 
 ## 不在本索引
