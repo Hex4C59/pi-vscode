@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-03
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-03
 - Authority: 八项有界 goal 下 PI-GAP-06 Prepare；实现与证据尚待完成
 
@@ -45,3 +45,8 @@ compile／lint／npm test／docs:verify，干净提交候选检查和打包；ma
 代码前准备四项 host／draft 组合和两项 mounted-production 场景，预期 red 是缺发现／Tab 意图，实现后六项通过。Compile、lint、1235 标准检查及 docs:verify 通过。完整检查发现私有跨模块导入及 browser 从 host 契约导入值；改经公开入口和独立 renderer-only 提示 parser，保留 host 权威推导，未弱化边界测试。最终提示可用性／文档重跑亦通过 compile、lint、1235 检查及 docs:verify。浏览器截图先于该可用性修订，是开发证据而非提交候选验收。
 
 真实浏览器合成宿主截图覆盖 18 组合（280／320／400、深／浅／高对比、英中）及长路径；已检查 contact sheet／geometry，无 composer 横向溢出，Send 可达，提示安静换行。部分既有欢迎动画是中间帧，不作运动证据。工件 dist/goal-eight/wi084/browser/{matrix.json,contact-sheet.jpg,*.png}。原生 picker 仍仅 host 组合证据，不是 F5／安装 VSIX，隔离 Code 绑定条件保留。搜索／选择 deadline 为 15 秒／2 分钟，失效 lease／dispose 释放控件。无验收、关闭或干净候选声明。下一步本项 diff 审查／本地提交、干净候选和原生验证。
+
+
+## 干净候选与串行交接
+
+实现提交 `fa1d18d97ef80ba95b0f814548a8b8cb56da7907` 在隔离干净候选执行 compile、lint、1235 检查、docs:verify、docs:health 与 VSIX 打包均通过，前后源码状态为空。工件：`dist/goal-eight/wi084/candidate-evidence/verified-candidate/` 与 `candidate-identity.json`。候选目录后续可复用；本次身份以保存记录而非后续 HEAD 为准。隔离原生窗口绑定阻碍不变；F5／安装版 native 文件 picker、键盘及附件交互未验证，无代理验收或关闭。保留 PI-GAP-06 未完成，唯一当前 WI 转向独立 WI-085／PI-GAP-14。

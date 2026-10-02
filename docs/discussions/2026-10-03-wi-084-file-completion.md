@@ -3,7 +3,7 @@
 English | [中文](2026-10-03-wi-084-file-completion.zh.md)
 
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-03
 - Authority: bounded PI-GAP-06 Prepare under the eight-gap goal; implementation and evidence pending
 
@@ -41,3 +41,8 @@ Run compile/lint/npm test/docs:verify, isolated clean committed-candidate checks
 Before code, four host/draft composition checks and two mounted-production scenarios were prepared. Expected red showed the missing discovery/Tab intent; after implementation all six passed. Compile, lint, 1235 standard checks and docs:verify passed. Full checks caught private cross-module imports and a browser value import from host contracts: fixed through public entries and an independent renderer-only affordance parser, preserving authoritative host derivation. No boundary test was weakened. The final hint-availability/docs rerun also passed compile, lint, all 1235 checks and docs:verify. Browser captures precede that availability refinement and are development evidence, not committed-candidate acceptance.
 
 Real-browser synthetic-host screenshots cover 18 combinations of 280/320/400, dark/light/high contrast, English/Chinese and long paths. Inspected contact sheet/geometry show no horizontal composer overflow, reachable Send and a quiet wrapped hint. Some existing welcome animations are mid-frame, not motion evidence. Artifacts: dist/goal-eight/wi084/browser/{matrix.json,contact-sheet.jpg,*.png}. Native picker remains host-composition evidence, not F5/installed VSIX; the isolated-Code binding condition remains. Search/picker deadlines are 15 seconds/2 minutes; stale leases/disposal release controls. No acceptance, closure or clean-candidate claim. Next: scoped diff review/local commit and clean-candidate/native verification.
+
+
+## Clean candidate and serial handoff
+
+Implementation commit `fa1d18d97ef80ba95b0f814548a8b8cb56da7907` was checked in the isolated clean candidate: compile, lint, all 1235 checks, docs:verify, docs:health and VSIX packaging passed; before/after source status empty. Evidence: `dist/goal-eight/wi084/candidate-evidence/verified-candidate/` and `candidate-identity.json`. The candidate checkout is reusable; saved identity, not its later HEAD, identifies this run. The native isolated-window binding blocker remains unchanged. F5/installed native file picker, keyboard and attachment interaction are unverified; no agent acceptance or closure. Retain PI-GAP-06 unfinished and move the single current WI to independent WI-085 / PI-GAP-14.
