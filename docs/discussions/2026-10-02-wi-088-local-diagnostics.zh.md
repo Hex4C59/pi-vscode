@@ -40,3 +40,13 @@ REQ-009 有界支持诊断，无新增 trust／data／upload／adapter 决策。
 预计写 diagnostics、provider／activation／command manifests、编码前 host composition、双语 PRD／README／WI。禁止编码后补单测。干净4eb8d38基线通过，diagnostics 测试尚未编写／运行。
 
 此有界方案 Prepare 完成；下一步预写组合 red，再按本轮批准 Build。此点无实现／验收。
+
+
+预写六项组合因缺少公开 diagnostics entry 正确 red，随后通过生产 owner 与隔离 fs 转绿。unique URI 保留最多八个冻结预览，过期读取明确 unavailable，不用其他报告替换。取消／dispose 在独占原子发布请求前撤权；一旦发出不可逆请求不承诺撤回。当前标准检查进行中，尚无候选／native 验收。
+
+
+## 提交后候选交接——native 待完成
+
+实现5f2135f95329cdbdd4b4c3e230f2a627f70d4e42已审查、与ACTIVE分开提交。当前开发与干净隔离提交候选 compile／lint／1261行为／docs:verify（两个既有ADR warning）／docs:health／package:vsix通过。candidate-evidence保留精确已审查／已导出JSON、取消／重叠／不覆盖／恢复组合、生成VSIX提取的固定manifest。实际archive插件／pi均0.86.1，因为既有packager以dependencyVersion生成插件manifest；源码插件仍0.0.1。按实际manifest报告，不替换为源码或声明版本；提取非安装。native只读审查／非模态通知／save取消／真实宿主视觉仍因隔离Code绑定限制未验证，未本轮代理验收或关闭。
+
+冻结预览最多8，过期明确unavailable。发布成功后的cleanup失败明确已导出，不误说无文件；发布前失败可重试。开发lint发现unsafe-finally throw，修正且未改测试断言，失败与最终log分留。无敏感收集／上传／模型调用。本地切片保留待完成，上传另行未批准，串行转入独立PI-GAP-27。

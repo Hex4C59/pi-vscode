@@ -36,3 +36,13 @@ REQ-009 bounded support diagnostics, no new trust/data/upload decision or adapte
 Expected writes: src/extension/diagnostics, provider/activation/command manifests, pre-code host composition tests, paired PRD/README/WI records. No post-code unit tests. Baseline clean candidate4eb8d38 checks passed; actual diagnostics tests not yet written or run.
 
 Prepare complete for this bounded design; next pre-code composition red then Build under the current scoped authorization. No implementation or acceptance at this checkpoint.
+
+
+Pre-code six composition cases failed red on the absent public diagnostics entry, then passed through the implemented production owner and isolated filesystem. Review snapshots use unique URIs with at most eight immutable previews; expired preview reads say unavailable, never substitute another report. Cancellation/disposal revokes authority before the exclusive atomic publication request; once that irreversible request is issued, no rollback is promised. Standard current-tree checks are in progress; no candidate/native acceptance yet.
+
+
+## Committed candidate handoff — native pending
+
+Implementation5f2135f95329cdbdd4b4c3e230f2a627f70d4e42 reviewed/committed separately from ACTIVE. Current development and clean isolated committed candidate compile/lint/1261 behavior/docs:verify(two existing ADR warnings)/docs:health/package:vsix pass. Candidate-evidence retains exact reviewed/exported host JSON, cancellation/overlap/no-overwrite/recovery composition and fixed manifests extracted from the generated VSIX. Actual archive extension and pi versions are both0.86.1 because the existing packager uses dependencyVersion for the extension manifest; source extension remains0.0.1. Report actual manifests, never substitute source/declaration versions. Extraction is not installation. Native read-only review, nonmodal notification, save/cancel and real-host visuals remain unverified under the same isolated Code binding blocker. No native/delegated acceptance or WI closure.
+
+Immutable previews are capped at8; expired reads are explicitly unavailable. Cleanup failure after successful publication is reported as already exported, not as no file; pre-publication errors stay retryable. A standard lint run caught unsafe-finally throw during development, corrected without changing test assertions; preserve failed vs final logs. No sensitive collection/upload/model calls. Retain local slice pending; upload remains separately unapproved. Proceed serially to independent PI-GAP-27.
