@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[README.md](README.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-10-01
+- 最近同步：2026-10-03
 - Type: Reference
 - Status: Accepted
 - Authority: **仅历史上下文**——被替代的PRD、WI、spike和讨论
@@ -53,6 +53,8 @@ WI 记录保留旧 pending／open 等历史状态；当前工作与决定见 [AC
 
 ## 被替代的交接与共用 WI 历史
 
+- [ACTIVE 同步与待验交接（2026-10-03 归档）](2026-10-03-active-handoff-cleanup.zh.md)
+
 - [已关闭工作项历史 — WI-001～007 与 WI-010～012](2026-09-21-closed-wi-history.zh.md)
 - [Goal 修改审查检查点 — WI-016](2026-09-22-goal-change-review-handoff.zh.md)
 - [Goal 前端与附件检查点](2026-09-22-goal-frontend-attachment-handoffs.zh.md)
@@ -69,7 +71,7 @@ WI 记录保留旧 pending／open 等历史状态；当前工作与决定见 [AC
 
 归档与当前权威文档冲突时忽略归档，引用现行文件。
 
-WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collaboration.zh.md#7-agent-义务)归档受影响材料，不另问保存／目录；不授权批量历史清理。记录原因、历史状态、替代链接（或说明无替代）。移动前在活动文档保存仍有效要求／未决问题，原入口留摘要／链接。翻译成对移动，修复入站／相对链接及索引，执行docs:verify和docs:health。ADR留在docs/decisions/并维护状态／替代关系。年代或长度本身不构成归档理由。
+WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collaboration.zh.md#7-agent-义务)归档受影响材料，不另问保存／目录；不授权批量历史清理。记录原因、历史状态、替代链接（或说明无替代）。移动前在活动文档保存仍有效要求／未决问题，原入口留摘要／链接；ACTIVE 仅保留通用归档索引链接，完成任务摘要和交接留在本目录。翻译成对移动，修复入站／相对链接及索引，执行docs:verify和docs:health。ADR留在docs/decisions/并维护状态／替代关系。年代或长度本身不构成归档理由。
 
 导航维护：WI-073 — [编号历史](2026-09-29-closed-wi-index.zh.md).
 
