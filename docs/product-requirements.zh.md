@@ -371,6 +371,8 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 ### REQ-009 — 代表性 pi 兼容
 
+**WI-088 已批准 Build 切片（本轮八项 Goal，2026-10-02）：** 显式本地有界诊断仅含实际安装 package／host 版本及既有 allowlist lifecycle flags。冻结只读预览、显式审查导出／取消、本地 save取消、拒绝覆盖、失败可重试。默认排除源码、完整会话、标识／路径、凭据、env、诊断／错误正文；无后台敏感收集或上传，无新增 runtime／trust／Webview 权限。[Prepare](discussions/2026-10-02-wi-088-local-diagnostics.zh.md)；实现与本轮代理 native 验收待完成。
+
 **WI-039 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-009 交付，受影响的供应商配置属 REQ-002）：** 交付的 VSIX 必须能加载自身 bundle 会导入的运行时依赖闭包。bundle 只能把宿主提供的 `vscode` 与 pinned `@earendil-works/pi-coding-agent`（其 CLI 由 supervisor 启动子进程）留在包外；其他每个裸标识符都必须内联进该 bundle 或随包装入，组包因此必须拒绝「交付 bundle 加载了未随包发布的依赖」。解包后的归档要在解包扩展根目录真实 `import()` 每个这样的标识符来验证。本切片修复安装版在供应商配置路径上以固定错误失败的缺陷，使安装版扩展宿主的供应商设置、endpoint 添加／删除与模型目录与开发宿主一致可用。不新增用户可见行为、gate 或模块责任，不把验证串接进 `package:vsix`／CI（仍属停车场 ARCH-07），也不接受整份 Draft PRD。[验收与限制](archive/2026-09-30-wi-039-macos-acceptance.zh.md)。
 
 **WI-070 已接受切片（代理依据完成 ACTIVE 的 `/goal`，2026-10-01；REQ-009 macOS 五类证据）：** 当前隔离安装包在 macOS 本机 VS Code 记录五类成功／失败矩阵、一次发送／流式／完成回合与自有 child 恢复，含已核对的 `pi-system-prompt-manager` 0.1.1。历史 Windows 通过仍是 Windows。skill 正文调用、附件／审阅与终端顺序交接未在本主机重跑。[证据表与限制](archive/2026-10-01-wi-070-acceptance.zh.md)。
@@ -510,6 +512,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-085-model-cycling.zh.md)。 |
 | WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
 | WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。 |
+| WI-088 | REQ-009 有界本地诊断导出（PI-GAP-26 本地切片） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-088-local-diagnostics.zh.md)。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
