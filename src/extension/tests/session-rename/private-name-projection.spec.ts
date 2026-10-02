@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { parseHostMessage } from "../../../webview/client/parse-host-message.js";
 import { tick } from "../harness.js";
 import { renameFixture } from "./rename.test-support.js";
@@ -21,6 +21,7 @@ test("raw upstream credentials beyond 160 units never reach current title or nat
     f.h.api.window.showInputBox = async options => { assert.equal(options?.value, name); return name; };
     f.v.action("renameSession"); await tick();
     assert.equal(f.commands.filter(value => value.type === "set_session_name").length, 1);
+    mkdirSync("dist/wi080", { recursive: true });
     writeFileSync("dist/wi080/private-name-projection.json", JSON.stringify({ status: "passed", safeOldProjection: true, safeNativePrefill: true,
       publicRawMetadataUnchangedOnCancel: true, exact200Readback: true, unchanged200NoMutation: true }, null, 2));
   } finally { await f.close(); }
