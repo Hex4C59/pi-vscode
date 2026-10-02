@@ -30,7 +30,7 @@
 
 [八项 Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界批准，不授权放宽 CSP、付费模型、真实账户、发布。PI-GAP-02／04／06／14／24 native 未完成。
 
-**进度与下一步：** 严格 CSP 技术探针保留，可见 flow／sequence，坏语法／边预算拒绝；具体安全／取消／输出预算 Prepare 与七项预写组合完成，red 缺失公开 diagrams 模块。下一步有界实现，无验收声明。
+**进度与下一步：** 七项预写组合转绿，有界 renderer／projection／UI 已实现但未提交；严格 CSP 真实组件英中18图、局部键盘平移／源码 Copy 保留。修正实际 SVG 良性声明／单位并收紧语法预算，最后标准检查与 scoped review 正在推进；旧 history 断言间歇失败日志保留，native 未验收。
 
 ## 待完成
 
