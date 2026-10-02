@@ -2,6 +2,15 @@ import type { UiText } from "../components/index.js";
 
 /** UI copy only. Synthetic response bodies and upstream diagnostics are intentionally not translated. */
 export const chineseUi = {
+  "Close usage": "关闭用量",
+  "Unknown": "未知", "Close": "关闭", "Refresh": "刷新",
+  "Usage": "用量", "Refresh usage": "刷新用量", "Current context": "当前上下文", "Session total": "会话累计",
+  "Context tokens": "上下文 token", "Context capacity": "上下文容量", "Context used": "上下文占用",
+  "Input tokens": "输入 token", "Output tokens": "输出 token", "Cache read tokens": "缓存读取 token",
+  "Cache write tokens": "缓存写入 token", "Total tokens": "总 token", "Estimated cost (USD)": "估算费用（USD）",
+  "Loading usage…": "正在加载用量…", "Usage unavailable. Refresh to retry.": "用量不可用，请刷新重试。",
+  "No active session.": "没有活动会话。", "Previous snapshot while the task is running.": "任务运行中显示上次快照。",
+  "Rename current conversation": "重命名当前对话",
   "Settings": "设置", "Settings categories": "设置分类", "General": "通用", "Providers": "供应商", "Plugins": "插件", "Back to providers": "返回供应商",
   "Search models": "搜索模型", "No matching models": "没有匹配的模型", "Manage providers": "管理供应商", "API key": "API 密钥", "Configured": "已配置", "Not configured": "未配置",
   "Add from disk": "从磁盘添加",
@@ -170,6 +179,11 @@ export const chineseUi = {
   "Recalling queued text…": "正在取回排队文字…",
   "Stopping and recalling…": "正在停止并取回…",
   "What should we work on?": "今天想做些什么？",
+  "Copy reply": "复制回复",
+  "Copying reply…": "正在复制回复…",
+  "Clipboard unavailable — select the reply to copy manually.": "剪贴板不可用，请选中回复手动复制。",
+  "Copy failed — clipboard permission is denied or unavailable. Select the reply to copy manually.": "复制失败，剪贴板权限被拒绝或不可用。请选中回复手动复制。",
+  "Reply copied.": "回复已复制。",
   "Copy code": "复制代码",
   "Copy": "复制",
   "Code block": "代码块",

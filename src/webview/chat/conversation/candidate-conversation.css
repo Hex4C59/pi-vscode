@@ -42,6 +42,14 @@ body[data-vscode-theme-kind="vscode-high-contrast-light"] .candidate__message--u
 .candidate__markdown :is(a, pre):focus-visible,
 .candidate__code-actions button:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
 
+/* Reply copy stays outside the Markdown body; long feedback wraps without hiding the action. */
+.candidate__reply-copy { display: flex; align-items: flex-start; gap: var(--ui-space-2); min-width: 0; margin-top: var(--ui-space-2); color: var(--ui-muted); font-size: var(--ui-font-chrome); line-height: 1.4; }
+.candidate__reply-copy [role="status"] { flex: 1; min-width: 0; padding-top: var(--ui-space-1); overflow-wrap: anywhere; }
+.candidate__reply-copy button { flex: none; min-height: 28px; padding: var(--ui-space-1) var(--ui-space-2); border: 1px solid transparent; border-radius: var(--ui-radius); background: transparent; color: var(--ui-muted); font: inherit; cursor: pointer; }
+.candidate__reply-copy button:hover:not([aria-disabled="true"]) { background: var(--ui-hover); color: var(--ui-fg); }
+.candidate__reply-copy button[aria-disabled="true"] { cursor: wait; }
+.candidate__reply-copy button:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+
 /* Tool activity: a borderless disclosure row; expanded items keep a hairline rail and literal output. */
 .candidate__activity { margin: 0 0 var(--ui-space-2); color: var(--ui-muted); font-size: var(--ui-font-chrome); line-height: 1.4; }
 .candidate__activity summary { display: flex; align-items: center; gap: var(--ui-space-1); min-width: 0; cursor: pointer; list-style: none; transition: color 100ms ease-out; }

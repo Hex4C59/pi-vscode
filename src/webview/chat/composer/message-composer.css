@@ -83,6 +83,20 @@
   .candidate-context__menu { animation: none; }
 }
 
+/* Read-only usage follows the same composer popover boundary. */
+.session-usage { flex: none; }
+.session-usage > button { max-width: none; min-height: 28px; padding: var(--ui-space-1) var(--ui-space-2); font-size: var(--ui-font-chrome); }
+.session-usage__panel button { min-height: 28px; padding: var(--ui-space-1) var(--ui-space-2); color: var(--ui-fg); background: transparent; border: 1px solid transparent; border-radius: var(--ui-radius); font-size: var(--ui-font-chrome); }
+.session-usage__panel button:hover:not(:disabled) { background: var(--ui-hover); }
+.session-usage__panel button:disabled { opacity: .45; }
+.session-usage__panel { position: absolute; z-index: 3; bottom: calc(100% + var(--ui-space-2)); right: 0; width: 100%; max-width: 320px; max-height: min(420px, 55dvh); overflow: auto; padding: var(--ui-space-3); color: var(--ui-fg); background: var(--ui-surface-raised); border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius); font-size: var(--ui-font-chrome); }
+.session-usage__panel header { display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2); }
+.session-usage__panel h3 { margin: var(--ui-space-3) 0 var(--ui-space-2); font-size: var(--ui-font-chrome); }
+.session-usage__panel dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ui-space-1) var(--ui-space-2); margin: 0 0 var(--ui-space-3); }
+.session-usage__panel dl > div { display: contents; }
+.session-usage__panel dt { color: var(--ui-muted); overflow-wrap: anywhere; }
+.session-usage__panel dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+
 @media (max-height: 540px) {
   .candidate__composer textarea { min-height: 36px; }
 }

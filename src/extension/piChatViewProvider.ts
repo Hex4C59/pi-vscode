@@ -8,12 +8,13 @@ import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./con
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage, WebviewMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
 
-import { SavedHistory } from "./sessions/index.js";
+import { SavedHistory, SessionRename, type RenameContext } from "./sessions/index.js";
 import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
 import { PluginInventorySettings, selectTrustedExtension, trustedInventoryApply } from "./extension-loading/index.js";
 import type { ExtensionExecutionProfile, ExecutionProfileProjection, ExtensionFeedback } from "./contracts/index.js";
 import { createInteractionCoordinator } from "./interactions/index.js";
 import { DraftSubmission } from "./draft/index.js";
+import { SessionUsageOwner } from "./session-usage/sessionUsageOwner.js";
 import { QueuedTextSession } from "./queue/queuedTextSession.js";
 
 const opaqueId = () => randomBytes(16).toString("hex");
@@ -45,6 +46,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private reconcileToken = 0;
   private readonly models: ModelSettings;
   private readonly savedDefaultApply: SavedDefaultApply;
+  private readonly usage = new SessionUsageOwner(() => this.runtime, () => ({
+    generation: this.state.generation, session: this.runtimeSession, disposed: this.disposed,
+    ready: this.state.runtime === "ready" && this.state.status === "eligible" && this.runtimeSession !== 0,
+    busy: this.state.chatBusy || this.state.busy || this.models?.snapshot.modelBusy || this.sessionTransitionBusy()
+      || this.profilePhase !== "idle" || this.interactions?.snapshot().phase !== "idle",
+  }), () => this.publishUsage());
   private runtimeSession = 0;
   private promptToken = 0;
   private stoppingTask = false;
@@ -81,6 +88,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private readonly draft: DraftSubmission;
   private queue: QueuedTextSession | undefined;
   private readonly tools: EditorTools;
+  private readonly sessionRename: SessionRename;
+  private renameRevision = 0;
+  private lastRenameProjection = "";
   private readonly savedHistory: SavedHistory;
   private sessionOperation: AbortController | undefined;
   private sessionCommit: AbortController | undefined;
@@ -104,18 +114,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     toolOptions: EditorToolOptions = {},
     hostPaths: { globalStorage?: string } = {},
   ) {
-    this.models = new ModelSettings(runtime, () => {
-      if (!this.disposed) this.refresh();
-      return { generation: this.state.generation, session: this.runtimeSession, ready: this.state.runtime === "ready",
-        disposed: this.disposed, blocked: this.state.busy || this.sessionTransitionBusy() || this.interactions.snapshot().phase !== "idle" || this.profilePhase !== "idle",
-        chatBusy: this.state.chatBusy, stopping: this.stoppingTask };
-    }, () => this.publish());
-    this.providerConfig = new ProviderConfig(createDefaultProviderConfigDeps({
-      showInputBox: options => this.api.window.showInputBox(options),
-      showQuickPick: (items, options) => this.api.window.showQuickPick(items, options),
-      showInformationMessage: message => this.api.window.showInformationMessage(message),
-      openExternal: url => this.api.env.openExternal(this.api.Uri.parse(url)),
-    }), () => this.publish());
+    this.sessionRename = new SessionRename({ runtime, context: () => this.renameContext(),
+      input: (options, signal) => this.renameInput(options, signal), changed: () => this.publish(),
+      notice: async message => this.api.window.showWarningMessage(message), apply: conversation => this.applyRenamedConversation(conversation) });
+    this.models = this.createModels(runtime);
+    this.providerConfig = this.createProviderConfig();
     this.savedDefaultApply = new SavedDefaultApply({
       models: this.models,
       providerConfig: this.providerConfig,
@@ -127,54 +130,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       () => this.pickInventoryEntry(),
       () => this.settingsPanel.publish(),
     );
-    this.settingsPanel = new SettingsPanel(this.api.window, this.extensionUri, () => {
-      if (!this.disposed) this.refresh();
-      return {
-        generation: this.state.generation, locale: this.uiLocale,
-        config: this.providerConfig.snapshot, inventory: this.pluginInventory.snapshot,
-      };
-    }, intent => this.configureSettings(intent), locale => this.setUiLanguage(locale),
-    () => this.pluginInventory.reload(() => !this.disposed));
-    this.savedHistory = new SavedHistory(sessionBackend, () => ({
-      cwd: this.state.folder?.path,
-      key: this.state.generation + ":" + this.state.viewId,
-      settled: this.sessionBackendSettlement,
-      enabled: !this.disposed && this.sessionEligible() && !this.sessionTransitionBusy(),
-      startable: !this.disposed && this.sessionEligible() && !this.sessionTransitionBusy() && !this.sessionOperation,
-    }), message => { if (this.view && !this.disposed) this.post(this.view, { ...this.envelope(message.type), ...message }); });
-    this.tools = new EditorTools(this.api, () => ({
-      generation: this.state.generation, session: this.runtimeSession, cwd: this.state.folder?.path,
-      ready: this.state.runtime === "ready", chatBusy: this.state.chatBusy,
-      stopping: this.state.execution === "stopping", disposed: this.disposed,
-    }), ({ approvals, grants }) => {
-      this.state = { ...this.state, approvals, grants, execution: approvals.length ? "awaiting-approval"
-        : this.state.execution === "awaiting-approval" ? "waiting" : this.state.execution };
-      this.publish();
-    }, projection => {
-      if (this.view && !this.disposed) this.post(this.view, { ...this.envelope("changeReviewState"), ...projection });
-    }, chatError => { this.state = { ...this.state, chatError }; this.publish(); }, toolOptions);
-    this.draft = new DraftSubmission(this.api, this.runtime, refresh => {
-      if (refresh && !this.disposed) this.refresh();
-      return { generation: this.state.generation, session: this.runtimeSession, viewId: this.state.viewId,
-        view: this.view, cwd: this.state.folder?.path, disposed: this.disposed, ready: this.state.runtime === "ready",
-        eligible: this.profilePhase === "idle" && this.interactions.snapshot().phase === "idle" && !this.sessionTransitionBusy() && this.state.status === "eligible" && this.state.runtime === "ready"
-          && !this.state.busy && !this.state.chatBusy && !this.models.snapshot.modelBusy && !this.stoppingTask };
-    }, message => { if (this.view && !this.disposed) this.post(this.view, message); }, {
-      accepted: body => {
-        this.untouchedControlledConversation = false;
-        this.taskFailed = false;
-        this.commandHandled = false;
-        this.settledOutcome = undefined;
-        this.state = { ...this.state, messages: [...this.state.messages, { role: "user" as const, text: body.trim() }].slice(-32), chatBusy: true, execution: "waiting", chatError: null };
-      },
-      attempted: submissionId => this.tools.beginTask(submissionId),
-      failed: chatError => {
-        this.tools.endTask(); this.models.cancelPending();
-        this.state = { ...this.state, chatBusy: false, execution: "failed", chatError };
-      },
-      settled: () => this.finishSettledTask(),
-      changed: () => this.publish(),
-    });
+    this.settingsPanel = this.createSettingsPanel();
+    this.savedHistory = this.createSavedHistory(sessionBackend);
+    this.tools = this.createEditorTools(toolOptions);
+    this.draft = this.createDraftSubmission();
     this.interactions.subscribe(snapshot => {
       this.publish();
       if (snapshot.errorCode && !this.interactionFailureReported && !this.disposed) {
@@ -198,6 +157,84 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       api.workspace.onDidGrantWorkspaceTrust(() => { this.refresh(); this.publish(); this.draft.publish(); }),
     ];
     this.startRetainedHandoff();
+  }
+
+  private createModels(runtime: PiRuntimeLifecycle): ModelSettings {
+    return new ModelSettings(runtime, () => {
+      if (!this.disposed) this.refresh();
+      return { generation: this.state.generation, session: this.runtimeSession, ready: this.state.runtime === "ready",
+        disposed: this.disposed, blocked: this.state.busy || this.sessionTransitionBusy() || this.interactions.snapshot().phase !== "idle" || this.profilePhase !== "idle",
+        chatBusy: this.state.chatBusy, stopping: this.stoppingTask };
+    }, () => this.publish());
+  }
+
+  private createProviderConfig(): ProviderConfig {
+    return new ProviderConfig(createDefaultProviderConfigDeps({
+      showInputBox: options => this.api.window.showInputBox(options),
+      showQuickPick: (items, options) => this.api.window.showQuickPick(items, options),
+      showInformationMessage: message => this.api.window.showInformationMessage(message),
+      openExternal: url => this.api.env.openExternal(this.api.Uri.parse(url)),
+    }), () => this.publish());
+  }
+
+  private createSettingsPanel(): SettingsPanel {
+    return new SettingsPanel(this.api.window, this.extensionUri, () => {
+      if (!this.disposed) this.refresh();
+      return {
+        generation: this.state.generation, locale: this.uiLocale,
+        config: this.providerConfig.snapshot, inventory: this.pluginInventory.snapshot,
+      };
+    }, intent => this.configureSettings(intent), locale => this.setUiLanguage(locale),
+    () => this.pluginInventory.reload(() => !this.disposed));
+  }
+
+  private createSavedHistory(sessionBackend: SessionBackend): SavedHistory {
+    return new SavedHistory(sessionBackend, () => ({
+      cwd: this.state.folder?.path,
+      key: this.state.generation + ":" + this.state.viewId,
+      settled: this.sessionBackendSettlement,
+      enabled: !this.disposed && this.sessionEligible() && !this.sessionTransitionBusy(),
+      startable: !this.disposed && this.sessionEligible() && !this.sessionTransitionBusy() && !this.sessionOperation,
+    }), message => { if (this.view && !this.disposed) this.post(this.view, { ...this.envelope(message.type), ...message }); });
+  }
+
+  private createEditorTools(toolOptions: EditorToolOptions): EditorTools {
+    return new EditorTools(this.api, () => ({
+      generation: this.state.generation, session: this.runtimeSession, cwd: this.state.folder?.path,
+      ready: this.state.runtime === "ready", chatBusy: this.state.chatBusy,
+      stopping: this.state.execution === "stopping", disposed: this.disposed,
+    }), ({ approvals, grants }) => {
+      this.state = { ...this.state, approvals, grants, execution: approvals.length ? "awaiting-approval"
+        : this.state.execution === "awaiting-approval" ? "waiting" : this.state.execution };
+      this.publish();
+    }, projection => {
+      if (this.view && !this.disposed) this.post(this.view, { ...this.envelope("changeReviewState"), ...projection });
+    }, chatError => { this.state = { ...this.state, chatError }; this.publish(); }, toolOptions);
+  }
+
+  private createDraftSubmission(): DraftSubmission {
+    return new DraftSubmission(this.api, this.runtime, refresh => {
+      if (refresh && !this.disposed) this.refresh();
+      return { generation: this.state.generation, session: this.runtimeSession, viewId: this.state.viewId,
+        view: this.view, cwd: this.state.folder?.path, disposed: this.disposed, ready: this.state.runtime === "ready",
+        eligible: this.profilePhase === "idle" && this.interactions.snapshot().phase === "idle" && !this.sessionTransitionBusy() && this.state.status === "eligible" && this.state.runtime === "ready"
+          && !this.state.busy && !this.state.chatBusy && !this.models.snapshot.modelBusy && !this.stoppingTask };
+    }, message => { if (this.view && !this.disposed) this.post(this.view, message); }, {
+      accepted: body => {
+        this.untouchedControlledConversation = false;
+        this.taskFailed = false;
+        this.commandHandled = false;
+        this.settledOutcome = undefined;
+        this.state = { ...this.state, messages: [...this.state.messages, { role: "user" as const, text: body.trim() }].slice(-32), chatBusy: true, execution: "waiting", chatError: null };
+      },
+      attempted: submissionId => this.tools.beginTask(submissionId),
+      failed: chatError => {
+        this.tools.endTask(); this.models.cancelPending();
+        this.state = { ...this.state, chatBusy: false, execution: "failed", chatError };
+      },
+      settled: () => this.finishSettledTask(),
+      changed: () => this.publish(),
+    });
   }
 
   private clearChat(preserveSessionTransition = false): void {
@@ -246,37 +283,15 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (this.queue?.runtimeSession === event.session && this.queue.observe(event)) {
       this.publishQueueState(true); return;
     }
-    if (event.kind === 'runtime_error') {
-      void this.interactions.stop();
-      void this.refreshOwnership();
-      this.resetSavedSessions(); this.publishSessions();
-      this.tools.reset();
-      this.draft.runtimeLost();
-      this.queue = undefined;
-      this.stoppingTask=false;
-      this.models.cancelPending(); this.promptToken++;
-      this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:this.settledOutcome ?? 'failed',activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
-    }
-    if (event.kind === "workflow") {
-      if (!this.state.chatBusy || this.stoppingTask || this.settledOutcome) return;
-      if (event.phase === "retrying" || event.phase === "compacting") {
-        this.taskFailed = false;
-        this.commandHandled = false;
-        this.state = { ...this.state, chatError: null };
-      }
-      this.state = { ...this.state, execution: this.state.approvals.length ? "awaiting-approval" : event.phase };
-      this.publish(); return;
-    }
-    if (event.kind === 'activity') {
-      if (!this.state.chatBusy || this.settledOutcome) return;
-      const activities=[...this.state.activities];const index=activities.findIndex(i=>i.id===event.item.id);
-      if(index>=0)activities[index]=event.item;else if(activities.length<64)activities.push(event.item);
-      this.state={...this.state,activities,execution:this.state.execution==='stopping'?'stopping':this.state.approvals.length?'awaiting-approval':event.item.kind==='thinking'?'thinking':event.item.status==='executing'?'executing':'waiting'};this.publish();return;
-    }
+    if (event.kind === "runtime_error") { this.handleRuntimeLoss(event); return; }
+    if (event.kind === "workflow") { this.handleWorkflow(event); return; }
+    if (event.kind === "activity") { this.handleActivity(event); return; }
     if(event.kind==='message_final') {
       if (!this.state.chatBusy || this.settledOutcome) return;
       const messages=[...this.state.messages];const index=messages.findIndex(m=>m.id===event.messageId);
-      if(index>=0)messages[index]={role:'assistant',id:event.messageId,text:event.text};else if(event.text)messages.push({role:'assistant',id:event.messageId,text:event.text});
+      const final = { role: 'assistant' as const, id: event.messageId, text: event.text,
+        ...(event.bodyCopyEligible && !this.stoppingTask ? { bodyCopyEligible: true as const } : {}) };
+      if(index>=0)messages[index]=final;else if(event.text)messages.push(final);
       this.state={...this.state,messages:messages.slice(-32)};this.publish();return;
     }
     if (event.kind === "text_delta") {
@@ -284,7 +299,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       const messages = [...this.state.messages];
       const last = messages.at(-1);
       if (last?.role === "assistant" && (!event.messageId || last.id===event.messageId)) {
-        messages[messages.length - 1] = { ...last, text: (last.text + event.delta).slice(0,65536) };
+        messages[messages.length - 1] = { role: last.role, ...(last.id ? { id: last.id } : {}), text: (last.text + event.delta).slice(0,65536) };
       } else {
         messages.push({ role: "assistant", text: event.delta.slice(0,65536), ...(event.messageId?{id:event.messageId}:{}) });
       }
@@ -312,6 +327,57 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
   }
 
+  private handleRuntimeLoss(event: Extract<RuntimeEvent, { kind: "runtime_error" }>): void {
+    void this.interactions.stop();
+    void this.refreshOwnership();
+    const previousName = this.sessionRename.busy ? this.sessionProjection.current : null;
+    this.resetSavedSessions();
+    if (previousName) this.sessionProjection = { ...this.sessionProjection, current: previousName };
+    this.publishSessions();
+    this.tools.reset();
+    this.draft.runtimeLost();
+    this.queue = undefined;
+    this.stoppingTask = false;
+    this.models.cancelPending();
+    this.promptToken++;
+    this.state = {
+      ...this.state, runtime: "error", runtimeDetail: event.detail, chatBusy: false,
+      execution: this.settledOutcome ?? "failed",
+      activities: this.state.activities.map(item => item.status === "complete" || item.status === "failed"
+        ? item : { ...item, status: "interrupted" }),
+    };
+    this.publish();
+    return;
+  }
+
+  private handleWorkflow(event: Extract<RuntimeEvent, { kind: "workflow" }>): void {
+    if (!this.state.chatBusy || this.stoppingTask || this.settledOutcome) return;
+    if (event.phase === "retrying" || event.phase === "compacting") {
+      this.taskFailed = false;
+      this.commandHandled = false;
+      this.state = { ...this.state, chatError: null };
+    }
+    this.state = { ...this.state, execution: this.state.approvals.length ? "awaiting-approval" : event.phase };
+    this.publish();
+    return;
+  }
+
+  private handleActivity(event: Extract<RuntimeEvent, { kind: "activity" }>): void {
+    if (!this.state.chatBusy || this.settledOutcome) return;
+    const activities = [...this.state.activities];
+    const index = activities.findIndex(item => item.id === event.item.id);
+    if (index >= 0) activities[index] = event.item;
+    else if (activities.length < 64) activities.push(event.item);
+    this.state = {
+      ...this.state, activities,
+      execution: this.state.execution === "stopping" ? "stopping" : this.state.approvals.length
+        ? "awaiting-approval" : event.item.kind === "thinking" ? "thinking"
+          : event.item.status === "executing" ? "executing" : "waiting",
+    };
+    this.publish();
+    return;
+  }
+
   private finishSettledTask(): void {
     this.promptToken += 1;
     const hasAssistant = this.state.messages.some((entry) => entry.role === "assistant" && entry.text.length > 0);
@@ -323,7 +389,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         ? this.state.chatError
         : "No assistant response. In pi, use /model and Ctrl+S to save a startup model, then restart runtime here.",
     };
-    void this.models.applyPending();
+    void this.models.applyPending().then(() => this.usage.refreshWhenIdle()).catch(() => undefined);
     this.publish();
   }
 
@@ -379,8 +445,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       return;
     }
     const projectTrust = choice === "allow" ? "approve" : "no-approve";
-    this.state = { ...this.state, runtime: "starting", runtimeDetail: null };
-    this.publish();
+    this.publishRuntimeStarting();
     // Never race the startup handoff: a launch must not reserve a domain whose leftover
     // run is still being ended and retired.
     if (this.retainedHandoff) await this.retainedHandoff;
@@ -395,9 +460,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const interactionReady = await this.interactionReset;
     if (token !== this.reconcileToken || this.disposed) return;
     if (!interactionReady) { this.state = { ...this.state, runtime: "error", runtimeDetail: "Extension interaction reset could not be confirmed." }; this.publish(); return; }
-    this.interactions.bindView({ generation: this.state.generation, viewId: this.state.viewId });
-    this.interactionFailureReported = false;
-    this.untouchedControlledConversation = false;
+    this.bindRuntimeStart();
     const result = await this.runtime.start({ cwd: folderPath, projectTrust, ...(this.executionProfile.kind === "trusted" ? { profile: this.executionProfile } : {}), ...(resume ? { resume: { id: resume.id, path: resume.path } } : {}) });
     if (token !== this.reconcileToken || this.disposed) return;
     this.refresh();
@@ -408,10 +471,33 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (resume && result.ok && result.conversation?.id !== resume.id) {
       await this.runtime.stop();
       if (token !== this.reconcileToken || this.disposed) return;
-      this.sessionProjection = { ...this.sessionProjection, current: null };
-      this.state = { ...this.state, runtime: "error", runtimeDetail: "Saved session identity could not be verified. No conversation is ready.", messages: [] };
-      this.publishSessions(); this.publish(); return;
+      this.rejectRuntimeIdentity();
+      return;
     }
+    this.commitRuntimeStart(result, token, resume, preserveMessages);
+    if (!result.ok) await this.refreshOwnership();
+    this.publishSessions(); this.publish();
+  }
+
+  private rejectRuntimeIdentity(): void {
+    this.sessionProjection = { ...this.sessionProjection, current: null };
+    this.state = { ...this.state, runtime: "error", runtimeDetail: "Saved session identity could not be verified. No conversation is ready.", messages: [] };
+    this.publishSessions();
+    this.publish();
+  }
+
+  private publishRuntimeStarting(): void {
+    this.state = { ...this.state, runtime: "starting", runtimeDetail: null };
+    this.publish();
+  }
+
+  private bindRuntimeStart(): void {
+    this.interactions.bindView({ generation: this.state.generation, viewId: this.state.viewId });
+    this.interactionFailureReported = false;
+    this.untouchedControlledConversation = false;
+  }
+
+  private commitRuntimeStart(result: Awaited<ReturnType<PiRuntimeLifecycle["start"]>>, token: number, resume: { id: string; path: string } | undefined, preserveMessages: boolean): void {
     if (!result.ok) {
       this.state = {
         ...this.state,
@@ -432,11 +518,11 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
         messages: preserveMessages ? this.state.messages : [],
       };
       this.ensureQueueSession();
+      this.usage.refreshWhenIdle();
       void this.loadStartupModels(token, result.modelLabel);
     }
-    if (!result.ok) await this.refreshOwnership();
-    this.publishSessions(); this.publish();
   }
+
 
   /**
    * Runs after the ready state is published: provider refresh uses the in-process SDK
@@ -618,7 +704,36 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       { modal: true }, "Load trusted extension") === "Load trusted extension";
   }
 
-  private sessionTransitionBusy(): boolean { return this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching"; }
+  private renameContext(): RenameContext {
+    return { generation: this.state.generation, viewId: this.state.viewId, session: this.runtimeSession, locale: this.uiLocale,
+      conversation: this.liveConversation && this.sessionProjection.current ? { ...this.liveConversation, name: this.sessionProjection.current.name } : null,
+      ready: !this.disposed && !!this.view && this.state.status === "eligible" && this.state.choice !== null
+        && this.state.runtime === "ready" && this.runtimeSession !== 0 && this.runtimeSession === this.runtime.getSession()
+        && !this.state.busy && !this.state.chatBusy && !this.stoppingTask && !this.models.snapshot.modelBusy
+        && !this.sessionOperation && this.profilePhase === "idle" && !this.profileOperation
+        && this.interactions.snapshot().phase === "idle" && !this.interactions.snapshot().active
+        && !this.draft.awaitingAcknowledgement && !this.draft.preparing && !!this.liveConversation };
+  }
+  private async renameInput(options: vscode.InputBoxOptions, signal: AbortSignal): Promise<string | undefined> {
+    const emitter = new this.api.EventEmitter<void>();
+    const cancel = () => emitter.fire(); signal.addEventListener("abort", cancel, { once: true });
+    const token: vscode.CancellationToken = { get isCancellationRequested() { return signal.aborted; }, onCancellationRequested: emitter.event };
+    try { return await this.api.window.showInputBox(options, token); }
+    finally { signal.removeEventListener("abort", cancel); emitter.dispose(); }
+  }
+  private async applyRenamedConversation(conversation: NonNullable<RenameContext["conversation"]>): Promise<void> {
+    this.sessionProjection = { ...this.sessionProjection, current: { id: conversation.id, name: conversation.name } };
+    this.publishSessions(); await this.listSavedSessions(this.sessionProjection.page);
+  }
+  private publishRenameState(force = false): void {
+    if (!this.view || this.disposed) return;
+    const projection = { ...this.envelope("sessionRenameState"), status: this.sessionRename.status };
+    const key = JSON.stringify(projection);
+    if (key !== this.lastRenameProjection) { this.lastRenameProjection = key; this.renameRevision = Math.min(Number.MAX_SAFE_INTEGER, this.renameRevision + 1); }
+    else if (!force) return;
+    this.post(this.view, { ...projection, revision: this.renameRevision });
+  }
+  private sessionTransitionBusy(): boolean { return this.sessionRename.busy || this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching"; }
   private beginSessionBackendOperation(): { previous: Promise<void>; settle: () => void } {
     const previous = this.sessionBackendSettlement;
     let resolve!: () => void;
@@ -628,6 +743,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     return { previous, settle: () => { if (!complete) { complete = true; resolve(); } } };
   }
   private resetSavedSessions(): void {
+    this.sessionRename.cancelInput();
     this.sessionOperation?.abort(); this.sessionOperation = undefined; this.sessionCommit = undefined; this.sessionCatalog.clear();
     this.savedHistory.reset();
     this.sessionProjection = { phase: "idle", current: null, loaded: false, entries: [], page: 0, total: 0, error: null };
@@ -701,11 +817,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (!folder) { this.sessionOperation = undefined; return; }
     const current = () => !this.disposed && (committed || this.view === view) && this.sessionOperation === operation && !operation.signal.aborted && this.state.generation === generation && this.state.folder?.path === folder && this.state.choice === choice;
     const fail = (error: SessionError) => { this.sessionProjection = { ...this.sessionProjection, phase: error === "cancelled" ? "idle" : "error", error }; };
-    this.savedHistory.cancel();
-    this.sessionProjection = { ...this.sessionProjection, phase: "confirming", error: null }; this.publishSessions();
+    this.beginConversationConfirmation();
     try {
-      const button = selected ? "Other entry point is closed — restore" : "Start new conversation";
-      const message = (selected ? "Close any terminal or other editor driving this saved pi session before restoring. Confirmation does not enforce exclusive ownership. Historical extensions will not be automatically loaded. " : "Start a new pi conversation without deleting saved sessions. ") + "The current task will be stopped. Unsent draft text/attachments, memory-only attachment history, and temporary grants/review snapshots will be cleared.";
+      const { button, message } = this.conversationChangePrompt(!!selected);
       const answer = await this.api.window.showWarningMessage(message, { modal: true }, button);
       if (!current()) return;
       if (answer !== button || revision !== this.draft.revision) { fail("cancelled"); return; }
@@ -735,23 +849,40 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       }
       if (revision !== this.draft.revision) { fail("cancelled"); return; }
       if (this.state.generation >= Number.MAX_SAFE_INTEGER) { fail("unavailable"); return; }
-      committed = true; this.sessionCommit = operation; this.clearChat(true); this.draft.clearText(); this.sessionCatalog.clear();
-      // Execution consent belongs to the old live runtime, never a new or restored conversation.
-      this.executionProfile = { kind: "controlled" }; this.profileDisplayName = null; this.profileError = null;
-      this.state = { ...this.state, generation: this.state.generation + 1, controlledExecution: true }; generation = this.state.generation;
-      this.sessionProjection = { phase: "switching", current: null, loaded: false, entries: [], page: 0, total: 0, error: null };
+      committed = true; generation = this.prepareConversationChange(operation);
       this.publishSessions(); this.draft.publish(); this.publish();
       await this.reconcileRuntime(resume); if (!current()) return;
       if (this.state.runtime !== "ready" || (resume && this.sessionProjection.current?.id !== resume.id)) { fail("restore-failed"); return; }
       this.sessionProjection = { ...this.sessionProjection, phase: "idle", error: null };
       if (resume && history) this.savedHistory.restore(resume.id, anchor, history);
     } catch { if (current()) fail("unavailable"); }
-    finally { if (this.sessionOperation === operation) { if (this.sessionCommit === operation) this.sessionCommit = undefined; if (!committed && (this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching")) fail("cancelled"); this.sessionOperation = undefined; this.publishSessions(); } }
+    finally { if (this.sessionOperation === operation) { if (this.sessionCommit === operation) this.sessionCommit = undefined; if (!committed && (this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching")) fail("cancelled"); this.sessionOperation = undefined; this.publishSessions(); if (committed && this.sessionProjection.phase === "idle") this.usage.refreshWhenIdle(); } }
+  }
+
+  private conversationChangePrompt(selected: boolean): { button: string; message: string } {
+    const button = selected ? "Other entry point is closed — restore" : "Start new conversation";
+    const message = (selected ? "Close any terminal or other editor driving this saved pi session before restoring. Confirmation does not enforce exclusive ownership. Historical extensions will not be automatically loaded. " : "Start a new pi conversation without deleting saved sessions. ") + "The current task will be stopped. Unsent draft text/attachments, memory-only attachment history, and temporary grants/review snapshots will be cleared.";
+    return { button, message };
+  }
+
+  private beginConversationConfirmation(): void {
+    this.savedHistory.cancel();
+    this.sessionProjection = { ...this.sessionProjection, phase: "confirming", error: null }; this.publishSessions();
+  }
+
+  private prepareConversationChange(operation: AbortController): number {
+    this.sessionCommit = operation; this.clearChat(true); this.draft.clearText(); this.sessionCatalog.clear();
+    // Execution consent belongs to the old live runtime, never a new or restored conversation.
+    this.executionProfile = { kind: "controlled" }; this.profileDisplayName = null; this.profileError = null;
+    this.state = { ...this.state, generation: this.state.generation + 1, controlledExecution: true };
+    this.sessionProjection = { phase: "switching", current: null, loaded: false, entries: [], page: 0, total: 0, error: null };
+    return this.state.generation;
   }
 
   private envelope<T extends string>(type: T) { return { version: 3 as const, type, generation: this.state.generation, viewId: this.state.viewId }; }
 
   private publish(forceExtensions = false): void {
+    this.usage.flushPending();
     if (!this.disposed) this.settingsPanel?.publish(forceExtensions);
     if (!this.view || this.disposed) return;
     const interactions = { ...this.envelope("interactionState"), ...this.interactions.snapshot(), ...this.extensionFeedback };
@@ -765,7 +896,19 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (forceExtensions || providerKey !== this.lastProviderConfigProjection) { this.lastProviderConfigProjection = providerKey; this.post(this.view, providers); }
     this.publishQueueState();
     this.publishCommands(forceExtensions);
+    this.publishUsage(forceExtensions);
+    this.publishRenameState(forceExtensions);
     this.post(this.view, { ...this.state, ...this.models.snapshot });
+  }
+
+  private lastUsageProjection = "";
+  private publishUsage(force = false): void {
+    const projection = { ...this.envelope("sessionUsageState"), ...this.usage.snapshot() };
+    const key = JSON.stringify(projection);
+    if (this.view && !this.disposed && (force || key !== this.lastUsageProjection)) {
+      this.lastUsageProjection = key;
+      this.post(this.view, projection);
+    }
   }
 
   private commandProjection(): Omit<CommandCatalogueStateMessage, "revision"> {
@@ -806,6 +949,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private clearView(): void {
+    this.sessionRename.cancelInput();
     this.savedHistory.cancel();
     if (this.sessionOperation && this.sessionCommit !== this.sessionOperation) {
       this.sessionOperation.abort(); this.sessionOperation = undefined;
@@ -859,6 +1003,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.generation !== this.state.generation || message.viewId !== this.state.viewId) { this.draft.rejectStale(); this.publish(); return; }
     if (message.type === "openSettings") { this.settingsPanel.open(); return; }
     if (message.type === "setUiLanguage") { this.setUiLanguage(message.locale); return; }
+    if (this.sessionRename.busy && message.type !== "updateDraft") { this.publish(); return; }
+    if (message.type === "renameSession") { await this.sessionRename.rename(); return; }
     if (message.type === "answerInteraction") { this.interactions.answer(message, message.id, message.answer); return; }
     if (message.type === "cancelInteraction") { this.interactions.cancel(message, message.id); return; }
     if (message.type === "chooseExecutionProfile") { await this.chooseExecutionProfile(view, message.profile); return; }
@@ -873,11 +1019,16 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
     if (this.profilePhase !== "idle" && message.type !== "stopChat") { this.publish(); return; }
     if (this.state.busy) { this.draft.rejectStale(); this.publish(); return; }
+    return this.receiveReady(view, message);
+  }
+
+  private async receiveReady(view: vscode.WebviewView, message: WebviewMessage): Promise<void> {
     if (message.type === "getSavedHistory") { await this.savedHistory.page(message.page); return; }
     if (message.type === "getSavedHistoryPreview") { await this.savedHistory.preview(message.id, message.requestId, message.offset); return; }
     const toolGeneration = this.state.generation; const session = this.runtimeSession;
     const toolOperation = this.tools.handle(message, () => !this.disposed && this.view === view && toolGeneration === this.state.generation && session === this.runtimeSession);
     if (toolOperation) { await toolOperation; return; }
+    if (message.type === "refreshSessionUsage") { await this.usage.refresh(); this.publishUsage(); return; }
     if (message.type === "completeCommand") { this.completeCommand(message); return; }
     const draftOperation = this.draft.handle(view, message);
     if (draftOperation) { await draftOperation; return; }
@@ -903,6 +1054,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
     if ((message.type === "openFolder" && this.state.status !== "no-folder")
       || (message.type === "manageTrust" && this.state.status !== "untrusted")) { this.publish(); return; }
+    return this.receiveWorkspaceAction(view, message);
+  }
+
+  private async receiveWorkspaceAction(view: vscode.WebviewView, message: WebviewMessage): Promise<void> {
     const operation = {};
     this.operation = operation;
     const generation = this.state.generation;
@@ -959,6 +1114,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private async configureSettings(message: ProviderConfigIntent | PluginInventoryIntent): Promise<void> {
+    if (this.sessionRename.busy) { this.publish(); return; }
     if (this.disposed) return;
     if (message.type === "addPluginInventoryEntry") {
       await this.pluginInventory.add(() => !this.disposed);
@@ -1013,6 +1169,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.usage.dispose();
     this.settingsPanel.dispose();
     this.reconcileToken += 1;
     this.unsubscribeRuntime();

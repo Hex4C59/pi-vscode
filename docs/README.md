@@ -14,7 +14,7 @@ Use the [domain glossary](../CONTEXT.md) for confirmed terminology. It does not 
 
 This index is a routing tree, not a read-everything order. Repository rules and mandatory baseline reads come from [`../AGENTS.md`](../AGENTS.md) and its kernel.
 
-- **Current session:** read the task registry in [`../ACTIVE.md`](../ACTIVE.md), then the assigned WI proposal in full, its approval, open limits and latest handoff. If no task is clearly assigned, ask rather than claiming the first WI; follow only task-relevant links.
+- **Current session:** read [`../ACTIVE.md`](../ACTIVE.md) in full for the current WI, if any, approval state, open limits and latest handoff; then follow its task-relevant links.
 - **Interface names for pointing at the UI:** use the illustrated [plugin parts glossary](reference/plugin-parts.md). Use [Sidebar regions and components](reference/sidebar-ui-anatomy.md) for demonstration wording and current code mapping.
 - **User-visible behavior:** read [`product-requirements.md`](product-requirements.md) and the [primary architecture](architecture/vscode-extension-architecture.md).
 - **Architecture or contracts:** read the [primary architecture](architecture/vscode-extension-architecture.md), the [Webview contract](reference/webview-messages.md), and [`guides/architecture-governance.md`](guides/architecture-governance.md).

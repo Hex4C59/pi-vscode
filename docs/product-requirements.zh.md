@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[product-requirements.md](product-requirements.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-10-02（并行派工政策；产品状态不变）
+- 最近同步：2026-10-02
 
 - 类型：产品需求
 - 状态：**Accepted**（自用 macOS 本机 VS Code 安装版 VSIX；standing non-goals 排除）
@@ -270,6 +270,16 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **验收：** 代码前失败方式；host→adapter→validated client→mounted 面板闭环用可区分累计／上下文、null／损坏／零定价、不可用／超时／替换迟到与 cleanup。隔离合成 provider＋真实 pi 0.86.1 公开统计；浏览器 280／320／400、中英、暗／亮／高对比与键盘；macOS F5／安装 VSIX 打开→真实数字→刷新→新会话不串数据。留报告／截图；compile／lint／npm test／docs:verify，关闭 docs:health。这些是新切片要求，不是通过证据。
 
+#### WI-081 已批准切片 — 完成 assistant 回复复制（PI-GAP-20）
+
+**范围批准（2026-10-02）：** 维护者明确批准本 REQ-004 切片及限定核对后 Prepare→Build。这是范围授权，不是验收证据；[ACTIVE](../ACTIVE.md)维护交付状态。
+
+- 仅对已完成、正文非空且安全完整投影的 assistant 回复提供 **复制回复**。复制投影原 Markdown 文本，而非 DOM 展示文字。排除思考、工具、角色名、隐藏／拒绝的敏感内容和 metadata；空、流式、被中断、失败或截断正文不具备整条复制资格。
+- 保留代码块复制。整条复制沿既有浏览器剪贴板边界，提供可访问的成功、失败／不可用和有界超时反馈；超时表示结果未知，不证明未写入。替换／unmount 后迟到结果不得在另一回复显示成功。草稿、流式和阅读位置保留。
+- 本切片覆盖当前已打开对话中的完成回复。已保存历史预览保留现有复制控件；不增加历史读取，不承诺从部分历史复制完整回复。
+
+**验收：** test-first 挂载 production 对话→clipboard，以可区分原 Markdown、代码块回归、空／流式／错误／隐藏／截断排除、拒绝／不可用／超时和迟到／unmount 留可重复 JSON。浏览器中英、键盘／焦点、280／320／400 暗／亮／高对比；macOS 真 F5 与安装 VSIX 复制／反馈分层记录。compile／lint／npm test／docs:verify，关闭 docs:health；不新增持久化、宿主权限或外部请求。
+
 ### REQ-005 — 停止与恢复
 
 提供停止全部操作，清除排队续跑并请求取消活动任务。在运行时稳定结束或报告关闭失败前显示停止中。取消不会撤销已完成的副作用。运行时断开／崩溃后明确显示中断，保留未发送输入，不自动重复可能有副作用的任务。重启／重试须由用户明确操作。
@@ -335,6 +345,16 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 超长历史先展示最近一段，明确提示存在更早历史并允许向前分批加载；每批及渲染预算通过性能验证确定。有界或折叠的工具输出须说明省略，UI 历史窗口不定义模型上下文。公开会话 API 保留的历史附件原文应可查看并标为历史快照；信息不足则明确不可恢复，不能重读当前文件冒充原附件。不增加额外附件持久化保证。
 
 **WI-041 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-008／CORE-02）：** session-worker 的 inspect／history／preview 成功响应必须把返回的会话 id、历史页码与预览 offset 绑定到本次请求。非终态预览必须推进游标；结束标记不得与剩余字符矛盾。list 已对照返回页码，保留该对照。解析器反例不构成真实 worker 会发出这些帧、或已错误切换所选会话的产品结论。[验收与限制](archive/2026-09-30-wi-041-macos-acceptance.zh.md)。
+
+#### WI-080 已批准切片 — 当前打开会话重命名（PI-GAP-12）
+
+**范围批准（2026-10-02）：** 维护者明确批准本 REQ-008 切片与限定核对后 Prepare→Build；只限当前已打开的 live session。[ACTIVE](../ACTIVE.md)维护证据与验收。
+
+- 可访问的 **重命名当前对话** 打开宿主原生输入框，以当前显示名预填。取消或名称未变保持会话；名称为非空、有界纯显示文本，非法或可识别凭据输入按既有安全规则拒绝，不传 runtime。
+- 使用公开 pi `set_session_name` 与经验证 `get_state`；不解析／写会话文件，不切换会话、不重写历史正文、不重命名未打开会话、不批量操作。pi 仍是持久化权威，不新增扩展标题存储。
+- 仅空闲、ready、已打开会话可准入。prompt／mutation 串行，在已准入工作未结束时阻止竞争的会话替换／发送；变更前及每次 await 后复核 workspace／runtime／session 身份。取消、拒绝、失败保留旧显示名；mutation／readback 不确定须诚实反馈，不自动重试。已验证成功后刷新当前标题与当前项目保存目录，保留草稿／历史／grants。
+
+**验收：** test-first host→adapter 和 validated-client→production-navigation，取消／no-op、成功标题／目录刷新、非法／空／凭据名、失败／未知 readback、重复、忙碌、替换／迟到／dispose 隔离及正文／草稿不变。隔离真实 pi 0.86.1 与 child close，浏览器中英窄屏／主题／键盘、macOS 真 F5 原生 prompt 与安装 VSIX 分层取证，保留报告；compile／lint／npm test／docs:verify，关闭 docs:health。重大信任／隐私／持久化策略改变仍在授权外。
 
 ### REQ-009 — 代表性 pi 兼容
 
@@ -423,7 +443,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 
 ## 工作追溯
 
-版本方向可以跨越未来 WI；ACTIVE 按[有界并行协作政策](guides/agent-collaboration.zh.md#4-有界并行最多-3-个任务)登记独立分配的任务。并发不批准新产品切片或合并其验收。2026-09-27 委托仅授权在明确覆盖的范围内依证据做决定与收尾。2026-09-30 剩余验证 `/goal` 后来把本 PRD 作为自用 macOS 安装版接受。ACTIVE 维护当前工作；下表是限定追溯，不能替代链接归档中的验收证据。
+版本方向可以跨越未来 WI；[协作 §4](guides/agent-collaboration.zh.md#4-进行中工作项wip1)维护工作顺序，ACTIVE 标明当前 WI。2026-09-27 委托仅授权在明确覆盖的范围内依证据做决定与收尾。2026-09-30 剩余验证 `/goal` 后来把本 PRD 作为自用 macOS 安装版接受。ACTIVE 维护当前工作；下表是限定追溯，不能替代链接归档中的验收证据。
 
 | WI ID | PRD 范围 | 验收／状态 |
 |-------|----------|-----------|
@@ -469,6 +489,8 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-069 | REQ-002 活跃模型身份使用供应商／模型 id，不用显示名 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-069-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-069-acceptance.zh.md)。 |
 | WI-077 | REQ-004／005 文字 steering／follow-up、诚实队列与显式恢复（PI-GAP-01） | 2026-10-02 Agent 依据持续产品切片 goal 关闭；[验收](archive/2026-10-02-wi-077-acceptance.zh.md)。排除附件和命令／模板展开。 |
 | WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-02 Agent 依据持续 goal 关闭；[验收](archive/2026-10-02-wi-078-acceptance.zh.md)。实际加载报告仍停车。 |
+| WI-080 | REQ-008 当前已打开会话重命名（PI-GAP-12） | 2026-10-02 明确范围批准；Prepare→Build、共享契约依赖与原生验收见 [ACTIVE](../ACTIVE.md)。未交付；不含批量／历史正文变更。 |
+| WI-081 | REQ-004 完成 assistant 回复正文复制（PI-GAP-20） | 2026-10-02 明确范围批准；Prepare→Build 与独立 clipboard／原生证据见 [ACTIVE](../ACTIVE.md)。未交付；保留代码块复制。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-02 持续 goal 下完成 Prepare／授权范围；Build／证据见 [ACTIVE](../ACTIVE.md)。未交付；无 compact／存储／账单承诺。 |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |

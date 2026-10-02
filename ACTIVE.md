@@ -6,80 +6,50 @@
 
 | 步骤 | Agent |
 |---|---|
-| 开场 | 必要阅读、Git 基线、分配任务 ID／所有者／批准／Gate／PRD 与验收核对；编辑前建立任务专属 worktree。 |
-| 提案 | 每任务单独 Prepare／批准／验收；最多 3 个任务执行，协调者登记槽位和文件归属。 |
-| 建造 | 按批准实现并实际验证；证据绑定实际候选提交、基线与源码状态，模拟／runtime／F5／安装分别取证。 |
-| 收尾 | 子任务交接由指定协调者汇总；记录验收身份、检查结果与未决项，按规则归档并清理自有资源。 |
+| 开场 | 必要阅读、Git 基线、当前 WI／批准／Gate／PRD 与验收核对。 |
+| 提案 | Prepare 记录范围与 PRD 判定；限定批准 Prepare 后直接 Build；单 Agent、单个当前 WI。 |
+| 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证。 |
+| 收尾 | 记录验收身份、检查结果与未决项；按规则归档并清理资源。 |
 
-## 任务登记（最多 3 个执行槽位）
+## 正在做（WIP=1）
 
-维护者明确批准多 Agent 执行多个独立任务，替换原 WIP=1；[协作指南 §4](docs/guides/agent-collaboration.zh.md#4-有界并行最多-3-个任务)负责计数及准入。[本轮任务单／批准／交接](docs/discussions/2026-10-02-wi079-parallel-dispatch.zh.md)保留具体范围。协调者为「添加多 Agent 隔离规则」会话；其他 Agent 不改本文件或自行晋升停车场。
-
-| 任务 ID | 阶段 | 槽位 | 执行者／所有者 | 分支／worktree | 范围／依赖 |
-|---|---|---|---|---|---|
-| OPS-PARALLEL | Done | - | 本会话协调者 | `codex/wi079-parallel-plan`／`../pi-vscode-worktrees/wi079-parallel-plan` | 并行政策／登记／入口及 docs 检查器已完成本地验证；维护者已授权提交／push／PR 合并；远端发布以 PR 正常合并记录为准，不改产品行为／内核／lockfile |
-| AUDIT-PARALLEL | Done | - | Dirac（已结束） | `codex/parallel-collaboration`／`../pi-vscode-worktrees/parallel-collaboration` | 已报告检查器硬编码、PRD／gate 单 WI 陈述及入口歧义；只读，无编辑 |
-| PREPARE-PARALLEL | Done | - | Curie（已结束） | `codex/parallel-task-audit`／`../pi-vscode-worktrees/parallel-task-audit` | 已完成独立候选／冲突矩阵；PR 基线审查可只读，整条回复复制仅 Prepare，不能沿并发批准启动产品 Build |
-| WI-079 | Blocked | - | 本会话接管；旧会话已确认停止写入与自动晋升 | 后续实现 worktree 待分配 | 已批准 Build；原主 checkout 的红灯测试／交接仍未提交，须获授权发布基线或另定不依赖它的实现路径，不能复制未提交文件 |
-
-空槽不自动授权新任务。旧连续队列指令不跨越新分配归属；2026-10-01 原批准／排除范围仍有效，历史 WIP=1 描述不再决定当前调度。每个新产品候选仍须独立 Prepare／范围批准；并发确认不等于批准全部停车场。
-
-## 任务提案
-
-### WI-079（接管；等待实现基线）
+### WI-079 — 只读用量验收
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-079（PI-GAP-03：只读会话／上下文用量） |
-| **阶段** | Build（2026-10-02 Prepare 核对完成；持续 goal 已授权既有 in-bound 独立切片；中英 PRD 行和 Outline 先同步再进入 Build，尚未实现／验收） |
-| **Gate ID** | none（沿既有只读 public RPC、宿主投影与 v3 allowlist；不声明新 gate） |
-| **Decision** | none（无新存储、信任、外部服务或 runtime 策略） |
-| **PRD 判定** | 用户可见：已同步中英 PRD WI-079／REQ-004／009 范围及追溯行；只批准本切片，不接受整份 Draft，不升级 ADR 0010 |
+| **ID** | WI-079 |
+| **阶段** | Blocked（实现已集成至 master；原生验收窗口定位受阻） |
+| **Gate ID** | none |
+| **Decision** | none |
+| **PRD 判定** | 用户可见：REQ-004／009、PI-GAP-03，双语 PRD 已批准 |
 
-#### 目标与范围
+### 目标与范围
 
-交付 PI-GAP-03 的只读 **用量**面板：当前上下文 token 估算／容量／百分比与整会话累计 input、output、cache-read、cache-write、total token 和上游报告估算 USD 费用分开显示；未知明确。公开 get_session_stats／必要时 get_state，不读 session 文件，不自算账单，不把累计误当当前。打开／手动刷新／ready 和任务稳定结束后的刷新，替换／New／Restore 不串会话，忙碌时标旧快照，不额外轮询。只做个人本机 macOS VS Code；排除 compact、导出、实时账单和持久化用量。
+当前 context token／容量／percent 与整会话 input／output／cache-read／cache-write／total 和上游估算 USD 分开；null／未知定价明确。公开 RPC，不读 session 文件、不自算费用、不轮询、不 compact／导出／持久化。实现已在 master，当前仅收尾批准范围的验收。
 
-#### 方案与架构核对
+### 方案与架构核对
 
-安装 pi **0.86.1** 的公开 `docs/rpc.md` get_session_stats（554–595 行）明确 full-session tokens/cost（含 tools／compaction／branch summary）和当前 contextUsage；无模型时 contextUsage 缺失，压缩后 tokens／percent 可为 null。当前 adapter 在 checkpointRestart 用该公开统计，但未对产品用量投影。可复用现有 request owner／5s deadline，禁止新增 generic RPC bridge。
+由一个 Agent 负责收尾。完整提案、批准与既有分层证据见[中文记录](docs/discussions/2026-10-02-wi-079-team.zh.md)／[English](docs/discussions/2026-10-02-wi-079-team.md)。这些记录中的 A／B／C 分工是历史安排，现行执行方式以[协作指南](docs/guides/agent-collaboration.zh.md)为准。
 
-按优先级检视：PI-GAP-01 余量附件／slash 展开需要另定队列内容边界；PI-GAP-02 实际加载报告尚无本轮确认的公开 loaded-context API。两者继续停车，不以菜单交付冒充整个 ID。选择下一已定义只读候选 PI-GAP-03，不跳到需单独确认的 PI-GAP-08／09／13／17／19／25。
+### 验收
 
-adapter 提供具名只读统计能力并验证 finite 非负数字和会话身份；宿主拥有一个 coalesced refresh、世代与快照；renderer 收 bounded nullable numeric DTO，绝不收路径／原响应。零费用但无可用非零定价明确 unknown，不证明免费。先通过[双语 Outline](docs/reference/webview-messages.zh.md#wi-079-只读用量outline未实现)核对字段／状态，再 test-first 实现。UI 本地打开／关闭，Refresh 仅 chat 无参数意图；沿一次一张弹出层，焦点不丢草稿。无新依赖／进程／持久化。
+保留 host→adapter→validated client→production mount 红绿 JSON、真实 pi0.86.1 与 observed child close、280／320／400 中英三主题 keyboard／focus／popup 的分层证据。当前缺口为真 macOS F5／安装 VSIX 打开→Refresh→New 及草稿保留；compile／lint／npm test／docs:verify，关闭时 docs:health。最近实际检查见交接，历史结果不替代新改动的验证。
 
-#### 架构核对（Prepare：implement now；Implementable，尚非 Verifiable）
+### 范围外与批准边界
 
-| 维度 | 状态、证据与下一检查 |
-|---|---|
-| 1–5 分解／接口／依赖／契约／owner | pass（设计）：adapter public RPC，host projection owner，UI type-only。现行 checkpointRestart 的 get_session_stats 只作先例，不冒充新能力。新 Outline 先于实现，需成对 types／validators／消费者。 |
-| 6 范围 | pass（批准）：中英 PRD WI-079，仅只读用量，无 compact／存储／价格计算。 |
-| 7–11 身份／状态／并发／恢复／清理 | pass（设计）：one-flight、5s deadline、generation＋session token、替换清零而非旧累计；ready／loading／unavailable／no-session；失败显式重试。gap（实现证据）：迟到／替换／dispose 测试、真实退出、主机 New 不串数据。 |
-| 12–14 安全／数据／隐私 | pass（设计）：只投影数字，sessionFile 和模型原元数据留宿主，无持久化；精确 chat allowlist。gap：异常原响应／额外 path 拒收、日志／Webview 检查。 |
-| 15 性能／背压 | pass（设计）：O(1) numeric DTO、coalesce、bounded RPC、无轮询；busy 不无谓请求。 |
-| 16–17 验证／构建 | gap：test-first composition、runtime／浏览器／F5／安装 VSIX 全待执行。现有 WI-078 结果不是此切片验收。 |
-| 18 版本兼容 | pass（设计）：v3 host／bundled UI 成对，只 chat；旧 view 不接纳。未扩支持平台。 |
-| 19 UX／可访问性 | gap：中英状态、未知／旧值、键盘／焦点／互斥、主题窄屏及 macOS 原生待验。 |
-
-#### 失败方式（代码前）
-
-累计冒充当前上下文；null 缺失变 0；零／未知定价显示免费；坏数字 NaN／负／无限／超界进入 UI；sessionFile／raw 响应／凭据跨边界；重复 Refresh 无限请求；busy／替换／迟到结果污染新会话；New／Restore 显示旧累计；错误显示成功；只发 RPC 不观察 cleanup；用量面板和模型／命令同时开；Escape／刷新丢未发草稿；实际 stats 被模拟替代却声称 runtime 通过。
-
-#### 验收
-
-1. 首先写行为端到端／跨 owner 用例并观察红，再实现，保留可重复 JSON 工件；host→adapter→validated client→mounted production panel，区分累计／当前、null、坏数字、零定价、无会话／错误／超时、busy／late replace／cleanup与非 chat 拒绝。
-2. 真实 pi 0.86.1＋隔离 HOME／workspace／loopback provider 获取公开 stats；记录请求、数字、身份替换与 child close，不使用真实凭据、用户 sessions 或付费模型。
-3. 浏览器 280／320／400、中英、暗／亮／高对比与 keyboard／close／focus／popup mutex；截图／报告。Preview 不冒充 host。
-4. macOS 真 F5 和安装 VSIX，打开→实际 stats→Refresh→New 无旧累计，草稿不被 Refresh 清掉；逐层 report、截图及 cleanup，禁止替旧版行为验收。
-5. compile／lint／npm test／docs:verify；关闭 docs:health、双语方案／验收归档，实现提交不含 ACTIVE，收尾 docs(active) 单独提交。未验明确，不自动 gate／ADR Accept。
-
-#### 范围外与批准边界
-
-2026-10-02 持续 goal 对既有 PI-GAP 内独立合规切片授权 Prepare→Build 和限定 Agent 验收。中英 PRD 已在本阶段前同步。高优先级冲突、产品扩张、重大架构／信任／隐私／存储／兼容、新服务／凭据／付费／公开发布和指定 GAP 仍须暂停询问。排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳审批。no push／amend／rebase／force，不改 sibling pi。
+仅个人本机 macOS VS Code，不扩存储／trust／模型账单。原有功能实现与完成验收授权继续有效；重大架构／信任／隐私／持久化问题单独报告。本轮另获 master 同步、正常 PR 合并与非 master 分支清理授权；不包含 publish 或历史改写。WI-080、WI-081 保留在下方已批准待收尾队列，不标完成。
 
 ## 当前焦点与未决项
 
-WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079 Build，下一步实现前读相关 owner／UI skill，先写 stats 闭环失败用例。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
+已批准待收尾队列（保留原授权，非并行执行）：
+
+| 顺序 | WI／范围 | 状态与证据 |
+|---|---|---|
+| 1 | WI-080：当前已打开 idle ready 会话重命名 | 实现已集成，原生 F5 输入框／安装版完整验收待完成；取消、非法、未知 mutation 不自动重试，标题与目录刷新及草稿正文不变。见[完整提案及验收](docs/discussions/2026-10-02-wi-080-team.zh.md)。 |
+| 2 | WI-081：完整成功 assistant 回复原 Markdown 复制 | 实现已集成，macOS F5／安装版剪贴板验收待完成；排除空、流式、失败、截断、隐藏内容，保留代码块复制。见[完整提案及验收](docs/discussions/2026-10-02-wi-081-team.zh.md)。 |
+
+
+WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。WI-079／080／081 已集成至 master，按 WI-079→WI-080→WI-081 顺序收尾；执行分支已转为归档标签以便追溯，原 worktree 保持 detached HEAD 并保留工件。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 macOS 已有矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)；它不替代 WI-079 新切片分层验收。
 
@@ -169,14 +139,25 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-02 — 恢复单 Agent 工作方式，保留验收缺口
+
+维护者随后要求提交推送并对齐本地／远程，仅保留 master。已获取远端 `5033907`，正常合并其八个独有历史提交至 `9cfb34a`，保留 CI 与历史证据，按最新要求解决旧隔离／并行规则冲突。远程 master 保护要求通过 PR 和基线检查；本轮使用临时同步分支交付，合并后删除临时分支及旧 `codex/wi079-parallel-plan`。不 force-push、不降低保护；最终远端结果以 GitHub 合并记录及同步核对为准。下方未 push／未同步陈述为此前阶段历史。
+
+维护者明确要求删除文档中的多 Agent 工作规则。现行 AGENTS／协作指南、PRD 工作顺序引用及仓库技能已改为单 Agent 顺序处理；删除执行槽位、A／B／C 分工、独立执行分支和自动派发子 Agent 的要求。当前 WI 为 WI-079，WI-080／081 已批准范围及未完成验收保留在顺序队列；既有团队证据保留为历史记录。此次仅修改文档，不改变产品行为或验收结论。
+
+本次文档检查：`docs:verify`、`docs:health` 与 `git diff --check` 通过，保留 Draft ADR 0010 两条既有提示。九份修改的技能 frontmatter 均可解析；五份通过技能快速校验，另四份仅因校验器不支持原有 `disable-model-invocation` 字段而未通过，已核对该字段与 HEAD 一致，未改变调用设置。
+
+维护者要求核对并完成 WI-079～081、汇总分支，并明确最终分支为 `master`。本轮将本地 `master` 从 `dd33b5d` 快进至集成提交 `752992c`；删除本轮临时创建、没有独有提交的 `codex/final-wi079-081`。没有 push、历史改写或原有分支／worktree 删除。所有原有 worktree 检查时干净。三个 feature 的提交已有对应集成版本；rename 的 patch 差别为 usage 组合上下文，`git range-diff` 已核对。旧 CI／PR／隔离规则分支仍按原批准范围保留，未盲目并入；本地 master 与现存 origin/master 跟踪记录仍有分叉，未联网刷新或宣称远程同步。
+
+维护者随后要求清理非主分支：12 个本地分支均先保存为 `archive/2026-10-02/<原分支名>` 标签，核对目标提交后删除分支名；9 个原有 worktree 检查为干净后转 detached HEAD，目录及忽略的验收工件全部保留。本地只剩 `master`；远程分支未修改。可恢复映射见 [分支清理记录](dist/final-integration/branch-cleanup.json)。
+
+本轮当前 `752992c`：compile、lint、1206/1206 tests、真实 pi0.86.1 用量及重命名探针通过。rename 探针首次输出到嵌套目录导致找不到同级 approval gate，按记录的 `dist/wi080-real-runtime.cjs` 路径重建后通过；不是产品修改。重新生成 [VSIX](dist/final-integration/pi-vscode-final.vsix)，包解压／依赖／RPC／gate 验证通过；安装到本轮 `/tmp/pi-final-*` 隔离 extensions 目录成功，仅证明安装性。日志位于 [本轮工件](dist/final-integration/)。此前原生报告 `dist/team-three-wi-native/report.json` 为失败，不能当作通过；本轮原生工具仍只定位到已有用户窗口，隔离窗口未完成交互，F5／安装版完整链路继续待验。三个 WI 不关闭、不冒称最终成品验收通过。
+
+
 ### 2026-10-02 — WI-078 关闭并晋升 WI-079
 
 Agent 按持续 goal 验收，不是维护者亲测；[方案／验收](docs/archive/2026-10-02-wi-078-acceptance.zh.md)。实现 `bdc9f5b` 不含 ACTIVE。compile／lint／1157 tests、18 组浏览器、真实 pi 4 starts／4 closes、macOS F5／安装 VSIX 裸空格与参数保留均通过；provider 数量不变，cleanup 空。VSIX SHA-256 `fa61b6b435d2d2f3da3e364cfc66e2c2208fd25c9299677790e6800631cc08a3`。F5 前两轮失败为 harness 父窗口 CLI 抢焦点，纠正后真 `[Extension Development Host] A` 通过，失败报告保留。OS IME、真实模型、加载报告未验。PRD／Living 契约及索引同步；docs:verify／health 零错误，保留 Draft ADR 0010 两条提示。下一 WI-079 Prepare→Build 和中英 PRD 已同步，不继承已关闭证据；goal 保持 active，无 push。
 
-### 2026-10-02 — WI-077 文字队列关闭（简要）
-
-[验收](docs/archive/2026-10-02-wi-077-acceptance.zh.md)：macOS F5 与安装 VSIX Steering→Stop Recalled→Use in draft，文字闭环关闭；附件／命令余量停车。Agent 委托验收，非维护者亲测；原证据限制保留。
-
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-078；当前 WI-079。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-078；当前 WI-079；WI-080／081 已批准待收尾。

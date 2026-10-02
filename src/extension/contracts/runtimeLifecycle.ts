@@ -1,7 +1,7 @@
 import type { ExtensionFeedback } from "./extensionInteractions.js";
 import type { InteractionFormInput, InteractionReplyCallback } from "../interactions/index.js";
 import type { GateCall } from "./approvalProtocol.js";
-import type { ActivityItem, AttachmentDetails, ModelCatalogEntry } from "./webviewProtocol.js";
+import type { ActivityItem, AttachmentDetails, ModelCatalogEntry, SessionUsage } from "./webviewProtocol.js";
 export type { ActivityItem, ModelCatalogEntry, RuntimePhase } from "./webviewProtocol.js";
 
 export type ExtensionExecutionProfile = { kind: "controlled" } | { kind: "trusted"; entryPath: string };
@@ -68,6 +68,13 @@ export type CommandCatalogue =
   | { status: "ready"; rows: readonly CommandCatalogueRow[] }
   | { status: "unavailable" };
 
+export type RuntimeSessionRenameResult =
+  | { ok: true; conversation: { id: string; name: string | null; path: string } }
+  | { ok: false; detail: string };
+export type RuntimeSessionUsageResult =
+  | { ok: true; usage: SessionUsage }
+  | { ok: false; detail: string };
+
 export type RuntimeEvent =
   | ({ kind: "queue_updated"; session: number } & QueuedTextSnapshot)
   /** null means valid user input that cannot be losslessly correlated as bounded plain text. */
@@ -75,7 +82,7 @@ export type RuntimeEvent =
   | { kind: "workflow"; session: number; phase: "retrying" | "compacting" | "waiting" }
   | { kind: "tool_finished"; session: number; toolCallId: string; failed: boolean }
   | { kind: "activity"; session: number; item: ActivityItem }
-  | { kind: "message_final"; session: number; messageId: string; text: string }
+  | { kind: "message_final"; session: number; messageId: string; text: string; bodyCopyEligible?: true }
   | { kind: "runtime_error"; session: number; detail: string }
 
   | { kind: "text_delta"; session: number; delta: string; messageId?: string }
@@ -113,6 +120,10 @@ export interface PiRuntimeLifecycle {
   prepareQueuedText?(text: string, mode: "steering" | "follow-up", expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
   /** Last verified get_commands presentation snapshot for this session; unavailable when none. */
   getCommandCatalogue?(): CommandCatalogue;
+  /** Read-only public statistics, bound to the verified runtime/session identity. */
+  getSessionUsage?(expectedSession: number): Promise<RuntimeSessionUsageResult>;
+  /** Native host input only; public mutation and readback, never automatic retry. */
+  renameSession?(name: string, expectedSession: number): Promise<RuntimeSessionRenameResult>;
   prompt(text: string): Promise<PromptResult>;
   getModelProjection(): Promise<ModelProjectionResult>;
   /** Mutations return a fresh applied projection, including current supported levels. */

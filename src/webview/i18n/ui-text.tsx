@@ -2,6 +2,11 @@ import { createContext, useContext } from "react";
 
 /** Source-language UI identifiers only; never pass host/user content through this Interface. */
 export type UiText =
+  | "Close usage"
+  | "Usage" | "Refresh usage" | "Current context" | "Session total" | "Context tokens" | "Context capacity" | "Context used"
+  | "Input tokens" | "Output tokens" | "Cache read tokens" | "Cache write tokens" | "Total tokens" | "Estimated cost (USD)"
+  | "Unknown" | "Close" | "Refresh" | "Loading usage…" | "Usage unavailable. Refresh to retry." | "No active session."
+  | "Previous snapshot while the task is running."
   | "Settings" | "Settings categories" | "General" | "Providers" | "Plugins" | "Back to providers"
   | "Search models" | "No matching models" | "Manage providers" | "API key" | "Configured" | "Not configured"
   | "Add from disk" | "Remove forgets the path. Files on disk stay."
@@ -127,6 +132,7 @@ export type UiText =
   | "Candidate chat"
   | "Conversation navigation"
   | "Current conversation"
+  | "Rename current conversation"
   | "Browse saved conversations"
   | "Chat history"
   | "New conversation"
@@ -168,6 +174,11 @@ export type UiText =
   | "Recalling queued text…"
   | "Stopping and recalling…"
   | "What should we work on?"
+  | "Copy reply"
+  | "Copying reply…"
+  | "Clipboard unavailable — select the reply to copy manually."
+  | "Copy failed — clipboard permission is denied or unavailable. Select the reply to copy manually."
+  | "Reply copied."
   | "Copy code"
   | "Copy"
   | "Code block"

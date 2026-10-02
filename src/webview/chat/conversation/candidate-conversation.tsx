@@ -2,11 +2,12 @@ import { useUiText } from "../../components/index.js";
 import type { ReactElement } from "react";
 import type { ActivityItem, WorkspaceStateMessage } from "../../../extension/contracts/index.js";
 import { ReplyMarkdown } from "./reply-markdown.js";
+import { ReplyCopy } from "./reply-copy.js";
 import { SessionIcon } from "../sessions/session-icon.js";
 
 const liveStatuses = new Set<ActivityItem["status"]>(["thinking", "preparing", "executing"]);
 
-type ConversationProps = Pick<WorkspaceStateMessage, "messages" | "activities" | "chatBusy">;
+type ConversationProps = Pick<WorkspaceStateMessage, "messages" | "activities" | "chatBusy" | "generation" | "viewId"> & { conversationId: string | null };
 
 function ActivitySummary({ items }: { items: readonly ActivityItem[] }): ReactElement | null {
   const { text: t } = useUiText();
@@ -31,7 +32,7 @@ function ActivitySummary({ items }: { items: readonly ActivityItem[] }): ReactEl
 }
 
 /** Message identity keeps early activity in the same row when the first body delta arrives. */
-export function CandidateConversation({ messages, activities, chatBusy }: ConversationProps): ReactElement {
+export function CandidateConversation({ messages, activities, chatBusy, generation, viewId, conversationId }: ConversationProps): ReactElement {
   const { text: t } = useUiText();
   const grouped = new Map<string, ActivityItem[]>();
   for (const item of activities) grouped.set(item.messageId, [...grouped.get(item.messageId) ?? [], item]);
@@ -44,6 +45,7 @@ export function CandidateConversation({ messages, activities, chatBusy }: Conver
     return <article className={`candidate__message candidate__message--${message.role}`} aria-label={message.role === "user" ? t("You") : "pi"} key={message.id ?? `unidentified-${index}`}>
       {message.role === "assistant" && <ActivitySummary items={items} />}
       <div className="candidate__text">{message.role === "assistant" && message.text ? <ReplyMarkdown text={message.text} /> : message.text || (waitingForBody ? <span className="candidate__waiting">{t("Thinking…")}</span> : "")}</div>
+      {message.role === "assistant" && message.bodyCopyEligible === true && message.text.trim() && <ReplyCopy key={`${generation}:${viewId}:${conversationId ?? "unconfirmed"}:${message.id ?? index}`} text={message.text} />}
     </article>;
   })}</>;
 }

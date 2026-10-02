@@ -11,6 +11,8 @@
 - 创建：2026-10-02
 - 范围：现有 WI-079 的派工准备，不新增产品 WI
 
+> 工作方式已替代（2026-10-02）：维护者随后要求单 Agent 工作并统一到 master。下文分工与隔离规则仅为历史；现行要求见[协作指南](../guides/agent-collaboration.zh.md)。
+
 ## 授权与基线（初始准备）
 
 维护者要求开始多 Agent 工作。协调者从 `origin/master` 的 `8fcc943a20b6893a9dba3f6184e154fd4914b95d` 创建三个专属分支／worktree。现有 [WI-079](../../ACTIVE.md) 仍是唯一产品工作项。本记录不授权 commit、历史修改、push 或 PR。
@@ -19,7 +21,7 @@
 
 ## 已分配任务单
 
-每个 Agent 单独收到任务单；[协作指南](../guides/agent-collaboration.zh.md#隔离任务单)仍是权威模板。下列 worktree 路径相对于主仓库目录。
+每个 Agent 单独收到任务单；[协作指南](../guides/agent-collaboration.zh.md)仍是权威模板。下列 worktree 路径相对于主仓库目录。
 
 | 所有者 | 分支 | Worktree | 本轮独占任务 |
 |---|---|---|---|

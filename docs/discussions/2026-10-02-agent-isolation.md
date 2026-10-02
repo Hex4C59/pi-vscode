@@ -7,6 +7,8 @@ English | [中文](2026-10-02-agent-isolation.zh.md)
 - Created: 2026-10-02
 - Scope: repository workflow only; no product behavior or shared-kernel changes
 
+> Superseded workflow (2026-10-02): the maintainer subsequently requested single-agent work and consolidation onto master. The assignments and isolation rules below are historical; follow the current [collaboration guide](../guides/agent-collaboration.md).
+
 ## Approval and ownership
 
 The maintainer approved the proposed isolation rollout on 2026-10-02, including the `codex/agent-isolation` branch and a dedicated worktree based on `origin/master`. No repository commit, history rewrite, push or PR is authorized. The existing primary-checkout WI-079 changes remain untouched; the remote baseline's older WI record is not current product approval for this task.

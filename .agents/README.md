@@ -98,7 +98,7 @@ Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, se
 #### `to-tickets`
 
 - **What:** Break a plan/spec into tracer-bullet tickets with blocking edges.
-- **When:** Spec exists (or conversation is enough) and work should be parallelizable / session-sized.
+- **When:** Spec exists (or conversation is enough) and work should be split into session-sized tickets.
 - **How:** `/to-tickets`. Explicit only.
 
 #### `to-questionnaire`
@@ -179,7 +179,7 @@ Vocabulary for steps 1–2: **`/codebase-design`** (module, interface, depth, se
 
 #### `code-review`
 
-- **What:** Dual-axis review since a fixed point: Standards vs Spec (parallel sub-agents).
+- **What:** Dual-axis review since a fixed point: Standards vs Spec (sequential reviews).
 - **When:** Review a branch/PR/WIP, or “review since X”.
 - **How:** Auto or by name; often after `/implement`.
 

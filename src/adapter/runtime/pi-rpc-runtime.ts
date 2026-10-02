@@ -1,3 +1,5 @@
+import { sessionUsageIdentity, sessionUsageNumbers } from "./session-usage.js";
+import { renamedConversation, validRenameInput, type OpenedConversation } from "./rpc/session-rename.js";
 import { createExtensionFeedback } from "./extension-feedback.js";
 import { extensionCommandNames, dispatchedExtensionCommand, presentCommandCatalogue } from "./command-classification.js";
 import { createInteractionWriter } from "./rpc/interaction-writer.js";
@@ -11,7 +13,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { access } from "node:fs/promises";
 import type { PiRpcRuntimeEnvironment } from "./types.js";
-import type { GateCall } from "../../extension/contracts/index.js";
+import { redactCredentialLikeText, type GateCall } from "../../extension/contracts/index.js";
 import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../index.js";
 import type { Readable } from "node:stream";
 
@@ -43,262 +45,367 @@ const START_TIMEOUT_MS = 15_000;
 const PROMPT_TIMEOUT_MS = 30_000;
 const MODEL_RPC_TIMEOUT_MS = 15_000;
 const STOP_TIMEOUT_MS = 5_000;
+const RENAME_UNVERIFIED = "The conversation name could not be verified. The visible name was kept; pi may already have changed it. Explicit runtime recovery is required before retrying.";
 
-export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRuntimeLifecycle {
-  let child: RuntimeLink | null = null;
-  let detachLost: (() => void) | undefined;
-  let detachReader: (() => void) | null = null;
-  let startToken = 0;
-  let activeSession = 0;
-  let queueControlOperation: { session: number } | undefined;
-  let queuedSend: { session: number; connection: RuntimeLink; pending: Promise<AttachmentPromptResult>; retire(): void } | undefined;
-  let resumedConversation = false;
-  let untouchedConversation = false;
-  let commandNames: ReadonlySet<string> = new Set();
-  let commandCatalogue: CommandCatalogue = { status: "unavailable" };
-  let gateId = '';
-  let cwd = '';
-  let gateReady = false;
-  let verifiedCustomTools: ReadonlySet<string> = new Set();
-  let initializationFailed = false;
-  let executionProfile: ExtensionExecutionProfile = { kind: "controlled" };
-  let interactionHandler: ((form: InteractionFormInput, reply: InteractionReplyCallback) => void) | undefined;
-  let dialogs: ReturnType<typeof createRpcDialogs> | undefined;
-  let approvalHandler: ((call: GateCall) => Promise<boolean>) | undefined;
-  const feedback = createExtensionFeedback();
-  let feedbackHandler: Parameters<NonNullable<PiRuntimeLifecycle["setFeedbackHandler"]>>[0] | undefined;
-  const frames = createRpcFrames();
-  const occupancy = createRpcOccupancy();
-  const replies = createRpcReplies();
-  const listeners = new Set<(event: RuntimeEvent) => void>();
+type RpcFrame = ReturnType<ReturnType<typeof createRpcFrames>["interpret"]>;
 
-  const emit = (event: RuntimeEvent): void => {
-    for (const listener of listeners) listener(event);
+type RpcLaunchArguments = {
+  profile: ExtensionExecutionProfile;
+  gatePath: string;
+  trustArg: "--approve" | "--no-approve";
+  resume?: Parameters<PiRuntimeLifecycle["start"]>[0]["resume"];
+};
+
+function rpcLaunchArguments({ profile, gatePath, trustArg, resume }: RpcLaunchArguments): string[] {
+  // pi's --tools allowlist also filters registered extension tools out of getAllTools().
+  // Trusted inventory is instead validated and activated by the bundled approval gate.
+  const toolArgs = profile.kind === "controlled" ? ["--tools", CONTROLLED_TOOLS.join(',')] : [];
+  const args = ["--mode", "rpc", ...toolArgs, '--no-extensions', '-e', gatePath, trustArg];
+  if (profile.kind === "trusted") args.push("-e", profile.entryPath);
+  if (resume) args.push("--session", resume.path);
+  return args;
+}
+
+type PromptAttempt = Parameters<ReturnType<PiRuntimeLifecycle["preparePrompt"]>["send"]>[0];
+
+type PreparedPrompt = {
+  readonly requestId: string;
+  readonly expectedSession: number;
+  readonly command: ReturnType<typeof dispatchedExtensionCommand>;
+  frame: string;
+  consumed: boolean;
+};
+
+class RpcRuntime {
+  private readonly environment: PiRpcRuntimeEnvironment;
+  private child: RuntimeLink | null;
+  private detachLost: (() => void) | undefined;
+  private detachReader: (() => void) | null;
+  private startToken: number;
+  private activeSession: number;
+  private usageConversation: { id: string; path: string } | undefined;
+  private openedConversation: OpenedConversation | undefined;
+  private renameOperation: { session: number; connection: RuntimeLink; mutationIssued: boolean } | undefined;
+  private queueControlOperation: { session: number } | undefined;
+  private queuedSend: { session: number; connection: RuntimeLink; pending: Promise<AttachmentPromptResult>; retire(): void } | undefined;
+  private resumedConversation: boolean;
+  private untouchedConversation: boolean;
+  private commandNames: ReadonlySet<string>;
+  private commandCatalogue: CommandCatalogue;
+  private gateId: string;
+  private cwd: string;
+  private gateReady: boolean;
+  private verifiedCustomTools: ReadonlySet<string>;
+  private initializationFailed: boolean;
+  private executionProfile: ExtensionExecutionProfile;
+  private interactionHandler: ((form: InteractionFormInput, reply: InteractionReplyCallback) => void) | undefined;
+  private dialogs: ReturnType<typeof createRpcDialogs> | undefined;
+  private approvalHandler: ((call: GateCall) => Promise<boolean>) | undefined;
+  private readonly feedback: ReturnType<typeof createExtensionFeedback>;
+  private feedbackHandler: Parameters<NonNullable<PiRuntimeLifecycle["setFeedbackHandler"]>>[0] | undefined;
+  private readonly frames: ReturnType<typeof createRpcFrames>;
+  private readonly occupancy: ReturnType<typeof createRpcOccupancy>;
+  private readonly replies: ReturnType<typeof createRpcReplies>;
+  private readonly listeners: Set<(event: RuntimeEvent) => void>;
+
+  constructor(environment: PiRpcRuntimeEnvironment) {
+    this.environment = environment;
+    this.child = null;
+    this.detachLost = undefined;
+    this.detachReader = null;
+    this.startToken = 0;
+    this.activeSession = 0;
+    this.usageConversation = undefined;
+    this.openedConversation = undefined;
+    this.renameOperation = undefined;
+    this.queueControlOperation = undefined;
+    this.queuedSend = undefined;
+    this.resumedConversation = false;
+    this.untouchedConversation = false;
+    this.commandNames = new Set();
+    this.commandCatalogue = { status: "unavailable" };
+    this.gateId = '';
+    this.cwd = '';
+    this.gateReady = false;
+    this.verifiedCustomTools = new Set();
+    this.initializationFailed = false;
+    this.executionProfile = { kind: "controlled" };
+    this.interactionHandler = undefined;
+    this.dialogs = undefined;
+    this.approvalHandler = undefined;
+    this.feedback = createExtensionFeedback();
+    this.feedbackHandler = undefined;
+    this.frames = createRpcFrames();
+    this.occupancy = createRpcOccupancy();
+    this.replies = createRpcReplies();
+    this.listeners = new Set<(event: RuntimeEvent) => void>();
+  }
+
+  private readonly emit = (event: RuntimeEvent): void => {
+    for (const listener of this.listeners) listener(event);
   };
 
-  const applyRuntime = (result: Extract<ReturnType<ReturnType<typeof createRpcFrames>["interpret"]>, { kind: "runtime" }>): void => {
-    if (result.conversationTouched) untouchedConversation = false;
-    if (result.agentSettled) occupancy.noteAgentSettled();
-    for (const event of result.events) emit(event);
-    if (result.agentStarted) occupancy.noteAgentStarted();
+  private readonly applyRuntime = (result: Extract<ReturnType<ReturnType<typeof createRpcFrames>["interpret"]>, { kind: "runtime" }>): void => {
+    if (result.conversationTouched) this.untouchedConversation = false;
+    if (result.agentSettled) this.occupancy.noteAgentSettled();
+    for (const event of result.events) this.emit(event);
+    if (result.agentStarted) this.occupancy.noteAgentStarted();
   };
 
-  const handleLine = (line: string): void => {
-    if (!child) return;
-    const interpreted = frames.interpret(line, {
-      session: activeSession,
-      aborting: occupancy.isStopping(),
-      gateId,
-      cwd,
-      executionProfile,
+  private readonly handleLine = (line: string): void => {
+    if (!this.child) return;
+    const interpreted = this.frames.interpret(line, {
+      session: this.activeSession,
+      aborting: this.occupancy.isStopping(),
+      gateId: this.gateId,
+      cwd: this.cwd,
+      executionProfile: this.executionProfile,
     });
     if (interpreted.kind === "rpc") {
-      if (replies.receive(interpreted.parsed) === "protocol-error") protocolFault();
+      if (this.replies.receive(interpreted.parsed) === "protocol-error") this.protocolFault();
       return;
     }
-    if (interpreted.kind === "protocol-error") { protocolFault(); return; }
+    if (interpreted.kind === "protocol-error") { this.protocolFault(); return; }
     if (interpreted.kind === "ignored") return;
     if (interpreted.kind === "extension_error") {
-      if (!activeSession) { initializationFailed = true; void faultStop(); }
-      else emit({ kind: 'stream_error', session: activeSession, detail: 'A runtime extension reported an error. Its operation may have failed; no automatic retry was made.' });
+      if (!this.activeSession) { this.initializationFailed = true; void this.faultStop(); }
+      else this.emit({ kind: 'stream_error', session: this.activeSession, detail: 'A runtime extension reported an error. Its operation may have failed; no automatic retry was made.' });
       return;
     }
     if (interpreted.kind === "hello") {
-      const hello = interpreted.envelope;
-      gateReady = executionProfile.kind === 'controlled' ? hello.profile !== 'trusted' : hello.profile === 'trusted' && Array.isArray(hello.customTools);
-      verifiedCustomTools = gateReady && hello.profile === 'trusted' ? new Set(hello.customTools) : new Set();
+      this.handleHello(interpreted);
       return;
     }
     if (interpreted.kind === "feedback") {
-      feedback.accept(interpreted.parsed); feedbackHandler?.(feedback.snapshot()); return;
+      this.handleFeedback(interpreted);
+      return;
     }
     if (interpreted.kind === "interaction") {
-      if (!dialogs) return; // A retired transport must not answer or retry.
-
-      try {
-        const interactionProcess = child;
-        const interactionSession = activeSession;
-        const opened = dialogs.open(interpreted.parsed);
-        if (opened.kind === 'dialog') {
-          occupancy.openDialog();
-          let consumed = false;
-          const answer: InteractionReplyCallback = async reply => {
-            if (consumed) return;
-            consumed = true;
-            try { await opened.reply(reply); }
-            finally {
-              occupancy.closeDialog(interactionProcess);
-              replies.resumeRemaining(occupancy.dialogs());
-            }
-          };
-          if (executionProfile.kind !== 'trusted' || !interactionHandler || occupancy.isStopping()) {
-            // Same replay registry, in-flight lease and bounded writer as a human reply.
-            void Promise.resolve(answer({ kind: 'cancel', reason: occupancy.isStopping() ? 'stop' : 'unavailable' })).catch(() => undefined);
-          } else {
-            replies.pauseRemaining();
-            interactionHandler(opened.form, answer);
-          }
-        }
-        else if (opened.kind === 'rejected') {
-          if (opened.code === 'identity-budget') {
-            void faultStop();
-            emit({ kind: 'runtime_error', session: interactionSession, detail: 'Extension interaction identity budget exhausted. Explicit safe recovery is required.' });
-            return;
-          }
-          if (opened.cancellation) {
-            occupancy.openDialog();
-            void opened.cancellation.catch(() => undefined).finally(() => {
-              occupancy.closeDialog(interactionProcess);
-              replies.resumeRemaining(occupancy.dialogs());
-            });
-          }
-          emit({ kind: 'stream_error', session: activeSession, detail: 'An unsupported or unsafe extension interaction was rejected.' });
-        }
-      } catch {
-        const session = activeSession;
-        void faultStop();
-        emit({ kind: 'runtime_error', session, detail: 'Extension interaction transport failed. Work status is uncertain; no reply was retried.' });
-      }
+      this.handleInteraction(interpreted);
       return;
     }
     if (interpreted.kind === "approval") {
-      const { id, envelope } = interpreted;
-      const session = activeSession; const process = child;
-      const reply = (allow: boolean): void => { occupancy.removeApproval(id); if (process === child) process?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,confirmed:allow && session===activeSession && !occupancy.isStopping()})); };
-      if (!gateReady || !session || occupancy.isStopping() || envelope?.kind !== 'call' || envelope.runtime !== gateId || !sameGateCwd(envelope.cwd, cwd) || (envelope.category === 'custom' && (executionProfile.kind !== 'trusted' || !verifiedCustomTools.has(envelope.tool))) || !approvalHandler) { reply(false); return; }
-      occupancy.addApproval(id);
-      void approvalHandler({ ...envelope, cwd }).then(reply,()=>reply(false));
+      this.handleApproval(interpreted);
       return;
     }
-    if (interpreted.kind === "runtime") applyRuntime(interpreted);
+    if (interpreted.kind === "runtime") this.applyRuntime(interpreted);
   };
 
-  const attachReader = (stdout: Readable): void => {
-    if (detachReader) detachReader();
-    detachReader = attachJsonlLineReader(stdout, handleLine, () => {
-      const session=activeSession;
-      emit({kind:'runtime_error',session,detail:'Runtime frame exceeded the safety limit. Explicit recovery is required.'});
-      void faultStop();
+  private readonly handleHello = (interpreted: Extract<RpcFrame, { kind: "hello" }>): void => {
+    const hello = interpreted.envelope;
+    this.gateReady = this.executionProfile.kind === 'controlled' ? hello.profile !== 'trusted' : hello.profile === 'trusted' && Array.isArray(hello.customTools);
+    this.verifiedCustomTools = this.gateReady && hello.profile === 'trusted' ? new Set(hello.customTools) : new Set();
+    return;
+  };
+
+  private readonly handleFeedback = (interpreted: Extract<RpcFrame, { kind: "feedback" }>): void => {
+    this.feedback.accept(interpreted.parsed);
+    const feedbackHandler = this.feedbackHandler;
+    feedbackHandler?.(this.feedback.snapshot()); return;
+  };
+
+  private readonly handleInteraction = (interpreted: Extract<RpcFrame, { kind: "interaction" }>): void => {
+    if (!this.dialogs) return; // A retired transport must not answer or retry.
+
+    try {
+      const interactionProcess = this.child;
+      const interactionSession = this.activeSession;
+      const opened = this.dialogs.open(interpreted.parsed);
+      if (opened.kind === 'dialog') {
+        this.occupancy.openDialog();
+        let consumed = false;
+        const answer: InteractionReplyCallback = async reply => {
+          if (consumed) return;
+          consumed = true;
+          try { await opened.reply(reply); }
+          finally {
+            this.occupancy.closeDialog(interactionProcess);
+            this.replies.resumeRemaining(this.occupancy.dialogs());
+          }
+        };
+        if (this.executionProfile.kind !== 'trusted' || !this.interactionHandler || this.occupancy.isStopping()) {
+          // Same replay registry, in-flight lease and bounded writer as a human reply.
+          void Promise.resolve(answer({ kind: 'cancel', reason: this.occupancy.isStopping() ? 'stop' : 'unavailable' })).catch(() => undefined);
+        } else {
+          this.replies.pauseRemaining();
+          const interactionHandler = this.interactionHandler;
+          interactionHandler(opened.form, answer);
+        }
+      }
+      else if (opened.kind === 'rejected') {
+        if (opened.code === 'identity-budget') {
+          void this.faultStop();
+          this.emit({ kind: 'runtime_error', session: interactionSession, detail: 'Extension interaction identity budget exhausted. Explicit safe recovery is required.' });
+          return;
+        }
+        if (opened.cancellation) {
+          this.occupancy.openDialog();
+          void opened.cancellation.catch(() => undefined).finally(() => {
+            this.occupancy.closeDialog(interactionProcess);
+            this.replies.resumeRemaining(this.occupancy.dialogs());
+          });
+        }
+        this.emit({ kind: 'stream_error', session: this.activeSession, detail: 'An unsupported or unsafe extension interaction was rejected.' });
+      }
+    } catch {
+      const session = this.activeSession;
+      void this.faultStop();
+      this.emit({ kind: 'runtime_error', session, detail: 'Extension interaction transport failed. Work status is uncertain; no reply was retried.' });
+    }
+    return;
+  };
+
+  private readonly handleApproval = (interpreted: Extract<RpcFrame, { kind: "approval" }>): void => {
+    const { id, envelope } = interpreted;
+    const session = this.activeSession; const process = this.child;
+    const reply = (allow: boolean): void => { this.occupancy.removeApproval(id); if (process === this.child) process?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,confirmed:allow && session===this.activeSession && !this.occupancy.isStopping()})); };
+    if (!this.gateReady || !session || this.occupancy.isStopping() || envelope?.kind !== 'call' || envelope.runtime !== this.gateId || !sameGateCwd(envelope.cwd, this.cwd) || (envelope.category === 'custom' && (this.executionProfile.kind !== 'trusted' || !this.verifiedCustomTools.has(envelope.tool))) || !this.approvalHandler) { reply(false); return; }
+    this.occupancy.addApproval(id);
+    const approvalHandler = this.approvalHandler;
+    void approvalHandler({ ...envelope, cwd: this.cwd }).then(reply,()=>reply(false));
+    return;
+  };
+
+  private readonly attachReader = (stdout: Readable): void => {
+    if (this.detachReader) {
+      const detachReader = this.detachReader;
+      detachReader();
+    }
+    this.detachReader = attachJsonlLineReader(stdout, this.handleLine, () => {
+      const session=this.activeSession;
+      this.emit({kind:'runtime_error',session,detail:'Runtime frame exceeded the safety limit. Explicit recovery is required.'});
+      void this.faultStop();
     });
   };
 
-  const release = async (uncertain = false, failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => {
-    const owned = child;
-    const reason = occupancy.classifyRelease({ forcedUncertain: uncertain, sessionActive: activeSession !== 0 });
-    const queuedObserver = queuedSend?.connection === owned ? queuedSend : undefined;
-    const cancelling = [...occupancy.approvalIds()];
-    dialogs?.invalidate(); dialogs = undefined;
-    occupancy.reset();
-    feedback.reset(); feedbackHandler?.(feedback.snapshot());
-    child = null; // Detach synchronously: late loss/close cannot affect a replacement.
-    if (startToken < Number.MAX_SAFE_INTEGER) startToken += 1;
-    activeSession = 0;
-    commandNames = new Set();
-    commandCatalogue = { status: "unavailable" };
-    gateReady = false; verifiedCustomTools = new Set();
-    frames.reset();
-    if (detachReader) {
+  private readonly release = async (uncertain = false, failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => {
+    const owned = this.child;
+    const reason = this.occupancy.classifyRelease({ forcedUncertain: uncertain, sessionActive: this.activeSession !== 0 });
+    const queuedObserver = this.queuedSend?.connection === owned ? this.queuedSend : undefined;
+    const cancelling = [...this.occupancy.approvalIds()];
+    this.dialogs?.invalidate(); this.dialogs = undefined;
+    this.occupancy.reset();
+    this.feedback.reset();
+    const feedbackHandler = this.feedbackHandler;
+    feedbackHandler?.(this.feedback.snapshot());
+    this.child = null; // Detach synchronously: late loss/close cannot affect a replacement.
+    if (this.startToken < Number.MAX_SAFE_INTEGER) this.startToken += 1;
+    this.activeSession = 0;
+    this.openedConversation = undefined; this.renameOperation = undefined;
+    this.commandNames = new Set();
+    this.commandCatalogue = { status: "unavailable" };
+    this.gateReady = false; this.verifiedCustomTools = new Set();
+    this.frames.reset();
+    if (this.detachReader) {
+      const detachReader = this.detachReader;
       detachReader();
-      detachReader = null;
+      this.detachReader = null;
     }
-    detachLost?.(); detachLost = undefined;
+    const detachLost = this.detachLost;
+    detachLost?.(); this.detachLost = undefined;
     for (const id of cancelling) { try { owned?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true})); } catch { /* Release the transport even if cancellation cannot be written. */ } }
     queuedObserver?.retire(); // Detach first; an early ACK may already have consumed its reply watch.
-    replies.failAll(failure);
-    await environment.process.release(reason);
-  };
-  const stop = (): Promise<void> => release();
-  const faultStop = (failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => release(true, failure);
-  const protocolFault = (): void => {
-    if (!child) return;
-    const session = activeSession;
-    // release revokes the connection synchronously before pending callers or UI observe failure.
-    void faultStop("protocol-error").catch(() => undefined);
-    emit({ kind: "runtime_error", session, detail: RPC_PROTOCOL_ERROR });
+    this.replies.failAll(failure);
+    await this.environment.process.release(reason);
   };
 
-  const start = async (options: {
+  private readonly stop = (): Promise<void> => this.release();
+
+  private readonly faultStop = (failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => this.release(true, failure);
+
+  private readonly protocolFault = (): void => {
+    if (!this.child) return;
+    const session = this.activeSession;
+    // release revokes the connection synchronously before pending callers or UI observe failure.
+    void this.faultStop("protocol-error").catch(() => undefined);
+    this.emit({ kind: "runtime_error", session, detail: RPC_PROTOCOL_ERROR });
+  };
+
+  private readonly attachStartupTransport = (owned: RuntimeLink, token: number): ReturnType<typeof this.replies.wait> => {
+    this.child = owned;
+    this.occupancy.bind({ connection: owned, session: 0 });
+    if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
+    const writeInteraction = createInteractionWriter(owned.stdin, () => this.child === owned);
+    this.dialogs = createRpcDialogs(async frame => {
+      try { await writeInteraction(frame); }
+      catch {
+        if (this.child === owned) {
+          const session = this.activeSession;
+          void this.faultStop();
+          this.emit({ kind: 'runtime_error', session, detail: this.environment.process.describeFailure("reply-delivery") });
+        }
+        throw new Error('Extension reply delivery is unconfirmed.');
+      }
+    });
+    const lost = (): void => {
+      if (owned !== this.child) return;
+      const session = this.activeSession;
+      const operation = this.renameOperation;
+      const detail = operation?.connection === owned && operation.session === session && operation.mutationIssued
+        ? RENAME_UNVERIFIED : 'Runtime disconnected. Work may be interrupted; no task was retried.';
+      this.activeSession = 0; this.gateReady = false; this.occupancy.disconnectSend();
+      this.replies.failAll();
+      if (session) this.emit({kind:'runtime_error',session,detail});
+      if (this.child === owned) {
+        void this.faultStop();
+      }
+    };
+    this.detachLost = this.child.onLost(lost);
+
+    this.attachReader(this.child.stdout);
+
+    const requestId = this.replies.startupId(token);
+    const waiting = this.replies.wait(requestId, "get_state", START_TIMEOUT_MS, { pauseable: this.executionProfile.kind === "trusted", outstanding: () => this.occupancy.dialogs() });
+    this.child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
+    return waiting;
+  };
+
+  private readonly start = async (options: {
     cwd: string;
     projectTrust: ProjectTrustFlag;
     profile?: ExtensionExecutionProfile;
     resume?: { id: string; path: string };
   }): Promise<RuntimeStartResult> => {
-    await stop();
-    if (startToken >= Number.MAX_SAFE_INTEGER) return { ok: false, detail: "Runtime identity exhausted. Reload the extension host." };
-    const token = ++startToken;
-    const cliPath = (environment.cliPath ?? resolvePiCliPath)();
+    await this.stop();
+    if (this.startToken >= Number.MAX_SAFE_INTEGER) return { ok: false, detail: "Runtime identity exhausted. Reload the extension host." };
+    const token = ++this.startToken;
+    const cliPath = (this.environment.cliPath ?? resolvePiCliPath)();
     const trustArg = options.projectTrust === "approve" ? "--approve" : "--no-approve";
-    initializationFailed = false;
-    executionProfile = options.profile ?? { kind: "controlled" };
-    if (executionProfile.kind === "trusted" && (!path.isAbsolute(executionProfile.entryPath) || executionProfile.entryPath.includes("\0"))) return { ok: false, detail: "Extension entry is invalid." };
-    gateId = randomUUID();
-    cwd = options.cwd;
+    this.initializationFailed = false;
+    this.executionProfile = options.profile ?? { kind: "controlled" };
+    if (this.executionProfile.kind === "trusted" && (!path.isAbsolute(this.executionProfile.entryPath) || this.executionProfile.entryPath.includes("\0"))) return { ok: false, detail: "Extension entry is invalid." };
+    this.gateId = randomUUID();
+    this.cwd = options.cwd;
     const gatePath = path.join(__dirname, 'approval-gate.mjs');
-    try { await (environment.gateAccess ?? access)(gatePath); } catch { return {ok:false,detail:'Bundled approval extension is missing. Tools remain disabled.'}; }
-    if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
+    try { await (this.environment.gateAccess ?? access)(gatePath); } catch { return {ok:false,detail:'Bundled approval extension is missing. Tools remain disabled.'}; }
+    if (token !== this.startToken) return { ok: false, detail: "Runtime start superseded" };
     if (options.resume && (!/^[A-Za-z0-9_-]{1,100}$/.test(options.resume.id) || !path.isAbsolute(options.resume.path))) return { ok: false, detail: "Saved session identity is invalid." };
-    // pi's --tools allowlist also filters registered extension tools out of getAllTools().
-    // Trusted inventory is instead validated and activated by the bundled approval gate.
-    const toolArgs = executionProfile.kind === "controlled" ? ["--tools", CONTROLLED_TOOLS.join(',')] : [];
-    const args = ["--mode", "rpc", ...toolArgs, '--no-extensions', '-e', gatePath, trustArg];
-    if (executionProfile.kind === "trusted") args.push("-e", executionProfile.entryPath);
-    if (options.resume) args.push("--session", options.resume.path);
-    const startupModel = (environment.startupModel ?? readPiStartupModelArg)();
+    const args = rpcLaunchArguments({ profile: this.executionProfile, gatePath, trustArg, resume: options.resume });
+    const startupModel = (this.environment.startupModel ?? readPiStartupModelArg)();
     if (startupModel) args.push("--model", startupModel);
 
     // Raw stderr may contain provider credentials; never project or accumulate it.
     try {
-      const runtimeEnv = { ...controlledEnvironment(process.env, gateId), PI_VSCODE_EXTENSION_PROFILE: executionProfile.kind };
-      const launched = await environment.process.launch({ cwd: options.cwd, cliPath, args, env: runtimeEnv });
+      const runtimeEnv = { ...controlledEnvironment(process.env, this.gateId), PI_VSCODE_EXTENSION_PROFILE: this.executionProfile.kind };
+      const launched = await this.environment.process.launch({ cwd: options.cwd, cliPath, args, env: runtimeEnv });
       if (!launched.ok) return launched;
-      if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
-      child = launched.link;
-      const owned = child;
-      occupancy.bind({ connection: owned, session: 0 });
-      if (!owned.stdin) throw new Error('Extension interaction input is unavailable.');
-      const writeInteraction = createInteractionWriter(owned.stdin, () => child === owned);
-      dialogs = createRpcDialogs(async frame => {
-        try { await writeInteraction(frame); }
-        catch {
-          if (child === owned) {
-            const session = activeSession;
-            void faultStop();
-            emit({ kind: 'runtime_error', session, detail: environment.process.describeFailure("reply-delivery") });
-          }
-          throw new Error('Extension reply delivery is unconfirmed.');
-        }
-      });
-      const lost = (): void => {
-        if (owned !== child) return;
-        const session = activeSession; activeSession = 0; gateReady = false; occupancy.disconnectSend();
-        replies.failAll();
-        if (session) emit({kind:'runtime_error',session,detail:'Runtime disconnected. Work may be interrupted; no task was retried.'});
-        if (child === owned) {
-          void faultStop();
-        }
-      };
-      detachLost = child.onLost(lost);
-
-      attachReader(child.stdout);
-
-      const requestId = replies.startupId(token);
-      const waiting = replies.wait(requestId, "get_state", START_TIMEOUT_MS, { pauseable: executionProfile.kind === "trusted", outstanding: () => occupancy.dialogs() });
-      child.stdin?.write(serializeJsonLine({ id: requestId, type: "get_state" }));
+      if (token !== this.startToken) return { ok: false, detail: "Runtime start superseded" };
+      const waiting = this.attachStartupTransport(launched.link, token);
       const response = requireRpcResponse(await waiting);
 
-      if (token !== startToken) {
+      if (token !== this.startToken) {
         return { ok: false, detail: "Runtime start superseded" };
       }
-      if (!response.success || !gateReady || initializationFailed) {
-        await faultStop();
+      if (!response.success || !this.gateReady || this.initializationFailed) {
+        await this.faultStop();
         return {
           ok: false,
           detail: 'Runtime readiness or approval extension verification failed.',
         };
       }
-      return await activateSession(token, response.data as Record<string, unknown> | undefined, options.resume);
+      return await this.activateSession(token, response.data as Record<string, unknown> | undefined, options.resume);
     } catch (error) {
-      if (token === startToken) await faultStop();
+      if (token === this.startToken) await this.faultStop();
       const message = error instanceof Error ? error.message : String(error);
       return {
         ok: false,
@@ -307,80 +414,144 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     }
   };
 
-  const invokeRpc = async (
+  private readonly invokeRpc = async (
     body: { type: string; [key: string]: unknown },
     timeoutMs: number,
   ): Promise<RpcResponse> => {
-    if (!child || !activeSession) {
+    if (!this.child || !this.activeSession) {
       throw new Error("Runtime not ready.");
     }
-    const session = activeSession;
-    const requestId = replies.rpcId(session);
-    const waiting = replies.wait(requestId, body.type, timeoutMs);
-    child.stdin?.write(serializeJsonLine({ id: requestId, ...body }));
+    const session = this.activeSession;
+    const requestId = this.replies.rpcId(session);
+    const waiting = this.replies.wait(requestId, body.type, timeoutMs);
+    if (body.type === "set_session_name" && this.renameOperation?.session === session && this.renameOperation.connection === this.child) this.renameOperation.mutationIssued = true;
+    this.child.stdin?.write(serializeJsonLine({ id: requestId, ...body }));
     const response = requireRpcResponse(await waiting);
-    if (session !== activeSession) {
+    if (session !== this.activeSession) {
       throw new Error("Runtime restarted during request.");
     }
     return response;
   };
 
-  const loadCommandCatalogue = async (token: number, trusted: boolean): Promise<boolean> => {
+  private readonly loadCommandCatalogue = async (token: number, trusted: boolean): Promise<boolean> => {
     let reply: RpcResponse;
     try {
-      reply = await invokeRpc({ type: "get_commands" }, START_TIMEOUT_MS);
+      reply = await this.invokeRpc({ type: "get_commands" }, START_TIMEOUT_MS);
     } catch {
-      if (token !== startToken || token !== activeSession) return false;
-      commandCatalogue = { status: "unavailable" };
+      if (token !== this.startToken || token !== this.activeSession) return false;
+      this.commandCatalogue = { status: "unavailable" };
       return !trusted;
     }
-    if (token !== startToken || token !== activeSession) return false;
+    if (token !== this.startToken || token !== this.activeSession) return false;
     if (trusted) {
       const names = reply.success ? extensionCommandNames(reply.data) : undefined;
       if (!names) {
-        commandCatalogue = { status: "unavailable" };
+        this.commandCatalogue = { status: "unavailable" };
         return false;
       }
-      commandNames = names;
+      this.commandNames = names;
     }
-    commandCatalogue = reply.success ? presentCommandCatalogue(reply.data) : { status: "unavailable" };
+    this.commandCatalogue = reply.success ? presentCommandCatalogue(reply.data) : { status: "unavailable" };
     return true;
   };
 
-  const activateSession = async (
+  private readonly activateSession = async (
     token: number,
     data: Record<string, unknown> | undefined,
     resume: { id: string; path: string } | undefined,
   ): Promise<RuntimeStartResult> => {
     const identityValid = data && typeof data === "object" && typeof data.sessionId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(data.sessionId) && typeof data.sessionFile === "string" && data.sessionFile.length <= 32768 && path.isAbsolute(data.sessionFile) && (data.sessionName == null || typeof data.sessionName === "string");
     if (!data || !identityValid || (resume && (data.sessionId !== resume.id || !sameNativePath(data.sessionFile as string, resume.path)))) {
-      await faultStop();
+      await this.faultStop();
       return { ok: false, detail: "Saved session identity could not be verified. No conversation is ready." };
     }
-    activeSession = token;
-    occupancy.setSession(token);
-    resumedConversation = resume !== undefined;
-    untouchedConversation = !resumedConversation;
-    if (!await loadCommandCatalogue(token, executionProfile.kind === "trusted")) {
-      if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
-      await faultStop();
+    this.activeSession = token;
+    this.usageConversation = sessionUsageIdentity(data);
+    this.openedConversation = { id: data.sessionId as string, path: data.sessionFile as string };
+    this.occupancy.setSession(token);
+    this.resumedConversation = resume !== undefined;
+    this.untouchedConversation = !this.resumedConversation;
+    if (!await this.loadCommandCatalogue(token, this.executionProfile.kind === "trusted")) {
+      if (token !== this.startToken) return { ok: false, detail: "Runtime start superseded" };
+      await this.faultStop();
       return { ok: false, detail: "Extension command catalogue could not be verified." };
     }
-    if (token !== startToken) return { ok: false, detail: "Runtime start superseded" };
+    if (token !== this.startToken) return { ok: false, detail: "Runtime start superseded" };
     return {
       ok: true,
       modelLabel: formatModelLabel(data),
       conversation: {
         id: data.sessionId as string,
         path: data.sessionFile as string,
-        name: typeof data.sessionName === "string" ? data.sessionName.slice(0, 160) : null,
+        name: typeof data.sessionName === "string" ? redactCredentialLikeText(data.sessionName).slice(0, 200) : null,
       },
     };
   };
 
-  const checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
-    const session = activeSession;
-    const idle = () => session !== 0 && session === activeSession && gateReady && occupancy.allowsRestart();
+  private readonly getSessionUsage: NonNullable<PiRuntimeLifecycle["getSessionUsage"]> = async expectedSession => {
+    const unavailable = { ok: false as const, detail: "Session usage is unavailable." };
+    const current = () => expectedSession !== 0 && expectedSession === this.activeSession && this.gateReady && this.occupancy.allowsRestart();
+    const deadline = performance.now() + 5000;
+    const read = (type: "get_state" | "get_session_stats") => {
+      const remaining = deadline - performance.now();
+      if (remaining <= 0) throw new Error("Usage deadline expired.");
+      return this.invokeRpc({ type }, remaining);
+    };
+    try {
+      if (!current()) return unavailable;
+      const before = await read("get_state");
+      const identity = sessionUsageIdentity(before.data);
+      if (!current() || !before.success || !identity || !this.usageConversation || identity.id !== this.usageConversation.id
+        || !sameNativePath(identity.path, this.usageConversation.path)) return unavailable;
+      const response = await read("get_session_stats");
+      const statsIdentity = sessionUsageIdentity(response.data);
+      if (!current() || !response.success || !statsIdentity || statsIdentity.id !== identity.id
+        || !sameNativePath(statsIdentity.path, identity.path)) return unavailable;
+      const after = await read("get_state");
+      const afterIdentity = sessionUsageIdentity(after.data);
+      if (!current() || !after.success || !afterIdentity || afterIdentity.id !== identity.id
+        || !sameNativePath(afterIdentity.path, identity.path)) return unavailable;
+      const usage = sessionUsageNumbers(response.data, before.data);
+      return usage ? { ok: true, usage } : unavailable;
+    } catch { return unavailable; }
+  };
+
+  private readonly renameSession: NonNullable<PiRuntimeLifecycle["renameSession"]> = async (name, expectedSession) => {
+    const owned = this.child; const expected = this.openedConversation;
+    if (!validRenameInput(name) || !expectedSession || expectedSession !== this.activeSession || !owned || !expected || !this.gateReady
+      || this.renameOperation || !this.occupancy.allowsRestart()) return { ok: false, detail: "Current conversation rename is unavailable." };
+    const operation = { session: expectedSession, connection: owned, mutationIssued: false }; this.renameOperation = operation; this.occupancy.beginStopping();
+    const current = () => this.renameOperation === operation && this.child === owned && this.activeSession === expectedSession && this.gateReady
+      && !this.occupancy.agentRunning() && this.occupancy.dialogs() === 0 && [...this.occupancy.approvalIds()].length === 0;
+    const deadline = performance.now() + STOP_TIMEOUT_MS;
+    const remaining = () => { const budget = deadline - performance.now(); if (budget <= 0) throw new Error("Rename deadline expired."); return budget; };
+    try {
+      const before = await this.invokeRpc({ type: "get_state" }, remaining()); remaining();
+      if (!current()) return { ok: false, detail: "Current conversation changed during rename." };
+      if (!before.success || !renamedConversation(before.data, expected)) throw new Error("Opened identity is unverified.");
+      const acknowledged = await this.invokeRpc({ type: "set_session_name", name }, remaining()); remaining();
+      if (!current()) return { ok: false, detail: "Current conversation changed during rename." };
+      if (!acknowledged.success) return { ok: false, detail: "Current conversation rename was rejected." };
+      this.untouchedConversation = false;
+      const after = await this.invokeRpc({ type: "get_state" }, remaining()); remaining();
+      if (!current()) return { ok: false, detail: "Current conversation changed during rename." };
+      const conversation = after.success ? renamedConversation(after.data, expected, name) : undefined;
+      if (!conversation) throw new Error("Rename readback is unverified.");
+      return { ok: true, conversation };
+    } catch {
+      if (this.activeSession === expectedSession && this.child === owned) {
+        this.emit({ kind: "runtime_error", session: expectedSession, detail: RENAME_UNVERIFIED });
+        await this.faultStop();
+      }
+      return { ok: false, detail: "Current conversation rename could not be verified. Do not retry automatically." };
+    } finally {
+      if (this.renameOperation === operation) { this.renameOperation = undefined; if (this.activeSession === expectedSession && this.child === owned) this.occupancy.clearStopping(); }
+    }
+  };
+
+  private readonly checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
+    const session = this.activeSession;
+    const idle = () => session !== 0 && session === this.activeSession && this.gateReady && this.occupancy.allowsRestart();
     const stateMatches = (response: RpcResponse, count?: number): boolean => {
       if (!response.success || !response.data || typeof response.data !== "object") return false;
       const state = response.data as Record<string, unknown>;
@@ -392,45 +563,45 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     try {
       if (!idle()) return { kind: "unavailable" };
       // Statistics are content-independent; never fetch history across the bounded JSONL transport.
-      const before = await invokeRpc({ type: "get_state" }, 5000);
+      const before = await this.invokeRpc({ type: "get_state" }, 5000);
       if (!idle() || !stateMatches(before)) return { kind: "unavailable" };
-      const response = await invokeRpc({ type: "get_session_stats" }, 5000);
+      const response = await this.invokeRpc({ type: "get_session_stats" }, 5000);
       if (!idle() || !response.success || !response.data || typeof response.data !== "object") return { kind: "unavailable" };
       const stats = response.data as Record<string, unknown>;
       if (stats.sessionId !== expected.id || typeof stats.sessionFile !== "string" || !sameNativePath(stats.sessionFile, expected.path)
         || !Number.isSafeInteger(stats.assistantMessages) || !Number.isSafeInteger(stats.totalMessages)
         || (stats.assistantMessages as number) < 0 || (stats.totalMessages as number) < (stats.assistantMessages as number)) return { kind: "unavailable" };
       const messageCount = (before.data as Record<string, unknown>).messageCount as number;
-      const after = await invokeRpc({ type: "get_state" }, 5000);
+      const after = await this.invokeRpc({ type: "get_state" }, 5000);
       if (!idle() || !stateMatches(after, messageCount)) return { kind: "unavailable" };
-      if (messageCount === 0 && stats.totalMessages === 0 && untouchedConversation) return { kind: "empty" };
+      if (messageCount === 0 && stats.totalMessages === 0 && this.untouchedConversation) return { kind: "empty" };
       // pi 0.86.1 flushes fresh session entries only once an assistant exists.
       // Stats count all entries, unlike active-branch messageCount after compaction.
       // A verified saved-session start is already durable, even with empty context.
-      if (resumedConversation || (stats.assistantMessages as number) > 0) {
+      if (this.resumedConversation || (stats.assistantMessages as number) > 0) {
         return { kind: "resume", conversation: { ...expected } };
       }
       return { kind: "unavailable" };
     } catch { return { kind: "unavailable" }; }
   };
 
-  const loadModelProjection = async (expectedSession = activeSession): Promise<ModelProjectionResult> => {
+  private readonly loadModelProjection = async (expectedSession = this.activeSession): Promise<ModelProjectionResult> => {
     const current = (): void => {
-      if (!expectedSession || expectedSession !== activeSession) throw new Error("Runtime changed.");
+      if (!expectedSession || expectedSession !== this.activeSession) throw new Error("Runtime changed.");
     };
     try {
       current();
-      const stateResponse = await invokeRpc({ type: "get_state" }, MODEL_RPC_TIMEOUT_MS);
+      const stateResponse = await this.invokeRpc({ type: "get_state" }, MODEL_RPC_TIMEOUT_MS);
       if (!stateResponse.success) {
         return { ok: false, detail: "Could not read runtime state." };
       }
       current();
-      const modelsResponse = await invokeRpc({ type: "get_available_models" }, MODEL_RPC_TIMEOUT_MS);
+      const modelsResponse = await this.invokeRpc({ type: "get_available_models" }, MODEL_RPC_TIMEOUT_MS);
       if (!modelsResponse.success) {
         return { ok: false, detail: "Could not list available models." };
       }
       current();
-      const levelsResponse = await invokeRpc({ type: "get_available_thinking_levels" }, MODEL_RPC_TIMEOUT_MS);
+      const levelsResponse = await this.invokeRpc({ type: "get_available_thinking_levels" }, MODEL_RPC_TIMEOUT_MS);
       if (!levelsResponse.success) {
         return { ok: false, detail: "Could not list thinking levels." };
       }
@@ -447,161 +618,169 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     }
   };
 
-  const setThinkingLevel = async (level: string): Promise<ModelMutationResult> => {
-    const session = activeSession;
-    if (!occupancy.allowsModelMutation()) return { ok: false, detail: "Wait until the agent has settled." };
+  private readonly setThinkingLevel = async (level: string): Promise<ModelMutationResult> => {
+    const session = this.activeSession;
+    if (!this.occupancy.allowsModelMutation()) return { ok: false, detail: "Wait until the agent has settled." };
     try {
-      const response = await invokeRpc({ type: "set_thinking_level", level }, MODEL_RPC_TIMEOUT_MS);
+      const response = await this.invokeRpc({ type: "set_thinking_level", level }, MODEL_RPC_TIMEOUT_MS);
       if (!response.success) {
         return { ok: false, detail: "Could not change thinking level." };
       }
-      return await loadModelProjection(session);
+      return await this.loadModelProjection(session);
     } catch {
       return { ok: false, detail: "Could not apply model settings." };
     }
   };
 
-  const setModel = async (provider: string, modelId: string): Promise<ModelMutationResult> => {
-    const session = activeSession;
-    if (!occupancy.allowsModelMutation()) return { ok: false, detail: "Wait until the agent has settled." };
+  private readonly setModel = async (provider: string, modelId: string): Promise<ModelMutationResult> => {
+    const session = this.activeSession;
+    if (!this.occupancy.allowsModelMutation()) return { ok: false, detail: "Wait until the agent has settled." };
     try {
-      const response = await invokeRpc({ type: "set_model", provider, modelId }, MODEL_RPC_TIMEOUT_MS);
+      const response = await this.invokeRpc({ type: "set_model", provider, modelId }, MODEL_RPC_TIMEOUT_MS);
       if (!response.success) {
         return { ok: false, detail: "Could not switch model." };
       }
-      return await loadModelProjection(session);
+      return await this.loadModelProjection(session);
     } catch {
       return { ok: false, detail: "Could not apply model settings." };
     }
   };
 
-  const prompt = async (text: string): Promise<{ ok: true } | { ok: false; detail: string }> => {
-    if (!child || !activeSession || !gateReady || occupancy.isStopping()) {
+  private readonly prompt = async (text: string): Promise<{ ok: true } | { ok: false; detail: string }> => {
+    if (!this.child || !this.activeSession || !this.gateReady || this.occupancy.isStopping()) {
       return { ok: false, detail: "Runtime not ready." };
     }
-    if (!occupancy.allowsSend() || replies.exhausted()) {
+    if (!this.occupancy.allowsSend() || this.replies.exhausted()) {
       return { ok: false, detail: "A message is already in progress or request identities are exhausted." };
     }
-    const session = activeSession;
-    const requestId = replies.promptId(session);
-    occupancy.beginPrompt(); untouchedConversation = false;
+    const session = this.activeSession;
+    const requestId = this.replies.promptId(session);
+    this.occupancy.beginPrompt(); this.untouchedConversation = false;
     try {
-      const waiting = replies.wait(requestId, "prompt", PROMPT_TIMEOUT_MS);
-      child.stdin?.write(serializePromptFrame(requestId, { kind: "plain", body: text }));
+      const waiting = this.replies.wait(requestId, "prompt", PROMPT_TIMEOUT_MS);
+      this.child.stdin?.write(serializePromptFrame(requestId, { kind: "plain", body: text }));
       const response = requireRpcResponse(await waiting);
-      if (session !== activeSession) {
-        occupancy.rejectSend(child);
+      if (session !== this.activeSession) {
+        this.occupancy.rejectSend(this.child);
         return { ok: false, detail: "Runtime restarted during send." };
       }
       if (!response.success) {
-        occupancy.rejectSend(child);
+        this.occupancy.rejectSend(this.child);
         return { ok: false, detail: "Prompt was rejected." };
       }
       return { ok: true };
     } catch {
-      if (session === activeSession) {
-        emit({kind:'runtime_error',session,detail:environment.process.describeFailure("prompt-ack")});
-        await faultStop();
+      if (session === this.activeSession) {
+        this.emit({kind:'runtime_error',session,detail:this.environment.process.describeFailure("prompt-ack")});
+        await this.faultStop();
       }
       return { ok: false, detail: 'Prompt acknowledgement was lost; restart runtime before retrying.' };
     }
   };
 
-  const preparePrompt: PiRuntimeLifecycle["preparePrompt"] = (input, expectedSession) => {
-    if (replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
-    const requestId = replies.promptId(expectedSession);
-    let frame = serializePromptFrame(requestId, input);
-    const command = dispatchedExtensionCommand(input, commandNames);
-    let consumed = false;
-    return { send(onAttempt) {
-      const owned = child;
-      const stream = owned?.stdin;
-      if (consumed || expectedSession !== activeSession || !activeSession || !gateReady || !occupancy.allowsSend() || !stream || stream.destroyed || stream.writableEnded) {
-        frame = "";
-        return Promise.resolve({ delivery: "not-sent", code: "runtime-lost" });
-      }
-      consumed = true; occupancy.beginSend({ command: command !== undefined });
-      return new Promise(resolve => {
-        let attempted = false; let finished = false; let callback = false; let drained = false; let returned = false;
-        let reply: RpcReplyResult | undefined;
-        const finish = (delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown", code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost") => {
-          if (finished) return; finished = true;
-          occupancy.clearAck(expectedSession);
-          clearTimeout(writeTimer); clearTimeout(ackTimer); replies.drop(requestId);
-          stream.off("error", lost); stream.off("close", lost); stream.off("drain", drain); frame = "";
-          if (delivery !== "rpc-accepted" && child === owned) occupancy.rejectSend(owned);
-          if (command && child === owned) occupancy.finishCommand(owned);
-          const response = reply?.kind === "response" ? reply.response : undefined;
-          const rejection = delivery === "rpc-rejected" && typeof response?.error === "string" && isAuthenticationError(response.error)
-            ? "authentication" as const : undefined;
-          resolve({ delivery, ...(code ? { code } : {}), ...(rejection ? { rejection } : {}) });
-          if (command && delivery === "rpc-accepted" && child === owned) emit({ kind: "command_handled", session: expectedSession, agentRunning: occupancy.agentRunning() });
-          if (delivery === "unknown" && child === owned && reply?.kind !== "failure") {
-            emit({ kind: "runtime_error", session: expectedSession, detail: environment.process.describeFailure("prompt-delivery") });
-            void faultStop();
-          }
-        };
-        const check = () => {
-          if (reply?.kind === "failure") { finish(attempted ? "unknown" : "not-sent", "runtime-lost"); return; }
-          if (!returned || !callback || !drained) return;
-          clearTimeout(writeTimer);
-          if (reply?.kind === "response") {
-            if (activeSession !== expectedSession) finish("unknown", "runtime-lost");
-            else finish(reply.response.success ? "rpc-accepted" : "rpc-rejected", reply.response.success ? undefined : "rpc-rejected");
-          }
-        };
-        const lost = () => finish(attempted ? "unknown" : "not-sent", "write-failed");
-        const drain = () => { drained = true; check(); };
-        const writeTimer = setTimeout(lost, 5000);
-        const ackTimer = command ? undefined : setTimeout(() => finish("unknown", "ack-timeout"), 30000);
-        replies.watch(requestId, "prompt", value => { reply = value; check(); });
-        stream.on("error", lost); stream.on("close", lost); stream.on("drain", drain);
-        try {
-          attempted = true; untouchedConversation = false; onAttempt();
-          const accepted = stream.write(frame, error => { if (error) lost(); else { callback = true; check(); } });
-          drained ||= accepted; returned = true; frame = ""; check();
-        } catch { lost(); }
-      });
-    } };
+  private readonly preparePrompt: PiRuntimeLifecycle["preparePrompt"] = (input, expectedSession) => {
+    if (this.replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
+    const requestId = this.replies.promptId(expectedSession);
+    const prepared: PreparedPrompt = {
+      requestId, expectedSession, frame: serializePromptFrame(requestId, input),
+      command: dispatchedExtensionCommand(input, this.commandNames), consumed: false,
+    };
+    return { send: onAttempt => this.sendPreparedPrompt(prepared, onAttempt) };
   };
 
-  const prepareQueuedText: NonNullable<PiRuntimeLifecycle["prepareQueuedText"]> = (text, mode, session) => {
-    if (replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
-    const requestId = replies.rpcId(session);
+  private readonly sendPreparedPrompt = (prepared: PreparedPrompt, onAttempt: PromptAttempt): Promise<AttachmentPromptResult> => {
+    const owned = this.child;
+    const stream = owned?.stdin;
+    if (prepared.consumed || prepared.expectedSession !== this.activeSession || !this.activeSession || !this.gateReady || !this.occupancy.allowsSend() || !stream || stream.destroyed || stream.writableEnded) {
+      prepared.frame = "";
+      return Promise.resolve({ delivery: "not-sent", code: "runtime-lost" });
+    }
+    prepared.consumed = true; this.occupancy.beginSend({ command: prepared.command !== undefined });
+    return this.writePreparedPrompt(prepared, owned, stream, onAttempt);
+  };
+
+  private readonly writePreparedPrompt = (prepared: PreparedPrompt, owned: RuntimeLink | null, stream: RuntimeLink["stdin"], onAttempt: PromptAttempt): Promise<AttachmentPromptResult> => {
+    const { expectedSession, requestId, command } = prepared;
+    return new Promise(resolve => {
+      let attempted = false; let finished = false; let callback = false; let drained = false; let returned = false;
+      let reply: RpcReplyResult | undefined;
+      const finish = (delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown", code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost") => {
+        if (finished) return; finished = true;
+        this.occupancy.clearAck(expectedSession);
+        clearTimeout(writeTimer); clearTimeout(ackTimer); this.replies.drop(requestId);
+        stream.off("error", lost); stream.off("close", lost); stream.off("drain", drain); prepared.frame = "";
+        if (delivery !== "rpc-accepted" && this.child === owned) this.occupancy.rejectSend(owned);
+        if (command && this.child === owned) this.occupancy.finishCommand(owned);
+        const response = reply?.kind === "response" ? reply.response : undefined;
+        const rejection = delivery === "rpc-rejected" && typeof response?.error === "string" && isAuthenticationError(response.error)
+          ? "authentication" as const : undefined;
+        resolve({ delivery, ...(code ? { code } : {}), ...(rejection ? { rejection } : {}) });
+        if (command && delivery === "rpc-accepted" && this.child === owned) this.emit({ kind: "command_handled", session: expectedSession, agentRunning: this.occupancy.agentRunning() });
+        if (delivery === "unknown" && this.child === owned && reply?.kind !== "failure") {
+          this.emit({ kind: "runtime_error", session: expectedSession, detail: this.environment.process.describeFailure("prompt-delivery") });
+          void this.faultStop();
+        }
+      };
+      const check = () => {
+        if (reply?.kind === "failure") { finish(attempted ? "unknown" : "not-sent", "runtime-lost"); return; }
+        if (!returned || !callback || !drained) return;
+        clearTimeout(writeTimer);
+        if (reply?.kind === "response") {
+          if (this.activeSession !== expectedSession) finish("unknown", "runtime-lost");
+          else finish(reply.response.success ? "rpc-accepted" : "rpc-rejected", reply.response.success ? undefined : "rpc-rejected");
+        }
+      };
+      const lost = () => finish(attempted ? "unknown" : "not-sent", "write-failed");
+      const drain = () => { drained = true; check(); };
+      const writeTimer = setTimeout(lost, 5000);
+      const ackTimer = command ? undefined : setTimeout(() => finish("unknown", "ack-timeout"), 30000);
+      this.replies.watch(requestId, "prompt", value => { reply = value; check(); });
+      stream.on("error", lost); stream.on("close", lost); stream.on("drain", drain);
+      try {
+        attempted = true; this.untouchedConversation = false; onAttempt();
+        const accepted = stream.write(prepared.frame, error => { if (error) lost(); else { callback = true; check(); } });
+        drained ||= accepted; returned = true; prepared.frame = ""; check();
+      } catch { lost(); }
+    });
+  };
+
+  private readonly prepareQueuedText: NonNullable<PiRuntimeLifecycle["prepareQueuedText"]> = (text, mode, session) => {
+    if (this.replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
+    const requestId = this.replies.rpcId(session);
     const command = mode === "steering" ? "steer" : "follow_up";
     const valid = typeof text === "string" && text.trim().length > 0 && text.length <= 8000
       && (mode === "steering" || mode === "follow-up");
     let owned: RuntimeLink | null = null;
     return prepareQueuedTextSend({ requestId, command,
-      admit() {
-        if (!valid || session !== activeSession || !session || !gateReady || !occupancy.agentRunning()
-          || occupancy.isStopping() || queueControlOperation?.session === session || queuedSend?.session === session
-          || !child?.stdin || child.stdin.destroyed || child.stdin.writableEnded) return undefined;
-        owned = child;
+      admit: () => {
+        if (!valid || session !== this.activeSession || !session || !this.gateReady || !this.occupancy.agentRunning()
+          || this.occupancy.isStopping() || this.queueControlOperation?.session === session || this.queuedSend?.session === session
+          || !this.child?.stdin || this.child.stdin.destroyed || this.child.stdin.writableEnded) return undefined;
+        owned = this.child;
         return owned.stdin;
       },
-      isCurrent: () => child === owned && session === activeSession,
-      canWrite: () => child === owned && session === activeSession && occupancy.agentRunning(),
-      watch: settle => replies.watch(requestId, command, settle),
-      drop: () => replies.drop(requestId),
-      track(pending, retire) {
-        if (!owned || child !== owned || session !== activeSession) return;
-        const attempt = queuedSend = { session, connection: owned, pending, retire };
-        occupancy.beginQueuedWrite();
+      isCurrent: () => this.child === owned && session === this.activeSession,
+      canWrite: () => this.child === owned && session === this.activeSession && this.occupancy.agentRunning(),
+      watch: settle => this.replies.watch(requestId, command, settle),
+      drop: () => this.replies.drop(requestId),
+      track: (pending, retire) => {
+        if (!owned || this.child !== owned || session !== this.activeSession) return;
+        const attempt = this.queuedSend = { session, connection: owned, pending, retire };
+        this.occupancy.beginQueuedWrite();
         void pending.then(() => {
-          if (queuedSend !== attempt) return;
-          queuedSend = undefined;
-          occupancy.finishQueuedWrite(owned, session);
+          if (this.queuedSend !== attempt) return;
+          this.queuedSend = undefined;
+          this.occupancy.finishQueuedWrite(owned, session);
         });
       },
-      onUnknown() {
-        emit({ kind: "runtime_error", session, detail: environment.process.describeFailure("prompt-delivery") });
-        void faultStop();
+      onUnknown: () => {
+        this.emit({ kind: "runtime_error", session, detail: this.environment.process.describeFailure("prompt-delivery") });
+        void this.faultStop();
       },
     }, valid ? serializeJsonLine({ id: requestId, type: command, message: text }) : "");
   };
 
-  const waitForQueuedSend = (pending: Promise<AttachmentPromptResult>, remaining: () => number): Promise<void> => new Promise((resolve, reject) => {
+  private readonly waitForQueuedSend = (pending: Promise<AttachmentPromptResult>, remaining: () => number): Promise<void> => new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("Queue send was not observed before clear.")), remaining());
     void pending.then(result => {
       clearTimeout(timer);
@@ -610,122 +789,144 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     });
   });
 
-  const clearQueuedText = async (session: number, remaining: () => number,
+  private readonly clearQueuedText = async (session: number, remaining: () => number,
     onQueueCleared: Parameters<NonNullable<PiRuntimeLifecycle["abortTask"]>>[0]): Promise<void> => {
-    if (queuedSend?.session === session) await waitForQueuedSend(queuedSend.pending, remaining);
-    if (session !== activeSession) throw new Error("Runtime changed before clear.");
-    const clear = await invokeRpc({ type: "clear_queue" }, remaining());
+    if (this.queuedSend?.session === session) await this.waitForQueuedSend(this.queuedSend.pending, remaining);
+    if (session !== this.activeSession) throw new Error("Runtime changed before clear.");
+    const clear = await this.invokeRpc({ type: "clear_queue" }, remaining());
     remaining(); // Late ACK is not timely recovery evidence, even if its timer has not run.
     const recalled = clear.success ? parseQueuedTextSnapshot(clear.data) : undefined;
-    if (!recalled || session !== activeSession) throw new Error("Clear was not confirmed.");
+    if (!recalled || session !== this.activeSession) throw new Error("Clear was not confirmed.");
     onQueueCleared?.(recalled);
-    if (session !== activeSession) throw new Error("Runtime changed during recall.");
+    if (session !== this.activeSession) throw new Error("Runtime changed during recall.");
   };
 
-  const recallQueuedText: NonNullable<PiRuntimeLifecycle["recallQueuedText"]> = async (session, onQueueCleared) => {
-    if (!session || session !== activeSession || !gateReady || queueControlOperation?.session === session
-      || typeof onQueueCleared !== "function") return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
-    const operation = queueControlOperation = { session };
+  private readonly recallQueuedText: NonNullable<PiRuntimeLifecycle["recallQueuedText"]> = async (session, onQueueCleared) => {
+    if (!session || session !== this.activeSession || !this.gateReady || this.queueControlOperation?.session === session
+      || typeof onQueueCleared !== "function") return { ok: false, detail: this.environment.process.describeFailure("stop-unconfirmed") };
+    const operation = this.queueControlOperation = { session };
     const deadline = performance.now() + STOP_TIMEOUT_MS;
     const remaining = (): number => {
       const budget = deadline - performance.now();
       if (budget <= 0) throw new Error("Recall observation deadline expired.");
       return budget;
     };
-    occupancy.beginStopping(); // Admission fence only: never changes live-task occupancy or sends abort.
+    this.occupancy.beginStopping(); // Admission fence only: never changes live-task occupancy or sends abort.
     try {
-      await clearQueuedText(session, remaining, onQueueCleared);
+      await this.clearQueuedText(session, remaining, onQueueCleared);
       remaining();
       return { ok: true };
     } catch {
-      if (session === activeSession) await faultStop();
-      return { ok: false, detail: environment.process.describeFailure("stop-failed") };
+      if (session === this.activeSession) await this.faultStop();
+      return { ok: false, detail: this.environment.process.describeFailure("stop-failed") };
     } finally {
-      if (queueControlOperation === operation) {
-        queueControlOperation = undefined;
-        if (session === activeSession) occupancy.clearStopping();
+      if (this.queueControlOperation === operation) {
+        this.queueControlOperation = undefined;
+        if (session === this.activeSession) this.occupancy.clearStopping();
       }
     }
   };
 
-  const waitForTaskSettlement = (remaining: () => number): Promise<void> => new Promise(resolve => {
-    const timer = setTimeout(() => { listeners.delete(listener); resolve(); }, remaining());
+  private readonly waitForTaskSettlement = (remaining: () => number): Promise<void> => new Promise(resolve => {
+    const timer = setTimeout(() => { this.listeners.delete(listener); resolve(); }, remaining());
     const listener = (event: RuntimeEvent): void => {
       if (event.kind !== "runtime_error"
-        && !((event.kind === "agent_settled" || event.kind === "command_handled") && !occupancy.sending())) return;
+        && !((event.kind === "agent_settled" || event.kind === "command_handled") && !this.occupancy.sending())) return;
       clearTimeout(timer);
-      listeners.delete(listener);
+      this.listeners.delete(listener);
       resolve();
     };
-    listeners.add(listener);
+    this.listeners.add(listener);
   });
 
-  return {
-    start,
-    checkpointRestart,
-    stop,
-    getOwnershipState: () => environment.process.inspect(),
-    endOwnedRuntime: () => environment.process.end(),
-    handoffRetainedRuntime: () => environment.process.handoff(),
-    async recoverOwnedRuntime() {
-      const result = await environment.process.recover();
-      if (result.ok) executionProfile = { kind: "controlled" };
-      return result;
-    },
-    preparePrompt,
-    prepareQueuedText,
-    recallQueuedText,
-    invalidateInteractions() {
-      if (!child) return;
-      const session = activeSession;
-      void faultStop();
-      emit({ kind: "runtime_error", session, detail: environment.process.describeFailure("interaction") });
-    },
-    setFeedbackHandler(handler) { feedbackHandler = handler; handler(feedback.snapshot()); },
-    setInteractionHandler(handler) { interactionHandler = handler; },
-    setApprovalHandler(handler) { approvalHandler = handler; },
-    async abortTask(onQueueCleared) {
-      const session = activeSession;
-      if (!session || queueControlOperation?.session === session) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
-      const operation = queueControlOperation = { session };
-      const deadline = performance.now() + STOP_TIMEOUT_MS;
-      const remaining = (): number => {
-        const budget = deadline - performance.now();
-        if (budget <= 0) throw new Error("Stop observation deadline expired.");
-        return budget;
-      };
-      occupancy.beginStopping();
-      try {
-        for (const id of occupancy.approvalIds()) child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
-        occupancy.clearApprovals();
-        await clearQueuedText(session, remaining, onQueueCleared); // Retain recalled text before abort.
-        const abort = await invokeRpc({type:'abort'}, remaining());
-        if (!abort.success) throw new Error();
-        if (occupancy.sending()) await waitForTaskSettlement(remaining);
-        if (!session || session !== activeSession) return { ok: false, detail: environment.process.describeFailure("stop-unconfirmed") };
-        if (occupancy.sending()) {
-          await faultStop();
-          return {ok:false,detail:environment.process.describeFailure("stop-unconfirmed")};
-        }
-        remaining(); // A late response/event is not timely observation, even if its timer has not run.
-        occupancy.clearStopping();
-        return {ok:true};
-      } catch {
-        if (session === activeSession) await faultStop();
-        return {ok:false,detail:environment.process.describeFailure("stop-failed")};
-      } finally {
-        if (queueControlOperation === operation) queueControlOperation = undefined;
-      }
-    },
-    getSession: () => activeSession,
-    getCommandCatalogue: () => commandCatalogue,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    prompt,
-    getModelProjection: loadModelProjection,
-    setThinkingLevel,
-    setModel,
+  private readonly recoverOwnedRuntime: NonNullable<PiRuntimeLifecycle["recoverOwnedRuntime"]> = async () => {
+    const result = await this.environment.process.recover();
+    if (result.ok) this.executionProfile = { kind: "controlled" };
+    return result;
   };
+
+  private readonly invalidateInteractions: NonNullable<PiRuntimeLifecycle["invalidateInteractions"]> = () => {
+    if (!this.child) return;
+    const session = this.activeSession;
+    void this.faultStop();
+    this.emit({ kind: "runtime_error", session, detail: this.environment.process.describeFailure("interaction") });
+  };
+
+  private readonly setFeedbackHandler: NonNullable<PiRuntimeLifecycle["setFeedbackHandler"]> = (handler) => { this.feedbackHandler = handler; handler(this.feedback.snapshot()); };
+
+  private readonly setInteractionHandler: NonNullable<PiRuntimeLifecycle["setInteractionHandler"]> = (handler) => { this.interactionHandler = handler; };
+
+  private readonly setApprovalHandler: NonNullable<PiRuntimeLifecycle["setApprovalHandler"]> = (handler) => { this.approvalHandler = handler; };
+
+  private readonly abortTask: NonNullable<PiRuntimeLifecycle["abortTask"]> = async (onQueueCleared) => {
+    const session = this.activeSession;
+    if (!session || this.queueControlOperation?.session === session) return { ok: false, detail: this.environment.process.describeFailure("stop-unconfirmed") };
+    const operation = this.queueControlOperation = { session };
+    const deadline = performance.now() + STOP_TIMEOUT_MS;
+    const remaining = (): number => {
+      const budget = deadline - performance.now();
+      if (budget <= 0) throw new Error("Stop observation deadline expired.");
+      return budget;
+    };
+    this.occupancy.beginStopping();
+    try {
+      for (const id of this.occupancy.approvalIds()) this.child?.stdin?.write(serializeJsonLine({type:'extension_ui_response',id,cancelled:true}));
+      this.occupancy.clearApprovals();
+      await this.clearQueuedText(session, remaining, onQueueCleared); // Retain recalled text before abort.
+      const abort = await this.invokeRpc({type:'abort'}, remaining());
+      if (!abort.success) throw new Error();
+      if (this.occupancy.sending()) await this.waitForTaskSettlement(remaining);
+      if (!session || session !== this.activeSession) return { ok: false, detail: this.environment.process.describeFailure("stop-unconfirmed") };
+      if (this.occupancy.sending()) {
+        await this.faultStop();
+        return {ok:false,detail:this.environment.process.describeFailure("stop-unconfirmed")};
+      }
+      remaining(); // A late response/event is not timely observation, even if its timer has not run.
+      this.occupancy.clearStopping();
+      return {ok:true};
+    } catch {
+      if (session === this.activeSession) await this.faultStop();
+      return {ok:false,detail:this.environment.process.describeFailure("stop-failed")};
+    } finally {
+      if (this.queueControlOperation === operation) this.queueControlOperation = undefined;
+    }
+  };
+
+  private readonly subscribe: NonNullable<PiRuntimeLifecycle["subscribe"]> = (listener) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  lifecycle(): PiRuntimeLifecycle {
+    return {
+      start: this.start,
+      checkpointRestart: this.checkpointRestart,
+      renameSession: this.renameSession,
+      stop: this.stop,
+      getOwnershipState: () => this.environment.process.inspect(),
+      endOwnedRuntime: () => this.environment.process.end(),
+      handoffRetainedRuntime: () => this.environment.process.handoff(),
+      recoverOwnedRuntime: this.recoverOwnedRuntime,
+      preparePrompt: this.preparePrompt,
+      prepareQueuedText: this.prepareQueuedText,
+      recallQueuedText: this.recallQueuedText,
+      invalidateInteractions: this.invalidateInteractions,
+      setFeedbackHandler: this.setFeedbackHandler,
+      setInteractionHandler: this.setInteractionHandler,
+      setApprovalHandler: this.setApprovalHandler,
+      abortTask: this.abortTask,
+      getSession: () => this.activeSession,
+      getSessionUsage: this.getSessionUsage,
+      getCommandCatalogue: () => this.commandCatalogue,
+      subscribe: this.subscribe,
+      prompt: this.prompt,
+      getModelProjection: this.loadModelProjection,
+      setThinkingLevel: this.setThinkingLevel,
+      setModel: this.setModel,
+    };
+  }
+}
+
+export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRuntimeLifecycle {
+  return new RpcRuntime(environment).lifecycle();
 }

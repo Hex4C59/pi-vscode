@@ -29,90 +29,106 @@ test("real host projection is accepted by the browser boundary, malformed snapsh
   } finally { ui.client.dispose(); h.provider.dispose(); }
 });
 
+function assertProjectionInventory(v: Awaited<ReturnType<typeof readySettings>>["v"], ui: ReturnType<typeof clientHarness>): void {
+  v.action("getAttachmentHistory");
+  v.action("getAttachmentPreview", { requestId: "preview-1", snapshotId: "missing-snapshot", offset: 0 });
+  const projections: object[] = [];
+  for (const message of v.sent) {
+    if (typeof message === "object" && message !== null && !Array.isArray(message) && "type" in message) projections.push(message);
+  }
+  const observedTypes = new Set<string>();
+  for (const projection of projections) {
+    const parsed = parseHostMessage(projection);
+    assert.ok(parsed, "a real host projection should pass the browser boundary");
+    observedTypes.add(parsed.type);
+    assert.equal(parseHostMessage({ ...projection, unexpected: true }), undefined, `${parsed.type} rejects unknown fields`);
+    ui.receive(projection);
+  }
+  assert.deepEqual([...observedTypes].sort(), ["attachmentHistory", "attachmentPreview", "attachmentState", "changeReviewState", "commandCatalogueState", "executionProfileState", "interactionState", "providerConfigState", "queuedTextState", "savedHistoryState", "sessionRenameState", "sessionState", "sessionUsageState", "uiLanguageState", "workspaceState"]);
+}
+
+function assertHeaderAndFolderAccessors(workspace: Extract<HostMessage, { type: "workspaceState" }>, ui: ReturnType<typeof clientHarness>, getterCalls: { value: number }) {
+  const pong = { version: 3, type: "pong", viewId: workspace.viewId, generation: workspace.generation } as const;
+  assert.ok(parseHostMessage(pong));
+  assert.equal(parseHostMessage({ ...pong, unexpected: true }), undefined);
+  const beforeMalformed = ui.client.getSnapshot();
+  const topLevelAccessor = Object.defineProperty({ ...pong }, "version", {
+    enumerable: true,
+    get() { getterCalls.value++; throw new Error("version accessor must not run"); },
+  });
+  assert.doesNotThrow(() => ui.receive(topLevelAccessor));
+  assert.equal(parseHostMessage(topLevelAccessor), undefined);
+  assert.equal(getterCalls.value, 0);
+  assert.equal(ui.client.getSnapshot(), beforeMalformed);
+
+  assert.ok(workspace.folder);
+  const folderAccessor = Object.defineProperty({ ...workspace.folder }, "name", {
+    enumerable: true,
+    get() { getterCalls.value++; throw new Error("folder accessor must not run"); },
+  });
+  const nestedAccessor = { ...workspace, folder: folderAccessor };
+  assert.doesNotThrow(() => ui.receive(nestedAccessor));
+  assert.equal(parseHostMessage(nestedAccessor), undefined);
+  assert.equal(getterCalls.value, 0);
+  assert.equal(ui.client.getSnapshot(), beforeMalformed);
+  return { workspace, ui, beforeMalformed, getterCalls };
+}
+
+function assertListAccessors(check: ReturnType<typeof assertHeaderAndFolderAccessors>): void {
+  const { workspace, ui, beforeMalformed, getterCalls } = check;
+  const lineAccessor = Object.defineProperty({ role: "assistant", text: "safe" }, "id", {
+    enumerable: true,
+    get() { getterCalls.value++; throw new Error("list-item accessor must not run"); },
+  });
+  const nestedListAccessor = { ...workspace, messages: [lineAccessor] };
+  assert.doesNotThrow(() => ui.receive(nestedListAccessor));
+  assert.equal(parseHostMessage(nestedListAccessor), undefined);
+  const accessorList = new Array(1);
+  Object.defineProperty(accessorList, "0", {
+    enumerable: true,
+    get() { getterCalls.value++; throw new Error("array-element accessor must not run"); },
+  });
+  const listAccessor = { ...workspace, messages: accessorList };
+  assert.doesNotThrow(() => ui.receive(listAccessor));
+  assert.equal(parseHostMessage(listAccessor), undefined);
+  assert.equal(getterCalls.value, 0);
+  assert.equal(ui.client.getSnapshot(), beforeMalformed);
+}
+
+function assertExtraFieldsAndOptionalContract(check: ReturnType<typeof assertHeaderAndFolderAccessors>): void {
+  const { workspace, ui, beforeMalformed, getterCalls } = check;
+  const nestedExtra = { ...workspace, folder: { ...workspace.folder, unexpected: true } };
+  const itemExtra = { ...workspace, messages: [{ role: "assistant", text: "safe", unexpected: true }] };
+  assert.equal(parseHostMessage(nestedExtra), undefined);
+  assert.equal(parseHostMessage(itemExtra), undefined);
+  assert.equal(getterCalls.value, 0);
+  assert.equal(ui.client.getSnapshot(), beforeMalformed);
+
+  const withContractOptionals = {
+    ...workspace,
+    messages: [{ role: "assistant" as const, text: "line", id: "message-1" }],
+    activities: [{ id: "activity-1", messageId: "message-1", contentIndex: 2, toolCallId: "tool-call-1", kind: "tool" as const,
+      tool: "read", text: "reading", input: "{}", status: "complete" as const, truncated: false }],
+  };
+  const parsedOptionals = parseHostMessage(withContractOptionals);
+  assert.ok(parsedOptionals?.type === "workspaceState");
+  assert.equal(parsedOptionals.messages[0]?.id, "message-1");
+  assert.equal(parsedOptionals.activities[0]?.contentIndex, 2);
+  assert.equal(parsedOptionals.activities[0]?.toolCallId, "tool-call-1");
+  assert.equal(parsedOptionals.activities[0]?.tool, "read");
+  assert.equal(parsedOptionals.activities[0]?.input, "{}");
+}
+
 test("v3 host DTO parsing rejects accessors and extra fields while preserving real projections", async () => {
   const { h, v } = await readySettings();
   const ui = clientHarness();
-  let getterCalls = 0;
+  const getterCalls = { value: 0 };
   try {
-    v.action("getAttachmentHistory");
-    v.action("getAttachmentPreview", { requestId: "preview-1", snapshotId: "missing-snapshot", offset: 0 });
-    const projections: object[] = [];
-    for (const message of v.sent) {
-      if (typeof message === "object" && message !== null && !Array.isArray(message) && "type" in message) projections.push(message);
-    }
-    const observedTypes = new Set<string>();
-    for (const projection of projections) {
-      const parsed = parseHostMessage(projection);
-      assert.ok(parsed, "a real host projection should pass the browser boundary");
-      observedTypes.add(parsed.type);
-      assert.equal(parseHostMessage({ ...projection, unexpected: true }), undefined, `${parsed.type} rejects unknown fields`);
-      ui.receive(projection);
-    }
-    assert.deepEqual([...observedTypes].sort(), ["attachmentHistory", "attachmentPreview", "attachmentState", "changeReviewState", "commandCatalogueState", "executionProfileState", "interactionState", "providerConfigState", "queuedTextState", "savedHistoryState", "sessionState", "uiLanguageState", "workspaceState"]);
-
+    assertProjectionInventory(v, ui);
     const workspace = v.state();
-    const pong = { version: 3, type: "pong", viewId: workspace.viewId, generation: workspace.generation } as const;
-    assert.ok(parseHostMessage(pong));
-    assert.equal(parseHostMessage({ ...pong, unexpected: true }), undefined);
-    const beforeMalformed = ui.client.getSnapshot();
-    const topLevelAccessor = Object.defineProperty({ ...pong }, "version", {
-      enumerable: true,
-      get() { getterCalls++; throw new Error("version accessor must not run"); },
-    });
-    assert.doesNotThrow(() => ui.receive(topLevelAccessor));
-    assert.equal(parseHostMessage(topLevelAccessor), undefined);
-    assert.equal(getterCalls, 0);
-    assert.equal(ui.client.getSnapshot(), beforeMalformed);
-
-    assert.ok(workspace.folder);
-    const folderAccessor = Object.defineProperty({ ...workspace.folder }, "name", {
-      enumerable: true,
-      get() { getterCalls++; throw new Error("folder accessor must not run"); },
-    });
-    const nestedAccessor = { ...workspace, folder: folderAccessor };
-    assert.doesNotThrow(() => ui.receive(nestedAccessor));
-    assert.equal(parseHostMessage(nestedAccessor), undefined);
-    assert.equal(getterCalls, 0);
-    assert.equal(ui.client.getSnapshot(), beforeMalformed);
-
-    const lineAccessor = Object.defineProperty({ role: "assistant", text: "safe" }, "id", {
-      enumerable: true,
-      get() { getterCalls++; throw new Error("list-item accessor must not run"); },
-    });
-    const nestedListAccessor = { ...workspace, messages: [lineAccessor] };
-    assert.doesNotThrow(() => ui.receive(nestedListAccessor));
-    assert.equal(parseHostMessage(nestedListAccessor), undefined);
-    const accessorList = new Array(1);
-    Object.defineProperty(accessorList, "0", {
-      enumerable: true,
-      get() { getterCalls++; throw new Error("array-element accessor must not run"); },
-    });
-    const listAccessor = { ...workspace, messages: accessorList };
-    assert.doesNotThrow(() => ui.receive(listAccessor));
-    assert.equal(parseHostMessage(listAccessor), undefined);
-    assert.equal(getterCalls, 0);
-    assert.equal(ui.client.getSnapshot(), beforeMalformed);
-
-    const nestedExtra = { ...workspace, folder: { ...workspace.folder, unexpected: true } };
-    const itemExtra = { ...workspace, messages: [{ role: "assistant", text: "safe", unexpected: true }] };
-    assert.equal(parseHostMessage(nestedExtra), undefined);
-    assert.equal(parseHostMessage(itemExtra), undefined);
-    assert.equal(getterCalls, 0);
-    assert.equal(ui.client.getSnapshot(), beforeMalformed);
-
-    const withContractOptionals = {
-      ...workspace,
-      messages: [{ role: "assistant" as const, text: "line", id: "message-1" }],
-      activities: [{ id: "activity-1", messageId: "message-1", contentIndex: 2, toolCallId: "tool-call-1", kind: "tool" as const,
-        tool: "read", text: "reading", input: "{}", status: "complete" as const, truncated: false }],
-    };
-    const parsedOptionals = parseHostMessage(withContractOptionals);
-    assert.ok(parsedOptionals?.type === "workspaceState");
-    assert.equal(parsedOptionals.messages[0]?.id, "message-1");
-    assert.equal(parsedOptionals.activities[0]?.contentIndex, 2);
-    assert.equal(parsedOptionals.activities[0]?.toolCallId, "tool-call-1");
-    assert.equal(parsedOptionals.activities[0]?.tool, "read");
-    assert.equal(parsedOptionals.activities[0]?.input, "{}");
+    const check = assertHeaderAndFolderAccessors(workspace, ui, getterCalls);
+    assertListAccessors(check);
+    assertExtraFieldsAndOptionalContract(check);
   } finally { ui.client.dispose(); h.provider.dispose(); }
 });
 test("attachment metadata paths are bounded by UTF-8 bytes", () => {

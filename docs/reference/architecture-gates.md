@@ -115,7 +115,7 @@ Before adding one:
 1. **Check existing coverage.** Prefer clarifying an existing gate when the new question is part of the same risk and would share its decision. Do not create gates named after a WI, framework or proposed answer merely to track implementation work.
 2. **Define a stable question.** Use `gate-<architectural-topic>` and phrase the summary as the risk to establish, not the desired solution—for example a delivery boundary rather than `gate-use-react`.
 3. **Define evidence and exclusions.** The detailed entry must state the question, evidence expected, current status/limits, and what acceptance would not establish. Evidence should match the risk rather than follow a universal checklist.
-4. **Link active ownership.** Record the gate ID, decision class and missing conditions in each relevant assigned WI in `ACTIVE.md`. A gate may span several WIs; the [collaboration policy](../guides/agent-collaboration.md#4-bounded-parallel-work-maximum-3-tasks) bounds concurrency and serializes shared ownership. Independent task approvals do not independently accept the gate.
+4. **Link active ownership.** Record the gate ID, decision class and missing conditions in the relevant current WI in `ACTIVE.md`. A gate may span several WIs, but only one current WI remains active under WIP=1.
 5. **Start conservatively.** A new gate normally starts `Open`. Use `In spike` only when a bounded investigation with a stated question, environment and limits is actually active. Do not create a gate directly as `Accepted` merely because implementation already exists.
 6. **Require the formal decision.** Move to `Accepted` only after the maintainer confirms the architectural choice, sufficient scoped verification is recorded, and the summary links an Accepted ADR.
 

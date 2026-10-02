@@ -24,7 +24,7 @@
 | 应放在… | 而非 discussions，当… |
 |---------|----------------------|
 | [`ACTIVE.md`](../../ACTIVE.md) **停车场** | 只是一句未来 WI 想法 |
-| [`ACTIVE.md`](../../ACTIVE.md) **Last session** | 是当前 WI 的交接 |
+| [`ACTIVE.md`](../../ACTIVE.md) **Last session** | 是主 agent 总交接；链接的各 WI 团队提案／证据在活动期间可保留于此 |
 | [`decisions/`](../decisions/) | 维护者**已确认**符合 ADR 条件的选择（所需验证完成后才标 Accepted） |
 | [`product-requirements.md`](../product-requirements.md) | 定义可验收的**用户可见**范围 |
 | [`archive/`](../archive/) | 内容**已过时**但需保留 |
@@ -68,6 +68,14 @@
 - [设置界面重设计调研](2026-09-29-settings-redesign-research.zh.md)
 - [ARCH-08 流式与历史预览成本](2026-09-30-arch-08-streaming-history-cost.zh.md)
 - [资源与期限测量](2026-09-30-resource-timeout-measurement.zh.md)
+
+### 活动团队任务记录
+
+- [WI-079 用量 — Prepare、证据与交接](2026-10-02-wi-079-team.zh.md)
+- [WI-080 当前会话重命名 — Prepare、证据与交接](2026-10-02-wi-080-team.zh.md)
+- [WI-081 回复复制 — Prepare、证据与交接](2026-10-02-wi-081-team.zh.md)
+
+各记录描述限定授权切片；ACTIVE 维护当前批准／状态登记，PRD 维护行为。原生验收仍须实际观察后确认。
 
 ### 代码审计与核验证据
 

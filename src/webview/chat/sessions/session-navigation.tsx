@@ -4,6 +4,8 @@ import { useUiText } from "../../components/index.js";
 
 type NavigationProps = {
   conversationName: string | undefined;
+  renameDisabled: boolean;
+  onRename: () => void;
   canBrowse: boolean;
   newConversationDisabled: boolean;
   settingsDisabled: boolean;
@@ -16,10 +18,11 @@ type NavigationProps = {
 };
 
 /** Navigation chrome; transcript scroll restoration and session intents stay with the page. */
-export function SessionNavigation({ conversationName, canBrowse, newConversationDisabled, settingsDisabled, historyOpen, historyId, browse, onBrowse, onNewConversation, onOpenSettings }: NavigationProps): ReactElement {
+export function SessionNavigation({ conversationName, renameDisabled, onRename, canBrowse, newConversationDisabled, settingsDisabled, historyOpen, historyId, browse, onBrowse, onNewConversation, onOpenSettings }: NavigationProps): ReactElement {
   const { text: t } = useUiText();
   return <nav className="candidate__navigation" aria-label={t("Conversation navigation")}>
-      <span className="candidate__current" aria-label={t("Current conversation")} title={conversationName}>{conversationName}</span>
+      <button className="candidate__current" type="button" aria-label={t("Rename current conversation")} title={conversationName}
+        disabled={renameDisabled} onClick={onRename}><span aria-label={t("Current conversation")}>{conversationName}</span></button>
       <button className="candidate__icon session-icon-button" type="button" aria-label={t("Browse saved conversations")} title={t("Chat history")} disabled={!canBrowse} ref={browse} aria-expanded={historyOpen} aria-controls={historyId}
         onClick={onBrowse}>
         <SessionIcon name="clock" />

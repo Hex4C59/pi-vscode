@@ -10,24 +10,6 @@ Project-specific agent working rules for **pi VS Code**. **Universal rules** are
 
 Detailed playbooks live under `docs/guides/agent/` (see **Load map**).
 
-## Multi-agent isolation
-
-Assume other agents are working concurrently. **One task = one branch + one dedicated worktree.** The primary checkout and local `master` / `main` are coordination surfaces, not development workspaces. Continue a task only in its own worktree; do all edits, tests, conflict resolution and authorized commits there.
-
-- Before any edit, create the assigned worktree from `origin/master`; use `codex/<task>` unless the maintainer names another branch. See [collaboration §5](docs/guides/agent-collaboration.md#multi-agent-task-isolation) for commands and [§6](docs/guides/agent-collaboration.md#isolated-task-sheet) for the task sheet.
-- Never reuse, modify or delete another task's branch/worktree, import its uncommitted files, mix unrelated cleanup, or merge a task into local `master` / `main` for integration or testing.
-- Never run `git reset --hard`, `git checkout .`, `git clean -fd`, `git stash` or `git add .` unless the maintainer explicitly names that exact command. Stage named paths only.
-- Refresh and resolve conflicts only in the task worktree, with explicit commit/history-change authorization. Stop if a conflicting file was not changed by this task. Never force-push; a published branch uses an authorized merge instead of rebase.
-- Before opening or updating a PR, run `npm run check:pr-base`, rerun affected checks after any refresh, and push only this branch when authorized. Bind evidence to the actual tested candidate and base under [collaboration §5](docs/guides/agent-collaboration.md#candidate-evidence-and-remote-checks). A worktree does not grant commit, rebase, merge, push or PR permission.
-- Run at most three independently assigned tasks concurrently, across WIs or separately approved maintenance. Each needs its own approval, task sheet, branch/worktree and disjoint write scope; one coordinator owns the task registry and shared records. See [collaboration §4](docs/guides/agent-collaboration.md#4-bounded-parallel-work-maximum-3-tasks) for admission and slot accounting. Do not modify an unassigned hotspot; request ownership first.
-
-Hotspots (one assigned writer at a time):
-
-- `src/extension/piChatViewProvider.ts`
-- `src/extension/contracts/webviewProtocol.ts`
-- `package.json` and `package-lock.json`
-- `ACTIVE.md` (coordinator only)
-
 ## Document responsibilities and conflict priority
 
 Use each document for the kind of question it owns. The list also gives conflict priority from highest to lowest:
@@ -82,7 +64,7 @@ On Windows, when `mcp__node_repl` is available, read files through Node filesyst
 3. Follow the applicable load-map routes below. Read archived material only when the current question needs its evidence.
 4. Check the recorded approval scope before editing application code. A Prepare proposal is not Build authorization; obtain and record maintainer approval before advancing.
 
-Mentioning only `ACTIVE.md` (or saying 「继续 pi VS Code」) supplies a session entry point, not a task assignment or waiver of required reading or approval. Select only the coordinator-assigned task ID; if ambiguous, ask rather than claiming the first WI or advancing the queue. Recording discussion or increasing concurrency does not authorize implementation. Git commits still require an explicit maintainer request.
+Mentioning only `ACTIVE.md` (or saying 「继续 pi VS Code」) supplies a session entry point, not a waiver of required reading or approval. Use one agent and one current WI (WIP=1), following the collaboration guide. Recording discussion does not authorize implementation. Git commits still require an explicit maintainer request.
 
 ## Conversation records
 

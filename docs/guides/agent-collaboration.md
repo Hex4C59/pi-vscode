@@ -22,7 +22,7 @@ This guide owns work approval and handoff. [Product requirements](../product-req
 | States goals, preferences, and what feels wrong | Reads requirements, architecture, `AGENTS.md`, and `ACTIVE.md` |
 | Chooses among proposed options (`yes` / `no` / `option B`) | Proposes the next work item, approach, risks, and acceptance steps |
 | Accepts or rejects outcomes like an end user | Implements, runs checks, documents how to verify |
-| Adds ideas to the parking lot | Keeps at most three independently approved tasks running under one coordinator |
+| Adds ideas to the parking lot | Completes approved work one WI at a time |
 
 The maintainer is not expected to know the product stack deeply. The agent proposes **what to do next**; the maintainer approves before large or irreversible code changes.
 
@@ -34,24 +34,20 @@ Use [AGENTS](../../AGENTS.md) for document responsibilities and conflict priorit
 
 When a new confirmed choice in chat differs from ACTIVE, update ACTIVE to that confirmed choice while retaining unresolved conditions.
 
-## 4. Bounded parallel work (maximum 3 tasks)
+## 4. Work in progress (WIP=1)
 
-- The maintainer approved this repository's replacement of WIP=1: at most **three independently assigned tasks** may execute concurrently, including different WIs, maintenance and read-only audits. More than one task is allowed, not required; never invent work to fill slots. This changes scheduling, not product scope or Git permissions.
-- One named coordinator admits tasks and is the sole writer of the registry and shared records. Record each task's ID, approval/phase, executor, exclusive paths, excluded paths, branch/worktree, dependencies, checks and handoff. Each task has a dedicated branch/worktree and its own acceptance; unrelated features do not share a task sheet.
-- The canonical registry heading is `## 任务登记（最多 3 个执行槽位）`, followed by columns `任务 ID`, `阶段`, `槽位`, `执行者／所有者`, `分支／worktree`, `范围／依赖`. Use `Build`, `Prepare`, `Audit` with unique slots `1`–`3`, or `Blocked`, `Paused`, `Done` with `-`. Executing rows name a distinct branch / worktree pair. Under `## 任务提案`, each registered WI has its own `### WI-xxx` proposal and `####` detail headings; approved maintenance may link its scoped record. The docs gate checks every WI's fields and Build PRD traceability, not just the first. It checks declarations, not actual running processes, path aliasing or Git ownership; the coordinator must verify those before dispatch.
-- Count each executing Prepare, Build or audit task, including delegated subtasks, against the three slots. A coordinator executing its own task consumes one slot; scheduling alone does not. A parent with no executor is not counted again. Blocked/paused tasks release their slot only after their executor has stopped; keep their owner and unresolved dependencies recorded. No extra agent or work is authorized merely because a slot is free.
-- Before dispatch, check overlaps in paths, public APIs, schema, fixtures, lockfiles and evidence/verification resources. Assign one writer per hotspot; serialize conflicting work even in different worktrees. Do not schedule consumers against another worktree's uncommitted code; shared contract changes must precede consumers through an authorized committed baseline. Real-host verification that shares a VS Code profile/window or port is also serialized or explicitly isolated.
-- Workers execute only their assigned task. A vague “continue ACTIVE” request must not claim the first entry or automatically promote another task; ask for assignment when unclear. Former single-task continuous instructions no longer confer queue-wide ownership after an explicit handoff.
-- New ideas go to **Parking lot** in `ACTIVE.md`, not into implementation, until the maintainer reprioritizes.
-- Each active WI has a persistent, fully reviewable proposal in `ACTIVE.md` covering goal and scope, approach and risks, observable acceptance, out of scope, applicable gate ID and decision class, **PRD assessment**, and approval status. A proposal can be incomplete during Prepare, but Build requires recorded maintainer approval.
-- `ACTIVE.md` is the current-work entry point, not an append-only history. Its stable sections are: session entry, a coordinator-owned task registry, separately identified inline WI proposals (maintenance may link its record), Current focus and open items, Parking lot, at most two recent handoffs, and a compact Completed WI index. Preserve unassigned/blocked WI proposals without treating them as running. Closed-WI proposals, long acceptance checklists and older handoffs belong under `docs/archive/`, with a link from the index.
-- Architecture **gates** must not be treated as shipped product until closed with an Accepted ADR.
+- One agent owns implementation, review, verification and handoff for one current work item (`WI-xxx`). Finish it, or record its blocker and the next focus, before starting another. Use additional agents only when the maintainer explicitly requests them for the current task.
+- New ideas go to **Parking lot** until explicitly approved. Previously approved unfinished WIs retain their scope and acceptance requirements in a sequential queue linked from `ACTIVE.md`.
+- The current WI records scope, approval, dependencies, expected paths, failure modes, PRD/architecture impact, observable acceptance, verification and handoff status. Prepare must be complete before Build; existing explicit scoped authorization remains valid.
+- Reuse the suitable current checkout and working branch. Inspect staged/unstaged changes and preserve uncertain ownership before editing. The agent maintains `ACTIVE.md` and its linked evidence through completion.
+- `ACTIVE.md` contains one Current work section, Current focus and open items, Parking lot, at most two recent handoffs and a compact Completed WI index. Detailed proposals may live in linked WI records; closed records belong under `docs/archive/`.
+- Architecture gates, security, actual acceptance and Git authorization requirements remain unchanged.
 
 ### Progressive loading
 
 Repository links form a routing tree, not a mandate to read every reachable file:
 
-1. **Required entry:** follow the kernel's baseline reads; for implementation, read this guide, the registry and the assigned WI proposal in full. Read other task ownership/dependencies, not every unrelated proposal.
+1. **Required entry:** follow the kernel's baseline reads; for implementation, read this guide and the current WI in `ACTIVE.md` in full.
 2. **Conditionally required:** follow the matching `AGENTS.md` load-map route and the current WI's links for requirements, architecture, contracts, playbooks and upstream evidence.
 3. **Background evidence:** open discussions and archive records only when the current question needs prior rationale or observations.
 
@@ -61,8 +57,8 @@ Stop expanding links when scope, constraints, contract and required evidence are
 
 | Step | Action and completion criterion |
 |------|---------------------------------|
-| Open | Use kernel baseline reads, this guide and ACTIVE to establish the assigned task ID/WI, approval, owner, last handoff, proposed focus and acceptance. Mentioning only ACTIVE uses the same entry procedure and does not assign a task. |
-| Propose (Prepare) | Complete the reviewable proposal from §4 in ACTIVE, with decision class `none` / `spike-only` / `adr-after-approval` and applicable gate. Record maintainer approval of approach/scope before Build; existing explicit approval remains valid. |
+| Open | Use kernel baseline reads, this guide and ACTIVE to establish the WI, approval, last handoff, proposed focus and acceptance. Mentioning only ACTIVE uses the same entry procedure. |
+| Propose (Prepare) | Complete the reviewable proposal from §4 in the linked WI record, with decision class `none` / `spike-only` / `adr-after-approval` and applicable gate. Record maintainer approval of approach/scope before Build; existing explicit approval remains valid. |
 | Build | Implement the approved proposal using AGENTS task routes and run applicable checks. Completion requires reviewable behavior and verification results, not merely edited files. |
 | Close | Reconcile the approved slice and acceptance; fix or explicitly defer differences. Update the latest handoff and preserve history under §7. Keep missing maintainer acceptance or ADR conditions pending and name the gap. |
 
@@ -70,34 +66,15 @@ Stop expanding links when scope, constraints, contract and required evidence are
 
 ### Git ownership and concern isolation
 
-At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. Every change must have clear ownership and a destination before staging. This classification does not authorize sharing a development worktree between tasks.
+At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns, but every change must have clear ownership and a destination before staging.
 
 When staging or committing, load the [Git commit convention](../git-commit-convention.md), which owns ACTIVE isolation, overlapping-hunk recovery and full staged-content review. Keep the WI record distinct from implementation concerns, preserving the existing index and user work. Commits still require explicit authorization.
-
-### Multi-agent task isolation
-
-The hard rules and hotspot inventory live in [AGENTS](../../AGENTS.md#multi-agent-isolation). Use this sequence for every editing task:
-
-1. Admit the task under §4 and assign one task sheet with its ID/approval, explicit branch, worktree, base, allowed paths, excluded paths, dependencies, checks, Git permissions and coordinator. Check overlapping paths, shared contracts, fixtures, lockfiles and shared verification resources before dispatch; do not launch overlapping writers. Naming a hotspot in scope must explicitly assign its sole writer.
-2. Inspect the primary checkout without changing it. Preserve existing work and verify approval against the committed base. If a product task needs approval or code present only in another worktree's uncommitted files, stop and ask its owner to publish an authorized baseline; do not copy those files. Separately authorized workflow maintenance keeps the product WI unchanged and records approval/handoff in its own linked discussion, as in the [isolation rollout](../discussions/2026-10-02-agent-isolation.md).
-3. After worktree/branch creation is authorized, run from the repository root, replacing both `<task>` placeholders with the assigned unique name:
-
-```bash
-git fetch origin master
-git worktree add -b codex/<task> ../pi-vscode-worktrees/<task> origin/master
-cd ../pi-vscode-worktrees/<task>
-```
-
-4. Resume only the same task's worktree, after verifying its path, branch and owner with `git worktree list` and `git status`. A name collision is not permission to reuse another task's checkout. All editing and verification, including coordination-document changes, happens in the assigned worktree, never the primary checkout.
-5. Run `npm run check:pr-base` before PR creation/update. It fetches `origin/master` and fails unless that ref is an ancestor of HEAD; fetch/Git errors fail closed. It changes shared remote-tracking metadata, not task files or commits. It neither refreshes history automatically nor enforces server-side PR policy. The result covers the fetched snapshot only; rerun if the base advances.
-6. If the gate fails, obtain explicit history-change authorization and a clean owned worktree first. For a private, never-pushed branch use `git fetch origin master && git rebase origin/master`; for an already-pushed branch use `git fetch origin master && git merge origin/master`, never force-push. Resolve only conflicts in files changed by this task; stop and ask on any other conflicting path. Re-run affected checks after refresh, then the base gate immediately before an authorized push/PR operation. Push only the assigned branch, never local `master` / `main`.
-7. The coordinator receives each subtask's changed paths, actual results, artifacts and remaining risks and updates shared records serially in its own assigned worktree. No subtask edits `ACTIVE.md` unless assigned coordinator ownership. Separately authorized maintenance uses its scoped handoff instead of replacing the product WI. Once merged and explicitly authorized for cleanup, verify this task's commits are included in the fetched base, preserve needed ignored artifacts and confirm no uncommitted/unpushed work remains before removing only this task's worktree/branch. Do not accumulate completed worktrees or delete other tasks' resources.
 
 ### Candidate evidence and remote checks
 
 Task-candidate validation and PR-integration validation answer different questions:
 
-- Validate the task's committed candidate in its worktree after incorporating the fetched `origin/master`, with relevant checks and resolved task-owned conflicts. Never merge into local `master` to manufacture a test candidate.
+- Validate the committed candidate after incorporating the fetched `origin/master`, resolving conflicts and running relevant checks in the current checkout.
 - Before landing, validate the actual integration candidate, such as the PR merge ref or a trusted merge-queue candidate. Record its tested commit, target base and PR head, not merely the task branch name. A task result applies to another candidate only when the relevant executable tree is identical; a changed base requires updated integration evidence.
 - Formal candidate evidence identifies a committed, clean source tree. Checks against uncommitted files are development evidence: record the dirty state and retain the patch/source snapshot, rather than claiming that HEAD alone passed. Changes after a run do not inherit its result.
 - The [PR base workflow](../../.github/workflows/pr-base.yml) runs on all PRs targeting `master`, including documentation-only changes. The shared CLI accepts `--base <full-commit-sha> --head <full-commit-sha>` without fetching and checks those exact snapshots, not checkout HEAD, which may be a synthetic merge. The no-argument local command still fetches first. The workflow preserves fixture results and the PR ancestry log; neither proves product behavior or real-host acceptance.
@@ -118,46 +95,14 @@ Environment: <actual host/runtime and relevant versions>
 Artifacts: <repeatable report/log locations>
 ```
 
+
 ## 6. Maintainer prompts (copy-paste)
-
-### Isolated task sheet
-
-Send one sheet per editing task; the same sheet may resume that task in a later chat. A sheet grants only its named permissions, not permission to dispatch more agents. Fill checks with the approved behavior and required repeatable artifact, retaining the existing test-first/E2E policy.
-
-```text prompt
-Task: <one concrete goal>
-Task ID / WI / approval: <assigned ID and individually approved scope; Build or Prepare-only>
-Coordinator: <sole owner of shared records>
-Branch: codex/<task>
-Worktree: ../pi-vscode-worktrees/<task>
-Base: origin/master only; create the assigned worktree before any edit
-
-Dependencies / slot: <required committed baseline, serialized resources and assigned execution slot>
-
-In scope (exclusive write ownership):
-- <file or directory; explicitly assign any hotspot>
-Out of scope (do not touch):
-- <other owners' paths, shared APIs/schema/types, ACTIVE.md unless coordinator>
-
-Do not reformat unrelated files or import another worktree's uncommitted code.
-Checks / artifact: <targeted checks, applicable repository checks, repeatable artifact>
-Git authorization: <creation only by default; name any allowed commit/history/push/PR operations>
-
-Done when:
-1. All edits and checks are in the assigned worktree.
-2. Required checks pass and the artifact is available; report unverified areas.
-3. Before an authorized PR, check:pr-base passes after any authorized refresh.
-4. Conflicts are limited to task-changed paths; stop on any other conflicting file.
-5. Report changed paths, actual checks, artifacts and remaining risks to the coordinator.
-
-Do not commit, rewrite history, push or open a PR unless explicitly authorized.
-```
 
 **New chat (routine):**
 
 ```text
 继续 pi VS Code。只 @ ACTIVE.md。
-先核对任务登记与分配 ID、Last session 和验收；没有明确归属时先问，不自动认领或晋升任务。
+先复述当前 WI、Last session、建议今天完成什么（含验收）；我确认后再改代码。
 ```
 
 **Acceptance failed:**
@@ -187,7 +132,7 @@ Apply this checkpoint when a discussion reaches a meaningful interim conclusion,
 | WI close or a confirmed replacement leaves inactive material worth retaining | Archive affected old discussions, proposals or long closed-WI records under `docs/archive/`, with reason, historical status and a replacement link (or an explicit explanation when none exists). Keep historical ADRs in `docs/decisions/` with status and replacement relationships. |
 | Routine Q&A, a small change or a one-line future idea | No standalone document; use the existing handoff or parking lot if needed. |
 
-Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep the complete current-WI proposal, approval state, unresolved blockers and brief handoff in `ACTIVE.md`; link detailed background, decisions and closed history instead of copying them back. At WI close, move the inactive proposal, long acceptance evidence and superseded handoffs to archive, then replace them with one row in the Completed WI index. The approved current scope and acceptance must remain readily reviewable from ACTIVE.
+Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep the complete current-WI proposal, approval state, unresolved blockers and brief handoff in the linked per-WI record; link detailed background, decisions and closed history instead of copying them back. At WI close, move the inactive proposal, long acceptance evidence and superseded handoffs to archive, then replace them with one row in the Completed WI index. The approved current scope and acceptance must remain readily reviewable from ACTIVE.
 
 This rule provides standing authorization for recordkeeping and archival **within the discussion or work already authorized**, without asking whether to save or where to put it. It does not approve a proposal, broaden implementation scope, start a bulk historical cleanup, authorize deletion or create Git commits. An explicit read-only request takes precedence. If approval is ambiguous, ask only about the specific decision; never infer approval from an agent recommendation or a successful test.
 

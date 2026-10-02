@@ -96,9 +96,12 @@ function parseFolder(value: unknown): DataRecord | undefined {
 }
 
 function parseChatLine(value: unknown): DataRecord | undefined {
-  const line = exactRecord(value, ["role", "text"], ["id"]);
-  return line && oneOf(line.role, ["user", "assistant"]) && string(line.text)
-    && (!Object.hasOwn(line, "id") || string(line.id, 200)) ? line : undefined;
+  const line = exactRecord(value, ["role", "text"], ["id", "bodyCopyEligible"]);
+  if (!line || !oneOf(line.role, ["user", "assistant"]) || !string(line.text)
+    || (Object.hasOwn(line, "id") && !string(line.id, 200))) return;
+  if (Object.hasOwn(line, "bodyCopyEligible")
+    && (line.bodyCopyEligible !== true || line.role !== "assistant" || !line.text.trim())) return;
+  return line;
 }
 
 function parseSavedHistoryLine(value: unknown): DataRecord | undefined {
@@ -218,232 +221,284 @@ function parseFeedback(value: unknown): DataRecord | undefined {
     && oneOf(item.level, ["info", "warning", "error"]) && utf8Text(item.text, 32768) ? item : undefined;
 }
 
+function parseUsage(value: unknown): DataRecord | undefined {
+  const usage = exactRecord(value, ["tokens", "context", "cost"]);
+  if (!usage) return;
+  const tokens = exactRecord(usage.tokens, ["input", "output", "cacheRead", "cacheWrite", "total"]);
+  if (!tokens || !Object.values(tokens).every(integer)) return;
+  const cost = usage.cost;
+  if (!(cost === null || (typeof cost === "number" && Number.isFinite(cost) && cost >= 0 && cost <= Number.MAX_SAFE_INTEGER))) return;
+  if (usage.context === null) return { tokens, context: null, cost };
+  const context = exactRecord(usage.context, ["tokens", "contextWindow", "percent"]);
+  if (!context || !(context.tokens === null || integer(context.tokens))
+    || !integer(context.contextWindow) || context.contextWindow === 0
+    || !(context.percent === null || (typeof context.percent === "number" && Number.isFinite(context.percent)
+      && context.percent >= 0 && context.percent <= 100))) return;
+  return { tokens, context, cost };
+}
+
+/** Narrow and copy the complete v3 DTO before the browser consumes host data. */
+function parseSessionRenameStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  return hasFields(message, [...envelope, "revision", "status"]) && integer(message.revision)
+          && oneOf(message.status, ["unavailable", "ready", "renaming"]) ? message as unknown as HostMessage : undefined;
+}
+
+function parseSessionUsageStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  if (!hasFields(message, [...envelope, "revision", "status", "usage"]) || !integer(message.revision)
+          || !oneOf(message.status, ["loading", "ready", "unavailable", "no-session"])) return;
+  if (message.status !== "ready") return message.usage === null ? message as unknown as HostMessage : undefined;
+  const usage = parseUsage(message.usage);
+  return usage ? { ...message, usage } as unknown as HostMessage : undefined;
+}
+
+function parseUiLanguageStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  return hasFields(message, [...envelope, "locale"]) && oneOf(message.locale, ["en", "zh-CN"]) ? message as unknown as HostMessage : undefined;
+}
+
+function parseInteractionStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  if (!hasFields(message, [...envelope, "active", "queuedCount", "phase", "errorCode", "feedback", "omittedFeedback"])
+          || !integer(message.queuedCount) || message.queuedCount > 7 || !integer(message.omittedFeedback)
+          || !oneOf(message.phase, ["idle", "waiting", "blocked"]) || !(message.errorCode === null || (string(message.errorCode, 100) && /^[a-z][a-z0-9-]*$/.test(message.errorCode)))) return;
+  const active = message.active === null ? null : parseInteractionForm(message.active);
+  const feedback = list(message.feedback, 16, parseFeedback);
+  if (active === undefined || !feedback || feedback.reduce((total, item) => total + encoder.encode(item.text as string).byteLength, 0) > 65536) return;
+  if ((message.phase === "idle" && (active !== null || message.queuedCount !== 0)) || (message.phase === "waiting" && active === null)) return;
+  return { ...message, active, feedback } as unknown as HostMessage;
+}
+
+function parseExecutionProfileStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  if (!hasFields(message, [...envelope, "profile", "displayName", "phase", "errorCode", "canSwitch", "canEnd", "canRecover"])
+          || !oneOf(message.profile, ["controlled", "trusted"]) || !(message.displayName === null || utf8Text(message.displayName, 512))
+          || !oneOf(message.phase, ["idle", "selecting", "switching", "recovery-required", "error"])
+          || !(message.errorCode === null || (string(message.errorCode, 100) && /^[a-z][a-z0-9-]*$/.test(message.errorCode)))
+          || [message.canSwitch, message.canEnd, message.canRecover].some(value => typeof value !== "boolean")) return;
+  return message as unknown as HostMessage;
+}
+
+function parseProviderConfigStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  if (!hasFields(message, [...envelope, "busy", "error", "defaultProvider", "defaultModelId", "defaultThinkingLevel", "thinkingLevels", "providers", "catalog"])
+          || typeof message.busy !== "boolean"
+          || !(message.error === null || string(message.error, 500))
+          || !(message.defaultProvider === null || string(message.defaultProvider, 64))
+          || !(message.defaultModelId === null || string(message.defaultModelId, 128))
+          || !(message.defaultThinkingLevel === null || string(message.defaultThinkingLevel, 16))) return;
+  const thinkingLevels = list(message.thinkingLevels, 16, item => string(item, 16) ? item : undefined);
+  const providers = list(message.providers, 64, item => {
+          const entry = exactRecord(item, ["providerId", "displayName", "configured", "authLabel", "canAddApiKey", "canLogout", "canSignIn", "canRemoveEndpoint"]);
+          return entry && string(entry.providerId, 64) && string(entry.displayName, 200)
+            && typeof entry.configured === "boolean" && typeof entry.canAddApiKey === "boolean" && typeof entry.canLogout === "boolean"
+            && typeof entry.canSignIn === "boolean" && typeof entry.canRemoveEndpoint === "boolean"
+            && (entry.authLabel === null || string(entry.authLabel, 200)) ? entry : undefined;
+        });
+  const catalog = list(message.catalog, 64, parseModel);
+  if (!providers || !catalog || !thinkingLevels
+          || (message.defaultThinkingLevel !== null && !thinkingLevels.includes(message.defaultThinkingLevel as string))) return;
+  return { ...message, providers, catalog, thinkingLevels } as unknown as HostMessage;
+}
+
+function parsePluginInventoryStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const errors = ["duplicate-path", "invalid-entry", "existing-unusable", "unknown-entry", "too-many", "too-large", "write-failed"] as const;
+  if (!hasFields(message, [...envelope, "busy", "error", "entries"]) || typeof message.busy !== "boolean"
+          || !(message.error === null || oneOf(message.error, errors))) return;
+  const entries = list(message.entries, 64, item => {
+          const entry = exactRecord(item, ["id", "displayName", "enabled"]);
+          return entry && id(entry.id) && utf8Text(entry.displayName, 512) && typeof entry.enabled === "boolean" ? entry : undefined;
+        });
+  return entries && new Set(entries.map(entry => entry.id)).size === entries.length
+          ? { ...message, entries } as unknown as HostMessage : undefined;
+}
+
+function parsePongMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  return hasFields(message, envelope) ? message as unknown as HostMessage : undefined;
+}
+
+function parseWorkspaceStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const required = [...envelope, "status", "folder", "choice", "busy", "error", "runtime", "runtimeDetail", "messages", "chatBusy", "chatError", "chatModel", "thinkingLevel", "thinkingLevels", "availableModels", "pendingModel", "pendingThinkingLevel", "modelBusy", "modelError", "activities", "approvals", "grants", "execution", "controlledExecution"];
+  if (!hasFields(message, required)
+          || !oneOf(message.status, ["no-folder", "multi-root", "remote", "non-file", "untrusted", "eligible"])
+          || (message.choice !== null && !oneOf(message.choice, ["allow", "decline"]))
+          || typeof message.busy !== "boolean" || typeof message.chatBusy !== "boolean" || typeof message.modelBusy !== "boolean"
+          || typeof message.controlledExecution !== "boolean"
+          || !oneOf(message.runtime, ["not-started", "starting", "ready", "stopping", "error"])
+          || !oneOf(message.execution, ["idle", "waiting", "thinking", "awaiting-approval", "executing", "replying", "retrying", "compacting", "completed", "stopped", "stopping", "failed"])
+          || ![message.error, message.runtimeDetail, message.chatError, message.chatModel, message.thinkingLevel, message.pendingThinkingLevel, message.modelError].every(nullableString)) return;
+  const folder = message.folder === null ? null : parseFolder(message.folder);
+  const pendingModel = message.pendingModel === null ? null : parseModel(message.pendingModel);
+  const thinkingLevels = list(message.thinkingLevels, 64, item => string(item, 100) ? item : undefined);
+  const availableModels = list(message.availableModels, 64, parseModel);
+  const messages = list(message.messages, 32, parseChatLine);
+  const activities = list(message.activities, 64, parseActivity);
+  const approvals = list(message.approvals, 8, parseApproval);
+  const grants = list(message.grants, 64, parseGrant);
+  if ((message.folder !== null && !folder) || (message.pendingModel !== null && !pendingModel)
+          || !thinkingLevels || !availableModels || !messages || !activities || !approvals || !grants) return;
+  return {
+          ...message,
+          folder,
+          pendingModel,
+          thinkingLevels,
+          availableModels,
+          messages,
+          activities,
+          approvals,
+          grants,
+        } as unknown as HostMessage;
+}
+
+function parseAttachmentStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const required = [...envelope, "draft", "preparation", "result", "historyCount", "retainedBytes", "lastSubmission"];
+  if (!hasFields(message, required) || !oneOf(message.preparation, ["idle", "picking", "preparing"])
+          || !integer(message.historyCount) || !integer(message.retainedBytes)) return;
+  const draft = exactRecord(message.draft, ["revision", "text", "acceptedEditSequence", "attachments"]);
+  const result = message.result === null ? null : parseAttachmentResult(message.result);
+  const lastSubmission = message.lastSubmission === null ? null : parseLastSubmission(message.lastSubmission);
+  if (!draft || !integer(draft.revision) || !string(draft.text, 8000) || !integer(draft.acceptedEditSequence)
+          || (message.result !== null && !result) || (message.lastSubmission !== null && !lastSubmission)) return;
+  const attachments = list(draft.attachments, 20, parseDraftAttachment);
+  if (!attachments || new Set(attachments.map(a => a.attachmentId)).size !== attachments.length
+          || new Set(attachments.map(a => a.snapshotId)).size !== attachments.length
+          || attachments.reduce((bytes, a) => bytes + (a.utf8Bytes as number), 0) > 1048576) return;
+  return {
+          ...message,
+          draft: { ...draft, attachments },
+          result,
+          lastSubmission,
+        } as unknown as HostMessage;
+}
+
+function parseCommandCatalogueStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  if (!hasFields(message, [...envelope, "revision", "status", "error", "rows"])
+          || !integer(message.revision) || !oneOf(message.status, ["loading", "ready", "empty", "unavailable"])
+          || message.error !== (message.status === "unavailable" ? "unavailable" : null)) return;
+  const rows = list(message.rows, 512, value => {
+          const row = exactRecord(value, ["name", "source"], ["description", "location"]);
+          if (!row || !utf8Text(row.name, 200) || !row.name || /[\s/]/.test(row.name)
+            || !oneOf(row.source, ["extension", "prompt", "skill"])
+            || (row.description !== undefined && !string(row.description, 500))
+            || (row.location !== undefined && !oneOf(row.location, ["user", "project", "path"]))) return;
+          return row;
+        });
+  if (!rows || (message.status === "ready" ? !rows.length : !!rows.length)
+          || new Set(rows.map(row => row.name)).size !== rows.length) return;
+  return { ...message, rows } as unknown as HostMessage;
+}
+
+function parseQueuedTextStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const errors = ["busy", "stale", "capacity", "invalid-text", "attachments", "runtime-unavailable", "unconfirmed", "unavailable", "draft-not-empty"] as const;
+  if (!hasFields(message, [...envelope, "revision", "phase", "error", "pending", "recovery"])
+          || !integer(message.revision)
+          || !oneOf(message.phase, ["idle", "submitting", "recalling", "stopping"])
+          || !(message.error === null || oneOf(message.error, errors))) return;
+  const pending = exactRecord(message.pending, ["steering", "followUp"]);
+  if (!pending) return;
+  const parsePending = (value: unknown) => {
+          const reusable = exactRecord(value, ["attribution", "reusable", "text"]);
+          if (reusable && oneOf(reusable.attribution, ["local", "external", "unknown"]) && reusable.reusable === true && string(reusable.text, 8000)) return reusable;
+          const hidden = exactRecord(value, ["attribution", "reusable"]);
+          return hidden && oneOf(hidden.attribution, ["local", "external", "unknown"]) && hidden.reusable === false ? hidden : undefined;
+        };
+  const steering = list(pending.steering, 32, parsePending);
+  const followUp = list(pending.followUp, 32, parsePending);
+  if (!steering || !followUp || steering.length + followUp.length > 32) return;
+  const recovery = list(message.recovery, 32, item => {
+          const recalled = exactRecord(item, ["id", "mode", "status", "text"]);
+          if (recalled && id(recalled.id) && oneOf(recalled.mode, ["steering", "follow-up"]) && recalled.status === "recalled" && string(recalled.text, 8000)) return recalled;
+          const unavailable = exactRecord(item, ["id", "mode", "status"]);
+          return unavailable && id(unavailable.id) && oneOf(unavailable.mode, ["steering", "follow-up"]) && unavailable.status === "unavailable"
+            ? unavailable : undefined;
+        });
+  return recovery && new Set(recovery.map(item => item.id)).size === recovery.length
+          ? { ...message, pending: { steering, followUp }, recovery } as unknown as HostMessage : undefined;
+}
+
+function parseAttachmentHistoryMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const required = [...envelope, "entries"];
+  if (!hasFields(message, required)) return;
+  const entries = list(message.entries, 128, parseHistoryEntry);
+  return entries ? { ...message, entries } as unknown as HostMessage : undefined;
+}
+
+function parseChangeReviewStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const required = [...envelope, "entries", "retainedBytes", "limited", "reset", "error"];
+  if (!hasFields(message, required) || !integer(message.retainedBytes) || message.retainedBytes > 8_388_608
+          || typeof message.limited !== "boolean" || typeof message.reset !== "boolean"
+          || (message.error !== null && !oneOf(message.error, ["unavailable", "stale"]))) return;
+  const entries = list(message.entries, 128, parseChangeReviewEntry);
+  return entries && new Set(entries.map(entry => entry.id)).size === entries.length
+          ? { ...message, entries } as unknown as HostMessage : undefined;
+}
+
+function parseSessionStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const required = [...envelope, "phase", "current", "loaded", "entries", "page", "total", "error"];
+  if (!hasFields(message, required) || !oneOf(message.phase, ["idle", "listing", "confirming", "switching", "error"])
+          || typeof message.loaded !== "boolean" || !integer(message.page) || !integer(message.total)
+          || (message.error !== null && !oneOf(message.error, ["unavailable", "cancelled", "stale", "wrong-project", "stop-failed", "restore-failed"]))) return;
+  const current = message.current === null ? null : parseSessionCurrent(message.current);
+  const entries = list(message.entries, 16, parseSessionEntry);
+  if (message.current !== null && !current || !entries || new Set(entries.map(entry => entry.id)).size !== entries.length) return;
+  return { ...message, current, entries } as unknown as HostMessage;
+}
+
+function parseSavedHistoryStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const required = [...envelope, "available", "phase", "messages", "page", "total", "error"];
+  if (!hasFields(message, required) || typeof message.available !== "boolean"
+          || !oneOf(message.phase, ["idle", "loading", "error"]) || !integer(message.page) || !integer(message.total)
+          || (message.error !== null && !oneOf(message.error, ["unavailable", "stale", "cancelled"]))) return;
+  const messages = list(message.messages, 32, parseSavedHistoryLine);
+  if (!messages) return;
+  const ids = messages.filter(line => Object.hasOwn(line, "id")).map(line => line.id);
+  return new Set(ids).size === ids.length ? { ...message, messages } as unknown as HostMessage : undefined;
+}
+
+function parseSavedHistoryPreviewMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const common = [...envelope, "requestId", "id"];
+  if (!id(message.requestId) || !id(message.id)) return;
+  if (Object.hasOwn(message, "code")) {
+          return hasFields(message, [...common, "code"]) && oneOf(message.code, ["unavailable", "stale", "cancelled"])
+            ? message as unknown as HostMessage : undefined;
+        }
+  return hasFields(message, [...common, "text", "offset", "nextOffset", "done", "totalChars"])
+          && string(message.text, 8192) && integer(message.offset) && integer(message.nextOffset)
+          && integer(message.totalChars) && typeof message.done === "boolean" ? message as unknown as HostMessage : undefined;
+}
+
+function parseAttachmentPreviewMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
+  const common = [...envelope, "requestId"];
+  if (!id(message.requestId)) return;
+  if (Object.hasOwn(message, "code")) {
+          const errorFields = [...common, "code"];
+          return hasFields(message, errorFields) && oneOf(message.code, codes) ? message as unknown as HostMessage : undefined;
+        }
+  const contentFields = [...common, "snapshotId", "offset", "nextOffset", "done", "text"];
+  return hasFields(message, contentFields) && id(message.snapshotId) && integer(message.offset)
+          && integer(message.nextOffset) && typeof message.done === "boolean" && string(message.text, 16384)
+          ? message as unknown as HostMessage : undefined;
+}
+
 /** Narrow and copy the complete v3 DTO before the browser consumes host data. */
 export function parseHostMessage(value: unknown): HostMessage | undefined {
   const message = snapshotRecord(value);
   if (!message || message.version !== 3 || !integer(message.generation) || !id(message.viewId)) return;
   const envelope = ["version", "type", "generation", "viewId"];
 
-  switch (message.type) {
-    case "uiLanguageState":
-      return hasFields(message, [...envelope, "locale"]) && oneOf(message.locale, ["en", "zh-CN"]) ? message as unknown as HostMessage : undefined;
-    case "interactionState": {
-      if (!hasFields(message, [...envelope, "active", "queuedCount", "phase", "errorCode", "feedback", "omittedFeedback"])
-        || !integer(message.queuedCount) || message.queuedCount > 7 || !integer(message.omittedFeedback)
-        || !oneOf(message.phase, ["idle", "waiting", "blocked"]) || !(message.errorCode === null || (string(message.errorCode, 100) && /^[a-z][a-z0-9-]*$/.test(message.errorCode)))) return;
-      const active = message.active === null ? null : parseInteractionForm(message.active);
-      const feedback = list(message.feedback, 16, parseFeedback);
-      if (active === undefined || !feedback || feedback.reduce((total, item) => total + encoder.encode(item.text as string).byteLength, 0) > 65536) return;
-      if ((message.phase === "idle" && (active !== null || message.queuedCount !== 0)) || (message.phase === "waiting" && active === null)) return;
-      return { ...message, active, feedback } as unknown as HostMessage;
-    }
-    case "executionProfileState": {
-      if (!hasFields(message, [...envelope, "profile", "displayName", "phase", "errorCode", "canSwitch", "canEnd", "canRecover"])
-        || !oneOf(message.profile, ["controlled", "trusted"]) || !(message.displayName === null || utf8Text(message.displayName, 512))
-        || !oneOf(message.phase, ["idle", "selecting", "switching", "recovery-required", "error"])
-        || !(message.errorCode === null || (string(message.errorCode, 100) && /^[a-z][a-z0-9-]*$/.test(message.errorCode)))
-        || [message.canSwitch, message.canEnd, message.canRecover].some(value => typeof value !== "boolean")) return;
-      return message as unknown as HostMessage;
-    }
-    case "providerConfigState": {
-      if (!hasFields(message, [...envelope, "busy", "error", "defaultProvider", "defaultModelId", "defaultThinkingLevel", "thinkingLevels", "providers", "catalog"])
-        || typeof message.busy !== "boolean"
-        || !(message.error === null || string(message.error, 500))
-        || !(message.defaultProvider === null || string(message.defaultProvider, 64))
-        || !(message.defaultModelId === null || string(message.defaultModelId, 128))
-        || !(message.defaultThinkingLevel === null || string(message.defaultThinkingLevel, 16))) return;
-      const thinkingLevels = list(message.thinkingLevels, 16, item => string(item, 16) ? item : undefined);
-      const providers = list(message.providers, 64, item => {
-        const entry = exactRecord(item, ["providerId", "displayName", "configured", "authLabel", "canAddApiKey", "canLogout", "canSignIn", "canRemoveEndpoint"]);
-        return entry && string(entry.providerId, 64) && string(entry.displayName, 200)
-          && typeof entry.configured === "boolean" && typeof entry.canAddApiKey === "boolean" && typeof entry.canLogout === "boolean"
-          && typeof entry.canSignIn === "boolean" && typeof entry.canRemoveEndpoint === "boolean"
-          && (entry.authLabel === null || string(entry.authLabel, 200)) ? entry : undefined;
-      });
-      const catalog = list(message.catalog, 64, parseModel);
-      if (!providers || !catalog || !thinkingLevels
-        || (message.defaultThinkingLevel !== null && !thinkingLevels.includes(message.defaultThinkingLevel as string))) return;
-      return { ...message, providers, catalog, thinkingLevels } as unknown as HostMessage;
-    }
-    case "pluginInventoryState": {
-      const errors = ["duplicate-path", "invalid-entry", "existing-unusable", "unknown-entry", "too-many", "too-large", "write-failed"] as const;
-      if (!hasFields(message, [...envelope, "busy", "error", "entries"]) || typeof message.busy !== "boolean"
-        || !(message.error === null || oneOf(message.error, errors))) return;
-      const entries = list(message.entries, 64, item => {
-        const entry = exactRecord(item, ["id", "displayName", "enabled"]);
-        return entry && id(entry.id) && utf8Text(entry.displayName, 512) && typeof entry.enabled === "boolean" ? entry : undefined;
-      });
-      return entries && new Set(entries.map(entry => entry.id)).size === entries.length
-        ? { ...message, entries } as unknown as HostMessage : undefined;
-    }
-    case "pong":
-      return hasFields(message, envelope) ? message as unknown as HostMessage : undefined;
-
-    case "workspaceState": {
-      const required = [...envelope, "status", "folder", "choice", "busy", "error", "runtime", "runtimeDetail", "messages", "chatBusy", "chatError", "chatModel", "thinkingLevel", "thinkingLevels", "availableModels", "pendingModel", "pendingThinkingLevel", "modelBusy", "modelError", "activities", "approvals", "grants", "execution", "controlledExecution"];
-      if (!hasFields(message, required)
-        || !oneOf(message.status, ["no-folder", "multi-root", "remote", "non-file", "untrusted", "eligible"])
-        || (message.choice !== null && !oneOf(message.choice, ["allow", "decline"]))
-        || typeof message.busy !== "boolean" || typeof message.chatBusy !== "boolean" || typeof message.modelBusy !== "boolean"
-        || typeof message.controlledExecution !== "boolean"
-        || !oneOf(message.runtime, ["not-started", "starting", "ready", "stopping", "error"])
-        || !oneOf(message.execution, ["idle", "waiting", "thinking", "awaiting-approval", "executing", "replying", "retrying", "compacting", "completed", "stopped", "stopping", "failed"])
-        || ![message.error, message.runtimeDetail, message.chatError, message.chatModel, message.thinkingLevel, message.pendingThinkingLevel, message.modelError].every(nullableString)) return;
-
-      const folder = message.folder === null ? null : parseFolder(message.folder);
-      const pendingModel = message.pendingModel === null ? null : parseModel(message.pendingModel);
-      const thinkingLevels = list(message.thinkingLevels, 64, item => string(item, 100) ? item : undefined);
-      const availableModels = list(message.availableModels, 64, parseModel);
-      const messages = list(message.messages, 32, parseChatLine);
-      const activities = list(message.activities, 64, parseActivity);
-      const approvals = list(message.approvals, 8, parseApproval);
-      const grants = list(message.grants, 64, parseGrant);
-      if ((message.folder !== null && !folder) || (message.pendingModel !== null && !pendingModel)
-        || !thinkingLevels || !availableModels || !messages || !activities || !approvals || !grants) return;
-
-      return {
-        ...message,
-        folder,
-        pendingModel,
-        thinkingLevels,
-        availableModels,
-        messages,
-        activities,
-        approvals,
-        grants,
-      } as unknown as HostMessage;
-    }
-
-    case "attachmentState": {
-      const required = [...envelope, "draft", "preparation", "result", "historyCount", "retainedBytes", "lastSubmission"];
-      if (!hasFields(message, required) || !oneOf(message.preparation, ["idle", "picking", "preparing"])
-        || !integer(message.historyCount) || !integer(message.retainedBytes)) return;
-
-      const draft = exactRecord(message.draft, ["revision", "text", "acceptedEditSequence", "attachments"]);
-      const result = message.result === null ? null : parseAttachmentResult(message.result);
-      const lastSubmission = message.lastSubmission === null ? null : parseLastSubmission(message.lastSubmission);
-      if (!draft || !integer(draft.revision) || !string(draft.text, 8000) || !integer(draft.acceptedEditSequence)
-        || (message.result !== null && !result) || (message.lastSubmission !== null && !lastSubmission)) return;
-      const attachments = list(draft.attachments, 20, parseDraftAttachment);
-      if (!attachments || new Set(attachments.map(a => a.attachmentId)).size !== attachments.length
-        || new Set(attachments.map(a => a.snapshotId)).size !== attachments.length
-        || attachments.reduce((bytes, a) => bytes + (a.utf8Bytes as number), 0) > 1048576) return;
-      return {
-        ...message,
-        draft: { ...draft, attachments },
-        result,
-        lastSubmission,
-      } as unknown as HostMessage;
-    }
-
-    case "commandCatalogueState": {
-      if (!hasFields(message, [...envelope, "revision", "status", "error", "rows"])
-        || !integer(message.revision) || !oneOf(message.status, ["loading", "ready", "empty", "unavailable"])
-        || message.error !== (message.status === "unavailable" ? "unavailable" : null)) return;
-      const rows = list(message.rows, 512, value => {
-        const row = exactRecord(value, ["name", "source"], ["description", "location"]);
-        if (!row || !utf8Text(row.name, 200) || !row.name || /[\s/]/.test(row.name)
-          || !oneOf(row.source, ["extension", "prompt", "skill"])
-          || (row.description !== undefined && !string(row.description, 500))
-          || (row.location !== undefined && !oneOf(row.location, ["user", "project", "path"]))) return;
-        return row;
-      });
-      if (!rows || (message.status === "ready" ? !rows.length : !!rows.length)
-        || new Set(rows.map(row => row.name)).size !== rows.length) return;
-      return { ...message, rows } as unknown as HostMessage;
-    }
-
-    case "queuedTextState": {
-      const errors = ["busy", "stale", "capacity", "invalid-text", "attachments", "runtime-unavailable", "unconfirmed", "unavailable", "draft-not-empty"] as const;
-      if (!hasFields(message, [...envelope, "revision", "phase", "error", "pending", "recovery"])
-        || !integer(message.revision)
-        || !oneOf(message.phase, ["idle", "submitting", "recalling", "stopping"])
-        || !(message.error === null || oneOf(message.error, errors))) return;
-      const pending = exactRecord(message.pending, ["steering", "followUp"]);
-      if (!pending) return;
-      const parsePending = (value: unknown) => {
-        const reusable = exactRecord(value, ["attribution", "reusable", "text"]);
-        if (reusable && oneOf(reusable.attribution, ["local", "external", "unknown"]) && reusable.reusable === true && string(reusable.text, 8000)) return reusable;
-        const hidden = exactRecord(value, ["attribution", "reusable"]);
-        return hidden && oneOf(hidden.attribution, ["local", "external", "unknown"]) && hidden.reusable === false ? hidden : undefined;
-      };
-      const steering = list(pending.steering, 32, parsePending);
-      const followUp = list(pending.followUp, 32, parsePending);
-      if (!steering || !followUp || steering.length + followUp.length > 32) return;
-      const recovery = list(message.recovery, 32, item => {
-        const recalled = exactRecord(item, ["id", "mode", "status", "text"]);
-        if (recalled && id(recalled.id) && oneOf(recalled.mode, ["steering", "follow-up"]) && recalled.status === "recalled" && string(recalled.text, 8000)) return recalled;
-        const unavailable = exactRecord(item, ["id", "mode", "status"]);
-        return unavailable && id(unavailable.id) && oneOf(unavailable.mode, ["steering", "follow-up"]) && unavailable.status === "unavailable"
-          ? unavailable : undefined;
-      });
-      return recovery && new Set(recovery.map(item => item.id)).size === recovery.length
-        ? { ...message, pending: { steering, followUp }, recovery } as unknown as HostMessage : undefined;
-    }
-
-    case "attachmentHistory": {
-      const required = [...envelope, "entries"];
-      if (!hasFields(message, required)) return;
-      const entries = list(message.entries, 128, parseHistoryEntry);
-      return entries ? { ...message, entries } as unknown as HostMessage : undefined;
-    }
-
-    case "changeReviewState": {
-      const required = [...envelope, "entries", "retainedBytes", "limited", "reset", "error"];
-      if (!hasFields(message, required) || !integer(message.retainedBytes) || message.retainedBytes > 8_388_608
-        || typeof message.limited !== "boolean" || typeof message.reset !== "boolean"
-        || (message.error !== null && !oneOf(message.error, ["unavailable", "stale"]))) return;
-      const entries = list(message.entries, 128, parseChangeReviewEntry);
-      return entries && new Set(entries.map(entry => entry.id)).size === entries.length
-        ? { ...message, entries } as unknown as HostMessage : undefined;
-    }
-
-    case "sessionState": {
-      const required = [...envelope, "phase", "current", "loaded", "entries", "page", "total", "error"];
-      if (!hasFields(message, required) || !oneOf(message.phase, ["idle", "listing", "confirming", "switching", "error"])
-        || typeof message.loaded !== "boolean" || !integer(message.page) || !integer(message.total)
-        || (message.error !== null && !oneOf(message.error, ["unavailable", "cancelled", "stale", "wrong-project", "stop-failed", "restore-failed"]))) return;
-
-      const current = message.current === null ? null : parseSessionCurrent(message.current);
-      const entries = list(message.entries, 16, parseSessionEntry);
-      if (message.current !== null && !current || !entries || new Set(entries.map(entry => entry.id)).size !== entries.length) return;
-      return { ...message, current, entries } as unknown as HostMessage;
-    }
-
-    case "savedHistoryState": {
-      const required = [...envelope, "available", "phase", "messages", "page", "total", "error"];
-      if (!hasFields(message, required) || typeof message.available !== "boolean"
-        || !oneOf(message.phase, ["idle", "loading", "error"]) || !integer(message.page) || !integer(message.total)
-        || (message.error !== null && !oneOf(message.error, ["unavailable", "stale", "cancelled"]))) return;
-      const messages = list(message.messages, 32, parseSavedHistoryLine);
-      if (!messages) return;
-      const ids = messages.filter(line => Object.hasOwn(line, "id")).map(line => line.id);
-      return new Set(ids).size === ids.length ? { ...message, messages } as unknown as HostMessage : undefined;
-    }
-
-    case "savedHistoryPreview": {
-      const common = [...envelope, "requestId", "id"];
-      if (!id(message.requestId) || !id(message.id)) return;
-      if (Object.hasOwn(message, "code")) {
-        return hasFields(message, [...common, "code"]) && oneOf(message.code, ["unavailable", "stale", "cancelled"])
-          ? message as unknown as HostMessage : undefined;
-      }
-      return hasFields(message, [...common, "text", "offset", "nextOffset", "done", "totalChars"])
-        && string(message.text, 8192) && integer(message.offset) && integer(message.nextOffset)
-        && integer(message.totalChars) && typeof message.done === "boolean" ? message as unknown as HostMessage : undefined;
-    }
-
-    case "attachmentPreview": {
-      const common = [...envelope, "requestId"];
-      if (!id(message.requestId)) return;
-      if (Object.hasOwn(message, "code")) {
-        const errorFields = [...common, "code"];
-        return hasFields(message, errorFields) && oneOf(message.code, codes) ? message as unknown as HostMessage : undefined;
-      }
-      const contentFields = [...common, "snapshotId", "offset", "nextOffset", "done", "text"];
-      return hasFields(message, contentFields) && id(message.snapshotId) && integer(message.offset)
-        && integer(message.nextOffset) && typeof message.done === "boolean" && string(message.text, 16384)
-        ? message as unknown as HostMessage : undefined;
-    }
+    switch (message.type) {
+    case "sessionRenameState": return parseSessionRenameStateMessage(message, envelope);
+    case "sessionUsageState": return parseSessionUsageStateMessage(message, envelope);
+    case "uiLanguageState": return parseUiLanguageStateMessage(message, envelope);
+    case "interactionState": return parseInteractionStateMessage(message, envelope);
+    case "executionProfileState": return parseExecutionProfileStateMessage(message, envelope);
+    case "providerConfigState": return parseProviderConfigStateMessage(message, envelope);
+    case "pluginInventoryState": return parsePluginInventoryStateMessage(message, envelope);
+    case "pong": return parsePongMessage(message, envelope);
+    case "workspaceState": return parseWorkspaceStateMessage(message, envelope);
+    case "attachmentState": return parseAttachmentStateMessage(message, envelope);
+    case "commandCatalogueState": return parseCommandCatalogueStateMessage(message, envelope);
+    case "queuedTextState": return parseQueuedTextStateMessage(message, envelope);
+    case "attachmentHistory": return parseAttachmentHistoryMessage(message, envelope);
+    case "changeReviewState": return parseChangeReviewStateMessage(message, envelope);
+    case "sessionState": return parseSessionStateMessage(message, envelope);
+    case "savedHistoryState": return parseSavedHistoryStateMessage(message, envelope);
+    case "savedHistoryPreview": return parseSavedHistoryPreviewMessage(message, envelope);
+    case "attachmentPreview": return parseAttachmentPreviewMessage(message, envelope);
   }
 }

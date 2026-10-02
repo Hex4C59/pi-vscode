@@ -7,6 +7,8 @@ English | [中文](2026-10-02-wi079-parallel-dispatch.zh.md)
 - Created: 2026-10-02
 - Scope: Dispatch preparation for the existing WI-079, not another product WI
 
+> Superseded workflow (2026-10-02): the maintainer subsequently requested single-agent work and consolidation onto master. The assignments and isolation rules below are historical; follow the current [collaboration guide](../guides/agent-collaboration.md).
+
 ## Authorization and baseline (initial preparation)
 
 The maintainer requested starting multi-agent work. The coordinator created three dedicated branches/worktrees from `origin/master` at `8fcc943a20b6893a9dba3f6184e154fd4914b95d`. The existing [WI-079](../../ACTIVE.md) remains the only product work item. This record does not authorize commits, history changes, pushes or PRs.
@@ -15,7 +17,7 @@ The primary checkout has an uncommitted `ACTIVE.md` change and `src/webview/test
 
 ## Assigned task sheets
 
-Each agent receives its own task sheet; [collaboration](../guides/agent-collaboration.md#isolated-task-sheet) remains the authoritative template. Worktree paths below are relative to the primary repository directory.
+Each agent receives its own task sheet; [collaboration](../guides/agent-collaboration.md) remains the authoritative template. Worktree paths below are relative to the primary repository directory.
 
 | Owner | Branch | Worktree | Current exclusive assignment |
 |---|---|---|---|
