@@ -46,3 +46,27 @@ test("a settled admitted task requests one fresh read after an initial in-flight
     writeFileSync("dist/wi079-session-usage/host-public-flight.json", JSON.stringify({ passed, reads: f.reads, prompts: f.prompts, limits: ["public byte transport fixture", "synthetic VS Code"] }, null, 2));
   }
 });
+
+test("queued automatic usage refresh drains after native rename cancellation", async context => {
+  const f = deferredPublicUsage(), host = harness([folder()], true, undefined, f.runtime), view = host.createView();
+  let cancel = () => {}, inputs = 0, passed = false;
+  context.mock.method(host.api.window, "showInputBox", () => {
+    inputs++; return new Promise<string | undefined>(resolve => { cancel = () => resolve(undefined); });
+  });
+  try {
+    view.action("chooseResources", { choice: "allow" }); await tick(); assert.equal(f.reads, 1);
+    view.action("sendChat", { text: "admitted task" }); await tick(); assert.equal(f.prompts, 1);
+    f.settle(); await tick();
+    view.action("renameSession"); await tick(); assert.equal(inputs, 1);
+    f.finishFirst(); await tick(); await tick(); assert.equal(f.reads, 1);
+    cancel(); await tick(); await tick();
+    assert.equal(f.reads, 2, "releasing native rename must drain the queued automatic read without a renderer request");
+    const last = [...view.sent].reverse().find(value => (value as { type: string }).type === "sessionUsageState") as SessionUsageStateMessage;
+    assert.equal(last.status, "ready"); assert.equal(last.usage?.tokens.total, 102);
+    assert.equal(f.prompts, 1); passed = true;
+  } finally {
+    cancel(); host.provider.dispose(); mkdirSync("dist/team-three-wi-native", { recursive: true });
+    writeFileSync(`dist/team-three-wi-native/pending-rename-${passed ? "green" : "red"}.json`, JSON.stringify({
+      passed, reads: f.reads, prompts: f.prompts, inputs, limits: ["public byte transport", "synthetic VS Code native input boundary"] }, null, 2));
+  }
+});
