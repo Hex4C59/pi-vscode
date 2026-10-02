@@ -3,7 +3,6 @@
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, realpath, writeFile, readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,7 +11,7 @@ const mode = process.argv[2];
 assert.ok(mode === 'f5' || mode === 'installed', 'Use f5 or installed [VSIX]');
 assert.equal(process.platform, 'darwin', 'This evidence lane is macOS only');
 const electron = '/Applications/Visual Studio Code.app/Contents/MacOS/Code';
-const root = await realpath(await mkdtemp(path.join(tmpdir(), 'pi-resource-native-')));
+const root = await realpath(await mkdtemp('/tmp/pi-resource-native-'));
 const evidence = path.join(repo, 'dist/goal-eight/wi082', mode);
 await mkdir(evidence, { recursive: true });
 for (const name of ['home', 'agent', 'tmp', 'project/.pi/prompts', 'project/.pi/skills/native-skill', 'driver', 'launcher/.vscode', 'user/User', 'extensions', 'parent-user/User', 'parent-extensions']) {
