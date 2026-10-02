@@ -17,9 +17,9 @@
 
 | 任务 ID | 阶段 | 槽位 | 执行者／所有者 | 分支／worktree | 范围／依赖 |
 |---|---|---|---|---|---|
-| WI-079 | Build | 1 | Agent A | team/wi079-usage / ../pi-vscode-worktrees/team-wi079-usage | 只读用量；A 先交付公共协议；已有红测仅归 A |
-| WI-080 | Build | 2 | Agent B | team/wi080-rename / ../pi-vscode-worktrees/team-wi080-rename | PI-GAP-12 当前已打开会话重命名；依赖 A 公共契约 |
-| WI-081 | Build | 3 | Agent C | team/wi081-copy / ../pi-vscode-worktrees/team-wi081-copy | PI-GAP-20 已完成 assistant 正文复制；保留代码块复制 |
+| WI-079 | Blocked | - | 主 agent | master / ./ | 只读用量已集成；完整原生验收待完成 |
+| WI-080 | Blocked | - | 主 agent | master / ./ | 当前会话重命名已集成；完整原生验收待完成 |
+| WI-081 | Blocked | - | 主 agent | master / ./ | 完成回复复制已集成；完整原生验收待完成 |
 
 基线：master `dd33b5d` 干净，暂存及 ACTIVE 未提交差异为空；六个登记旧 worktree 均干净，全部保留。旧 `0412459` 的 mounted usage 红测由 A 单独带入；旧并行入口校验器与测试由主 agent 仅复用相关文件，先观察 3 项失败再实现，13 项通过。没有所需未提交基线。旧 CI／PR／隔离规则提交不整批并入本轮。
 
@@ -34,7 +34,7 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-079 |
-| **阶段** | Build（Prepare 与初始共同契约已审；功能未验收） |
+| **阶段** | Blocked（实现已集成至 master；组合原生验收窗口定位受阻） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-004／009、PI-GAP-03，双语 PRD 已批准 |
@@ -60,7 +60,7 @@ host→adapter→validated client→production mount 先红／绿 JSON；真实 
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-080 |
-| **阶段** | Build（Prepare 与初始共同契约已审；功能未验收） |
+| **阶段** | Blocked（实现已集成至 master；组合原生验收窗口定位受阻） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-008、PI-GAP-12，双语 PRD 已批准 |
@@ -86,7 +86,7 @@ B Prepare 已审，依赖 A task-4 公共契约；no-payload renameSession、具
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-081 |
-| **阶段** | Build（Prepare 与初始共同契约已审；功能未验收） |
+| **阶段** | Blocked（实现已集成至 master；组合原生验收窗口定位受阻） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-004、PI-GAP-20，双语 PRD 已批准 |
@@ -109,7 +109,7 @@ production mount→clipboard 和public JSONL→host资格 test-first 红绿；�
 
 ## 当前焦点与未决项
 
-WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079／080／081 并行；主 agent 协调共同契约、审查及顺序集成，各执行 agent 先完成自己的 Prepare 与 test-first 用例。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
+WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079／080／081 已集成至 master，主 agent 继续组合验收；执行分支保留以便追溯。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 macOS 已有矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)；它不替代 WI-079 新切片分层验收。
 
@@ -199,14 +199,17 @@ DOC-ORG-03 已在本轮独立授权下按 WI-075 完成；见[验收](docs/archi
 
 ## 最近交接
 
+### 2026-10-02 — 三项功能汇入 master，验收未关闭
+
+维护者要求核对并完成 WI-079～081、汇总分支，并明确最终分支为 `master`。本轮将本地 `master` 从 `dd33b5d` 快进至集成提交 `752992c`；删除本轮临时创建、没有独有提交的 `codex/final-wi079-081`。没有 push、历史改写或原有分支／worktree 删除。所有原有 worktree 检查时干净。三个 feature 的提交已有对应集成版本；rename 的 patch 差别为 usage 组合上下文，`git range-diff` 已核对。旧 CI／PR／隔离规则分支仍按原批准范围保留，未盲目并入；本地 master 与现存 origin/master 跟踪记录仍有分叉，未联网刷新或宣称远程同步。
+
+本轮当前 `752992c`：compile、lint、1206/1206 tests、真实 pi0.86.1 用量及重命名探针通过。rename 探针首次输出到嵌套目录导致找不到同级 approval gate，按记录的 `dist/wi080-real-runtime.cjs` 路径重建后通过；不是产品修改。重新生成 [VSIX](dist/final-integration/pi-vscode-final.vsix)，包解压／依赖／RPC／gate 验证通过；安装到本轮 `/tmp/pi-final-*` 隔离 extensions 目录成功，仅证明安装性。日志位于 [本轮工件](dist/final-integration/)。此前原生报告 `dist/team-three-wi-native/report.json` 为失败，不能当作通过；本轮原生工具仍只定位到已有用户窗口，隔离窗口未完成交互，F5／安装版完整链路继续待验。三个 WI 不关闭、不冒称最终成品验收通过。
+
+
 ### 2026-10-02 — WI-078 关闭并晋升 WI-079
 
 Agent 按持续 goal 验收，不是维护者亲测；[方案／验收](docs/archive/2026-10-02-wi-078-acceptance.zh.md)。实现 `bdc9f5b` 不含 ACTIVE。compile／lint／1157 tests、18 组浏览器、真实 pi 4 starts／4 closes、macOS F5／安装 VSIX 裸空格与参数保留均通过；provider 数量不变，cleanup 空。VSIX SHA-256 `fa61b6b435d2d2f3da3e364cfc66e2c2208fd25c9299677790e6800631cc08a3`。F5 前两轮失败为 harness 父窗口 CLI 抢焦点，纠正后真 `[Extension Development Host] A` 通过，失败报告保留。OS IME、真实模型、加载报告未验。PRD／Living 契约及索引同步；docs:verify／health 零错误，保留 Draft ADR 0010 两条提示。下一 WI-079 Prepare→Build 和中英 PRD 已同步，不继承已关闭证据；goal 保持 active，无 push。
 
-### 2026-10-02 — WI-077 文字队列关闭（简要）
-
-[验收](docs/archive/2026-10-02-wi-077-acceptance.zh.md)：macOS F5 与安装 VSIX Steering→Stop Recalled→Use in draft，文字闭环关闭；附件／命令余量停车。Agent 委托验收，非维护者亲测；原证据限制保留。
-
 ## 已完成 WI 索引
 
-编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-078；当前 WI-079。
+编号、验收记录与历史限制见[已关闭 WI 索引](docs/archive/2026-09-29-closed-wi-index.zh.md)；现行架构 gate 状态见 [gate 表](docs/reference/architecture-gates.zh.md)。最近关闭：WI-078；当前 WI-079／080／081 组合验收。
