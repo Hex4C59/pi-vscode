@@ -6,12 +6,27 @@
 
 | 步骤 | Agent |
 |---|---|
-| 开场 | 必要阅读、Git 基线、当前 WI／批准／Gate／PRD 与验收核对；编辑前建立任务专属 worktree。 |
-| 提案 | Prepare 记录范围与 PRD 判定；Build 须批准；WIP 最多 1。 |
+| 开场 | 必要阅读、Git 基线、分配任务 ID／所有者／批准／Gate／PRD 与验收核对；编辑前建立任务专属 worktree。 |
+| 提案 | 每任务单独 Prepare／批准／验收；最多 3 个任务执行，协调者登记槽位和文件归属。 |
 | 建造 | 按批准实现并实际验证；证据绑定实际候选提交、基线与源码状态，模拟／runtime／F5／安装分别取证。 |
 | 收尾 | 子任务交接由指定协调者汇总；记录验收身份、检查结果与未决项，按规则归档并清理自有资源。 |
 
-## 正在做（WIP=1）
+## 任务登记（最多 3 个执行槽位）
+
+维护者明确批准多 Agent 执行多个独立任务，替换原 WIP=1；[协作指南 §4](docs/guides/agent-collaboration.zh.md#4-有界并行最多-3-个任务)负责计数及准入。[本轮任务单／批准／交接](docs/discussions/2026-10-02-wi079-parallel-dispatch.zh.md)保留具体范围。协调者为「添加多 Agent 隔离规则」会话；其他 Agent 不改本文件或自行晋升停车场。
+
+| 任务 ID | 阶段 | 槽位 | 执行者／所有者 | 分支／worktree | 范围／依赖 |
+|---|---|---|---|---|---|
+| OPS-PARALLEL | Done | - | 本会话协调者 | `codex/wi079-parallel-plan`／`../pi-vscode-worktrees/wi079-parallel-plan` | 并行政策／登记／入口及 docs 检查器已完成本地验证；维护者已授权提交／push／PR 合并；远端发布以 PR 正常合并记录为准，不改产品行为／内核／lockfile |
+| AUDIT-PARALLEL | Done | - | Dirac（已结束） | `codex/parallel-collaboration`／`../pi-vscode-worktrees/parallel-collaboration` | 已报告检查器硬编码、PRD／gate 单 WI 陈述及入口歧义；只读，无编辑 |
+| PREPARE-PARALLEL | Done | - | Curie（已结束） | `codex/parallel-task-audit`／`../pi-vscode-worktrees/parallel-task-audit` | 已完成独立候选／冲突矩阵；PR 基线审查可只读，整条回复复制仅 Prepare，不能沿并发批准启动产品 Build |
+| WI-079 | Blocked | - | 本会话接管；旧会话已确认停止写入与自动晋升 | 后续实现 worktree 待分配 | 已批准 Build；原主 checkout 的红灯测试／交接仍未提交，须获授权发布基线或另定不依赖它的实现路径，不能复制未提交文件 |
+
+空槽不自动授权新任务。旧连续队列指令不跨越新分配归属；2026-10-01 原批准／排除范围仍有效，历史 WIP=1 描述不再决定当前调度。每个新产品候选仍须独立 Prepare／范围批准；并发确认不等于批准全部停车场。
+
+## 任务提案
+
+### WI-079（接管；等待实现基线）
 
 | 字段 | 内容 |
 |---|---|
@@ -21,11 +36,11 @@
 | **Decision** | none（无新存储、信任、外部服务或 runtime 策略） |
 | **PRD 判定** | 用户可见：已同步中英 PRD WI-079／REQ-004／009 范围及追溯行；只批准本切片，不接受整份 Draft，不升级 ADR 0010 |
 
-### 目标与范围
+#### 目标与范围
 
 交付 PI-GAP-03 的只读 **用量**面板：当前上下文 token 估算／容量／百分比与整会话累计 input、output、cache-read、cache-write、total token 和上游报告估算 USD 费用分开显示；未知明确。公开 get_session_stats／必要时 get_state，不读 session 文件，不自算账单，不把累计误当当前。打开／手动刷新／ready 和任务稳定结束后的刷新，替换／New／Restore 不串会话，忙碌时标旧快照，不额外轮询。只做个人本机 macOS VS Code；排除 compact、导出、实时账单和持久化用量。
 
-### 方案与架构核对
+#### 方案与架构核对
 
 安装 pi **0.86.1** 的公开 `docs/rpc.md` get_session_stats（554–595 行）明确 full-session tokens/cost（含 tools／compaction／branch summary）和当前 contextUsage；无模型时 contextUsage 缺失，压缩后 tokens／percent 可为 null。当前 adapter 在 checkpointRestart 用该公开统计，但未对产品用量投影。可复用现有 request owner／5s deadline，禁止新增 generic RPC bridge。
 
@@ -33,7 +48,7 @@
 
 adapter 提供具名只读统计能力并验证 finite 非负数字和会话身份；宿主拥有一个 coalesced refresh、世代与快照；renderer 收 bounded nullable numeric DTO，绝不收路径／原响应。零费用但无可用非零定价明确 unknown，不证明免费。先通过[双语 Outline](docs/reference/webview-messages.zh.md#wi-079-只读用量outline未实现)核对字段／状态，再 test-first 实现。UI 本地打开／关闭，Refresh 仅 chat 无参数意图；沿一次一张弹出层，焦点不丢草稿。无新依赖／进程／持久化。
 
-### 架构核对（Prepare：implement now；Implementable，尚非 Verifiable）
+#### 架构核对（Prepare：implement now；Implementable，尚非 Verifiable）
 
 | 维度 | 状态、证据与下一检查 |
 |---|---|
@@ -46,11 +61,11 @@ adapter 提供具名只读统计能力并验证 finite 非负数字和会话身�
 | 18 版本兼容 | pass（设计）：v3 host／bundled UI 成对，只 chat；旧 view 不接纳。未扩支持平台。 |
 | 19 UX／可访问性 | gap：中英状态、未知／旧值、键盘／焦点／互斥、主题窄屏及 macOS 原生待验。 |
 
-### 失败方式（代码前）
+#### 失败方式（代码前）
 
 累计冒充当前上下文；null 缺失变 0；零／未知定价显示免费；坏数字 NaN／负／无限／超界进入 UI；sessionFile／raw 响应／凭据跨边界；重复 Refresh 无限请求；busy／替换／迟到结果污染新会话；New／Restore 显示旧累计；错误显示成功；只发 RPC 不观察 cleanup；用量面板和模型／命令同时开；Escape／刷新丢未发草稿；实际 stats 被模拟替代却声称 runtime 通过。
 
-### 验收
+#### 验收
 
 1. 首先写行为端到端／跨 owner 用例并观察红，再实现，保留可重复 JSON 工件；host→adapter→validated client→mounted production panel，区分累计／当前、null、坏数字、零定价、无会话／错误／超时、busy／late replace／cleanup与非 chat 拒绝。
 2. 真实 pi 0.86.1＋隔离 HOME／workspace／loopback provider 获取公开 stats；记录请求、数字、身份替换与 child close，不使用真实凭据、用户 sessions 或付费模型。
@@ -58,7 +73,7 @@ adapter 提供具名只读统计能力并验证 finite 非负数字和会话身�
 4. macOS 真 F5 和安装 VSIX，打开→实际 stats→Refresh→New 无旧累计，草稿不被 Refresh 清掉；逐层 report、截图及 cleanup，禁止替旧版行为验收。
 5. compile／lint／npm test／docs:verify；关闭 docs:health、双语方案／验收归档，实现提交不含 ACTIVE，收尾 docs(active) 单独提交。未验明确，不自动 gate／ADR Accept。
 
-### 范围外与批准边界
+#### 范围外与批准边界
 
 2026-10-02 持续 goal 对既有 PI-GAP 内独立合规切片授权 Prepare→Build 和限定 Agent 验收。中英 PRD 已在本阶段前同步。高优先级冲突、产品扩张、重大架构／信任／隐私／存储／兼容、新服务／凭据／付费／公开发布和指定 GAP 仍须暂停询问。排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳审批。no push／amend／rebase／force，不改 sibling pi。
 
