@@ -44,6 +44,7 @@ export function activate(context: vscode.ExtensionContext): void {
       provider,
       { webviewOptions: { retainContextWhenHidden: true } },
     ),
+    vscode.commands.registerCommand("pi-vscode.compactContext", () => provider.compactContext()),
     vscode.commands.registerCommand("pi-vscode.showResourceReport", () => provider.showResourceReport()),
     vscode.commands.registerCommand(FOCUS_CHAT_COMMAND, async () => {
       await focusPiChat(vscode);

@@ -65,6 +65,8 @@ The controlled profile asks before covered actions, with an automatic allowance 
 
 Run **pi: Show Resource Loading Report** from the Command Palette for a read-only live report. Template/skill definitions and extension commands come from the current runtime catalogue; AGENTS.md, skill bodies and the full set of extension files remain unknown when loading cannot be proved. Inventory registration/enabling is not loading. The report does not start a runtime or make network requests.
 
+Run **pi: Compact Context** only with an idle, ready runtime. Confirm lossy summarization (ordinary selected-model charges may apply), optionally add bounded instructions, and use the progress notification Cancel or existing Stop to request cancellation. Completion, failure and observed cancellation are distinct. Your unsent draft stays intact; automatic compaction and retry remain upstream-owned.
+
 ## Development and verification
 
 Use the checks that match the change:

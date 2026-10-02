@@ -23,6 +23,10 @@ export function createRpcOccupancy() {
     beginPrompt(): void {
       promptInFlight = true;
     },
+    beginManualCommand(): void {
+      promptInFlight = true;
+      commandInFlight = true;
+    },
     beginSend(options: { command: boolean }): void {
       promptInFlight = true;
       promptAckPending = true;

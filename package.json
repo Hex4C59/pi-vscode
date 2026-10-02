@@ -82,6 +82,10 @@
           "light": "assets/pi-light.svg",
           "dark": "assets/pi-dark.svg"
         }
+      },
+      {
+        "command": "pi-vscode.compactContext",
+        "title": "pi: Compact Context"
       }
     ],
     "menus": {

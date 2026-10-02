@@ -37,6 +37,7 @@ export type InterpretedFrame =
       conversationTouched?: boolean;
       agentStarted?: boolean;
       agentSettled?: boolean;
+      manualCompactionEnded?: { aborted: boolean };
     };
 
 const FEEDBACK_METHODS = ["notify", "setStatus", "setWidget", "setTitle", "set_editor_text"];
@@ -107,6 +108,7 @@ function projectRuntimeFrame(parsed: RuntimeFrameEvent, context: FrameContext, a
   return {
     kind: "runtime",
     events: parsed.type === "agent_settled" ? [...events, { kind: "agent_settled", session }] : events,
+    ...(parsed.type === "compaction_end" && parsed.reason === "manual" && typeof parsed.aborted === "boolean" ? { manualCompactionEnded: { aborted: parsed.aborted } } : {}),
     ...(conversationTouched ? { conversationTouched } : {}),
     ...(parsed.type === "agent_start" ? { agentStarted: true } : {}),
     ...(parsed.type === "agent_settled" ? { agentSettled: true } : {}),

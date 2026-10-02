@@ -22,7 +22,7 @@ function reply(response, text) {
   response.end('data: [DONE]\n\n');
 }
 
-export async function createLoopbackProvider() {
+export async function createLoopbackProvider(heldRequests = new Set([1, 2])) {
   const requests = [];
   const held = new Map();
   const arrival = new Map();
@@ -38,7 +38,7 @@ export async function createLoopbackProvider() {
         assert.equal(request.url, '/v1/chat/completions');
         requests.push(JSON.parse(body));
         const number = requests.length;
-        if (number <= 2) held.set(number, response);
+        if (heldRequests.has(number)) held.set(number, response);
         else reply(response, number === 3 ? 'STEER_RESULT' : 'FOLLOW_RESULT');
         arrival.get(number)?.resolve();
       } catch (error) { failures.reject(error); response.destroy(); }
@@ -58,7 +58,7 @@ export async function createLoopbackProvider() {
   };
 }
 
-function createRpcDriver(child, attachReader) {
+function createRpcDriver(child, attachReader, onEvent) {
   const failure = deferred();
   const requests = new Map();
   const idle = new Set();
@@ -68,6 +68,7 @@ function createRpcDriver(child, attachReader) {
   const detach = attachReader(child.stdout, line => {
     try {
       const frame = JSON.parse(line);
+      onEvent?.(frame);
       if (frame.type === 'response') {
         const request = requests.get(frame.id);
         if (!request) return;
@@ -99,7 +100,7 @@ export async function withQueueRuntime(cli, options, run) {
   const args = [cli, '--offline', '--mode', 'rpc', '--no-session', '--no-tools', '--no-extensions', '--no-approve', '--model', 'queue-loopback/queue-fixture'];
   const child = spawn(process.execPath, args, { cwd: path.join(options.root, 'a'), env: options.env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const closed = new Promise(resolve => child.once('close', (code, signal) => resolve({ code, signal })));
-  const driver = createRpcDriver(child, options.attachJsonlLineReader);
+  const driver = createRpcDriver(child, options.attachJsonlLineReader, options.onEvent);
   const failure = deferred();
   const fail = error => { driver.fail(error); failure.reject(error); };
   const onClose = () => fail(new Error('Runtime closed before probe completion'));

@@ -70,6 +70,8 @@ npm run preview:webview
 
 通过命令面板运行 **pi: Show Resource Loading Report** 查看只读加载报告。模板／skill 定义和扩展命令来自当前 runtime 的公开目录；AGENTS.md、skill 正文和全部扩展文件的加载若无法证明则标未知。清单登记／启用不等于已加载，报告不启动 runtime 或联网。
 
+仅在 runtime 就绪且空闲时运行 **pi: Compact Context**。确认有损摘要（可能产生所选模型的正常费用），可添加有界指令；通过进度通知的 Cancel 或既有 Stop 请求取消。完成、失败与实际取消分别提示，未发送草稿保留，自动压缩与重试仍由上游负责。
+
 ## 开发与验证
 
 按改动范围运行检查：

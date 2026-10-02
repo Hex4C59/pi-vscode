@@ -17,6 +17,8 @@ export type PromptInput =
   | { kind: "enriched"; body: string; attachments: ({ path: string; unsaved: boolean; text: string } & AttachmentDetails)[] };
 
 export type AttachmentPromptResult = { rejection?: "authentication"; delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown"; code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost" };
+export type ManualCompactionResult = { outcome: "completed" | "cancelled" | "failed" | "unavailable"; agentRunning: boolean };
+
 export type PromptResult = { ok: true } | { ok: false; detail: string };
 
 /** Supervision state of the run recorded in this window's recovery domain. */
@@ -98,6 +100,7 @@ export interface PiRuntimeLifecycle {
   checkpointRestart?(expected: { id: string; path: string }): Promise<
     { kind: "empty" } | { kind: "resume"; conversation: { id: string; path: string } } | { kind: "unavailable" }
   >;
+  compactContext?(customInstructions: string | undefined, expectedSession: number): Promise<ManualCompactionResult>;
   getOwnershipState?(): Promise<"none" | "pending" | "terminal" | "blocked">;
   endOwnedRuntime?(): Promise<PromptResult>;
   recoverOwnedRuntime?(): Promise<PromptResult>;

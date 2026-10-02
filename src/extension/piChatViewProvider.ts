@@ -1,10 +1,11 @@
+import { NativeCompaction } from "./compaction/nativeCompaction.js";
 import { unavailableSessionBackend, type SessionBackend, type SavedSession, type SavedHistoryPage } from "./contracts/index.js";
 import { redactCredentialLikeText, type CommandCatalogueStateMessage, type SessionStateMessage, type SessionError } from "./contracts/index.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import { getWebviewHtml, getWebviewResourceRoot, SettingsPanel, ResourceReport } from "./bridge/index.js";
 import { ModelSettings, ProviderConfig, SavedDefaultApply, createDefaultProviderConfigDeps, type ModelSettingsSnapshot } from "./models/index.js";
-import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
+import type { ManualCompactionResult, PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./contracts/index.js";
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage, WebviewMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
 
@@ -40,6 +41,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private view: vscode.WebviewView | undefined;
   private viewSubscriptions: vscode.Disposable[] = [];
   private disposed = false;
+  private readonly nativeCompaction: NativeCompaction;
+  private manualContinuation = false;
+  private manualAgentSettled = false;
   private readonly resourceReport: ResourceReport;
   private reportInventoryReady = false;
   private identity = "";
@@ -137,6 +141,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       locale: this.uiLocale, runtime: this.state.runtime, catalogue: this.commandProjection(),
       inventory: this.reportInventoryReady ? this.pluginInventory.snapshot : null,
     }));
+    this.nativeCompaction = this.createNativeCompaction();
     this.savedHistory = this.createSavedHistory(sessionBackend);
     this.tools = this.createEditorTools(toolOptions);
     this.draft = this.createDraftSubmission();
@@ -163,6 +168,44 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       api.workspace.onDidGrantWorkspaceTrust(() => { this.refresh(); this.publish(); this.draft.publish(); }),
     ];
     this.startRetainedHandoff();
+  }
+
+  compactContext(): Promise<void> { return this.nativeCompaction.run(); }
+
+  private createNativeCompaction(): NativeCompaction {
+    return new NativeCompaction({ window: this.api.window, runtime: this.runtime,
+      context: () => ({ identity: `${this.state.generation}:${this.models.snapshot.chatModel}:${this.models.snapshot.thinkingLevel}`,
+        session: this.runtimeSession, locale: this.uiLocale,
+        allowed: this.canSwitchProfile() && this.runtime.getSession() === this.runtimeSession && !this.draft.preparing }),
+      begin: () => {
+        this.manualAgentSettled = false;
+        this.stoppingTask = false; this.taskFailed = false; this.settledOutcome = undefined;
+        this.state = { ...this.state, chatBusy: true, execution: "compacting", chatError: null }; this.publish();
+      }, finish: result => this.finishManualCompaction(result), stop: () => this.stopCurrentTask() });
+  }
+
+  private finishManualCompaction(result: ManualCompactionResult): void {
+    if (this.stoppingTask || this.settledOutcome === "stopped") return;
+    const agentRunning = result.agentRunning && !this.manualAgentSettled;
+    this.manualContinuation = agentRunning;
+    this.state = { ...this.state, chatBusy: agentRunning,
+      execution: agentRunning ? "waiting" : result.outcome === "completed" ? "completed" : result.outcome === "cancelled" ? "stopped" : "failed" };
+    this.publish();
+    if (!agentRunning) void this.models.applyPending();
+  }
+
+  private observeManualSettlement(event: RuntimeEvent): boolean {
+    if (event.kind !== "agent_settled" && event.kind !== "command_handled") return false;
+    if (this.nativeCompaction.running) {
+      this.manualAgentSettled = event.kind === "agent_settled" || !event.agentRunning;
+      return true;
+    }
+    if (!this.manualContinuation) return false;
+    if (event.kind === "agent_settled" || !event.agentRunning) {
+      this.manualContinuation = false;
+      this.finishManualCompaction({ outcome: this.taskFailed ? "failed" : "completed", agentRunning: false });
+    }
+    return true;
   }
 
   async showResourceReport(): Promise<void> {
@@ -255,6 +298,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private clearChat(preserveSessionTransition = false): void {
+    this.manualContinuation = false;
     this.interactionFailureReported = false;
     this.interactionReset = this.interactions.reset({ generation: this.state.generation, viewId: this.state.viewId });
     this.extensionFeedback = { feedback: [], omittedFeedback: 0 };
@@ -301,6 +345,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       this.publishQueueState(true); return;
     }
     if (event.kind === "runtime_error") { this.handleRuntimeLoss(event); return; }
+    if (this.observeManualSettlement(event)) return;
     if (event.kind === "workflow") { this.handleWorkflow(event); return; }
     if (event.kind === "activity") { this.handleActivity(event); return; }
     if(event.kind==='message_final') {
@@ -1190,6 +1235,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.disposed = true;
     this.usage.dispose();
     this.resourceReport.dispose();
+    this.nativeCompaction.dispose();
     this.settingsPanel.dispose();
     this.reconcileToken += 1;
     this.unsubscribeRuntime();

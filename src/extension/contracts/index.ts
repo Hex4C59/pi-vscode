@@ -4,7 +4,7 @@ export type {
   PiRuntimeLifecycle, RuntimeEvent, ProjectTrustFlag, RuntimeStartResult, ExtensionExecutionProfile,
   PromptInput, AttachmentPromptResult, PromptResult, QueuedTextSnapshot, CommandCatalogue, CommandCatalogueRow,
   RetainedRunState, RetainedRunHandoff,
-  ModelProjectionResult, ModelMutationResult,
+  ModelProjectionResult, ModelMutationResult, ManualCompactionResult,
 } from "./runtimeLifecycle.js";
 export { noopPiRuntimeLifecycle } from "./runtimeLifecycle.js";
 export type {

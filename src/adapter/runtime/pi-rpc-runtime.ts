@@ -27,6 +27,7 @@ import type {
   CommandCatalogue,
   ExtensionExecutionProfile,
   ModelMutationResult,
+  ManualCompactionResult,
   ModelProjectionResult,
   PiRuntimeLifecycle,
   ProjectTrustFlag,
@@ -45,6 +46,8 @@ const START_TIMEOUT_MS = 15_000;
 const PROMPT_TIMEOUT_MS = 30_000;
 const MODEL_RPC_TIMEOUT_MS = 15_000;
 const STOP_TIMEOUT_MS = 5_000;
+const MANUAL_COMPACTION_TIMEOUT_MS = 180_000;
+const MAX_COMPACTION_INSTRUCTION_BYTES = 4096;
 const RENAME_UNVERIFIED = "The conversation name could not be verified. The visible name was kept; pi may already have changed it. Explicit runtime recovery is required before retrying.";
 
 type RpcFrame = ReturnType<ReturnType<typeof createRpcFrames>["interpret"]>;
@@ -86,6 +89,7 @@ class RpcRuntime {
   private usageConversation: { id: string; path: string } | undefined;
   private openedConversation: OpenedConversation | undefined;
   private renameOperation: { session: number; connection: RuntimeLink; mutationIssued: boolean } | undefined;
+  private compactionOperation: { session: number; connection: RuntimeLink; aborted: boolean } | undefined;
   private queueControlOperation: { session: number } | undefined;
   private queuedSend: { session: number; connection: RuntimeLink; pending: Promise<AttachmentPromptResult>; retire(): void } | undefined;
   private resumedConversation: boolean;
@@ -146,6 +150,7 @@ class RpcRuntime {
   };
 
   private readonly applyRuntime = (result: Extract<ReturnType<ReturnType<typeof createRpcFrames>["interpret"]>, { kind: "runtime" }>): void => {
+    if (result.manualCompactionEnded && this.compactionOperation?.session === this.activeSession) this.compactionOperation.aborted = result.manualCompactionEnded.aborted;
     if (result.conversationTouched) this.untouchedConversation = false;
     if (result.agentSettled) this.occupancy.noteAgentSettled();
     for (const event of result.events) this.emit(event);
@@ -897,6 +902,33 @@ class RpcRuntime {
     return () => this.listeners.delete(listener);
   };
 
+  private readonly compactContext = async (customInstructions: string | undefined, expectedSession: number): Promise<ManualCompactionResult> => {
+    if (!this.child || !this.gateReady || expectedSession !== this.activeSession || this.compactionOperation
+      || !this.occupancy.allowsRestart() || (customInstructions !== undefined && Buffer.byteLength(customInstructions, "utf8") > MAX_COMPACTION_INSTRUCTION_BYTES)) {
+      return { outcome: "unavailable", agentRunning: this.occupancy.agentRunning() };
+    }
+    const operation = { session: this.activeSession, connection: this.child, aborted: false };
+    this.compactionOperation = operation;
+    this.occupancy.beginManualCommand();
+    let outcome: ManualCompactionResult["outcome"] = "failed";
+    try {
+      const reply = await this.invokeRpc({ type: "compact", ...(customInstructions !== undefined ? { customInstructions } : {}) }, MANUAL_COMPACTION_TIMEOUT_MS);
+      outcome = operation.aborted ? "cancelled" : reply.success ? "completed" : "failed";
+    } catch {
+      if (this.child === operation.connection && this.activeSession === operation.session) {
+        await this.faultStop();
+        this.emit({ kind: "runtime_error", session: operation.session, detail: "Compaction completion could not be verified. Explicit runtime recovery is required." });
+      }
+    } finally {
+      if (this.compactionOperation === operation) this.compactionOperation = undefined;
+      if (this.child === operation.connection && this.activeSession === operation.session) {
+        this.occupancy.finishCommand(operation.connection);
+        this.emit({ kind: "command_handled", session: operation.session, agentRunning: this.occupancy.agentRunning() });
+      }
+    }
+    return { outcome, agentRunning: this.child === operation.connection && this.occupancy.agentRunning() };
+  };
+
   lifecycle(): PiRuntimeLifecycle {
     return {
       start: this.start,
@@ -915,6 +947,7 @@ class RpcRuntime {
       setInteractionHandler: this.setInteractionHandler,
       setApprovalHandler: this.setApprovalHandler,
       abortTask: this.abortTask,
+      compactContext: this.compactContext,
       getSession: () => this.activeSession,
       getSessionUsage: this.getSessionUsage,
       getCommandCatalogue: () => this.commandCatalogue,
