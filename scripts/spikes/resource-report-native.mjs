@@ -55,7 +55,7 @@ exports.run = async () => {
   try {
     const extension = vscode.extensions.getExtension('pi-vscode-dev.pi-vscode');
     assert.ok(extension);
-    await extension.activate();
+    record.activeBeforeCommand = extension.isActive;
     record.extensionPath = extension.extensionPath;
     record.extensionVersion = extension.packageJSON.version;
     record.piVersion = JSON.parse(await fs.readFile(path.join(extension.extensionPath, 'node_modules/@earendil-works/pi-coding-agent/package.json'), 'utf8')).version;

@@ -167,9 +167,12 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   async showResourceReport(): Promise<void> {
     if (this.disposed) return;
-    await this.pluginInventory.reload(() => !this.disposed);
+    const inventory = this.pluginInventory.snapshot;
+    if (!inventory.busy) {
+      await this.pluginInventory.reload(() => !this.disposed && this.pluginInventory.snapshot === inventory);
+      this.reportInventoryReady = true;
+    }
     if (this.disposed) return;
-    this.reportInventoryReady = true;
     await this.resourceReport.open();
   }
 
