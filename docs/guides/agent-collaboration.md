@@ -22,7 +22,7 @@ This guide owns work approval and handoff. [Product requirements](../product-req
 | States goals, preferences, and what feels wrong | Reads requirements, architecture, `AGENTS.md`, and `ACTIVE.md` |
 | Chooses among proposed options (`yes` / `no` / `option B`) | Proposes the next work item, approach, risks, and acceptance steps |
 | Accepts or rejects outcomes like an end user | Implements, runs checks, documents how to verify |
-| Adds ideas to the parking lot | Keeps a single work in progress (WIP=1) |
+| Adds ideas to the parking lot | Keeps approved work within WIP≤3 |
 
 The maintainer is not expected to know the product stack deeply. The agent proposes **what to do next**; the maintainer approves before large or irreversible code changes.
 
@@ -34,13 +34,16 @@ Use [AGENTS](../../AGENTS.md) for document responsibilities and conflict priorit
 
 When a new confirmed choice in chat differs from ACTIVE, update ACTIVE to that confirmed choice while retaining unresolved conditions.
 
-## 4. Work in progress (WIP=1)
+## 4. Work in progress (WIP≤3)
 
-- Exactly **one** active work item (`WI-xxx`) in `ACTIVE.md` at a time.
-- New ideas go to **Parking lot** in `ACTIVE.md`, not into implementation, until the maintainer reprioritizes.
-- Each active WI has a persistent, fully reviewable proposal in `ACTIVE.md` covering goal and scope, approach and risks, observable acceptance, out of scope, applicable gate ID and decision class, **PRD assessment**, and approval status. A proposal can be incomplete during Prepare, but Build requires recorded maintainer approval.
-- `ACTIVE.md` is the current-work entry point, not an append-only history. Its stable sections are: session entry, exactly one Current work section, Current focus and open items, Parking lot, at most two recent handoffs, and a compact Completed WI index. Closed-WI proposals, long acceptance checklists and older handoffs belong under `docs/archive/`, with a link from the index.
-- Architecture **gates** must not be treated as shipped product until closed with an Accepted ADR.
+- At most **three** explicitly approved active work items (`WI-xxx`) may appear in `ACTIVE.md`. The maintainer authorized this limit for WI-079, current-session rename and completed assistant-reply copy on 2026-10-02; other work is not automatically promoted.
+- New ideas go to **Parking lot** until explicitly approved.
+- Each active WI has its own persistent proposal and handoff record linked from `ACTIVE.md`: owner, scope, approval, dependencies, expected paths, shared interfaces, failure modes, PRD/architecture impact, observable acceptance, verification and handoff status. Prepare must be complete before Build; existing explicit scoped authorization remains valid.
+- The lead alone maintains the total entry and final handoff. Executors maintain only their own WI records and use separate Git worktrees and branches. Before dispatch, inspect staged/unstaged changes and every required baseline; preserve uncertain ownership without committing it. Record how any required uncommitted baseline is carried into the correct task.
+- Inspect path/interface overlap on the shared task board before Build. Assign one owner to common contracts/types; publish that dependency first and have dependent tasks use the same committed contract. Independent feature hunks in common files require lead review and sequential integration.
+- Each executor verifies its own worktree and supplies reviewed diffs, red/green evidence and reproducible artifacts. The lead queues shared F5/VSIX resources, reviews each task before local sequential integration, and verifies the combined result. No implicit permission to push, publish, rewrite history or discard changes.
+- `ACTIVE.md` remains the entry point: session entry, one Current work registry (up to three rows), Current focus and open items, Parking lot, at most two recent handoffs and a compact Completed WI index. Detailed active proposals may live in linked per-WI records; closed records belong under `docs/archive/`.
+- Architecture gates, safety and actual acceptance requirements remain unchanged.
 
 ### Progressive loading
 
@@ -57,7 +60,7 @@ Stop expanding links when scope, constraints, contract and required evidence are
 | Step | Action and completion criterion |
 |------|---------------------------------|
 | Open | Use kernel baseline reads, this guide and ACTIVE to establish the WI, approval, last handoff, proposed focus and acceptance. Mentioning only ACTIVE uses the same entry procedure. |
-| Propose (Prepare) | Complete the reviewable proposal from §4 in ACTIVE, with decision class `none` / `spike-only` / `adr-after-approval` and applicable gate. Record maintainer approval of approach/scope before Build; existing explicit approval remains valid. |
+| Propose (Prepare) | Complete the reviewable proposal from §4 in the linked WI record, with decision class `none` / `spike-only` / `adr-after-approval` and applicable gate. Record maintainer approval of approach/scope before Build; existing explicit approval remains valid. |
 | Build | Implement the approved proposal using AGENTS task routes and run applicable checks. Completion requires reviewable behavior and verification results, not merely edited files. |
 | Close | Reconcile the approved slice and acceptance; fix or explicitly defer differences. Update the latest handoff and preserve history under §7. Keep missing maintainer acceptance or ADR conditions pending and name the gap. |
 
@@ -65,7 +68,7 @@ Stop expanding links when scope, constraints, contract and required evidence are
 
 ### Git ownership and concern isolation
 
-At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns even though product work remains WIP=1, but every change must have clear ownership and a destination before staging.
+At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns while approved product work stays within WIP≤3, but every change must have clear ownership and a destination before staging.
 
 When staging or committing, load the [Git commit convention](../git-commit-convention.md), which owns ACTIVE isolation, overlapping-hunk recovery and full staged-content review. Keep the WI record distinct from implementation concerns, preserving the existing index and user work. Commits still require explicit authorization.
 
@@ -105,7 +108,7 @@ Apply this checkpoint when a discussion reaches a meaningful interim conclusion,
 | WI close or a confirmed replacement leaves inactive material worth retaining | Archive affected old discussions, proposals or long closed-WI records under `docs/archive/`, with reason, historical status and a replacement link (or an explicit explanation when none exists). Keep historical ADRs in `docs/decisions/` with status and replacement relationships. |
 | Routine Q&A, a small change or a one-line future idea | No standalone document; use the existing handoff or parking lot if needed. |
 
-Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep the complete current-WI proposal, approval state, unresolved blockers and brief handoff in `ACTIVE.md`; link detailed background, decisions and closed history instead of copying them back. At WI close, move the inactive proposal, long acceptance evidence and superseded handoffs to archive, then replace them with one row in the Completed WI index. The approved current scope and acceptance must remain readily reviewable from ACTIVE.
+Before writing, find and update the existing topic; avoid empty files, duplicate reports and multiple copies of the same facts. Keep the complete current-WI proposal, approval state, unresolved blockers and brief handoff in the linked per-WI record; link detailed background, decisions and closed history instead of copying them back. At WI close, move the inactive proposal, long acceptance evidence and superseded handoffs to archive, then replace them with one row in the Completed WI index. The approved current scope and acceptance must remain readily reviewable from ACTIVE.
 
 This rule provides standing authorization for recordkeeping and archival **within the discussion or work already authorized**, without asking whether to save or where to put it. It does not approve a proposal, broaden implementation scope, start a bulk historical cleanup, authorize deletion or create Git commits. An explicit read-only request takes precedence. If approval is ambiguous, ask only about the specific decision; never infer approval from an agent recommendation or a successful test.
 
