@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { tick } from "../harness.js";
 import { renameFixture } from "./rename.test-support.js";
 
@@ -17,6 +17,7 @@ test("transport loss after the public rename write reports unknown name outcome 
     assert.match(state.runtimeDetail ?? "", /recovery/i);
     assert.equal(f.commands.filter(value => value.type === "set_session_name").length, 1);
     assert.deepEqual(f.memory.releases, ["uncertain"]);
+    mkdirSync("dist/wi080", { recursive: true });
     writeFileSync("dist/wi080/mutation-loss.json", JSON.stringify({ status: "passed", mutationAttempts: 1, upstreamOutcome: "unknown",
       visibleError: state.runtimeDetail, explicitRecovery: true, replay: false }, null, 2));
   } finally { await f.close(); }

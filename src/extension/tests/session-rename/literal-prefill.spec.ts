@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { tick } from "../harness.js";
 import { renameFixture } from "./rename.test-support.js";
 
@@ -13,6 +13,7 @@ test("accepting the unchanged literal upstream prefill is a no-op even with surr
     assert.equal(prompts, 1);
     assert.equal(f.commands.filter(value => value.type === "set_session_name").length, 0);
     assert.equal(f.state.sessionName, original);
+    mkdirSync("dist/wi080", { recursive: true });
     writeFileSync("dist/wi080/literal-prefill.json", JSON.stringify({ status: "passed", nativePrefillLiteral: true, unchangedNoMutation: true }, null, 2));
   } finally { await f.close(); }
 });
