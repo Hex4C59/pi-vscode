@@ -70,6 +70,32 @@ At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff,
 
 When staging or committing, load the [Git commit convention](../git-commit-convention.md), which owns ACTIVE isolation, overlapping-hunk recovery and full staged-content review. Keep the WI record distinct from implementation concerns, preserving the existing index and user work. Commits still require explicit authorization.
 
+### Candidate evidence and remote checks
+
+Task-candidate validation and PR-integration validation answer different questions:
+
+- Validate the committed candidate after incorporating the fetched `origin/master`, resolving conflicts and running relevant checks in the current checkout.
+- Before landing, validate the actual integration candidate, such as the PR merge ref or a trusted merge-queue candidate. Record its tested commit, target base and PR head, not merely the task branch name. A task result applies to another candidate only when the relevant executable tree is identical; a changed base requires updated integration evidence.
+- Formal candidate evidence identifies a committed, clean source tree. Checks against uncommitted files are development evidence: record the dirty state and retain the patch/source snapshot, rather than claiming that HEAD alone passed. Changes after a run do not inherit its result.
+- The [PR base workflow](../../.github/workflows/pr-base.yml) runs on all PRs targeting `master`, including documentation-only changes. The shared CLI accepts `--base <full-commit-sha> --head <full-commit-sha>` without fetching and checks those exact snapshots, not checkout HEAD, which may be a synthetic merge. The no-argument local command still fetches first. The workflow preserves fixture results and the PR ancestry log; neither proves product behavior or real-host acceptance.
+- The remote check covers the PR event's base/head snapshot only. Its presence is not a configured merge requirement or continuous proof of the latest target branch. Maintainers must separately configure required checks and up-to-date-branch or trusted merge-queue protection, and rerun affected checks for a changed candidate. Do not claim these server settings or remote execution are verified from a local workflow file.
+
+Record evidence using this identity block alongside the checks required by the [testing guide](agent/testing.md); do not create a new test tier merely to fill the template:
+
+```text prompt
+Validation stage: task-candidate | PR-integration | development
+Tested candidate commit: <full SHA of the source that actually ran>
+Base commit: <full SHA incorporated or used by that candidate>
+PR head commit: <full SHA for integration evidence, otherwise not applicable>
+Source state: clean | dirty (development evidence only)
+Dirty source snapshot: <patch/source artifact if dirty, otherwise not applicable>
+Checks: <exact commands/suites>
+Results: <passed, failed, skipped and unverified separately>
+Environment: <actual host/runtime and relevant versions>
+Artifacts: <repeatable report/log locations>
+```
+
+
 ## 6. Maintainer prompts (copy-paste)
 
 **New chat (routine):**

@@ -75,6 +75,32 @@ Agent 提案可以是**「暂不做了」**、**「本阶段现状足够」**或
 
 暂存或提交时，加载 [Git 提交规范](../git-commit-convention.zh.md)：其中集中规定 ACTIVE 隔离、重叠 hunk 恢复和完整暂存审阅。当前 WI 记录独立于实现关注点；保持既有 index 和用户工作。提交仍须明确授权。
 
+### 候选证据与远端检查
+
+任务候选验证与 PR 集成验证回答不同问题：
+
+- 纳入已获取的 `origin/master` 并解决冲突后，在当前 checkout 对已提交候选运行相关检查。
+- 落地前验证实际集成候选，例如 PR merge ref 或可信 merge-queue 候选。记录实际测试提交、目标基线与 PR head，而不只是任务分支名。仅当相关可执行树相同时，任务结果才适用于另一候选；基线变化须更新集成证据。
+- 正式候选证据标识已提交且干净的源码树。针对未提交文件的检查属于开发证据：记录脏状态并保留补丁／源码快照，不声称 HEAD 本身通过。运行后修改不继承之前结果。
+- [PR 基线工作流](../../.github/workflows/pr-base.yml) 对所有目标为 `master` 的 PR 运行，包括仅文档修改。共享 CLI 接受 `--base <full-commit-sha> --head <full-commit-sha>`，不 fetch，只检查这两个准确快照，不误查可能为合成 merge 的 checkout HEAD。无参数本地命令仍先 fetch。工作流保留 fixture 结果及 PR 祖先检查日志；两者均不证明产品行为或真实宿主验收。
+- 远端检查仅覆盖 PR 事件的 base/head 快照。有工作流不代表已配置合并必需检查，也不持续证明包含目标分支最新版本。维护者须另行配置必需检查与分支最新／可信 merge-queue 保护；候选变化须重跑受影响检查。不得仅凭本地工作流文件声称服务端设置或远端运行已验证。
+
+将以下身份块与[测试指南](agent/testing.zh.md) 要求的检查一起记录，不为填模板新增测试层级：
+
+```text prompt
+Validation stage: 任务候选 | PR 集成 | 开发
+Tested candidate commit: <实际运行源码的完整 SHA>
+Base commit: <该候选纳入或使用的基线完整 SHA>
+PR head commit: <集成证据的完整 SHA；其他情况写不适用>
+Source state: 干净 | 脏（仅开发证据）
+Dirty source snapshot: <脏状态的补丁／源码工件；其他情况写不适用>
+Checks: <准确命令／套件>
+Results: <分别列出通过、失败、跳过、未验证>
+Environment: <实际宿主／runtime 及相关版本>
+Artifacts: <可重复报告／日志位置>
+```
+
+
 ## 6. 维护者提示词（可复制）
 
 **新对话（常规）：**
