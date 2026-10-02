@@ -292,7 +292,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if(event.kind==='message_final') {
       if (!this.state.chatBusy || this.settledOutcome) return;
       const messages=[...this.state.messages];const index=messages.findIndex(m=>m.id===event.messageId);
-      if(index>=0)messages[index]={role:'assistant',id:event.messageId,text:event.text};else if(event.text)messages.push({role:'assistant',id:event.messageId,text:event.text});
+      const final = { role: 'assistant' as const, id: event.messageId, text: event.text,
+        ...(event.bodyCopyEligible && !this.stoppingTask ? { bodyCopyEligible: true as const } : {}) };
+      if(index>=0)messages[index]=final;else if(event.text)messages.push(final);
       this.state={...this.state,messages:messages.slice(-32)};this.publish();return;
     }
     if (event.kind === "text_delta") {
@@ -300,7 +302,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       const messages = [...this.state.messages];
       const last = messages.at(-1);
       if (last?.role === "assistant" && (!event.messageId || last.id===event.messageId)) {
-        messages[messages.length - 1] = { ...last, text: (last.text + event.delta).slice(0,65536) };
+        messages[messages.length - 1] = { role: last.role, ...(last.id ? { id: last.id } : {}), text: (last.text + event.delta).slice(0,65536) };
       } else {
         messages.push({ role: "assistant", text: event.delta.slice(0,65536), ...(event.messageId?{id:event.messageId}:{}) });
       }

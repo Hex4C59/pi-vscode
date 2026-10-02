@@ -57,7 +57,11 @@ export function createRpcFrames() {
     const finalMessage = "message" in parsed ? parsed.message : undefined;
     if (parsed.type === "message_end" && finalMessage?.role === "assistant" && Array.isArray(finalMessage.content)) {
       const text = finalMessage.content.filter((p) => p.type === "text" && typeof p.text === "string").map((p) => p.text).join("");
-      events.push({ kind: "message_final", session, messageId: activity.currentMessageId(), text: displayText(text).slice(0, 65536) });
+      const projected = displayText(text);
+      const bodyCopyEligible = !context.aborting && finalMessage.stopReason === "stop" && !!text.trim()
+        && text.length <= 65536 && projected === text;
+      events.push({ kind: "message_final", session, messageId: activity.currentMessageId(), text: projected.slice(0, 65536),
+        ...(bodyCopyEligible ? { bodyCopyEligible: true } : {}) });
     }
     if (parsed.type === "message_end" && finalMessage?.role === "assistant" && finalMessage.stopReason === "error") {
       events.push({ kind: "stream_error", session, detail: formatRuntimeError(typeof finalMessage.errorMessage === "string" && finalMessage.errorMessage.trim() ? finalMessage.errorMessage : "Assistant request failed.") });

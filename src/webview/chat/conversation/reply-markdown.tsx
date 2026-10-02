@@ -100,7 +100,7 @@ function renderTokens(tokens: readonly Token[]): ReactNode {
   });
 }
 
-/** Preview-only assistant body. Approval input and attachment snapshots never call this Module. */
+/** Safe projected assistant body shared by production and preview; never attachment or approval input. */
 export function ReplyMarkdown({ text }: { text: string }): ReactNode {
   return <div className="candidate__markdown">{renderTokens(Lexer.lex(text, { gfm: false }))}</div>;
 }

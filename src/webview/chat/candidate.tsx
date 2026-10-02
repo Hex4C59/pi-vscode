@@ -141,7 +141,7 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
             disabled={!!snapshot.error || state.busy || controls.sessionTransitioning}
             onPage={client.savedHistory.page} onPreview={client.savedHistory.preview} onPreviewPage={client.savedHistory.navigatePreview}
             onClosePreview={client.savedHistory.closePreview} onInteract={() => { follow.current = false; }} />}
-          <CandidateConversation messages={state.messages} activities={state.activities} chatBusy={state.chatBusy} />
+          <CandidateConversation messages={state.messages} activities={state.activities} chatBusy={state.chatBusy} generation={state.generation} viewId={state.viewId} conversationId={snapshot.sessions?.current?.id ?? null} />
         </>}
       </>}
     </div>
