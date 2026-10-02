@@ -7,11 +7,27 @@
 | 步骤 | Agent |
 |---|---|
 | 开场 | 必要阅读、Git 基线、当前 WI／批准／Gate／PRD 与验收核对。 |
-| 提案 | Prepare 记录范围与 PRD 判定；Build 须批准；WIP 最多 1。 |
+| 提案 | Prepare 记录范围与 PRD 判定；限定批准 Prepare 后直接 Build；WIP 最多 3，任务分别记录。 |
 | 建造 | 按批准实现并实际验证；模拟／runtime／F5／安装分别取证。 |
 | 收尾 | 记录验收身份、检查结果与未决项；按规则归档并清理资源。 |
 
-## 正在做（WIP=1）
+## 任务登记（最多 3 个执行槽位）
+
+2026-10-02 本轮维护者明确批准 WIP≤3、三个独立分支／worktree、Prepare 完成后在限定范围内直接 Build、本地任务提交及主 agent 顺序集成。安全／架构／真实验收要求不变；no push／publish／amend／rebase／force／discard。主 agent 独占总入口与最终交接，各执行 agent 仅维护自己的任务记录。
+
+| 任务 ID | 阶段 | 槽位 | 执行者／所有者 | 分支／worktree | 范围／依赖 |
+|---|---|---|---|---|---|
+| WI-079 | Build | 1 | Agent A | team/wi079-usage / ../pi-vscode-worktrees/team-wi079-usage | 只读用量；A 先交付公共协议；已有红测仅归 A |
+| WI-080 | Prepare | 2 | Agent B | team/wi080-rename / ../pi-vscode-worktrees/team-wi080-rename | PI-GAP-12 当前已打开会话重命名；依赖 A 公共契约 |
+| WI-081 | Prepare | 3 | Agent C | team/wi081-copy / ../pi-vscode-worktrees/team-wi081-copy | PI-GAP-20 已完成 assistant 正文复制；保留代码块复制 |
+
+基线：master `dd33b5d` 干净，暂存及 ACTIVE 未提交差异为空；六个登记旧 worktree 均干净，全部保留。旧 `0412459` 的 mounted usage 红测由 A 单独带入；旧并行入口校验器与测试由主 agent 仅复用相关文件，先观察 3 项失败再实现，13 项通过。没有所需未提交基线。旧 CI／PR／隔离规则提交不整批并入本轮。
+
+共享文件：A 独占初始 host-owned 协议／runtime 类型及 validator 契约，B 先发送重命名提案，再等统一契约本地提交；C 不新增宿主权限。共同 coordinator／i18n 文件按功能 hunk 分开，各分支独立修改，主 agent 按 A→B→C 顺序审查集成。PRD 总体变更主 agent 维护。F5／安装 VSIX 由主 agent 排队，执行 agent 不自行占用。
+
+## 任务提案
+
+### WI-079 — 只读用量
 
 | 字段 | 内容 |
 |---|---|
@@ -21,11 +37,11 @@
 | **Decision** | none（无新存储、信任、外部服务或 runtime 策略） |
 | **PRD 判定** | 用户可见：已同步中英 PRD WI-079／REQ-004／009 范围及追溯行；只批准本切片，不接受整份 Draft，不升级 ADR 0010 |
 
-### 目标与范围
+#### 目标与范围
 
 交付 PI-GAP-03 的只读 **用量**面板：当前上下文 token 估算／容量／百分比与整会话累计 input、output、cache-read、cache-write、total token 和上游报告估算 USD 费用分开显示；未知明确。公开 get_session_stats／必要时 get_state，不读 session 文件，不自算账单，不把累计误当当前。打开／手动刷新／ready 和任务稳定结束后的刷新，替换／New／Restore 不串会话，忙碌时标旧快照，不额外轮询。只做个人本机 macOS VS Code；排除 compact、导出、实时账单和持久化用量。
 
-### 方案与架构核对
+#### 方案与架构核对
 
 安装 pi **0.86.1** 的公开 `docs/rpc.md` get_session_stats（554–595 行）明确 full-session tokens/cost（含 tools／compaction／branch summary）和当前 contextUsage；无模型时 contextUsage 缺失，压缩后 tokens／percent 可为 null。当前 adapter 在 checkpointRestart 用该公开统计，但未对产品用量投影。可复用现有 request owner／5s deadline，禁止新增 generic RPC bridge。
 
@@ -33,7 +49,7 @@
 
 adapter 提供具名只读统计能力并验证 finite 非负数字和会话身份；宿主拥有一个 coalesced refresh、世代与快照；renderer 收 bounded nullable numeric DTO，绝不收路径／原响应。零费用但无可用非零定价明确 unknown，不证明免费。先通过[双语 Outline](docs/reference/webview-messages.zh.md#wi-079-只读用量outline未实现)核对字段／状态，再 test-first 实现。UI 本地打开／关闭，Refresh 仅 chat 无参数意图；沿一次一张弹出层，焦点不丢草稿。无新依赖／进程／持久化。
 
-### 架构核对（Prepare：implement now；Implementable，尚非 Verifiable）
+#### 架构核对（Prepare：implement now；Implementable，尚非 Verifiable）
 
 | 维度 | 状态、证据与下一检查 |
 |---|---|
@@ -46,11 +62,11 @@ adapter 提供具名只读统计能力并验证 finite 非负数字和会话身�
 | 18 版本兼容 | pass（设计）：v3 host／bundled UI 成对，只 chat；旧 view 不接纳。未扩支持平台。 |
 | 19 UX／可访问性 | gap：中英状态、未知／旧值、键盘／焦点／互斥、主题窄屏及 macOS 原生待验。 |
 
-### 失败方式（代码前）
+#### 失败方式（代码前）
 
 累计冒充当前上下文；null 缺失变 0；零／未知定价显示免费；坏数字 NaN／负／无限／超界进入 UI；sessionFile／raw 响应／凭据跨边界；重复 Refresh 无限请求；busy／替换／迟到结果污染新会话；New／Restore 显示旧累计；错误显示成功；只发 RPC 不观察 cleanup；用量面板和模型／命令同时开；Escape／刷新丢未发草稿；实际 stats 被模拟替代却声称 runtime 通过。
 
-### 验收
+#### 验收
 
 1. 首先写行为端到端／跨 owner 用例并观察红，再实现，保留可重复 JSON 工件；host→adapter→validated client→mounted production panel，区分累计／当前、null、坏数字、零定价、无会话／错误／超时、busy／late replace／cleanup与非 chat 拒绝。
 2. 真实 pi 0.86.1＋隔离 HOME／workspace／loopback provider 获取公开 stats；记录请求、数字、身份替换与 child close，不使用真实凭据、用户 sessions 或付费模型。
@@ -58,13 +74,65 @@ adapter 提供具名只读统计能力并验证 finite 非负数字和会话身�
 4. macOS 真 F5 和安装 VSIX，打开→实际 stats→Refresh→New 无旧累计，草稿不被 Refresh 清掉；逐层 report、截图及 cleanup，禁止替旧版行为验收。
 5. compile／lint／npm test／docs:verify；关闭 docs:health、双语方案／验收归档，实现提交不含 ACTIVE，收尾 docs(active) 单独提交。未验明确，不自动 gate／ADR Accept。
 
-### 范围外与批准边界
+#### 范围外与批准边界
 
 2026-10-02 持续 goal 对既有 PI-GAP 内独立合规切片授权 Prepare→Build 和限定 Agent 验收。中英 PRD 已在本阶段前同步。高优先级冲突、产品扩张、重大架构／信任／隐私／存储／兼容、新服务／凭据／付费／公开发布和指定 GAP 仍须暂停询问。排除下载／市场、额外生态／平台、Chat Participant、remote／multi-root、跳审批。no push／amend／rebase／force，不改 sibling pi。
 
+### WI-080 — 当前会话重命名
+
+| 字段 | 内容 |
+|---|---|
+| **ID** | WI-080 |
+| **阶段** | Prepare |
+| **Gate ID** | none |
+| **Decision** | none；重大持久化／信任问题隔离报告 |
+| **PRD 判定** | 用户可见：PI-GAP-12，REQ-008；Build 前同步双语切片 |
+
+#### 目标与范围
+
+仅当前已打开会话显示名；公开 pi API，取消不变、失败保留原值、成功刷新当前标题及目录。禁止批量／未打开会话重命名或修改历史正文。
+
+#### 方案与架构核对
+
+B 阅读适用规则与技能后在自己的双语 WI 记录完成 Prepare（范围、失败方式、owner、公开 API、身份／迟到／并发约束、PRD／架构、可观察验收）。共享契约依赖 A；不得修改总入口。
+
+#### 验收
+
+先写 host→adapter／validated client→production mount 跨模块行为并观察失败，保留 JSON 工件；验证取消、成功、失败、空名／非法名、重复请求与替换不串会话。compile／lint／npm test／docs:verify，真实 pi 与浏览器证据；F5／安装 VSIX 主 agent 排队验收。代码及测试通过不替代真实验收。
+
+#### 范围外与批准边界
+
+本轮明确批准 Prepare 完成后直接 Build 与本地限定提交；无 push／公开发布／重写历史／丢弃旧修改。交接：尚未 Prepare，证据未验。
+
+### WI-081 — 完成回复复制
+
+| 字段 | 内容 |
+|---|---|
+| **ID** | WI-081 |
+| **阶段** | Prepare |
+| **Gate ID** | none |
+| **Decision** | none；不新增持久化或信任能力 |
+| **PRD 判定** | 用户可见：PI-GAP-20，REQ-004；Build 前同步双语切片 |
+
+#### 目标与范围
+
+仅复制已完成 assistant 回复正文（现有投影原文，保留 Markdown）；排除思考／工具／元数据／隐藏或拒绝内容。流式、空回复不可复制；保留现有代码块复制，提供成功／失败／超时反馈。历史仅在已完整展示且可靠标为完成的现有正文范围内考虑，不新增历史读取能力。
+
+#### 方案与架构核对
+
+C 阅读适用规则与技能后在自己的双语 WI 记录完成 Prepare；沿现有 browser clipboard 路径，不新增 generic bridge。检查当前完成状态与历史边界，生命周期迟到反馈不串回复；不得修改总入口。
+
+#### 验收
+
+先通过 production mount 写完整正文复制／失败跨组件用例并观察失败，保留可重复 JSON；验证原文、空态、流式、错误／拒绝内容、代码块保留、失败／超时／晚到／unmount。compile／lint／npm test／docs:verify；浏览器、中英、键盘、窄屏／主题，F5／安装 VSIX 主 agent 排队。
+
+#### 范围外与批准边界
+
+本轮明确批准 Prepare 完成后直接 Build 与本地限定提交；无批量复制、历史读取扩张、push／发布／重写历史／丢弃旧修改。交接：尚未 Prepare，证据未验。
+
 ## 当前焦点与未决项
 
-WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079 Build，下一步实现前读相关 owner／UI skill，先写 stats 闭环失败用例。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
+WI-078 菜单切片已关闭，方案与长验收见[双语归档](docs/archive/2026-10-02-wi-078-acceptance.zh.md)，不重开 WI-077／078。当前 WI-079／080／081 并行；主 agent 协调共同契约、审查及顺序集成，各执行 agent 先完成自己的 Prepare 与 test-first 用例。PI-GAP-01 附件／slash、PI-GAP-02 实际加载报告仍停车；Draft ADR 0010 保持 Draft。REQ-008／中文 REQ-009 文档漂移不是新实现任务。
 
 [PRD](docs/product-requirements.zh.md) REQ-009 macOS 已有矩阵见 [WI-070](docs/archive/2026-10-01-wi-070-acceptance.zh.md)；它不替代 WI-079 新切片分层验收。
 
