@@ -1,10 +1,10 @@
 # WI-085 — available model and thinking cycling
 
-English | [中文](2026-10-03-wi-085-model-cycling.zh.md)
+English | [中文](2026-10-02-wi-085-model-cycling.zh.md)
 
 - Type: Discussion
 - Status: Active
-- Created: 2026-10-03
+- Created: 2026-10-02
 - Authority: bounded PI-GAP-14 Prepare and pending evidence
 - Related: [ACTIVE](../../ACTIVE.md), [bounded goal](2026-10-03-eight-gap-goal.md), [requirements](../product-requirements.md)
 
@@ -25,3 +25,10 @@ Cycling unconfigured or unavailable models; matching a duplicate pretty label in
 ## Observable acceptance and artifacts
 
 Before application code, prepare provider→ModelSettings→runtime composition checks for confirmed subset and identity, wrapping model/levels, empty/cancel/singleton/unavailable/stale/failure, busy next-turn intent and Stop/settlement, existing selector unchanged, disposal/overlap. Use synthetic catalogue and isolated state, never real credentials or paid calls. Verify public actual pi set_model/set_thinking_level behavior with an isolated synthetic loopback if needed; record runtime versus simulation separately. Run compile, lint, standard behavior and docs checks; review scoped diff, local implementation commit, clean candidate checks and packaging. F5/installed VSIX separately require actual native multi-select, command keyboard interaction and readable English/Chinese controls. Existing isolated-Code binding blocker is retained, not a native pass. Evidence root `dist/goal-eight/wi085/`; no implementation or acceptance at Prepare.
+
+
+## Development checkpoint
+
+Seven provider-to-ModelSettings-to-runtime composition scenarios were prepared before application code; red showed missing methods. All seven now pass: exact identity/wrap, initial/confirmed empty/cancel/singleton, pending next-turn/settlement, actual levels/empty, failure/readback/removed members, stale/disposed/overlap, replacement/picker error. Corrected the replacement fixture to real chooseResources decline/allow, not an undeclared restart message, and supplied required failure detail. No post-code unit tests were added. Compile, lint, all 1242 standard checks, docs:verify and docs:health passed.
+
+Actual pi 0.86.1 public RPC in isolated HOME/agent/project verified synthetic duplicate-label model mutations/readback, high/off/medium level readback, missing model refusal preserving the old model and observed child close. Zero inference requests, real model calls or credentials. Command: node scripts/spikes/spike-model-cycling.mjs. Artifacts: dist/goal-eight/wi085/ (red.log, green.log, compile.log, lint.log, tests.log, docs.log, docs-health.log, runtime.log, runtime-model-cycling.json). Native F5/installed VSIX remain unverified under the isolated-window binding blocker; no acceptance or closure. Next: scoped local implementation commit and clean candidate checks. This record uses October 2, 2026 UTC; earlier October 3 filenames use the machine's Asia/Shanghai local day, not future evidence.

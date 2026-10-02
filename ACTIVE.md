@@ -9,14 +9,14 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-085 |
-| **阶段** | Build（Prepare 完成；尚未编码） |
+| **阶段** | Build（Prepare 完成） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-002/004 的轮换子集与命令 |
 
 #### 目标与范围
 
-仅内存、初始为空、当前工作区／runtime session 的实际可用模型子集；native 上／下一个模型与思考级别命令，可自行绑定快捷键。[完整 Prepare](docs/discussions/2026-10-03-wi-085-model-cycling.zh.md)记录现状、公开边界、失败方式和可观察验收。
+仅内存、初始为空、当前工作区／runtime session 的实际可用模型子集；native 上／下一个模型与思考级别命令，可自行绑定快捷键。[完整 Prepare](docs/discussions/2026-10-02-wi-085-model-cycling.zh.md)记录现状、公开边界、失败方式和可观察验收。
 
 #### 方案与架构核对
 
@@ -30,7 +30,7 @@
 
 [八项有界 Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)批准本项 Prepare→Build／验证／代理验收／本地独立提交；无 push／上游升级／付费或真实账户调用。PI-GAP-02／04／06 保留原生验收未完成。
 
-**进度与下一步：** Prepare 完成并记录；下一步编码前组合验证。
+**进度与下一步：** 编码前 7 项组合已转绿；compile／lint／1242 检查／文档通过。真实 pi 0.86.1 合成 catalogue RPC 验证通过，无推理请求。下一步独立实现提交与干净候选；native 仍未验收。
 
 ## 待完成
 
