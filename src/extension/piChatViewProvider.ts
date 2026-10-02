@@ -330,35 +330,53 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   private handleRuntimeLoss(event: Extract<RuntimeEvent, { kind: "runtime_error" }>): void {
     void this.interactions.stop();
-      void this.refreshOwnership();
-      const previousName = this.sessionRename.busy ? this.sessionProjection.current : null;
-      this.resetSavedSessions();
-      if (previousName) this.sessionProjection = { ...this.sessionProjection, current: previousName };
-      this.publishSessions();
-      this.tools.reset();
-      this.draft.runtimeLost();
-      this.queue = undefined;
-      this.stoppingTask=false;
-      this.models.cancelPending(); this.promptToken++;
-      this.state={...this.state,runtime:'error',runtimeDetail:event.detail,chatBusy:false,execution:this.settledOutcome ?? 'failed',activities:this.state.activities.map(i=>i.status==='complete'||i.status==='failed'?i:{...i,status:'interrupted'})};this.publish();return;
+    void this.refreshOwnership();
+    const previousName = this.sessionRename.busy ? this.sessionProjection.current : null;
+    this.resetSavedSessions();
+    if (previousName) this.sessionProjection = { ...this.sessionProjection, current: previousName };
+    this.publishSessions();
+    this.tools.reset();
+    this.draft.runtimeLost();
+    this.queue = undefined;
+    this.stoppingTask = false;
+    this.models.cancelPending();
+    this.promptToken++;
+    this.state = {
+      ...this.state, runtime: "error", runtimeDetail: event.detail, chatBusy: false,
+      execution: this.settledOutcome ?? "failed",
+      activities: this.state.activities.map(item => item.status === "complete" || item.status === "failed"
+        ? item : { ...item, status: "interrupted" }),
+    };
+    this.publish();
+    return;
   }
 
   private handleWorkflow(event: Extract<RuntimeEvent, { kind: "workflow" }>): void {
     if (!this.state.chatBusy || this.stoppingTask || this.settledOutcome) return;
-      if (event.phase === "retrying" || event.phase === "compacting") {
-        this.taskFailed = false;
-        this.commandHandled = false;
-        this.state = { ...this.state, chatError: null };
-      }
-      this.state = { ...this.state, execution: this.state.approvals.length ? "awaiting-approval" : event.phase };
-      this.publish(); return;
+    if (event.phase === "retrying" || event.phase === "compacting") {
+      this.taskFailed = false;
+      this.commandHandled = false;
+      this.state = { ...this.state, chatError: null };
+    }
+    this.state = { ...this.state, execution: this.state.approvals.length ? "awaiting-approval" : event.phase };
+    this.publish();
+    return;
   }
 
   private handleActivity(event: Extract<RuntimeEvent, { kind: "activity" }>): void {
     if (!this.state.chatBusy || this.settledOutcome) return;
-      const activities=[...this.state.activities];const index=activities.findIndex(i=>i.id===event.item.id);
-      if(index>=0)activities[index]=event.item;else if(activities.length<64)activities.push(event.item);
-      this.state={...this.state,activities,execution:this.state.execution==='stopping'?'stopping':this.state.approvals.length?'awaiting-approval':event.item.kind==='thinking'?'thinking':event.item.status==='executing'?'executing':'waiting'};this.publish();return;
+    const activities = [...this.state.activities];
+    const index = activities.findIndex(item => item.id === event.item.id);
+    if (index >= 0) activities[index] = event.item;
+    else if (activities.length < 64) activities.push(event.item);
+    this.state = {
+      ...this.state, activities,
+      execution: this.state.execution === "stopping" ? "stopping" : this.state.approvals.length
+        ? "awaiting-approval" : event.item.kind === "thinking" ? "thinking"
+          : event.item.status === "executing" ? "executing" : "waiting",
+    };
+    this.publish();
+    return;
   }
 
 
