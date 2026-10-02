@@ -22,7 +22,7 @@ This guide owns work approval and handoff. [Product requirements](../product-req
 | States goals, preferences, and what feels wrong | Reads requirements, architecture, `AGENTS.md`, and `ACTIVE.md` |
 | Chooses among proposed options (`yes` / `no` / `option B`) | Proposes the next work item, approach, risks, and acceptance steps |
 | Accepts or rejects outcomes like an end user | Implements, runs checks, documents how to verify |
-| Adds ideas to the parking lot | Keeps approved work within WIP≤3 |
+| Adds ideas to the parking lot | Completes approved work one WI at a time |
 
 The maintainer is not expected to know the product stack deeply. The agent proposes **what to do next**; the maintainer approves before large or irreversible code changes.
 
@@ -34,16 +34,14 @@ Use [AGENTS](../../AGENTS.md) for document responsibilities and conflict priorit
 
 When a new confirmed choice in chat differs from ACTIVE, update ACTIVE to that confirmed choice while retaining unresolved conditions.
 
-## 4. Work in progress (WIP≤3)
+## 4. Work in progress (WIP=1)
 
-- At most **three** explicitly approved active work items (`WI-xxx`) may appear in `ACTIVE.md`. The maintainer authorized this limit for WI-079, current-session rename and completed assistant-reply copy on 2026-10-02; other work is not automatically promoted.
-- New ideas go to **Parking lot** until explicitly approved.
-- Each active WI has its own persistent proposal and handoff record linked from `ACTIVE.md`: owner, scope, approval, dependencies, expected paths, shared interfaces, failure modes, PRD/architecture impact, observable acceptance, verification and handoff status. Prepare must be complete before Build; existing explicit scoped authorization remains valid.
-- The lead alone maintains the total entry and final handoff. Executors maintain only their own WI records and use separate Git worktrees and branches. Before dispatch, inspect staged/unstaged changes and every required baseline; preserve uncertain ownership without committing it. Record how any required uncommitted baseline is carried into the correct task.
-- Inspect path/interface overlap on the shared task board before Build. Assign one owner to common contracts/types; publish that dependency first and have dependent tasks use the same committed contract. Independent feature hunks in common files require lead review and sequential integration.
-- Each executor verifies its own worktree and supplies reviewed diffs, red/green evidence and reproducible artifacts. The lead queues shared F5/VSIX resources, reviews each task before local sequential integration, and verifies the combined result. No implicit permission to push, publish, rewrite history or discard changes.
-- `ACTIVE.md` remains the entry point: session entry, one Current work registry (up to three rows), Current focus and open items, Parking lot, at most two recent handoffs and a compact Completed WI index. Detailed active proposals may live in linked per-WI records; closed records belong under `docs/archive/`.
-- Architecture gates, safety and actual acceptance requirements remain unchanged.
+- One agent owns implementation, review, verification and handoff for one current work item (`WI-xxx`). Finish it, or record its blocker and the next focus, before starting another. Use additional agents only when the maintainer explicitly requests them for the current task.
+- New ideas go to **Parking lot** until explicitly approved. Previously approved unfinished WIs retain their scope and acceptance requirements in a sequential queue linked from `ACTIVE.md`.
+- The current WI records scope, approval, dependencies, expected paths, failure modes, PRD/architecture impact, observable acceptance, verification and handoff status. Prepare must be complete before Build; existing explicit scoped authorization remains valid.
+- Reuse the suitable current checkout and working branch. Inspect staged/unstaged changes and preserve uncertain ownership before editing. The agent maintains `ACTIVE.md` and its linked evidence through completion.
+- `ACTIVE.md` contains one Current work section, Current focus and open items, Parking lot, at most two recent handoffs and a compact Completed WI index. Detailed proposals may live in linked WI records; closed records belong under `docs/archive/`.
+- Architecture gates, security, actual acceptance and Git authorization requirements remain unchanged.
 
 ### Progressive loading
 
@@ -68,7 +66,7 @@ Stop expanding links when scope, constraints, contract and required evidence are
 
 ### Git ownership and concern isolation
 
-At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns while approved product work stays within WIP≤3, but every change must have clear ownership and a destination before staging.
+At the start of every task, inspect `git status`, the unstaged `ACTIVE.md` diff, and the existing staged diff. Classify every observed change as **pre-existing agent work**, **current-task work**, or **user-owned work**; uncertainty means user-owned until clarified. Keep an ephemeral commit map for the session: one row per concern recording its owner, intended commit, and expected paths or hunks. The worktree may contain several concerns, but every change must have clear ownership and a destination before staging.
 
 When staging or committing, load the [Git commit convention](../git-commit-convention.md), which owns ACTIVE isolation, overlapping-hunk recovery and full staged-content review. Keep the WI record distinct from implementation concerns, preserving the existing index and user work. Commits still require explicit authorization.
 

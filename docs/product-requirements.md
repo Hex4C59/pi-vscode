@@ -267,7 +267,7 @@ Accept bounded plain text when the runtime is ready and display incremental assi
 
 #### WI-081 approved slice — Completed assistant reply copy (PI-GAP-20)
 
-**Scope approval (2026-10-02):** the maintainer explicitly authorized this REQ-004 slice, Prepare→Build after scoped review, and three isolated work items. This is scope approval, not acceptance evidence; [ACTIVE](../ACTIVE.md) owns delivery status.
+**Scope approval (2026-10-02):** the maintainer explicitly authorized this REQ-004 slice and Prepare→Build after scoped review. This is scope approval, not acceptance evidence; [ACTIVE](../ACTIVE.md) owns delivery status.
 
 - Offer **Copy reply** only for an already completed assistant reply with a complete, nonempty safely projected body. Copy the original projected Markdown text, rather than rendered DOM text. Exclude thinking, tools, role labels, hidden/refused sensitive content and metadata. Empty, streaming, interrupted, failed or truncated bodies do not qualify for whole-reply copy.
 - Retain code-block copy. Whole-reply copy uses the existing browser clipboard boundary and shows accessible success, failure/unavailable and bounded timeout feedback. Timeout is unknown completion, not failure proof; late results after replacement/unmount must not show success on another reply. Preserve draft, streaming and reading position.
@@ -438,7 +438,7 @@ The requirements above define the personal-use target; they do not mean every de
 
 ## Traceability to work
 
-A release direction may span future WIs, while ACTIVE maintains at most three explicitly approved current implementation WIs. The 2026-09-27 delegation authorized evidence-based decisions and closure only for explicitly covered scope. The 2026-09-30 remaining-verification `/goal` later accepted this PRD as personal-use macOS installed VSIX. ACTIVE owns current work; the table below is scoped traceability, not a substitute for linked acceptance evidence.
+A release direction may span future WIs; [collaboration §4](guides/agent-collaboration.md#4-work-in-progress-wip1) owns work sequencing, and ACTIVE identifies the current WI. The 2026-09-27 delegation authorized evidence-based decisions and closure only for explicitly covered scope. The 2026-09-30 remaining-verification `/goal` later accepted this PRD as personal-use macOS installed VSIX. ACTIVE owns current work; the table below is scoped traceability, not a substitute for linked acceptance evidence.
 
 | WI ID | PRD scope | Acceptance / status |
 |-------|-----------|---------------------|

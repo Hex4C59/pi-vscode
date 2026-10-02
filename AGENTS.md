@@ -64,7 +64,7 @@ On Windows, when `mcp__node_repl` is available, read files through Node filesyst
 3. Follow the applicable load-map routes below. Read archived material only when the current question needs its evidence.
 4. Check the recorded approval scope before editing application code. A Prepare proposal is not Build authorization; obtain and record maintainer approval before advancing.
 
-Mentioning only `ACTIVE.md` (or saying 「继续 pi VS Code」) supplies a session entry point, not a waiver of required reading or approval. Keep at most three explicitly approved active WIs (WIP≤3), following the collaboration guide. Recording discussion does not authorize implementation. Git commits still require an explicit maintainer request.
+Mentioning only `ACTIVE.md` (or saying 「继续 pi VS Code」) supplies a session entry point, not a waiver of required reading or approval. Use one agent and one current WI (WIP=1), following the collaboration guide. Recording discussion does not authorize implementation. Git commits still require an explicit maintainer request.
 
 ## Conversation records
 
