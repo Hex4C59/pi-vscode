@@ -101,6 +101,9 @@ The History column keeps the original acceptance/closure link and adds standalon
 | WI-076 | Public queued-input RPC prerequisite | 2026-10-01 agent /goal; runtime-only, no product acceptance | [record](2026-10-01-wi-076-acceptance.md); [proposal](2026-10-01-wi-076-approved-proposal.md) |
 | WI-077 | Text steering/follow-up, queue display, recall and Stop recovery (PI-GAP-01 text slice) | 2026-10-02 agent /goal; F5 + installed VSIX; remainder parked | [record](2026-10-02-wi-077-acceptance.md); [proposal](2026-10-02-wi-077-approved-proposal.md) |
 | WI-078 | Composer slash discovery and acknowledged completion (PI-GAP-02 menu slice) | 2026-10-02 agent /goal; browser, real pi, F5 and installed VSIX; loaded-context remainder parked | [record](2026-10-02-wi-078-acceptance.md); [proposal](2026-10-02-wi-078-approved-proposal.md) |
+| WI-079 | Read-only context/session usage; Refresh focus fix | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-079-team.md) |
+| WI-080 | Rename the opened idle session | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-080-team.md) |
+| WI-081 | Copy completed assistant Markdown; retain code copy | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-081-team.md) |
 
 
 ## Not in this index

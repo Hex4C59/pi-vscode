@@ -45,3 +45,9 @@ compile（三个 TypeScript 配置）、lint、**1157 tests**通过，无 failed
 ## 限制与交接
 
 不是维护者亲测、真实／付费模型、OS IME、任意第三方兼容或额外宿主／平台验收；合成 IME 不能升级成 OS IME。无 AGENTS.md 加载报告、下载、存储／信任扩张或 sibling pi 修改。PI-GAP-01 附件／slash 与 PI-GAP-02 加载报告余量仍停车；下一可执行候选为只读用量（PI-GAP-03），新切片单独批准 PRD 和取证，不继承本次验收。
+
+## 原 ACTIVE 交接（2026-10-03 归档）
+
+2026-10-02 — WI-078 关闭并晋升 WI-079
+
+Agent 按持续 goal 验收，不是维护者亲测；[方案／验收](2026-10-02-wi-078-acceptance.zh.md)。实现 `bdc9f5b` 不含 ACTIVE。compile／lint／1157 tests、18 组浏览器、真实 pi 4 starts／4 closes、macOS F5／安装 VSIX 裸空格与参数保留均通过；provider 数量不变，cleanup 空。VSIX SHA-256 `fa61b6b435d2d2f3da3e364cfc66e2c2208fd25c9299677790e6800631cc08a3`。F5 前两轮失败为 harness 父窗口 CLI 抢焦点，纠正后真 `[Extension Development Host] A` 通过，失败报告保留。OS IME、真实模型、加载报告未验。PRD／Living 契约及索引同步；docs:verify／health 零错误，保留 Draft ADR 0010 两条提示。下一 WI-079 Prepare→Build 和中英 PRD 已同步，不继承已关闭证据；goal 保持 active，无 push。

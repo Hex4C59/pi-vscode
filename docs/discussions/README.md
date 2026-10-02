@@ -64,13 +64,13 @@ The [feature-gap comparison](2026-10-01-pi-feature-gaps.md) remains a candidate 
 - [ARCH-08 streaming and history preview cost](2026-09-30-arch-08-streaming-history-cost.md)
 - [Resource and timeout measurement](2026-09-30-resource-timeout-measurement.md)
 
-### Active team task records
+### Archived WI-079–081 records
 
-- [WI-079 usage — Prepare, evidence and handoff](2026-10-02-wi-079-team.md)
-- [WI-080 current-session rename — Prepare, evidence and handoff](2026-10-02-wi-080-team.md)
-- [WI-081 reply copy — Prepare, evidence and handoff](2026-10-02-wi-081-team.md)
+- [WI-079 usage — Prepare, evidence and handoff](../archive/2026-10-02-wi-079-team.md)
+- [WI-080 current-session rename — Prepare, evidence and handoff](../archive/2026-10-02-wi-080-team.md)
+- [WI-081 reply copy — Prepare, evidence and handoff](../archive/2026-10-02-wi-081-team.md)
 
-These records describe their authorized slices; ACTIVE owns the current approval/status registry and PRD owns behavior. Native acceptance remains pending until observed.
+These records were archived after scoped native acceptance on 2026-10-03. ACTIVE owns the current work registry and PRD owns behavior; historical checkpoints retain their original evidence limits.
 
 ### Code audits and verification evidence
 

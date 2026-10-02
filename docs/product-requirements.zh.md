@@ -489,9 +489,9 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-069 | REQ-002 活跃模型身份使用供应商／模型 id，不用显示名 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-069-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-069-acceptance.zh.md)。 |
 | WI-077 | REQ-004／005 文字 steering／follow-up、诚实队列与显式恢复（PI-GAP-01） | 2026-10-02 Agent 依据持续产品切片 goal 关闭；[验收](archive/2026-10-02-wi-077-acceptance.zh.md)。排除附件和命令／模板展开。 |
 | WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-02 Agent 依据持续 goal 关闭；[验收](archive/2026-10-02-wi-078-acceptance.zh.md)。实际加载报告仍停车。 |
-| WI-080 | REQ-008 当前已打开会话重命名（PI-GAP-12） | 2026-10-02 明确范围批准；Prepare→Build、共享契约依赖与原生验收见 [ACTIVE](../ACTIVE.md)。未交付；不含批量／历史正文变更。 |
-| WI-081 | REQ-004 完成 assistant 回复正文复制（PI-GAP-20） | 2026-10-02 明确范围批准；Prepare→Build 与独立 clipboard／原生证据见 [ACTIVE](../ACTIVE.md)。未交付；保留代码块复制。 |
-| WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-02 持续 goal 下完成 Prepare／授权范围；Build／证据见 [ACTIVE](../ACTIVE.md)。未交付；无 compact／存储／账单承诺。 |
+| WI-080 | REQ-008 当前已打开会话重命名（PI-GAP-12） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-080](archive/2026-10-02-wi-080-team.zh.md). |
+| WI-081 | REQ-004 完成 assistant 回复正文复制（PI-GAP-20） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-081](archive/2026-10-02-wi-081-team.zh.md). |
+| WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
 | WI-038 | REQ-002 自定义 endpoint 跨宿主写入互斥及明确冲突／清理结果（ARCH-05） | 2026-09-30 由代理依据本会话完成 ACTIVE 收尾并提交的要求接受；[双窗口证据与限制](archive/2026-09-30-wi-038-macos-acceptance.zh.md)。[ADR 0007](decisions/0007-endpoint-write-transaction.zh.md)已 Accepted；不接受整份 PRD 或 gate。 |
