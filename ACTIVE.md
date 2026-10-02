@@ -4,33 +4,33 @@
 
 ## 正在做（WIP=1）
 
-### WI-086 — PI-GAP-24 当前项目会话搜索
+### WI-087 — PI-GAP-21 有界 Mermaid 渲染
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-086 |
-| **阶段** | Build（Prepare 完成） |
+| **ID** | WI-087 |
+| **阶段** | Prepare（调查中，未进入 Build） |
 | **Gate ID** | none |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：REQ-008/009 catalogue 搜索／筛选／排序 |
+| **PRD 判定** | 用户可见：安全回复渲染，映射待 Prepare 明确 |
 
 #### 目标与范围
 
-完整批准当前项目 catalogue 的既有有界标题／名称／首条预览搜索，named-only 和 recent／oldest／name 排序，先筛再页；不全文／全局搜索。[完整 Prepare](docs/discussions/2026-10-02-wi-086-session-search.zh.md)记录公开 API、现状、失败方式及验收。
+安全有界 Mermaid、保留源码与复制、流式／错误／过大回退。[Prepare](docs/discussions/2026-10-02-wi-087-mermaid.zh.md)记录现状、候选公开 API 与编码前失败方式。
 
 #### 方案与架构核对
 
-host ephemeral criteria；具名 intent／显式 Search／Enter／Clear，刷新与分页一致；5000 项／15 秒，超限明确失败、不截断冒充完整。公开 SessionManager 当前项目 list，不会话解析／索引／持久 query。保留恢复确认和顺序交接。
+先验证本地 renderer 与既有 nonce／local-only CSP；不扩大资源／执行权限，不外部加载／联网，不直接信任 SVG。确定预算、sanitize、生命周期后才 Build。
 
 #### 验收
 
-先 worker／host／mounted 组合再实现；真实隔离 SDK、真实浏览器、F5／安装 VSIX 分层；compile／lint／行为／文档、提交后干净候选／打包，保留可重复工件。原生阻碍不冒充通过。
+先 CSP 技术探针与预写 mounted／组合，真实浏览器矩阵、compile／lint／行为／文档、提交后候选／打包；native F5／安装独立，阻碍不冒充通过。
 
 #### 范围外与批准边界
 
-[八项有界 Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)批准本项实施／实际验证／代理验收／本地提交；不扩大 session 目录或资源／权限，不真实账户／付费／push。PI-GAP-02／04／06／14 原生验收未完成。
+[八项 Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界批准，不授权放宽 CSP、付费模型、真实账户、发布。PI-GAP-02／04／06／14／24 native 未完成。
 
-**进度与下一步：** 实现与六项组合转绿；隔离 HOME／空 auth 下 compile／lint／1248 检查通过。真实公开 SDK／worker 与 18 份浏览器暂存条件视觉工件保留，native 未验收。下一步 scoped 提交与干净候选。
+**进度与下一步：** WI-086 的 4bb653c 干净隔离候选通过并保留未验收项；当前调查确切 Mermaid 11.12.0 公开包及严格 CSP 能否安全渲染，无应用修改。
 
 ## 待完成
 
@@ -59,7 +59,7 @@ host ephemeral criteria；具名 intent／显式 Search／Enter／Clear，刷新
 | PI-GAP-17／需工具／信任决策 | 用户可选工具集合：初始工具子集、仅检查工作流与可用工具展示。 | 公开工具配置，实际启用集合、生效时机与恢复明确；不绕过审批，不把省略 write／edit 宣称严格只读或沙箱，说明 shell／Trusted 扩展写入能力。 |
 | PI-GAP-18／后续 | 丰富自定义模型配置：多模型、API 类型、上下文／输出上限、能力／兼容元数据及 headers。 | 分片批准字段；公开格式，保留已有模型与未知配置，字段验证和失败恢复；credentials／敏感 headers 不进入 Webview；不误称外部 models.json 支持缺失。 |
 | PI-GAP-19／需本地模型范围决策 | llama.cpp router 模型下载、加载、卸载及状态展示。 | 先确认公开控制方式与本机范围；来源、空间／网络、取消及恢复明确，加载状态可核对；卸载活动模型先处理任务；不默认安装／启动服务，登录端点不是模型管理。 |
-| PI-GAP-21／较低 | Mermaid 渲染，保留源码与复制。 | 安全 Webview 渲染，不执行消息脚本或隐式外部请求；流式未完成、语法错误、过大图表有界回退源码；验证主题、窄侧栏与可访问性。 |
+| PI-GAP-24／原生验收阻塞 | 当前项目 metadata 搜索已实现并提交；F5／安装未验收。 | [WI-086](docs/discussions/2026-10-02-wi-086-session-search.zh.md)：4bb653c 干净隔离候选 compile／lint／1248／文档／实际 SDK／打包通过；须 native 搜索／筛排页／恢复确认。 |
 | PI-GAP-22／较低 | 插件快捷键与帮助表：模型／思考选择、Stop、工具／思考展开等，分片确定。 | 适配 VS Code 命令与上下文，避免冲突和 IME 误触；帮助对应真实注册操作，忙碌／弹窗规则明确；与 PI-GAP-09 第三方快捷键分开，不照搬终端。 |
 | PI-GAP-23／较低 | 长草稿转原生编辑器：打开 VS Code 编辑器，编辑后显式带回。 | 确定缓冲区及保存方式；用户显式操作，不自动发送；取消、关闭、并行编辑与版本冲突不静默覆盖；附件归属与临时内容清理明确，不任意执行外部编辑器命令。 |
 | PI-GAP-25／需会话 API／删除决策 | 确认删除已保存会话。 | 先核对公开 API 可行性；若不可行，记录阻碍并提出合规方案，不直接操作 session 文件。明确活动会话处理、确认、删除后列表刷新、失败及是否可撤销；不误删其他项目或依赖历史中的文件，不把删除会话说成代码回滚。 |

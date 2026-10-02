@@ -3,7 +3,7 @@
 English | [中文](2026-10-02-wi-086-session-search.zh.md)
 
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-02
 - Authority: bounded PI-GAP-24 Prepare; no delivery or acceptance claim
 - Related: [ACTIVE](../../ACTIVE.md), [goal](2026-10-03-eight-gap-goal.md), [requirements](../product-requirements.md)
@@ -36,3 +36,12 @@ Six worker/host/mounted scenarios were prepared before code. Initial host and mo
 Compile/lint/all 1248 checks passed under curated environment with isolated HOME, empty auth, PI agent/tmp and no inherited tokens/proxy/options (compile-isolated.log, lint-isolated.log, tests-isolated.log, check-isolated-exit.txt). Earlier standard runs inherited the shell environment and are not evidence of isolated user-state checks. Future clean candidates must use the curated environment too. Worker/backend metadata tests are composition, not native host evidence. SDK probe node scripts/spikes/spike-session-search.mjs uses public SessionManager creation and production worker/backend: 40 synthetic current-project sessions plus foreign-project sentinels, 20 named rows, cross-page match, sorting/count/page clamp, zero-match and >5000 explicit refusal. All seven owned workers observed closed; zero inference or real accounts. JSON/TAP in dist/goal-eight/wi086/.
 
 Real browser captures cover English/Chinese, 280/320/400 and light/dark/high contrast. Long staged query, named and sort controls have no form overflow; neutral checkbox and unapplied-criteria status clarify that visible results/paging still use the previous applied search. PreviewBridge does not implement the new search operation: captures prove rendered controls/staging/focus only, not applied search results. Production mounted client/host/worker evidence is separate. Native F5/installed search, paging and restore-consent acceptance remain blocked by isolated-Code binding, not waived. Implementation remains uncommitted; next scoped review/local commit and clean candidate checks.
+
+
+## Committed candidate and handoff
+
+Implementation 4bb653cfc6e01676183a5183de76aec10907ae1a; full scoped staged diff and commit:check reviewed, user gap discussion/ACTIVE grouping preserved. Final review restricted the 5000 cap to search requests so legacy non-search inspection/list semantics stay unchanged. Two development full-suite rechecks failed the unchanged frozen-history test's last-message assertion; focused test, previous 66ba52b full baseline and subsequent current full run passed. Keep failed logs and focused/baseline logs; intermittent cause not established, no assertion weakened.
+
+Clean source candidate at /tmp/pi-resource-candidate-vQqd8G: compile/lint/1248 checks/docs:verify (two existing ADR warnings)/docs:health/actual SDK probe/package:vsix passed under curated isolated HOME/empty auth/agent/tmp. Status before/after empty, source SHA/commands/version/logs in dist/goal-eight/wi086/candidate-evidence/verified-candidate and candidate-identity.json. Seven workers closed, zero inference. Packaged VSIX is not installed evidence. Candidate browser en/zh 280px HC captures and keyboard focus confirm staged controls with no overflow; previous 18-image development matrix remains separately identified, not post-commit matrix. Preview does not apply the search operation.
+
+Delegated acceptance under this authorization: composition/public SDK and bounded candidate checks support the slice; native F5/installed search/filter/sort/page/restore-confirmation and native visual acceptance remain unverified. No maintainer personal test or WI closure. Retain PI-GAP-24 as blocked pending the same safe isolated native app binding unlock; continue independent Mermaid investigation with WIP=1.

@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-02
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-02
 - Authority: PI-GAP-24 有界 Prepare；不宣称交付或验收
 - Related: [ACTIVE](../../ACTIVE.md)、[Goal](2026-10-03-eight-gap-goal.zh.md)、[需求](../product-requirements.zh.md)
@@ -40,3 +40,12 @@ v3 具名 searchSavedSessions 仅传 query／named／sort，host 拥有已应用
 compile／lint／1248 检查在受限环境、隔离 HOME、空 auth、独立 PI agent／tmp 下通过，无继承 tokens／proxy／options（compile-isolated.log、lint-isolated.log、tests-isolated.log、check-isolated-exit.txt）。更早标准运行继承 shell 环境，不作为隔离用户状态证据；后续干净候选也使用受限环境。worker／backend 为组合而非原生证据。node scripts/spikes/spike-session-search.mjs 使用公开 SessionManager 创建、生产 worker／backend：当前项目 40 合成会话及另一项目 sentinel，20 命名项、跨页匹配、排序／计数／页 clamp、无结果、>5000 明确拒绝。七个 owned workers 均观察关闭，无推理或真实账户。JSON／TAP 在 dist/goal-eight/wi086/。
 
 真实浏览器英中、280／320／400、浅／深／HC 截图已覆盖；长暂存 query／命名／排序表单无横向溢出，中性 checkbox 与未应用提示明确旧结果／分页仍用已应用条件。PreviewBridge 尚未实现新搜索操作，截图仅证明控件渲染／暂存／焦点，不证明应用后结果；production mounted client／host／worker 证据分开。原生 F5／安装搜索、分页／恢复同意仍受隔离 Code 绑定阻碍，不豁免验收。实现未提交，下一步 scoped 审查／本地提交／干净候选。
+
+
+## 提交候选与交接
+
+实现 4bb653cfc6e01676183a5183de76aec10907ae1a；完整 scoped staged diff／commit:check 已审查，用户 gap 讨论／ACTIVE 分组保留。末次审查把 5000 上限限定为搜索，旧非搜索 list／inspect 语义不变。两次开发完整复查在未修改 frozen-history 的最后消息断言失败；聚焦、66ba52b 完整基线及随后当前完整运行通过。失败／聚焦／基线日志保留；间歇根因未确定，不放宽断言。
+
+/tmp/pi-resource-candidate-vQqd8G 干净源码候选：curated env／隔离 HOME／空 auth／agent／tmp 下 compile／lint／1248／docs:verify（旧 ADR 两警告）／docs:health／实际 SDK／package:vsix 通过。前后 status 空，源码 SHA／命令／版本／日志在 dist/goal-eight/wi086/candidate-evidence/verified-candidate 与 candidate-identity.json。7 个 worker 实际关闭、零推理；打包不等于安装。候选英中 280px HC／键盘焦点证实暂存控件无溢出；旧 18 图开发矩阵分开，不是提交后矩阵。preview 不处理搜索操作。
+
+本次授权下的代理验收：组合／公开 SDK 与有界候选检查支持该切片；native F5／安装搜索／筛排页／恢复确认／视觉仍未验证。不是维护者亲测，不关闭 WI。PI-GAP-24 保留阻塞待安全隔离 native app 绑定解锁；WIP=1 继续独立 Mermaid 调查。
