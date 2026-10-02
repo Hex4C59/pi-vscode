@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[product-requirements.md](product-requirements.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-09-30（自用 macOS 验证与 ADR 0005／PRD Accepted）
+- 最近同步：2026-10-02（并行派工政策；产品状态不变）
 
 - 类型：产品需求
 - 状态：**Accepted**（自用 macOS 本机 VS Code 安装版 VSIX；standing non-goals 排除）
@@ -423,7 +423,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 
 ## 工作追溯
 
-版本方向可以跨越未来 WI，而 ACTIVE 同时只维护一个当前实现 WI。2026-09-27 委托仅授权在明确覆盖的范围内依证据做决定与收尾。2026-09-30 剩余验证 `/goal` 后来把本 PRD 作为自用 macOS 安装版接受。ACTIVE 维护当前工作；下表是限定追溯，不能替代链接归档中的验收证据。
+版本方向可以跨越未来 WI；ACTIVE 按[有界并行协作政策](guides/agent-collaboration.zh.md#4-有界并行最多-3-个任务)登记独立分配的任务。并发不批准新产品切片或合并其验收。2026-09-27 委托仅授权在明确覆盖的范围内依证据做决定与收尾。2026-09-30 剩余验证 `/goal` 后来把本 PRD 作为自用 macOS 安装版接受。ACTIVE 维护当前工作；下表是限定追溯，不能替代链接归档中的验收证据。
 
 | WI ID | PRD 范围 | 验收／状态 |
 |-------|----------|-----------|

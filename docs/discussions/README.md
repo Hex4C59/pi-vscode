@@ -56,6 +56,7 @@ The [feature-gap comparison](2026-10-01-pi-feature-gaps.md) remains a candidate 
 
 ### Technical research, measurements and operational evidence
 
+- [WI-079 parallel dispatch preparation](2026-10-02-wi079-parallel-dispatch.md)
 - [WI-004 Prepare — pinned pi `0.85.1` RPC evidence](2026-09-21-wi-004-rpc-evidence-0.85.1.md)
 - [WI-022: default CLI workaround (closed)](2026-09-28-wi-022-background-consoles.md)
 - [Component motion research for the sidebar UI skill](2026-09-29-component-motion-research.md)

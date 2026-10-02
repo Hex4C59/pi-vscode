@@ -418,7 +418,7 @@ The requirements above define the personal-use target; they do not mean every de
 
 ## Traceability to work
 
-A release direction may span future WIs, while ACTIVE maintains exactly one current implementation WI. The 2026-09-27 delegation authorized evidence-based decisions and closure only for explicitly covered scope. The 2026-09-30 remaining-verification `/goal` later accepted this PRD as personal-use macOS installed VSIX. ACTIVE owns current work; the table below is scoped traceability, not a substitute for linked acceptance evidence.
+A release direction may span future WIs; ACTIVE registers independently assigned tasks under the [bounded-parallel collaboration policy](guides/agent-collaboration.md#4-bounded-parallel-work-maximum-3-tasks). Concurrency does not approve new product slices or combine their acceptance. The 2026-09-27 delegation authorized evidence-based decisions and closure only for explicitly covered scope. The 2026-09-30 remaining-verification `/goal` later accepted this PRD as personal-use macOS installed VSIX. ACTIVE owns current work; the table below is scoped traceability, not a substitute for linked acceptance evidence.
 
 | WI ID | PRD scope | Acceptance / status |
 |-------|-----------|---------------------|

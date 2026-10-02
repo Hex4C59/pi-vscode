@@ -61,6 +61,7 @@
 
 ### 技术调研、测量与运行证据
 
+- [WI-079 并行派工准备](2026-10-02-wi079-parallel-dispatch.zh.md)
 - [WI-004 Prepare — 固定 pi `0.85.1` RPC 证据](2026-09-21-wi-004-rpc-evidence-0.85.1.zh.md)
 - [WI-022：默认CLI规避（已关闭）](2026-09-28-wi-022-background-consoles.zh.md)
 - [侧栏 UI skill 的组件动效调研](2026-09-29-component-motion-research.zh.md)
