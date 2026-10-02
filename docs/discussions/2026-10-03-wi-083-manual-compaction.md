@@ -3,7 +3,7 @@
 English | [中文](2026-10-03-wi-083-manual-compaction.zh.md)
 
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-03
 - Authority: bounded PI-GAP-04 Prepare/Build record
 
@@ -39,3 +39,10 @@ Pre-code host/adapter composition scenarios failed on the missing entry points, 
 Development compile, lint, 1229 behavior checks and docs:verify passed (two pre-existing ADR 0010 notices), and the final ownership-refinement rerun also passed. Actual pi 0.86.1 with isolated HOME/agent/project and synthetic loopback responses exercised successful default compaction, cancellation with manual compaction_end.aborted, and too-small failure; every process close was observed, zero real-model calls. Artifacts: dist/goal-eight/wi083/{red.log,green.log,compile.log,lint.log,tests.log,docs.log,runtime.log,runtime-compaction.json}. These are dirty-source development evidence, not committed-candidate or native acceptance.
 
 The first runtime probe assumed custom instructions occur in every summary request. Public upstream source and observed requests show split-turn prefix summarization does not receive them; a two-turn fixture proves literal instructions reach the ordinary history summarizer. We preserve the public upstream behavior rather than replacing its compaction algorithm. Cancellation is supported by the aborted event, not only a requested cancel. F5/installed-VSIX UI, visual/keyboard/progress acceptance and committed clean-candidate checks remain outstanding; WI-082's isolated native-window binding condition still applies. This WI is not accepted, closed or archived.
+
+
+## Committed candidate and retained blocker
+
+Prepare/records commit `2b46d72`; implementation `77ca3c22015cc731de69aca19a5cf69b6233bb2d`. Task-candidate base `bc1a2d7b9c5174434036445db6c5f85624072a72`, PR head not applicable; an independently clean local checkout ran compile, lint, 1229 tests, docs:verify, the actual-pi compaction probe, existing queue RPC regression and packaging. All passed; wrapper exit 0 and before/after source status empty. Evidence copied to dist/goal-eight/wi083/candidate-evidence/, identity in candidate-identity.json. The owned clean checkout was reused from WI-082; that earlier snapshot's saved evidence retains its original identity, but its path now points to this newer candidate. Historical mounted artifacts are link-validation dependencies only.
+
+Native F5/installed-VSIX interaction, Cancel/Stop/keyboard and visual acceptance remain missing under the same isolated-Code CUA binding blocker recorded in WI-082. No delegated acceptance or closure is claimed. Minimum unlock: safely operate a real isolated Code window and execute the documented native acceptance without real accounts or paid calls. Preserve this unfinished item in ACTIVE; serially proceed to independent PI-GAP-06 / WI-084, with its own complete Prepare before Build.

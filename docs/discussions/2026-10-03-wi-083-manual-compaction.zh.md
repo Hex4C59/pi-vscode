@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-03
 - Type: Reference
-- Status: Active
+- Status: Blocked
 - Created: 2026-10-03
 - Authority: PI-GAP-04 有界 Prepare／Build 记录
 
@@ -43,3 +43,10 @@ Adapter 复用公开 compact，独立命令占用到实际 response；manual com
 开发 compile、lint、1229 项行为检查及 docs:verify 通过（保留既有 ADR 0010 两项提示），最终所有权修订后的重跑亦通过。隔离 HOME／agent／项目和合成本地 loopback 响应下的真实 pi 0.86.1 验证默认压缩完成、manual compaction_end.aborted 取消、会话过小失败；每个进程均观察到关闭，零真实模型调用。工件：dist/goal-eight/wi083/{red.log,green.log,compile.log,lint.log,tests.log,docs.log,runtime.log,runtime-compaction.json}。这是脏源码开发证据，不是提交候选或原生验收。
 
 首轮 runtime probe 误以为每个摘要请求都有自定义指令。公开上游源码与请求显示 split-turn prefix 摘要不接收它们；双轮 fixture 证明普通历史摘要收到原样指令。保留公开上游行为，不替换压缩算法。取消依据 aborted 事件，不仅取消请求。F5／安装 VSIX UI、视觉／键盘／进度验收及干净提交候选检查仍待完成；WI-082 的隔离原生窗口绑定条件仍适用。本 WI 尚未验收、关闭或归档。
+
+
+## 提交候选与保留阻碍
+
+Prepare／记录提交 `2b46d72`；实现 `77ca3c22015cc731de69aca19a5cf69b6233bb2d`。Task-candidate 基线 `bc1a2d7b9c5174434036445db6c5f85624072a72`，PR head 不适用；独立干净本地 checkout 执行 compile、lint、1229 项测试、docs:verify、真实 pi 压缩 probe、既有队列 RPC 回归和打包，全部通过；wrapper 返回 0，检查前后源码状态为空。证据复制至 dist/goal-eight/wi083/candidate-evidence/，身份见 candidate-identity.json。复用 WI-082 的自有干净 checkout；此前证据保留原身份，但路径现在指向较新候选。挂载历史工件仅用于链接验证。
+
+Native F5／安装 VSIX 交互、Cancel／Stop／键盘和视觉验收仍缺，受 WI-082 记录的隔离 Code CUA 绑定阻碍影响。不宣称代理验收或关闭。最小解锁：安全操作真实隔离 Code 窗口，在无真实账户或付费调用下执行记录中的原生验收。ACTIVE 保留未完成项；串行推进独立 PI-GAP-06／WI-084，须先完整 Prepare 再 Build。
