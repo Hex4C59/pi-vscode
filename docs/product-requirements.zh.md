@@ -280,6 +280,8 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **验收：** test-first 挂载 production 对话→clipboard，以可区分原 Markdown、代码块回归、空／流式／错误／隐藏／截断排除、拒绝／不可用／超时和迟到／unmount 留可重复 JSON。浏览器中英、键盘／焦点、280／320／400 暗／亮／高对比；macOS 真 F5 与安装 VSIX 复制／反馈分层记录。compile／lint／npm test／docs:verify，关闭 docs:health；不新增持久化、宿主权限或外部请求。
 
+**WI-082 批准切片（2026-10-03；PI-GAP-02、REQ-004/009）：** 原生命令 `pi: Show Resource Loading Report` 打开随当前 runtime 身份更新的只读文本报告。区分登记／可发现与实际加载：公开 `get_commands` 证明模板和 skill 定义加载、扩展命令登记，不证明 skill 正文、AGENTS.md 或所有扩展文件加载；不可确认项标未知。清单登记／启用数量另列且不代表加载。无 runtime、启动中、空、不可用及失效状态明确；每类最多展示 100 名称并说明省略，不包含正文／路径／凭据，不启动 runtime 或联网。英文／中文按现有界面语言；打开失败可重试。验收覆盖身份替换、边界和不改变任务的组合验证、隔离真实 pi、macOS F5 与安装 VSIX 原生命令／只读报告及关闭恢复，按[WI-082](discussions/2026-10-03-wi-082-resource-report.zh.md)保留工件。本次有界授权下的代理验收尚待实际证据，不是维护者亲自测试。
+
 ### REQ-005 — 停止与恢复
 
 提供停止全部操作，清除排队续跑并请求取消活动任务。在运行时稳定结束或报告关闭失败前显示停止中。取消不会撤销已完成的副作用。运行时断开／崩溃后明确显示中断，保留未发送输入，不自动重复可能有副作用的任务。重启／重试须由用户明确操作。
@@ -491,6 +493,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-02 Agent 依据持续 goal 关闭；[验收](archive/2026-10-02-wi-078-acceptance.zh.md)。实际加载报告仍停车。 |
 | WI-080 | REQ-008 当前已打开会话重命名（PI-GAP-12） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-080](archive/2026-10-02-wi-080-team.zh.md). |
 | WI-081 | REQ-004 完成 assistant 回复正文复制（PI-GAP-20） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-081](archive/2026-10-02-wi-081-team.zh.md). |
+| WI-082 | REQ-004／009 实际资源加载报告（PI-GAP-02） | 2026-10-03 有界 goal 批准；[Prepare 和待完成验收](discussions/2026-10-03-wi-082-resource-report.zh.md)。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |
