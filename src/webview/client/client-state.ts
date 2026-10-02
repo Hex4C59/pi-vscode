@@ -9,7 +9,7 @@ export function availability(s: ClientSnapshot) {
   const extensionBlocked = s.interactions?.phase === "blocked" || s.interactions?.active != null
     || (!!s.executionProfile && s.executionProfile.phase !== "idle");
   const ready = !!w && w.runtime === "ready" && !w.busy && !extensionBlocked;
-  const sessionTransitioning = s.sessions?.phase === "confirming" || s.sessions?.phase === "switching";
+  const sessionTransitioning = s.sessionRename?.status === "renaming" || s.sessions?.phase === "confirming" || s.sessions?.phase === "switching";
   const chatDisabled = !ready || !!w?.chatBusy || !!w?.modelBusy || stopping || !!s.error || sessionTransitioning;
   const draftBlocked = s.synchronizing || s.submitting || s.attachments?.preparation !== "idle"
     || !!s.attachments?.draft.attachments.length || !s.text.trim();

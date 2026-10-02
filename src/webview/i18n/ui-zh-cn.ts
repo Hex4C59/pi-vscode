@@ -10,6 +10,7 @@ export const chineseUi = {
   "Cache write tokens": "缓存写入 token", "Total tokens": "总 token", "Estimated cost (USD)": "估算费用（USD）",
   "Loading usage…": "正在加载用量…", "Usage unavailable. Refresh to retry.": "用量不可用，请刷新重试。",
   "No active session.": "没有活动会话。", "Previous snapshot while the task is running.": "任务运行中显示上次快照。",
+  "Rename current conversation": "重命名当前对话",
   "Settings": "设置", "Settings categories": "设置分类", "General": "通用", "Providers": "供应商", "Plugins": "插件", "Back to providers": "返回供应商",
   "Search models": "搜索模型", "No matching models": "没有匹配的模型", "Manage providers": "管理供应商", "API key": "API 密钥", "Configured": "已配置", "Not configured": "未配置",
   "Add from disk": "从磁盘添加",

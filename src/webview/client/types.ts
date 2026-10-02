@@ -42,6 +42,7 @@ export type ClientSnapshot = SavedHistorySnapshot & {
   commandCatalogue: CommandCatalogueStateMessage | null;
   sessionUsage: SessionUsageStateMessage | null;
   sessions: SessionStateMessage | null;
+  sessionRename?: import("../../extension/contracts/index.js").SessionRenameStateMessage | null;
   changeReview: ChangeReviewStateMessage | null;
   changeReviewOpen: boolean;
   changeReviewPage: number;

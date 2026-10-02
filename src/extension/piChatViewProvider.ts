@@ -8,7 +8,7 @@ import type { PiRuntimeLifecycle, RetainedRunHandoff, RuntimeEvent } from "./con
 import { parseWebviewMessage } from "./bridge/index.js";
 import type { WorkspaceStateMessage, WebviewMessage, ProviderConfigIntent, PluginInventoryIntent } from "./contracts/index.js";
 
-import { SavedHistory } from "./sessions/index.js";
+import { SavedHistory, SessionRename, type RenameContext } from "./sessions/index.js";
 import { EditorTools, type EditorToolOptions } from "./editor-tools/index.js";
 import { PluginInventorySettings, selectTrustedExtension, trustedInventoryApply } from "./extension-loading/index.js";
 import type { ExtensionExecutionProfile, ExecutionProfileProjection, ExtensionFeedback } from "./contracts/index.js";
@@ -88,6 +88,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   private readonly draft: DraftSubmission;
   private queue: QueuedTextSession | undefined;
   private readonly tools: EditorTools;
+  private readonly sessionRename: SessionRename;
+  private renameRevision = 0;
+  private lastRenameProjection = "";
   private readonly savedHistory: SavedHistory;
   private sessionOperation: AbortController | undefined;
   private sessionCommit: AbortController | undefined;
@@ -111,6 +114,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     toolOptions: EditorToolOptions = {},
     hostPaths: { globalStorage?: string } = {},
   ) {
+    this.sessionRename = new SessionRename({ runtime, context: () => this.renameContext(),
+      input: (options, signal) => this.renameInput(options, signal), changed: () => this.publish(),
+      notice: async message => this.api.window.showWarningMessage(message), apply: conversation => this.applyRenamedConversation(conversation) });
     this.models = new ModelSettings(runtime, () => {
       if (!this.disposed) this.refresh();
       return { generation: this.state.generation, session: this.runtimeSession, ready: this.state.runtime === "ready",
@@ -256,7 +262,10 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (event.kind === 'runtime_error') {
       void this.interactions.stop();
       void this.refreshOwnership();
-      this.resetSavedSessions(); this.publishSessions();
+      const previousName = this.sessionRename.busy ? this.sessionProjection.current : null;
+      this.resetSavedSessions();
+      if (previousName) this.sessionProjection = { ...this.sessionProjection, current: previousName };
+      this.publishSessions();
       this.tools.reset();
       this.draft.runtimeLost();
       this.queue = undefined;
@@ -626,7 +635,36 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       { modal: true }, "Load trusted extension") === "Load trusted extension";
   }
 
-  private sessionTransitionBusy(): boolean { return this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching"; }
+  private renameContext(): RenameContext {
+    return { generation: this.state.generation, viewId: this.state.viewId, session: this.runtimeSession, locale: this.uiLocale,
+      conversation: this.liveConversation && this.sessionProjection.current ? { ...this.liveConversation, name: this.sessionProjection.current.name } : null,
+      ready: !this.disposed && !!this.view && this.state.status === "eligible" && this.state.choice !== null
+        && this.state.runtime === "ready" && this.runtimeSession !== 0 && this.runtimeSession === this.runtime.getSession()
+        && !this.state.busy && !this.state.chatBusy && !this.stoppingTask && !this.models.snapshot.modelBusy
+        && !this.sessionOperation && this.profilePhase === "idle" && !this.profileOperation
+        && this.interactions.snapshot().phase === "idle" && !this.interactions.snapshot().active
+        && !this.draft.awaitingAcknowledgement && !this.draft.preparing && !!this.liveConversation };
+  }
+  private async renameInput(options: vscode.InputBoxOptions, signal: AbortSignal): Promise<string | undefined> {
+    const emitter = new this.api.EventEmitter<void>();
+    const cancel = () => emitter.fire(); signal.addEventListener("abort", cancel, { once: true });
+    const token: vscode.CancellationToken = { get isCancellationRequested() { return signal.aborted; }, onCancellationRequested: emitter.event };
+    try { return await this.api.window.showInputBox(options, token); }
+    finally { signal.removeEventListener("abort", cancel); emitter.dispose(); }
+  }
+  private async applyRenamedConversation(conversation: NonNullable<RenameContext["conversation"]>): Promise<void> {
+    this.sessionProjection = { ...this.sessionProjection, current: { id: conversation.id, name: conversation.name } };
+    this.publishSessions(); await this.listSavedSessions(this.sessionProjection.page);
+  }
+  private publishRenameState(force = false): void {
+    if (!this.view || this.disposed) return;
+    const projection = { ...this.envelope("sessionRenameState"), status: this.sessionRename.status };
+    const key = JSON.stringify(projection);
+    if (key !== this.lastRenameProjection) { this.lastRenameProjection = key; this.renameRevision = Math.min(Number.MAX_SAFE_INTEGER, this.renameRevision + 1); }
+    else if (!force) return;
+    this.post(this.view, { ...projection, revision: this.renameRevision });
+  }
+  private sessionTransitionBusy(): boolean { return this.sessionRename.busy || this.sessionProjection.phase === "confirming" || this.sessionProjection.phase === "switching"; }
   private beginSessionBackendOperation(): { previous: Promise<void>; settle: () => void } {
     const previous = this.sessionBackendSettlement;
     let resolve!: () => void;
@@ -636,6 +674,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     return { previous, settle: () => { if (!complete) { complete = true; resolve(); } } };
   }
   private resetSavedSessions(): void {
+    this.sessionRename.cancelInput();
     this.sessionOperation?.abort(); this.sessionOperation = undefined; this.sessionCommit = undefined; this.sessionCatalog.clear();
     this.savedHistory.reset();
     this.sessionProjection = { phase: "idle", current: null, loaded: false, entries: [], page: 0, total: 0, error: null };
@@ -775,6 +814,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.publishQueueState();
     this.publishCommands(forceExtensions);
     this.publishUsage(forceExtensions);
+    this.publishRenameState(forceExtensions);
     this.post(this.view, { ...this.state, ...this.models.snapshot });
   }
 
@@ -826,6 +866,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private clearView(): void {
+    this.sessionRename.cancelInput();
     this.savedHistory.cancel();
     if (this.sessionOperation && this.sessionCommit !== this.sessionOperation) {
       this.sessionOperation.abort(); this.sessionOperation = undefined;
@@ -879,6 +920,8 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.generation !== this.state.generation || message.viewId !== this.state.viewId) { this.draft.rejectStale(); this.publish(); return; }
     if (message.type === "openSettings") { this.settingsPanel.open(); return; }
     if (message.type === "setUiLanguage") { this.setUiLanguage(message.locale); return; }
+    if (this.sessionRename.busy && message.type !== "updateDraft") { this.publish(); return; }
+    if (message.type === "renameSession") { await this.sessionRename.rename(); return; }
     if (message.type === "answerInteraction") { this.interactions.answer(message, message.id, message.answer); return; }
     if (message.type === "cancelInteraction") { this.interactions.cancel(message, message.id); return; }
     if (message.type === "chooseExecutionProfile") { await this.chooseExecutionProfile(view, message.profile); return; }
@@ -980,6 +1023,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
   }
 
   private async configureSettings(message: ProviderConfigIntent | PluginInventoryIntent): Promise<void> {
+    if (this.sessionRename.busy) { this.publish(); return; }
     if (this.disposed) return;
     if (message.type === "addPluginInventoryEntry") {
       await this.pluginInventory.add(() => !this.disposed);

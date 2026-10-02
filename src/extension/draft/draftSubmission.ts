@@ -55,6 +55,7 @@ export class DraftSubmission implements vscode.Disposable {
   }
   get revision(): number { return this.draftRevision; }
   get awaitingAcknowledgement(): boolean { return this.awaitingAck; }
+  get preparing(): boolean { return this.preparation !== "idle"; }
 
   /**
    * Synchronous queue admission for the exact acknowledged draft revision.

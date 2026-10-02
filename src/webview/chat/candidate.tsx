@@ -104,7 +104,8 @@ function Candidate({ client, language }: { client: WebviewClient; language: UiLa
     if (event.currentTarget.querySelector('[role="dialog"]:not([hidden]), dialog[open]')) return;
     event.preventDefault(); setHistoryOpen(false);
   }}>
-    <SessionNavigation conversationName={snapshot.sessions?.current?.name ?? undefined} canBrowse={canBrowse}
+    <SessionNavigation conversationName={snapshot.sessions?.current ? snapshot.sessions.current.name ?? t("Untitled conversation") : undefined} canBrowse={canBrowse}
+      renameDisabled={snapshot.sessionRename?.status !== "ready" || !snapshot.sessions?.current} onRename={() => client.action({ type: "renameSession" })}
       newConversationDisabled={newConversationDisabled} settingsDisabled={!state}
       historyOpen={historyOpen} historyId={historyId} browse={browse}
       onBrowse={() => { if (historyOpen) { setHistoryOpen(false); return; } readingPosition.current = messages.current?.scrollTop ?? 0; setHistoryOpen(true); client.openSessions(); }}

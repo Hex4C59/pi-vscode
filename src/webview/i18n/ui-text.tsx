@@ -132,6 +132,7 @@ export type UiText =
   | "Candidate chat"
   | "Conversation navigation"
   | "Current conversation"
+  | "Rename current conversation"
   | "Browse saved conversations"
   | "Chat history"
   | "New conversation"

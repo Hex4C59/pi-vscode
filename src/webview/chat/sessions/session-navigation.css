@@ -2,6 +2,10 @@
    Color transitions reverse from their current value; focus and visibility never wait. */
 .candidate__navigation { display: flex; flex: none; align-items: center; gap: var(--ui-space-1); min-height: 40px; padding: 0 var(--ui-space-2) 0 var(--ui-space-4); }
 .candidate__current { flex: 1; min-width: 0; margin-right: var(--ui-space-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-fg); font-size: var(--ui-font-chrome); font-weight: 550; line-height: 1.4; }
+.candidate .candidate__current { border: 0; background: transparent; padding: var(--ui-space-1) 0; text-align: left; border-radius: var(--ui-radius); cursor: pointer; }
+.candidate .candidate__current:disabled { cursor: default; }
+.candidate .candidate__current:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.candidate .candidate__current:hover:not(:disabled) { background: var(--ui-hover); }
 .candidate .session-icon-button { width: 28px; height: 28px; border: 1px solid transparent; transition: color 100ms ease-out, background-color 100ms ease-out; }
 .candidate .session-icon-button svg { width: 16px; height: 16px; stroke-width: 1.75; }
 .candidate .session-icon-button:hover:not(:disabled),

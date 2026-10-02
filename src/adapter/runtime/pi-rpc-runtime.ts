@@ -1,4 +1,5 @@
 import { sessionUsageIdentity, sessionUsageNumbers } from "./session-usage.js";
+import { renamedConversation, validRenameInput, type OpenedConversation } from "./rpc/session-rename.js";
 import { createExtensionFeedback } from "./extension-feedback.js";
 import { extensionCommandNames, dispatchedExtensionCommand, presentCommandCatalogue } from "./command-classification.js";
 import { createInteractionWriter } from "./rpc/interaction-writer.js";
@@ -12,7 +13,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { access } from "node:fs/promises";
 import type { PiRpcRuntimeEnvironment } from "./types.js";
-import type { GateCall } from "../../extension/contracts/index.js";
+import { redactCredentialLikeText, type GateCall } from "../../extension/contracts/index.js";
 import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../index.js";
 import type { Readable } from "node:stream";
 
@@ -44,6 +45,7 @@ const START_TIMEOUT_MS = 15_000;
 const PROMPT_TIMEOUT_MS = 30_000;
 const MODEL_RPC_TIMEOUT_MS = 15_000;
 const STOP_TIMEOUT_MS = 5_000;
+const RENAME_UNVERIFIED = "The conversation name could not be verified. The visible name was kept; pi may already have changed it. Explicit runtime recovery is required before retrying.";
 
 export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRuntimeLifecycle {
   let child: RuntimeLink | null = null;
@@ -52,6 +54,8 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   let startToken = 0;
   let activeSession = 0;
   let usageConversation: { id: string; path: string } | undefined;
+  let openedConversation: OpenedConversation | undefined;
+  let renameOperation: { session: number; connection: RuntimeLink; mutationIssued: boolean } | undefined;
   let queueControlOperation: { session: number } | undefined;
   let queuedSend: { session: number; connection: RuntimeLink; pending: Promise<AttachmentPromptResult>; retire(): void } | undefined;
   let resumedConversation = false;
@@ -195,6 +199,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     child = null; // Detach synchronously: late loss/close cannot affect a replacement.
     if (startToken < Number.MAX_SAFE_INTEGER) startToken += 1;
     activeSession = 0;
+    openedConversation = undefined; renameOperation = undefined;
     commandNames = new Set();
     commandCatalogue = { status: "unavailable" };
     gateReady = false; verifiedCustomTools = new Set();
@@ -272,9 +277,13 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       });
       const lost = (): void => {
         if (owned !== child) return;
-        const session = activeSession; activeSession = 0; gateReady = false; occupancy.disconnectSend();
+        const session = activeSession;
+        const operation = renameOperation;
+        const detail = operation?.connection === owned && operation.session === session && operation.mutationIssued
+          ? RENAME_UNVERIFIED : 'Runtime disconnected. Work may be interrupted; no task was retried.';
+        activeSession = 0; gateReady = false; occupancy.disconnectSend();
         replies.failAll();
-        if (session) emit({kind:'runtime_error',session,detail:'Runtime disconnected. Work may be interrupted; no task was retried.'});
+        if (session) emit({kind:'runtime_error',session,detail});
         if (child === owned) {
           void faultStop();
         }
@@ -319,6 +328,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     const session = activeSession;
     const requestId = replies.rpcId(session);
     const waiting = replies.wait(requestId, body.type, timeoutMs);
+    if (body.type === "set_session_name" && renameOperation?.session === session && renameOperation.connection === child) renameOperation.mutationIssued = true;
     child.stdin?.write(serializeJsonLine({ id: requestId, ...body }));
     const response = requireRpcResponse(await waiting);
     if (session !== activeSession) {
@@ -361,6 +371,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
     }
     activeSession = token;
     usageConversation = sessionUsageIdentity(data);
+    openedConversation = { id: data.sessionId as string, path: data.sessionFile as string };
     occupancy.setSession(token);
     resumedConversation = resume !== undefined;
     untouchedConversation = !resumedConversation;
@@ -376,7 +387,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       conversation: {
         id: data.sessionId as string,
         path: data.sessionFile as string,
-        name: typeof data.sessionName === "string" ? data.sessionName.slice(0, 160) : null,
+        name: typeof data.sessionName === "string" ? redactCredentialLikeText(data.sessionName).slice(0, 200) : null,
       },
     };
   };
@@ -407,6 +418,39 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
       const usage = sessionUsageNumbers(response.data, before.data);
       return usage ? { ok: true, usage } : unavailable;
     } catch { return unavailable; }
+  };
+
+  const renameSession: NonNullable<PiRuntimeLifecycle["renameSession"]> = async (name, expectedSession) => {
+    const owned = child; const expected = openedConversation;
+    if (!validRenameInput(name) || !expectedSession || expectedSession !== activeSession || !owned || !expected || !gateReady
+      || renameOperation || !occupancy.allowsRestart()) return { ok: false, detail: "Current conversation rename is unavailable." };
+    const operation = { session: expectedSession, connection: owned, mutationIssued: false }; renameOperation = operation; occupancy.beginStopping();
+    const current = () => renameOperation === operation && child === owned && activeSession === expectedSession && gateReady
+      && !occupancy.agentRunning() && occupancy.dialogs() === 0 && [...occupancy.approvalIds()].length === 0;
+    const deadline = performance.now() + STOP_TIMEOUT_MS;
+    const remaining = () => { const budget = deadline - performance.now(); if (budget <= 0) throw new Error("Rename deadline expired."); return budget; };
+    try {
+      const before = await invokeRpc({ type: "get_state" }, remaining()); remaining();
+      if (!current()) return { ok: false, detail: "Current conversation changed during rename." };
+      if (!before.success || !renamedConversation(before.data, expected)) throw new Error("Opened identity is unverified.");
+      const acknowledged = await invokeRpc({ type: "set_session_name", name }, remaining()); remaining();
+      if (!current()) return { ok: false, detail: "Current conversation changed during rename." };
+      if (!acknowledged.success) return { ok: false, detail: "Current conversation rename was rejected." };
+      untouchedConversation = false;
+      const after = await invokeRpc({ type: "get_state" }, remaining()); remaining();
+      if (!current()) return { ok: false, detail: "Current conversation changed during rename." };
+      const conversation = after.success ? renamedConversation(after.data, expected, name) : undefined;
+      if (!conversation) throw new Error("Rename readback is unverified.");
+      return { ok: true, conversation };
+    } catch {
+      if (activeSession === expectedSession && child === owned) {
+        emit({ kind: "runtime_error", session: expectedSession, detail: RENAME_UNVERIFIED });
+        await faultStop();
+      }
+      return { ok: false, detail: "Current conversation rename could not be verified. Do not retry automatically." };
+    } finally {
+      if (renameOperation === operation) { renameOperation = undefined; if (activeSession === expectedSession && child === owned) occupancy.clearStopping(); }
+    }
   };
 
   const checkpointRestart: NonNullable<PiRuntimeLifecycle["checkpointRestart"]> = async expected => {
@@ -694,6 +738,7 @@ export function createPiRpcRuntime(environment: PiRpcRuntimeEnvironment): PiRunt
   return {
     start,
     checkpointRestart,
+    renameSession,
     stop,
     getOwnershipState: () => environment.process.inspect(),
     endOwnedRuntime: () => environment.process.end(),

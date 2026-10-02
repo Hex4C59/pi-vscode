@@ -124,7 +124,7 @@ test("mounted session history pages, recovers from errors, keeps draft text, and
     assert.equal(h.sent.at(-1)?.type, "getSavedSessions");
     assert.equal((h.sent.at(-1) as { page: number }).page, 0);
     assert.equal(h.get<HTMLTextAreaElement>(draft).value, "unsent draft");
-    assert.equal(h.get(".candidate__current").textContent, "");
+    assert.equal(h.get(".candidate__current").textContent, "Untitled conversation");
 
     await h.receive(sessionState({ current: { id: "current-1", name: "Current task" }, loaded: true, entries: Array.from({ length: 16 }, (_, index) => sessionEntry(index)), total: 33 }));
     assert.match(h.get(".candidate__current").textContent ?? "", /Current task/);

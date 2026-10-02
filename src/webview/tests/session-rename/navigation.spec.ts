@@ -28,3 +28,28 @@ test("opened conversation title offers an accessible payload-free rename without
     artifact({ phase: "green", accessibleTrigger: true, intent: h.sent.at(-1), draftPreserved: true });
   } finally { await h.close(); }
 });
+
+test("unnamed live title keeps its current-conversation semantic label and absent session has no invented title", async () => {
+  const h = await uiHarness();
+  try {
+    const projection = { version: 3 as const, type: "sessionState" as const, viewId: "view", generation: 1, phase: "idle" as const, loaded: true, page: 0, total: 0, entries: [], error: null };
+    await h.receive({ ...projection, current: { id: "opened", name: null } });
+    await h.receive({ version: 3, type: "sessionRenameState", viewId: "view", generation: 1, revision: 1, status: "ready" });
+    assert.equal(h.get('[aria-label="Current conversation"]').textContent, "Untitled conversation");
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Rename current conversation"]').disabled, false);
+    await h.receive({ ...projection, current: null });
+    assert.equal(h.get('[aria-label="Current conversation"]').textContent, "");
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Rename current conversation"]').disabled, true);
+  } finally { await h.close(); }
+});
+
+test("rename in progress disables competing send and new conversation without losing draft", async () => {
+  const h = await uiHarness();
+  try {
+    await h.input("Preserve while naming");
+    await h.receive({ version: 3, type: "sessionRenameState", viewId: "view", generation: 1, revision: 2, status: "renaming" });
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="New conversation"]').disabled, true);
+    assert.equal(h.get<HTMLButtonElement>('button[aria-label="Send message"]').disabled, true);
+    assert.equal(h.get<HTMLTextAreaElement>('textarea[aria-label="Message"]').value, "Preserve while naming");
+  } finally { await h.close(); }
+});
