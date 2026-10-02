@@ -1,3 +1,5 @@
+import { fileReferenceToken } from "../contracts/index.js";
+import { FileDiscovery } from "./fileDiscovery.js";
 import type * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 import type { PiRuntimeLifecycle } from "../contracts/index.js";
@@ -34,11 +36,12 @@ export class DraftSubmission implements vscode.Disposable {
   private disposed = false;
   private readonly subscriptions: vscode.Disposable[];
   constructor(
-    private readonly api: Pick<typeof vscode, "workspace" | "window">,
+    private readonly api: Pick<typeof vscode, "workspace" | "window" | "RelativePattern" | "EventEmitter">,
     private readonly runtime: Pick<PiRuntimeLifecycle, "preparePrompt">,
     private readonly context: (refresh?: boolean) => DraftContext,
     private readonly send: (message: unknown) => void,
     private readonly events: DraftSubmissionEvents,
+    private readonly locale: () => "en" | "zh-CN" = () => "en",
   ) {
     this.subscriptions = [
       api.workspace.onDidChangeTextDocument(event => {
@@ -183,7 +186,7 @@ export class DraftSubmission implements vscode.Disposable {
   handle(view: vscode.WebviewView, message: WebviewMessage): Promise<boolean> | undefined {
     switch (message.type) {
       case "updateDraft": case "confirmSelectionAttachment": case "confirmFileAttachment":
-      case "addSelectionAttachment": case "addFileAttachment": case "removeAttachment":
+      case "completeFileReference": case "addSelectionAttachment": case "addFileAttachment": case "removeAttachment":
       case "getAttachmentHistory": case "getAttachmentPreview": case "sendChat":
         return this.receive(view, message);
       default: return undefined;
@@ -201,6 +204,11 @@ export class DraftSubmission implements vscode.Disposable {
     if (message.type === "confirmSelectionAttachment") { await this.confirmAttachment(view, message.attachmentId, message.snapshotId, "selection"); return true; }
     if (message.type === "confirmFileAttachment") { await this.confirmAttachment(view, message.attachmentId, message.snapshotId, "file"); return true; }
     if (message.type === "addSelectionAttachment") { await this.addAttachment(view, "selection"); return true; }
+    if (message.type === "completeFileReference") {
+      const token = fileReferenceToken(this.draftText, message.caret);
+      if (!token) { this.rejectStale(); return true; }
+      await this.addAttachment(view, "file", token); return true;
+    }
     if (message.type === "addFileAttachment") { await this.addAttachment(view); return true; }
     if (message.type === "removeAttachment") {
       if (!this.attachments.some(a => a.attachmentId === message.attachmentId)) this.attachmentResult = "stale";
@@ -243,7 +251,7 @@ export class DraftSubmission implements vscode.Disposable {
     if (attachments.reduce((bytes, a) => bytes + a.source.utf8Bytes, 0) > 1048576) throw new AttachmentFailure("total-too-large");
   }
 
-  private async addAttachment(view: vscode.WebviewView, kind: "file" | "selection" = "file"): Promise<void> {
+  private async addAttachment(view: vscode.WebviewView, kind: "file" | "selection" = "file", completion?: NonNullable<ReturnType<typeof fileReferenceToken>>): Promise<void> {
     if (this.attachments.length >= 20) { this.attachmentResult = "attachment-limit"; this.publish(); return; }
     if (this.preparation !== "idle") { this.attachmentResult = "busy"; this.publish(); return; }
     if (!this.attachmentEligible()) { this.attachmentResult = "ineligible"; this.publish(); return; }
@@ -258,7 +266,9 @@ export class DraftSubmission implements vscode.Disposable {
         if (!current()) return;
         added.push({ attachmentId: opaqueId(), snapshotId: opaqueId(), kind, originalRange, stale: false, authorized: source, source, state: "attached" });
       } else {
-        const selected = await this.api.window.showOpenDialog({ canSelectFiles: true, canSelectFolders: false, canSelectMany: true, defaultUri: this.api.workspace.workspaceFolders?.[0]?.uri, openLabel: "Attach nonsecret text files" });
+        const selected = completion
+          ? await new FileDiscovery(this.api, this.locale).pick(this.context().cwd!, completion.query, current)
+          : await this.api.window.showOpenDialog({ canSelectFiles: true, canSelectFolders: false, canSelectMany: true, defaultUri: this.api.workspace.workspaceFolders?.[0]?.uri, openLabel: "Attach nonsecret text files" });
         if (!current()) return;
         if (!selected?.length) throw new AttachmentFailure("cancelled");
         if (this.attachments.length + selected.length > 20) throw new AttachmentFailure("attachment-limit");
@@ -285,6 +295,7 @@ export class DraftSubmission implements vscode.Disposable {
       const next = [...this.attachments, ...added]; this.checkAttachmentBounds(next);
       if (!current()) return;
       this.attachments = next;
+      if (completion) this.draftText = this.draftText.slice(0, completion.start) + this.draftText.slice(completion.end);
       this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
     } catch (error) { if (token === this.attachmentToken) this.attachmentResult = error instanceof AttachmentFailure ? error.code : "unavailable"; }
     finally { if (token === this.attachmentToken) { this.preparation = "idle"; this.publish(); } }

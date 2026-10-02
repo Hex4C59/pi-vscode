@@ -386,3 +386,8 @@ The host performs one retained-runtime handoff before admitting a new launch; We
 ### Required verification and architecture disposition
 
 Governance dimensions 1–19 have been evaluated for the bounded WI-013 implementation: ownership/public seams/v3 DTOs, requirements and state/concurrency, error cleanup, security/data/privacy/backpressure, build/compatibility/UX. Deterministic and actual runtime/native F5/installed/multiwindow evidence and limits are separated in the [delegated acceptance](../archive/2026-09-28-wi-013-acceptance.md). Scoped maturity is Implemented/Accepted and ADR0002 is Accepted; the three broad gates were subsequently accepted separately by ADR0004, and other WIs are not accepted by inference.
+
+
+## WI-084 file discovery intent
+
+`completeFileReference {draftRevision, caret}` is a named v3 chat-only operation with existing generation/view identity. The caret is an integer in 0-8000; only these fields are allowlisted, never a path/query/RPC. Host independently derives a standalone at-caret @ token from acknowledged text, then reserves existing attachment preparation. Native workspace discovery reads no body; its host-only URI still passes captureFile and all sensitivity/size/change checks. Success atomically appends a whole file and removes exactly the token; failure/cancel/stale leaves draft and attachments intact. Settings has no handler; browser has no filesystem access. [WI-084](../discussions/2026-10-03-wi-084-file-completion.md) retains pending native acceptance.

@@ -18,6 +18,7 @@ type ComposerProps = {
   attachments: AttachmentStateMessage | null;
   queuedText: QueuedTextStateMessage | null;
   commandCatalogue: CommandCatalogueStateMessage | null;
+  onCompleteFileReference?: (caret: number) => void;
   onCompleteCommand: (name: string) => void;
   commandCompletionDisabled: boolean;
   history: AttachmentHistoryEntry[];
@@ -140,7 +141,7 @@ function ComposerModel({ workspace, canPrepare, providerConfig, error, settingsD
 /** Layout and input behavior; send, stop, draft and attachment intents are bound by the page. */
 export function MessageComposer({
   sessionUsage, onRefreshUsage,
-  text, error, workspace, attachments, queuedText, commandCatalogue, onCompleteCommand, commandCompletionDisabled, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
+  text, error, workspace, attachments, queuedText, commandCatalogue, onCompleteCommand, onCompleteFileReference, commandCompletionDisabled, history, historyOpen, historyPage, preview, providerConfig, executionProfile,
   input, canPrepare, canBrowse, canCompose, readableRuntimeError, showStop, stopping, sendBlocked, queueDisabled, recallDisabled,
   attachmentDisabled, settingsDisabled, sessionTransitioning, submit, onEdit, onStop, onQueueChat, onRecallQueuedText,
   onUseRecoveredText, onDiscardRecoveredText, onAddAttachment, onAddSelection, onRemoveAttachment,
@@ -160,7 +161,7 @@ export function MessageComposer({
     <CommandInput key={identity} text={text} input={input} catalogue={commandCatalogue}
       readOnly={readableRuntimeError} disabled={!!error || (canPrepare ? !!workspace?.busy : (!canCompose && !readableRuntimeError) || !attachments)}
       blocked={chrome.modelOpen || chrome.permissionsOpen} completionDisabled={commandCompletionDisabled}
-      taskRunning={taskRunning} onEdit={onEdit} onComplete={onCompleteCommand} onOpen={chrome.closePopovers} submit={submit} />
+      taskRunning={taskRunning} onCompleteFile={onCompleteFileReference} onEdit={onEdit} onComplete={onCompleteCommand} onOpen={chrome.closePopovers} submit={submit} />
     {taskRunning && <div className="candidate__composer-queue" role="group" aria-label={t("Queued text")}>
       <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("steering")}>{t("Steer current task")}</button>
       <button type="button" disabled={queueDisabled} onClick={() => onQueueChat("follow-up")}>{t("Follow up after task")}</button>

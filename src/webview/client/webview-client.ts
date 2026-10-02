@@ -1,3 +1,4 @@
+import { fileReferenceToken } from "./file-reference.js";
 import { SavedHistoryClient } from "./saved-history-client.js";
 import { availability, ATTACHMENT_HISTORY_PAGE_SIZE, CHANGE_REVIEW_PAGE_SIZE, SESSION_PAGE_SIZE, type ClientSnapshot, type Intent } from "./client-state.js";
 import type { WebviewBridge } from "./bridge.js";
@@ -167,6 +168,12 @@ export class WebviewClient {
   discardRecoveredText = (id: string): void => {
     if (!this.snapshot.queuedText?.recovery.some(item => item.id === id) || this.snapshot.error) return;
     this.action({ type: "discardRecoveredText", id });
+  };
+  completeFileReference = (caret: number): void => {
+    const draft = this.snapshot.attachments?.draft;
+    if (!draft || draft.attachments.length >= MAX_ATTACHMENTS || this.snapshot.synchronizing
+      || availability(this.snapshot).attachmentDisabled || !fileReferenceToken(this.snapshot.text, caret)) return;
+    this.action({ type: "completeFileReference", draftRevision: draft.revision, caret });
   };
   addAttachment = (): void => { this.beginAttachment("file"); };
   addSelection = (): void => { this.beginAttachment("selection"); };

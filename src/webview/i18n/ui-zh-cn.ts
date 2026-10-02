@@ -156,6 +156,7 @@ export const chineseUi = {
   "Project": "项目",
   "User": "用户",
   "Custom path": "自定义位置",
+  "Press Tab to find and attach a workspace file.": "按 Tab 搜索并附加工作区文件。",
   "Loading commands…": "正在加载命令…",
   "Commands unavailable. Restart the runtime to reload.": "命令暂不可用。请重启运行时重新加载。",
   "No commands loaded in this runtime.": "当前运行时没有已加载命令。",

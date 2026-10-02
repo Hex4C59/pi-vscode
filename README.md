@@ -67,6 +67,8 @@ Run **pi: Show Resource Loading Report** from the Command Palette for a read-onl
 
 Run **pi: Compact Context** only with an idle, ready runtime. Confirm lossy summarization (ordinary selected-model charges may apply), optionally add bounded instructions, and use the progress notification Cancel or existing Stop to request cancellation. Completion, failure and observed cancellation are distinct. Your unsent draft stays intact; automatic compaction and retry remain upstream-owned.
 
+Type a standalone `@` file query and press **Tab** to open native workspace fuzzy/path discovery. Choose one file explicitly; successful attachment removes only the query token. Discovery reads names only, respects default file exclusions and displays at most 3000 safe paths with a truncation notice. Cancel/error/stale input preserves the draft. Source sensitivity, size and change-confirmation rules remain unchanged; the existing file attachment picker stays available outside the bounded list.
+
 ## Development and verification
 
 Use the checks that match the change:

@@ -17,6 +17,7 @@ const actions: Record<string, string[]> = {
   addPluginInventoryEntry: [], removePluginInventoryEntry: ["id"], setPluginInventoryEnabled: ["id", "enabled"],
   stopChat: [], openFolder: [], manageTrust: [], getAttachmentHistory: [], getChangeReview: [], openReviewDiff: ["id"], openReviewSource: ["id"],
   decideApproval: ["id", "decision"], revokeGrant: ["id"], chooseResources: ["choice"],
+  completeFileReference: ["draftRevision", "caret"],
   sendChat: ["draftRevision"], addFileAttachment: ["draftRevision"], addSelectionAttachment: ["draftRevision"],
   completeCommand: ["draftRevision", "name"],
   queueChat: ["draftRevision", "mode"], recallQueuedText: ["queueRevision"],
@@ -35,6 +36,7 @@ function validateActionPayload(message: Record<string, unknown>): boolean {
   }
   if (message.type === "chooseResources" && message.choice !== "allow" && message.choice !== "decline") return false;
   if (message.type === "setUiLanguage" && message.locale !== "en" && message.locale !== "zh-CN") return false;
+  if (message.type === "completeFileReference" && (!Number.isSafeInteger(message.caret) || Number(message.caret) < 0 || Number(message.caret) > 8000)) return false;
   if (message.type === "completeCommand" && (typeof message.name !== "string" || !message.name
     || Buffer.byteLength(message.name) > 200 || /[\s/]/.test(message.name))) return false;
   if (message.type === "queueChat" && message.mode !== "steering" && message.mode !== "follow-up") return false;

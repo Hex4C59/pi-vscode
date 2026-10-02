@@ -35,3 +35,6 @@ export {
   MAX_THINKING_LEVEL_CHARS,
 } from "./modelCatalog.js";
 export { containsCredentialLikeText, redactCredentialLikeText } from "./credentialText.js";
+
+/** Host-authoritative syntax validator; never grants filesystem access. */
+export { fileReferenceToken } from "./fileReference.js";

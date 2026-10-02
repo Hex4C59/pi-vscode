@@ -396,3 +396,8 @@ Stop先关闭准入、撤销／取消未答form与covered approval，包括取�
 ### 所需验证与架构结论
 
 治理维度1～19已通过WI-013限定实现与分层证据核对：owner／公共seam／v3 DTO、需求与状态并发、故障cleanup、安全／数据／隐私／背压、构建／兼容／UX。确定性测试与实际runtime／原生F5／安装／多窗口各自证据及限制见[委托验收](../archive/2026-09-28-wi-013-acceptance.zh.md)。限定设计成熟度为Implemented／Accepted，ADR0002 Accepted；三项广泛gates后来另由ADR0004接受，其他WI完整接受不由本节推断。
+
+
+## WI-084 文件发现意图
+
+`completeFileReference {draftRevision, caret}` 是具名 v3 chat-only 操作，继承 generation／view 身份；caret 为 0–8000 整数，仅允许这些字段，不接受 path／query／RPC。Host 从已确认草稿独立推导光标处独立 @ token，再使用既有附件准备占用。原生发现不读正文，返回仅 host 持有的 URI，仍经 captureFile 和全部敏感／大小／变化检查。成功原子附加整文件且仅移除该 token；取消／失败／失效保留草稿与附件。设置页无处理器，浏览器无文件系统能力。[WI-084](../discussions/2026-10-03-wi-084-file-completion.zh.md)保留待完成原生验收。

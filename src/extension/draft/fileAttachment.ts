@@ -20,6 +20,18 @@ function safePath(value: string): void {
 function sensitivePath(value: string): void {
   if (value.split(/[\\/]/).some(part => /^(?:\.local-env|\.ssh|\.env(?:\..*)?|auth\.json|credentials\.json|id_rsa|id_ed25519)$/i.test(part) || /\.(pem|key|p12|pfx)$/i.test(part))) fail("sensitive-source");
 }
+/** Discovery is metadata only; captureFile still validates real targets and content after selection. */
+export function discoverableAttachmentPath(rootPath: string, uri: vscode.Uri): string | undefined {
+  try {
+    if (uri.scheme !== "file" || uri.authority || uri.query || uri.fragment) return;
+    safePath(rootPath); safePath(uri.fsPath); sensitivePath(uri.fsPath);
+    const relative = path.relative(rootPath, uri.fsPath);
+    if (!relative || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)
+      || Buffer.byteLength(relative, "utf8") > 1024 || containsCredentialLikeText(relative)) return;
+    return relative;
+  } catch { return; }
+}
+
 async function source(rootPath: string, uri: vscode.Uri, current: () => boolean) {
   if (uri.scheme !== "file" || uri.authority || uri.query || uri.fragment) fail("invalid-source");
   safePath(rootPath); safePath(uri.fsPath); sensitivePath(uri.fsPath);

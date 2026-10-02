@@ -151,6 +151,7 @@ export type UiText =
   | "Project"
   | "User"
   | "Custom path"
+  | "Press Tab to find and attach a workspace file."
   | "Loading commands…"
   | "Commands unavailable. Restart the runtime to reload."
   | "No commands loaded in this runtime."

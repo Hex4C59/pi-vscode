@@ -294,7 +294,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
       },
       settled: () => this.finishSettledTask(),
       changed: () => this.publish(),
-    });
+    }, () => this.uiLocale);
   }
 
   private clearChat(preserveSessionTransition = false): void {

@@ -35,6 +35,7 @@ export type WebviewMessage = PingMessage | { version: 3; type: "getWorkspaceStat
     | { type: "chooseResources"; choice: ResourceChoice }
     | { type: "sendChat" | "addFileAttachment"; draftRevision: number }
     | { type: "addSelectionAttachment"; draftRevision: number }
+    | { type: "completeFileReference"; draftRevision: number; caret: number }
     | { type: "completeCommand"; draftRevision: number; name: string }
     | { type: "queueChat"; draftRevision: number; mode: "steering" | "follow-up" }
     | { type: "recallQueuedText"; queueRevision: number }

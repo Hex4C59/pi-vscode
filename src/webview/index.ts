@@ -7,3 +7,5 @@ export type { WebviewBridge, ClientSnapshot, Intent, Preview, SavedHistoryPrevie
 export { WebviewClient } from "./client/webview-client.js";
 export { availability, SESSION_PAGE_SIZE } from "./client/client-state.js";
 export { SAVED_HISTORY_PAGE_SIZE } from "./client/saved-history-client.js";
+
+export { fileReferenceToken } from "./client/file-reference.js";

@@ -1,3 +1,4 @@
+import { fileReferenceToken } from "../../index.js";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type RefObject } from "react";
 import type { CommandCatalogueRow, CommandCatalogueStateMessage } from "../../../extension/contracts/index.js";
 import { useUiText } from "../../components/index.js";
@@ -13,6 +14,7 @@ export type CommandInputProps = {
   taskRunning: boolean;
   onEdit: (text: string) => void;
   onComplete: (name: string) => void;
+  onCompleteFile?: (caret: number) => void;
   onOpen: () => void;
   submit: () => void;
 };
@@ -34,6 +36,11 @@ function useCommandInput(props: CommandInputProps) {
   };
   const key = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+    const position = props.input.current?.selectionStart ?? 0;
+    if (!open && !event.shiftKey && event.key === "Tab" && props.onCompleteFile && fileReferenceToken(props.text, position)
+      && !props.blocked && !props.disabled && !props.readOnly && !props.completionDisabled && !props.taskRunning) {
+      event.preventDefault(); props.onCompleteFile(position); return;
+    }
     if (open && event.key === "Escape") { event.preventDefault(); setDismissed(true); return; }
     if (open && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault(); setIndex((active + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % (rows.length || 1)); return;
@@ -100,6 +107,9 @@ export function CommandInput(props: CommandInputProps): ReactElement {
   return <>
     {menu.open && <CommandMenu id={id} catalogue={props.catalogue} rows={menu.rows} active={menu.active}
       disabled={props.completionDisabled} complete={menu.complete} />}
+    {props.onCompleteFile && !props.taskRunning && !props.blocked && !props.disabled && !props.readOnly
+      && !props.completionDisabled && fileReferenceToken(props.text, props.text.length)
+      && <p className="command-menu__notice" role="status">{t("Press Tab to find and attach a workspace file.")}</p>}
     <textarea ref={props.input} role="combobox" aria-label={t("Message")} aria-autocomplete="list"
       aria-haspopup="listbox" aria-expanded={menu.open} aria-controls={menu.open ? id : undefined}
       aria-activedescendant={menu.open && menu.rows.length ? `${id}-${menu.active}` : undefined}
