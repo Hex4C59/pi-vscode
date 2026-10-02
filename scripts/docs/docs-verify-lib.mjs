@@ -9,6 +9,7 @@ const PRD_EN = 'docs/product-requirements.md';
 const ACTIVE = 'ACTIVE.md';
 const CURRENT_HEADING = '## 正在做（WIP=1）';
 const NO_CURRENT_HEADING = '## 当前无活动 WI（WIP=0）';
+const PARALLEL_HEADING = '## 任务登记（最多 3 个执行槽位）';
 
 function stripFencedBlocks(content) {
   return content.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1\s*$/gm, (block) => '\n'.repeat(block.split(/\r?\n/).length - 1));
@@ -16,15 +17,76 @@ function stripFencedBlocks(content) {
 
 export function parseCurrentWork(active) {
   const clean = stripFencedBlocks(active);
-  const currentCount = (clean.match(/^## 正在做（WIP=1）\s*$/gm) ?? []).length;
-  const emptyCount = (clean.match(/^## 当前无活动 WI（WIP=0）\s*$/gm) ?? []).length;
-  if (currentCount + emptyCount !== 1) return { kind: 'invalid', section: '' };
-  if (emptyCount === 1) return { kind: 'empty', section: '' };
-  const start = clean.search(/^## 正在做（WIP=1）\s*$/m);
-  const bodyStart = clean.indexOf('\n', start) + 1;
-  const next = clean.slice(bodyStart).search(/^## /m);
-  const section = next === -1 ? clean.slice(bodyStart) : clean.slice(bodyStart, bodyStart + next);
-  return { kind: 'current', section };
+  const headings = (clean.match(/^## .+$/gm) ?? []).map((heading) => heading.trim());
+  const boundaries = headings.filter((heading) => [CURRENT_HEADING, NO_CURRENT_HEADING, PARALLEL_HEADING].includes(heading));
+  if (boundaries.length !== 1) return { kind: 'invalid', section: '' };
+  if (boundaries[0] === NO_CURRENT_HEADING) return { kind: 'empty', section: '' };
+  if (boundaries[0] === CURRENT_HEADING) return { kind: 'current', section: headingBody(clean, CURRENT_HEADING) };
+  if (headings.filter((heading) => heading === '## 任务提案').length !== 1) return { kind: 'invalid', section: '' };
+  const registry = headingBody(clean, PARALLEL_HEADING);
+  const rows = registry.split(/\r?\n/).filter((line) => /^\|/.test(line)).map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+  const tasks = rows.filter((cells) => cells[0] !== '任务 ID' && !/^[-:]+$/.test(cells[0] ?? ''));
+  const sections = headingBody(clean, '## 任务提案').split(/^### (?=WI-\d+)/m).slice(1);
+  const header = ['任务 ID', '阶段', '槽位', '执行者／所有者', '分支／worktree', '范围／依赖'];
+  const validHeader = rows.filter((cells) => JSON.stringify(cells) === JSON.stringify(header)).length === 1;
+  return { kind: 'parallel', registry, tasks, sections, validHeader, section: '' };
+}
+
+function headingBody(clean, heading) {
+  const lines = clean.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim() === heading) + 1;
+  const next = lines.findIndex((line, index) => index >= start && /^## /.test(line));
+  return lines.slice(start, next === -1 ? undefined : next).join('\n');
+}
+
+function proposalId(section) {
+  return section.match(/\|\s*\*\*ID\*\*\s*\|\s*(WI-\d+)(?=\s|\||（|\()/)?.[1];
+}
+
+function checkParallelRegistry(parsed) {
+  const errors = [];
+  if (!parsed.validHeader) errors.push({ code: 'active-task-registry', message: `${ACTIVE}: require the six-column task registry header` });
+  const ids = new Set();
+  const slots = new Set();
+  const proposalIds = parsed.sections.map(proposalId);
+  for (const cells of parsed.tasks) {
+    const [id, phase, slot, owner, worktree, scope] = cells;
+    if (cells.length !== 6 || !/^(?:WI-\d+|[A-Z]+-[A-Z0-9-]+)$/.test(id) || !owner || !worktree || !scope || !/^(?:Build|Prepare|Audit|Blocked|Paused|Done)$/.test(phase)) {
+      errors.push({ code: 'active-task-registry', message: `${ACTIVE}: malformed task row ${id ?? ''}` });
+    }
+    if (ids.has(id)) errors.push({ code: 'active-task-duplicate', message: `${ACTIVE}: duplicate task ID ${id}` });
+    ids.add(id);
+    const executing = ['Build', 'Prepare', 'Audit'].includes(phase);
+    if (executing ? !/^[1-3]$/.test(slot) || slots.has(slot) : slot !== '-') {
+      errors.push({ code: 'active-task-slots', message: `${ACTIVE}: ${id} needs a unique slot 1–3 while executing, otherwise -` });
+    }
+    if (executing) slots.add(slot);
+    if (/^WI-\d+$/.test(id) && !proposalIds.includes(id)) {
+      errors.push({ code: 'active-current-field', message: `${ACTIVE}: ${id} requires an inline proposal with an ID row` });
+    }
+  }
+  if (new Set(proposalIds).size !== proposalIds.length || proposalIds.some((id, index) => !id || !ids.has(id) || !parsed.sections[index].startsWith(id))) {
+    errors.push({ code: 'active-task-proposal', message: `${ACTIVE}: proposal IDs must be unique, registered and match their headings` });
+  }
+  errors.push(...checkTaskResources(parsed.tasks));
+  return errors;
+}
+
+function checkTaskResources(tasks) {
+  const errors = [];
+  const branches = new Set();
+  const worktrees = new Set();
+  for (const [id, phase, , , resource] of tasks) {
+    if (!['Build', 'Prepare', 'Audit'].includes(phase)) continue;
+    const parts = (resource ?? '').replace(/`/g, '').split(/\s+\/\s+|／/).map((part) => part.trim());
+    const [branch, worktree] = parts;
+    if (parts.length !== 2 || !/^\S+$/.test(branch) || ['main', 'master'].includes(branch) || !/^(?:\.\.?\/|\/|[A-Za-z]:[\\/])/.test(worktree ?? '') || branches.has(branch) || worktrees.has(worktree)) {
+      errors.push({ code: 'active-task-resource', message: `${ACTIVE}: ${id} requires a distinct development branch / worktree pair` });
+    }
+    branches.add(branch);
+    worktrees.add(worktree);
+  }
+  return errors;
 }
 
 export function checkActiveStructure(active) {
@@ -32,7 +94,7 @@ export function checkActiveStructure(active) {
   const warnings = [];
   const parsed = parseCurrentWork(active);
   if (parsed.kind === 'invalid') {
-    errors.push({ code: 'active-current-boundary', message: `${ACTIVE}: require exactly one canonical current-work or no-active-WI heading` });
+    errors.push({ code: 'active-current-boundary', message: `${ACTIVE}: require exactly one canonical task registry (with proposals), legacy current-work or no-active-WI heading` });
     return { errors, warnings };
   }
   const clean = stripFencedBlocks(active);
@@ -45,14 +107,16 @@ export function checkActiveStructure(active) {
   if (/^## (?:已完成（WI-|WI-\d+\s+讨论稿)/m.test(clean)) {
     errors.push({ code: 'active-closed-detail', message: `${ACTIVE}: closed WI detail belongs in docs/archive; keep only the completed index` });
   }
-  if (parsed.kind === 'current') {
+  if (parsed.kind === 'parallel') errors.push(...checkParallelRegistry(parsed));
+  const sections = parsed.kind === 'parallel' ? parsed.sections : parsed.kind === 'current' ? [parsed.section] : [];
+  for (const section of sections) {
     for (const field of ['ID', '阶段', 'Gate ID', 'Decision', 'PRD 判定']) {
-      if (!new RegExp(`\\|\\s*\\*\\*${field}\\*\\*\\s*\\|`).test(parsed.section)) {
+      if (!new RegExp(`\\|\\s*\\*\\*${field}\\*\\*\\s*\\|`).test(section)) {
         errors.push({ code: 'active-current-field', message: `${ACTIVE}: current WI is missing ${field}` });
       }
     }
     for (const heading of ['目标与范围', '方案与架构核对', '验收', '范围外与批准边界']) {
-      if (!new RegExp(`^### ${heading}`, 'm').test(parsed.section)) {
+      if (!new RegExp(`^#{3,4} ${heading}`, 'm').test(section)) {
         errors.push({ code: 'active-current-detail', message: `${ACTIVE}: current WI is missing ${heading}` });
       }
     }
@@ -73,8 +137,14 @@ export function checkPrdGate(prd, active) {
     errors.push({ code: 'prd-placeholder', message: `${PRD_EN}: REQ row contains a placeholder comment` });
   }
   const parsed = parseCurrentWork(active);
-  const current = parsed.kind === 'current' ? parsed.section : '';
-  const wi = current.match(/\|\s*\*\*ID\*\*\s*\|\s*(WI-\d+)\s*\|/)?.[1];
+  const sections = parsed.kind === 'parallel' ? parsed.sections : parsed.kind === 'current' ? [parsed.section] : [];
+  for (const section of sections) errors.push(...checkProposalPrdGate(prd, section));
+  return errors;
+}
+
+function checkProposalPrdGate(prd, current) {
+  const errors = [];
+  const wi = proposalId(current);
   const build = /\|\s*\*\*阶段\*\*\s*\|\s*(?:建造|Build)(?:\s|\||（|\()/.test(current);
   if (!wi || !build) return errors;
   const assessment = current.match(/\|\s*\*\*PRD 判定\*\*\s*\|\s*([^|]+)\|/)?.[1]?.trim();

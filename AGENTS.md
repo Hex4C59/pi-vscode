@@ -19,7 +19,7 @@ Assume other agents are working concurrently. **One task = one branch + one dedi
 - Never run `git reset --hard`, `git checkout .`, `git clean -fd`, `git stash` or `git add .` unless the maintainer explicitly names that exact command. Stage named paths only.
 - Refresh and resolve conflicts only in the task worktree, with explicit commit/history-change authorization. Stop if a conflicting file was not changed by this task. Never force-push; a published branch uses an authorized merge instead of rebase.
 - Before opening or updating a PR, run `npm run check:pr-base`, rerun affected checks after any refresh, and push only this branch when authorized. Bind evidence to the actual tested candidate and base under [collaboration §5](docs/guides/agent-collaboration.md#candidate-evidence-and-remote-checks). A worktree does not grant commit, rebase, merge, push or PR permission.
-- Keep product WIP=1. Parallel subtasks need disjoint write scopes and one coordinator for shared records. Do not modify an unassigned hotspot; request ownership first.
+- Run at most three independently assigned tasks concurrently, across WIs or separately approved maintenance. Each needs its own approval, task sheet, branch/worktree and disjoint write scope; one coordinator owns the task registry and shared records. See [collaboration §4](docs/guides/agent-collaboration.md#4-bounded-parallel-work-maximum-3-tasks) for admission and slot accounting. Do not modify an unassigned hotspot; request ownership first.
 
 Hotspots (one assigned writer at a time):
 
@@ -82,7 +82,7 @@ On Windows, when `mcp__node_repl` is available, read files through Node filesyst
 3. Follow the applicable load-map routes below. Read archived material only when the current question needs its evidence.
 4. Check the recorded approval scope before editing application code. A Prepare proposal is not Build authorization; obtain and record maintainer approval before advancing.
 
-Mentioning only `ACTIVE.md` (or saying 「继续 pi VS Code」) supplies a session entry point, not a waiver of required reading or approval. Keep one current WI (WIP=1); recording discussion does not authorize implementation. Git commits still require an explicit maintainer request.
+Mentioning only `ACTIVE.md` (or saying 「继续 pi VS Code」) supplies a session entry point, not a task assignment or waiver of required reading or approval. Select only the coordinator-assigned task ID; if ambiguous, ask rather than claiming the first WI or advancing the queue. Recording discussion or increasing concurrency does not authorize implementation. Git commits still require an explicit maintainer request.
 
 ## Conversation records
 
