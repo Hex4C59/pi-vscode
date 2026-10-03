@@ -93,3 +93,6 @@ WI084 native continuation: harness27623b4 clean checks1279/package passed. Actua
 
 
 WI084 closed b7f02ae under Goal delegation: clean9ec5339 and independent actual F5/installed ten-case review plus18 native geometry captures each. Earlier failures retained; unchanged full1282 candidate rerun passed. Normal UI exit/wrapper0, provider closure one synthetic request/zero real calls. 4/8 closed (PI02/04/06/27); sole WI085/model cycling native Prepare. Four unfinished, PI26upload unapproved, no owned native jobs left.
+
+
+WI085 closed816654c: clean e77135c checks1287/public RPC/package and independent actual F5/installed ten-case review, applied/pending distinct through actual settlement, native English/Chinese. Both main/wrapper0/provider closed one synthetic/zero real calls, no jobs remain. 5/8 closed PI02/04/06/14/27; sole current WI086/session metadata search native Prepare, three unfinished, PI26upload unapproved.

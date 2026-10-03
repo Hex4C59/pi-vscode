@@ -97,3 +97,6 @@ WI084 native续跑：harness27623b4干净1279／打包通过；实际F5成功cap
 
 
 WI084以b7f02ae本次代理关闭：干净9ec5339及独立实际F5／安装十案与各18native geometry图；旧失败保留，未改全1282重跑通过。正常UI退出／wrapper0，provider关闭一次合成请求／零真实调用。4/8关闭（PI02／04／06／27），唯一WI085模型轮换native Prepare；四项未完、PI26上传未批准，无自有native遗留job。
+
+
+WI085以816654c代理关闭：干净e77135c检查1287／公开RPC／打包及独立实际F5／安装十案英中原生，applied与pending区分直到实际结算。两主／wrapper0／provider关闭一次合成零真实，无遗留job。5/8关闭PI02／04／06／14／27，唯一WI086会话metadata搜索native Prepare，三项未完，PI26上传未批准。
