@@ -4,7 +4,7 @@
 
 - 翻译状态：Machine Draft
 - 权威原文：[2026-10-02-wi-089-version-information.md](2026-10-02-wi-089-version-information.md)
-- 原文版本：1011afa + closure
+- 原文版本：f67bcec
 - 最近同步：2026-10-03
 - Type: Reference
 - Status: Superseded
