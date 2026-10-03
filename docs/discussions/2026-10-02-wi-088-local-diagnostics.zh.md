@@ -4,8 +4,8 @@
 
 - 翻译状态：Machine Draft
 - 权威原文：[2026-10-02-wi-088-local-diagnostics.md](2026-10-02-wi-088-local-diagnostics.md)
-- 原文版本：4eb8d38 + current Prepare
-- 最近同步：2026-10-02
+- 原文版本：Uncommitted baseline
+- 最近同步：2026-10-03
 - Type: Discussion
 - Status: Active
 - Created: 2026-10-02
@@ -50,3 +50,15 @@ REQ-009 有界支持诊断，无新增 trust／data／upload／adapter 决策。
 实现5f2135f95329cdbdd4b4c3e230f2a627f70d4e42已审查、与ACTIVE分开提交。当前开发与干净隔离提交候选 compile／lint／1261行为／docs:verify（两个既有ADR warning）／docs:health／package:vsix通过。candidate-evidence保留精确已审查／已导出JSON、取消／重叠／不覆盖／恢复组合、生成VSIX提取的固定manifest。实际archive插件／pi均0.86.1，因为既有packager以dependencyVersion生成插件manifest；源码插件仍0.0.1。按实际manifest报告，不替换为源码或声明版本；提取非安装。native只读审查／非模态通知／save取消／真实宿主视觉仍因隔离Code绑定限制未验证，未本轮代理验收或关闭。
 
 冻结预览最多8，过期明确unavailable。发布成功后的cleanup失败明确已导出，不误说无文件；发布前失败可重试。开发lint发现unsafe-finally throw，修正且未改测试断言，失败与最终log分留。无敏感收集／上传／模型调用。本地切片保留待完成，上传另行未批准，串行转入独立PI-GAP-27。
+
+
+## 重新原生Prepare — 2026-10-03
+
+WI087关闭35fefec，仅WI088仍在原本地授权。核对LocalDiagnostics／diagnosticSnapshot／packageVersions／排他发布及注册；保留固定安装manifest、枚举／布尔projection、<=4096bytes、唯一不可变只读preview、八份上限、单操作、显式非模态review再native本地Save、新文件排他发布清理。导出不启动runtime／grant；F5源码0.0.1与实际包0.86.1分别核对。无包／API／依赖／权限变更。
+
+普通observer仅公开VS Code文档打开事件观察隔离诊断scheme及固定安装manifest，把确切allowlist preview作为工件，不替换API／自动同意导出／启动runtime／读取用户文档。新隔离空auth／HOME／agent，禁账户扩展与memory SecretStorage，无provider／模型服务。源码／env sentinel仅自有合成，应不出现在报告，不真实secret。native十案：eligible not-started metadata、只读preview、review取消、Save取消、重叠命令无第二preview、英文冻结bytes相等导出、重复恢复、中文review取消、中文Save相等导出、英中native键盘视觉。F5与安装独立检查只读editor／非模态反馈／save；既有不覆盖／symlink／错误／dispose竞态独立composition／fs证据，不批准原生Replace／删除prompt或虚报逆境UI通过。
+
+工具编码前契约：缺逐案review／实际进程非零／安装失败／隔离错误／无普通observer／导出篡改／report形状非法拒绝，并在synthetic VS Code边界证明preview-export identity。review50分钟／自有wrapper60分钟，正常UI退出，不强杀用户进程／绕过锁屏。精确SHA／VSIX摘要、导出bytes／hash／mode／size、native截图AX／只读prompt、取消后自有输出目录为空、实际manifest与零推理留证。验证工具Prepare完成，下一先RED后Build。
+
+
+八项先行subprocess／普通observer契约缺工具RED后通过：隔离／F5／安装失败、缺真实review、确切有效preview-export、篡改导出与敏感extra拒绝。仅synthetic工具边界非native验收。无provider；driver仅观察实际诊断文档事件，<=8份及确切英中导出0600。下一干净候选／实际F5安装；日志dist/goal-eight/wi088/native-harness/。
