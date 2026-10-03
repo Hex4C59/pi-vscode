@@ -88,3 +88,5 @@ Navigation maintenance: WI-075 — [numbered history](2026-09-29-closed-wi-index
 - [Session search / 会话搜索 — WI-086](2026-10-02-wi-086-session-search.md): actual independent F5/installed ten cases and eighteen native captures per lane; Goal-delegated acceptance, two slices unfinished.
 
 - [WI-087 bounded Mermaid acceptance](2026-10-02-wi-087-mermaid.md): independent actual F5/installed diagrams, source/fallback and native visual evidence; Goal-delegated bounded slice only.
+
+- [WI-088 local diagnostic acceptance](2026-10-02-wi-088-local-diagnostics.md): independent actual F5/installed read-only review, both cancels and exact frozen-byte private local exports; upload unapproved.

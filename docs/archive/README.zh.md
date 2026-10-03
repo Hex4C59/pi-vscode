@@ -92,3 +92,5 @@ WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collabora
 - [Session search / 会话搜索 — WI-086](2026-10-02-wi-086-session-search.zh.md): actual independent F5/installed ten cases and eighteen native captures per lane; Goal-delegated acceptance, two slices unfinished.
 
 - [WI-087 有界 Mermaid 验收](2026-10-02-wi-087-mermaid.zh.md)：独立实际F5／安装图表、源码回退及原生视觉；仅Goal委托有界切片。
+
+- [WI-088 本地诊断验收](2026-10-02-wi-088-local-diagnostics.zh.md)：独立实际F5／安装只读review、双取消、冻结bytes相等的0600本地导出；上传未批准。
