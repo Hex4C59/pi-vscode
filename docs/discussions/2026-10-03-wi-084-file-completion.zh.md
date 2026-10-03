@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-03
 - Type: Reference
-- Status: Blocked
+- Status: Draft
 - Created: 2026-10-03
 - Authority: 八项有界 goal 下 PI-GAP-06 Prepare；实现与证据尚待完成
 
@@ -50,3 +50,14 @@ compile／lint／npm test／docs:verify，干净提交候选检查和打包；ma
 ## 干净候选与串行交接
 
 实现提交 `fa1d18d97ef80ba95b0f814548a8b8cb56da7907` 在隔离干净候选执行 compile、lint、1235 检查、docs:verify、docs:health 与 VSIX 打包均通过，前后源码状态为空。工件：`dist/goal-eight/wi084/candidate-evidence/verified-candidate/` 与 `candidate-identity.json`。候选目录后续可复用；本次身份以保存记录而非后续 HEAD 为准。隔离原生窗口绑定阻碍不变；F5／安装版 native 文件 picker、键盘及附件交互未验证，无代理验收或关闭。保留 PI-GAP-06 未完成，唯一当前 WI 转向独立 WI-085／PI-GAP-14。
+
+
+## 恢复native Prepare——2026年10月3日
+
+原有有界授权继续，WI082／083／089关闭，当前仅WI084；旧blocked为历史，隔离已可用。已审阅FileDiscovery公开RelativePattern／默认排除3001／3000、15秒搜索／2分钟QuickPick，DraftSubmission lease／原子token移除／capture／重验证／继承源变化确认，FileAttachment realpath项目内／敏感路径内容／262144字节。无产品／API／依赖／架构或信任持久化变化。
+
+独立F5／安装fixture复用普通observer：空合成HOME／agent、内存SecretStorage、禁账户，无extensionTestsPath／API替换／自动批准。自有项目含嵌套／中文／长文件、排除文件、无凭据虚假敏感路径、超大文本及指向项目外自有fixture文件symlink；仅明确确认变化后的合成Send用既有held loopback。observer只记录身份、等待逐案review及正常退出。
+
+harness编码前四项子进程契约因缺实现失败（red.log），非native。失败方式：真实文件账户、自动picker批准Send、文件provider时间无界、旧标记／非零退出冒充、安装身份不符、确认前投递、排除敏感超大symlink绕过、取消丢token草稿／重复附件、no-match键盘未实际观察、模拟升级native。待实际验收Cancel／模糊键盘选择／no-match／原子草稿附件／排除敏感metadata／超大外部拒绝／变化拒绝及确认／英中；旧18浏览器宽主题语言预览不升级，native受影响hint280／320／400及主题单独取证。保留准确源码包环境命令／请求截图AX，全部native尚待。
+
+harness开发checkpoint：四项合成子进程契约RED→GREEN，compile／lint／1279收集测试／docs:verify通过。不宣称native；普通observer无API替换，自有合成fixture，wrapper要求实际成功退出及变化内容请求。接下来提交审阅／隔离干净候选，再真实F5／安装。

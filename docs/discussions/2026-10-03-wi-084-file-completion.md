@@ -3,7 +3,7 @@
 English | [中文](2026-10-03-wi-084-file-completion.zh.md)
 
 - Type: Reference
-- Status: Blocked
+- Status: Draft
 - Created: 2026-10-03
 - Authority: bounded PI-GAP-06 Prepare under the eight-gap goal; implementation and evidence pending
 
@@ -46,3 +46,14 @@ Real-browser synthetic-host screenshots cover 18 combinations of 280/320/400, da
 ## Clean candidate and serial handoff
 
 Implementation commit `fa1d18d97ef80ba95b0f814548a8b8cb56da7907` was checked in the isolated clean candidate: compile, lint, all 1235 checks, docs:verify, docs:health and VSIX packaging passed; before/after source status empty. Evidence: `dist/goal-eight/wi084/candidate-evidence/verified-candidate/` and `candidate-identity.json`. The candidate checkout is reusable; saved identity, not its later HEAD, identifies this run. The native isolated-window binding blocker remains unchanged. F5/installed native file picker, keyboard and attachment interaction are unverified; no agent acceptance or closure. Retain PI-GAP-06 unfinished and move the single current WI to independent WI-085 / PI-GAP-14.
+
+
+## Resumed native Prepare — October 3, 2026
+
+Original bounded authorization continues; WI082/083/089 closed, only WI084 current. Prior blocked statements are historical: safe isolation now works. Inspected FileDiscovery public RelativePattern/default-exclude enumeration3001/3000, 15s search/2m QuickPick, DraftSubmission lease/atomic token removal/capture/revalidation and inherited changed-source confirmation; FileAttachment realpath containment, sensitive path/content and262144-byte bound. No product/API/dependency/architecture or trust/persistence change planned.
+
+Adapt proven ordinary observer launcher into independent F5/installed file-completion lanes: empty synthetic HOME/agent, memory SecretStorage, authentication disabled, no extensionTestsPath/API replacement/automatic consent. Owned project contains distinguishable nested/Chinese/long files, excluded file, dummy sensitive-path file with no credential, oversized text and symlink to project-external owned fixture. Existing held loopback only for explicit synthetic send after changed-source confirmation. Observer only records identity and waits for reviewed cases/normal exit.
+
+Before harness code, four subprocess contracts prepared and failed because implementation absent (red.log); synthetic only, not native. Failure modes: real user file/account access, automatic picker/approval/send, unbounded files/provider/lifetime, stale markers or nonzero process exit accepted, mismatched installed identity, changed-source delivery before confirmation, excluded/sensitive/oversize/symlink bypass, cancelled token/draft loss/duplicate attachment, no-match/keyboard not actually reviewed, mocked evidence upgraded. Actual pending cases: cancel, fuzzy keyboard selection, no match, atomic draft/attachment, excluded/sensitive metadata, oversized/outside rejection, inherited source-change refusal+confirmation, en/zh. Preserve separate18 browser width/theme/language preview; capture native affected hint geometry/themes separately at280/320/400 rather than infer. Exact source/package/environment/commands, request receipt/screenshots/AX retained. All native acceptance pending.
+
+Harness development checkpoint: four synthetic subprocess contracts RED then GREEN; compile/lint/1279 collected tests/docs:verify passed. No native pass claimed. Ordinary observer does not replace API, fixtures stay owned/synthetic and wrapper requires observed successful exit plus changed-content receipt. Next commit/review and isolated clean candidate checks before actual F5/installed review.
