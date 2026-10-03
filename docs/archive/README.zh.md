@@ -46,6 +46,8 @@ WI 记录保留旧 pending／open 等历史状态；当前工作与决定见 [AC
 - [文字队列产品切片 — WI-077](2026-10-02-wi-077-acceptance.zh.md)；F5 与安装 VSIX＋合成 provider；PI-GAP-01 剩余范围停车。
 - [作曲区命令发现 — WI-078](2026-10-02-wi-078-acceptance.zh.md)；浏览器、真实 runtime、F5／安装 VSIX；加载报告余量停车。
 
+- [实际安装版本信息 — WI-089](2026-10-02-wi-089-version-information.zh.md)：本次Goal代理验收，F5／安装UI分层证据，其余七项仍未完成。
+
 ## 被替代的方案与调查
 
 - [pi 兼容性调查](2026-09-22-pi-compatibility.zh.md)

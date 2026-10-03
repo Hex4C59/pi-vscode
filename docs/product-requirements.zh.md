@@ -371,7 +371,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 ### REQ-009 — 代表性 pi 兼容
 
-**WI-089已批准Build切片（本轮八项Goal，2026-10-02）：** native只读显示实际安装插件／内置pi版本及精确版本有界本地notes；unknown／缺失／不完整／过大明确unavailable。不承诺最新，不替换Unreleased／其他版本，不隐式联网／更新。[Prepare](discussions/2026-10-02-wi-089-version-information.zh.md)，实现／native验收待完成。
+**WI-089已验收切片（2026年10月3日，本次八项Goal授权下的代理验收，不是维护者亲自测试）：** native只读实际安装插件／内置pi／宿主版本及精确有界本地说明；unknown／missing／截断／超预算明确不可用。不承诺最新、不替代Unreleased／其他版本、不隐式联网／更新。实际macOS F5与安装VSIX英中报告、键盘只读及关闭重开已观察；保留archive插件0.86.1映射并诚实提示对应插件说明缺失。[Prepare、证据与限制](archive/2026-10-02-wi-089-version-information.zh.md)。其余七项目标及诊断上传仍未完成。
 
 **WI-088 已批准 Build 切片（本轮八项 Goal，2026-10-02）：** 显式本地有界诊断仅含实际安装 package／host 版本及既有 allowlist lifecycle flags。冻结只读预览、显式审查导出／取消、本地 save取消、拒绝覆盖、失败可重试。默认排除源码、完整会话、标识／路径、凭据、env、诊断／错误正文；无后台敏感收集或上传，无新增 runtime／trust／Webview 权限。[Prepare](discussions/2026-10-02-wi-088-local-diagnostics.zh.md)；实现与本轮代理 native 验收待完成。
 
@@ -515,7 +515,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
 | WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。 |
 | WI-088 | REQ-009 有界本地诊断导出（PI-GAP-26 本地切片） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-088-local-diagnostics.zh.md)。 |
-| WI-089 | REQ-009 实际安装版本与本地说明（PI-GAP-27） | 有界Goal已批准；[Prepare／待验收](discussions/2026-10-02-wi-089-version-information.zh.md)。 |
+| WI-089 | REQ-009实际安装版本与有界本地说明（PI-GAP-27） | 2026年10月3日依本次Goal委托代理关闭；实际F5／安装英中、只读／重开分层证据。[验收](archive/2026-10-02-wi-089-version-information.zh.md)。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |
 | WI-070 | REQ-009 当前 macOS 五类证据 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-070-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-070-acceptance.zh.md)。 |
 | WI-037 | REQ-004 有界 thinking 流式与完整引号凭据值脱敏（RUNTIME-01／02） | 2026-09-30 由代理依据维护者明确的实机取证并完结委托接受；[实际 macOS F5／隔离安装证据与限制](archive/2026-09-30-wi-037-macos-acceptance.zh.md)。不接受整份 PRD、gate 或 ADR。 |

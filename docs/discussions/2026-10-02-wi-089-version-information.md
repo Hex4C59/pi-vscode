@@ -1,62 +1,10 @@
-# WI-089 — PI-GAP-27 installed version information
+# WI-089 — archived version-information record
 
 English | [中文](2026-10-02-wi-089-version-information.zh.md)
 
-- Type: Discussion
-- Status: Active
-- Created: 2026-10-02
-- Authority: scoped Prepare/Build and evidence, not acceptance
-- Related: [ACTIVE](../../ACTIVE.md), [eight-item Goal](2026-10-03-eight-gap-goal.md), [PRD](../product-requirements.md)
+- Type: Reference
+- Status: Superseded
+- Superseded by: [Archived Prepare and acceptance](../archive/2026-10-02-wi-089-version-information.md)
+- Authority: navigation only
 
-## Scope and current facts
-
-Current execution request approves actual extension/bundled pi versions and corresponding local notes; missing/unavailable explicit, no newest-version promise or implicit network/update/install. No dependency upgrade. WI-088 actual-manifest public installedVersions already supplies bounded name/version checks. Native read-only TextDocumentContentProvider/showTextDocument matches existing report flow. No version report exists. Source extension0.0.1, installed archive0.86.1 under the existing packager mapping; bundled pi0.86.1. Do not change package versioning to fit notes or label source as installed. Root CHANGELOG has0.0.1 and Unreleased,1581bytes; upstream local CHANGELOG569032bytes starts exact0.86.1. Root CHANGELOG is not currently selected by package files; add just that fixed local document for this slice, not download/market scope. Public file reads are limited to installation manifests and those two local notes files. Upstream source is read-only.
-
-## Prepare design and boundaries
-
-One host version-information module uses public installedVersions, fixed paths only; lazy native command. Show actual extension/pi/VS Code versions distinctly, unknown when missing/invalid. For each version, read at most64KiB prefix plus one byte, find one exact version heading, include only its complete section <=8KiB. Unreleased/other versions never presented as corresponding notes. If matching section is incomplete/budget-exceeded, duplicated, absent, unreadable or version unknown, explicit localized status; no fallback to another version. Plain read-only text, no Markdown/HTML evaluation or automatic links/images/network, no runtime start/prompt/trust changes. Preview reflects one fresh package snapshot, bounded document <=20KiB, single opening owner, dispose/late suppression and fixed bilingual native failure recovery. No persisted UI state. Root notes may be unavailable for installed0.86.1; this is honest missing state, not a scope blocker requiring invented notes.
-
-## Failure modes before code
-
-- Source/dependency declaration masquerades as actual installed version; guessed newest/automatic update/network.
-- Wrong/Unreleased notes presented for installed version; missing/duplicate/truncated/out-of-budget notes look successful.
-- Whole huge changelog loaded/rendered; arbitrary workspace paths or unsafe rich resources; error leaks absolute paths.
-- Old async open after dispose or overlapping commands; native failure cannot recover.
-- Packaging omits root notes, or adding notes changes runtime dependencies/versioning/delivery scope.
-
-## Approval, requirements, evidence
-
-REQ-009 local support information; no architecture/ADR/gate or major trust/data decision. User bounded Goal approves Build after this Prepare. Expected writes host version-information/public wiring/command/package files, pre-code composition/packaged-note assertions and paired README/PRD/WI. Write production composition failures first: exact actual version selection, different versions/Unreleased exclusion, unknown/missing/duplicate/huge/truncated/unreadable states, literal plain source, disposal/overlap/open retry/no runtime calls; real fixed package notes and packaged archive checks separate from simulated native APIs. Baseline clean5f2135f1261checks passed. Then compile/lint/behavior/docs, scoped reviewed commit, clean candidate/package; native en/zh read-only report and installed presentation required separately. Existing isolated Code binding blocker means no acceptance/closure; retain all eight Goal native items pending if it persists.
-
-Prepare complete for this bounded design. Next pre-code composition red then implementation. No version report or native acceptance yet.
-
-
-Six production compositions were written before application code; red failed on the absent public version-information entry. Duplicate detection applies to the bounded scanned prefix, not an audit of the whole historical changelog. Complete current sections before a later heading can qualify despite an oversized older tail; incomplete/beyond-prefix/oversize cases explicitly unavailable. Next focused and standard checks; no candidate/native acceptance yet.
-
-
-## Committed candidate and external blocker
-
-Implementation d3ff0ea4144280f32d2b14ffb4f5648f1195e3db reviewed and committed separately from ACTIVE. Clean isolated candidate compile/lint pass; first two full runs failed the unchanged frozen-history global-last-message assertion. Corrected generated-bundle diagnostic replay passed, then standard npm test rebuilt uninstrumented bundles and 1267 passed. Root cause not established; failed, diagnostic and final standard logs remain separate, with no history assertion/behavior changes. Development const/control-regex lint errors fixed. docs:verify (two existing ADR warnings), docs:health and package:vsix pass. Final-candidate actual resource-report/compaction/model-cycling public pi RPC and actual SDK/production worker session search pass; zero real/paid inference/accounts. Loopback compaction is synthetic inference only.
-
-Actual built archive includes fixed root/upstream notes. Production version owner with substituted native APIs verifies actual extension/pi0.86.1, missing corresponding extension notes (existing packaging mapping retained), exact upstream0.86.1, no other-version/Unreleased fallback, en/zh bounded output. Repeatable probe: node dist/goal-eight/wi089/verify-version-archive.mjs <clean candidate> <output> under curated isolated env. candidate-identity.json/candidate-evidence preserve identity/logs/reports. Extraction is not installation. Frontend Git tree identical since4eb8d38; earlier browser matrix is still synthetic-host, not native.
-
-All eight native F5/installed acceptance remains blocked. Original user Code exists (binary-only inventory; no user content inspection); available macOS CUA cannot safely bind the isolated instance by PID/window. Never quit/use the user instance or weaken signing/library validation. Minimal unlock: user saves/closes original Code so isolated signed instance can be bound, or supported safe PID/window binding. No WI closure/archive or Goal completion.
-
-
-## Native credential-isolation repair Prepare — October 3, 2026
-
-The resumed goal observed the original Code process absent, then launched the existing isolated F5 launcher from clean d3ff0ea. Path and bundle-ID CUA binding both timed out. The maintainer reported repeated “keychain not found” prompts; the isolated launch log shows builtin GitHub authentication reading sessions from keychain. Exact dialog origin/root cause remains unproven. The owned launcher was terminated and its process exit observed; no user keychain or configuration was inspected/modified. This turn is progress through new evidence, not native acceptance.
-
-Bounded repair: change only the native verification launcher, not product SecretStorage. The installed Code bundle declares `--use-inmemory-secretstorage` and passes that boolean into NativeSecretStorageService. Add it to F5 parent, generated debug child, installed CLI and installed launch; disable builtin GitHub/Microsoft authentication extensions in interactive fixture windows. Retain curated HOME, empty credentials and current resource/trust fixture; never substitute real HOME, reset/delete keychains, disable OS security or request passwords.
-
-Pre-code failure modes: missing flags in any launch path; argument/environment forwarding loss; test driver accidentally starting actual Code or reading user state; synthetic checks falsely called native/keychain acceptance. Prewrite a subprocess composition using a substituted executable to exercise the actual launcher in both modes and inspect generated F5 arguments. It proves argument plumbing only, not disappearance of the reported dialog. Real retry stays unverified until an isolated native window is controllable without credential prompts; exact symptom verification requires a safe native observation or maintainer evidence.
-
-The two launcher composition scenarios were written before script changes and both failed for the missing memory-only flag (`dist/goal-eight/native-isolation/red.log`). The repair forwards memory-only storage to every invocation and disables the two builtin account extensions in interactive fixture windows; no product code or user settings changed. Both compositions now pass (`green.log`), script syntax checks pass, compile/lint pass. Full standard behavior first failed the existing unchanged frozen-history last-message assertion (1268/1269); retained `test.log`. A second unmodified standard run passed 1269 (`test-recheck.log`). Documentation verification/health passed. These are development/script evidence, not native acceptance, dialog disappearance, a root-cause claim or a system-keychain repair. Next: review/commit only owned launcher/tests/records, then verify committed candidate in isolation before any guarded native attempt.
-
-Guarded retry from clean 585bd06 succeeds in native CUA binding with an identified `PI-RESOURCE-f5` launcher and actual F5 key launch. No keychain dialog was present in observed states; this is bounded observation, not a system repair claim. WI089 English exact source extension0.0.1/pi0.86.1/host1.140.0 and readonly paste rejection captured in `dist/goal-eight/wi089/native-f5/`. A new launcher defect appeared: detached option values became extra workspace folders in the debug host; it correctly blocked runtime as unsupported multi-root. No resource consent was given and no resource/native pass is claimed. Stop owned launcher and retain artifacts. Before the next script edit, add subprocess expectations for self-contained `--name=value` options and exactly one debug positional project. Then repair argument plumbing without changing product workspace eligibility or user data isolation.
-
-Atomic-option compositions both fail before the second launcher edit and pass after it (`atomic-red.log`/`atomic-green.log`). Compile/lint pass. First full 1269 run failed a different unchanged plugin-inventory settle expectation; the focused exact scenario passed, then unchanged full standard run passed 1269. Failure/focused/recheck logs retained; root cause not proven and unrelated inventory code/assertions were not changed. Docs verify/health pass. This repair only packages flag values atomically for debug argument forwarding; native single-project confirmation and the remaining WI089 acceptance still pending.
-
-Actual atomic F5 from f2b4462 confirms a single synthetic project, explicit consent through Add context → Add file (no message), and real runtime catalogue with one template/skill and unknown context-body/extension-file facts. The driver then fails at `editor.edit` boolean expected false. Installed Code1.140.0 source shows MainThreadTextEditor.applyEdits returning true after executeEdits, whereas the editor executeEdits itself rejects readonly state. Therefore success boolean alone is not proof of mutation; post-edit unchanged-content assertion and real keyboard rejection remain required. Retain failed native result; do not claim mutation or native pass. Before correcting only this return-value assumption, add generated-driver composition where the substituted native edit returns true and preserves bytes, mirroring observed/inspected behavior. No product readonly/security requirement is relaxed.
-
-Generated-driver composition was red before the return-value correction. Both preserved-byte and deliberately mutated-byte cases are now covered: the former passes, the latter remains failed. The native script records the API boolean without treating it as readonly proof, retains unchanged bytes/reopen assertions, and still requires actual agent visual/keyboard review before a finish marker. Four launcher/driver compositions, compile/lint, full standard1271, docs verify/health pass (`readonly-*.log`). No application code or readonly policy changed. Repeat real native after committed candidate checks; earlier failed native artifact remains failed.
+PI-GAP-27 closed on October 3, 2026 under the current bounded Goal delegation, not personal maintainer testing. The [archive](../archive/2026-10-02-wi-089-version-information.md) preserves Prepare, implementation, separate native F5/installed version observations and failed resource-broker artifacts. Other seven slices remain unfinished in [ACTIVE](../../ACTIVE.md) and the [Goal](2026-10-03-eight-gap-goal.md); current behavior belongs to [REQ-009](../product-requirements.md#req-009--representative-pi-compatibility).

@@ -104,7 +104,7 @@ The History column keeps the original acceptance/closure link and adds standalon
 | WI-079 | Read-only context/session usage; Refresh focus fix | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-079-team.md) |
 | WI-080 | Rename the opened idle session | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-080-team.md) |
 | WI-081 | Copy completed assistant Markdown; retain code copy | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-081-team.md) |
-
+| WI-089 | PI-GAP-27 actual installed versions and bounded local notes | October 3, 2026 agent under bounded Goal; macOS F5 + installed VSIX; no gate/ADR change | [Prepare, acceptance and limits](2026-10-02-wi-089-version-information.md) |
 
 ## Not in this index
 
