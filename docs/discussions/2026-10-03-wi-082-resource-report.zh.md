@@ -49,3 +49,6 @@ WI089／PI27已有独立实际F5及安装版本UI验收，不验收PI02。当前
 
 
 10月3日从干净2d4b871重试：binary-only清单无既有Code，隔离F5父进程14301启动，但native工具报告Mac锁定且无法自动解锁。未运行driver或UI操作；已停止自有父进程并观察终止，保留native-locked-2d4b871工件。当前最小解锁条件为用户手动解锁Mac，不是重置钥匙串或终止用户app。解锁后复核无竞争Code及新的自有存活进程／fixture身份，再专注同一有界资源F5审查。不属于PI02验收。
+
+
+当前阻碍经连续三Goal turn确认：native清单明确Mac锁定，无存活自有验证job。Goal等待手动解锁标blocked；WI082仍未完成Build，须native审查／driver验收。不授权钥匙串／安全修改。

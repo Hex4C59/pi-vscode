@@ -56,3 +56,9 @@ atomic launcher f2b4462干净compile／lint／1269／文档／打包通过，实
 PI27验收／归档提交f67bcec，串行ACTIVE交接2d4b871，三个原用户修改文件仍未暂存。干净2d4b871 docs:verify／docs:health通过、status为空、相对1011afa可执行源码diff为空（`dist/goal-eight/native-isolation/closure-candidate/`）；完整1271仍为可执行树相同1011afa的证据，不冒充文档HEAD重新完整运行。翻译source metadata在bbb6f70修正：首次正规化1011afa被source-drift正确拒绝，最终指向实际英文关闭提交。
 
 binary-only清单现无Code实例；未改已提交launcher启动自有隔离F5父进程14301，fixture `/private/tmp/pi-resource-native-HXvFad`。CUA准确返回“The Mac is locked and automatic unlock could not unlock it.”，没有按F5、允许资源、审查报告或新增native验收。仅向自有launcher请求SIGTERM并确认session终止／process-exit code0；因无driver结果，harness自身exit1。`dist/goal-eight/wi082/native-locked-2d4b871/`保留fixture／log／exit。须用户手动解锁Mac；不索取密码、不改OS设置、不绕过锁屏。这是新的当前外部条件，不是旧非fixture进程阻碍；本轮有关闭提交及候选证据，未满足连续三轮无进展阈值。Goal仍active，七项native未完成。
+
+
+锁屏native audit2（下一自动Goal续跑，10月3日）：上一turn通过有界关闭／提交及提交候选检查推进，不是verified wait。重新读取Goal／ACTIVE／WI082与Git；本审计记录前仅三个原用户修改，index为空。当前native `cua.getState()`返回无app及明确Mac锁定错误；无自有native job存活，没有仅为重试锁屏而重启launcher。剩余七项均须实际native验收，没有独立批准实现或关闭可替代。同一当前外部条件连续两Goal turn出现，Goal保持active；最小解锁仍为用户手动解锁Mac。本审计turn无进展，非验收或运行进程等待。
+
+
+锁屏native audit3（连续第三Goal turn，10月3日）：上一审计turn无进展，非verified wait。重读ACTIVE／WI082，index为空、原用户修改保护。native清单再次返回同一Mac锁定错误及无app；自有测试已终止，无存活job可poll。剩余七项均须native验收，无独立批准工作可替代。连续三轮确认锁屏条件，Goal标blocked非complete，最小外部变化为用户手动解锁Mac；不索取凭据、不绕过锁屏。完整目标、PI27关闭及剩余实现／证据保留；续跑后重新blocked审计。

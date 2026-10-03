@@ -45,3 +45,6 @@ The owned installed process exited. A non-fixture Code process/title `pi-vscode`
 
 
 October 3 retry from clean2d4b871: no pre-existing Code in binary-only inventory, isolated F5 parent14301 starts, but native tool reports Mac locked and cannot auto-unlock. No driver or UI action took place. Owned parent stopped, terminal exit observed; native-locked-2d4b871 artifacts retained. Current minimum unlock is manual Mac unlock, not a keychain reset or termination of a user app. After unlock, confirm no competing Code instance and fresh owned liveness/fixture identity before starting the same bounded resource-only F5 review. This is not PI02 acceptance.
+
+
+Current blocker confirmed across three consecutive Goal turns: native inventory explicitly reports locked Mac, no live owned verification job. Goal blocked pending manual unlock; WI082 remains unfinished in Build, native review/driver acceptance required. No keychain/security changes authorized.
