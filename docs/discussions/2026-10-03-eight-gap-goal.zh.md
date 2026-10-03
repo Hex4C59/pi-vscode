@@ -86,3 +86,8 @@ Goal已恢复ACTIVE，现重新开始blocked审计。native清单返回apps且�
 ### WI083原生工具续跑——10月3日
 
 四项test-first子进程契约覆盖隔离lane、安装cleanup、缺失review及nonzero退出诚实。本地提交`964c410`／`ed7744b`／`c1b4cd5`提供有界合成压缩observer并修复真实宿主modal被抑制问题。ed7744b干净检查／打包通过，实际F5因Code test模式拒绝modal而失败，保留非验收。普通UI退出仅关闭自有子／父窗口，未强杀或无关保存／丢弃。c1b4cd5去除test mode、保留真实native API，正重跑干净候选后重试。维持WIP1 WI083、2/8已验收，不新增批准请求、不标Goal完成或推断外部阻碍。真实native矩阵及另五个未完切片仍必须完成。
+
+
+## PI04关闭及串行WI084交接——2026年10月3日
+
+PI04／WI083经干净c1b4cd5检查、独立实际macOS F5／安装十项英中UI审阅，按本Goal代理委托通过并归档78a9d2e。仅合成loopback、真实模型0，正常退出自有窗口、provider实际关闭；准确源码／VSIX身份及早期失败保留。**PI02／04／27共3/8关闭，五项未完成**，上传／敏感收集未批准。当前WIP1 WI084文件补全，基于既有fa1d18d恢复native Prepare；旧安全绑定阻碍解除，真实QuickPick／附件／继承变化确认尚未验收。不宣称Goal完成，不需再次批准。

@@ -82,3 +82,8 @@ Current WIP moves to WI083 manual-compaction native acceptance. Both resource jo
 ### WI083 native tooling continuation — October 3
 
 Four test-first subprocess contracts now cover isolated native lanes, installation cleanup, missing review and nonzero exit honesty. Local commits `964c410`, `ed7744b`, `c1b4cd5` implement the bounded synthetic compaction observer and repair real-host modal suppression. Clean ed7744b checks/package passed; actual F5 failed because VS Code test mode refuses modal dialogs, retained rather than accepted. Normal UI quit closed only owned child/parent; no force-kill or unrelated save/discard. c1b4cd5 removes test mode, preserves actual native APIs and is undergoing clean candidate rerun before retry. Remain WIP1 WI083, 2/8 accepted; no new approval request, no Goal completion or new external blocker inferred. Actual native matrix and other five unfinished slices remain required.
+
+
+## PI04 closure and serial WI084 handoff — October 3, 2026
+
+PI04/WI083 accepted and archived78a9d2e under this Goal delegation after clean c1b4cd5 checks and independent actual macOS F5/installed ten-case English/Chinese UI review. Synthetic loopback only, zero real-model calls, normal owned-window quits and observed provider closure; exact candidate/VSIX identities and failed earlier lanes retained. **3/8 closed (PI02, PI04, PI27); five unfinished**; upload/sensitive collection unapproved. Current WIP1 WI084/file completion resumes native Prepare against existing implementationfa1d18d; old safe-binding blocker resolved, native QuickPick/attachment and inherited change-confirmation remain unverified. No goal completion or fresh approval needed.
