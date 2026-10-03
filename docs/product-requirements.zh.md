@@ -289,7 +289,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **WI-084 已验收切片（2026-10-03；PI-GAP-06，REQ-004/009）：** 已确认 composer 草稿的独立 @ token 处，显式 Tab 打开 native 工作区模糊／路径文件选择；host 从身份关联 revision／caret 推导 query，不接受 renderer 路径。仅单个合格受信任本地文件夹、默认文件排除、最多 3000 安全名称，明确截断／不完整列表；选择前不读正文。复用附件捕获、敏感／大小／symlink 检查和源码变化确认。捕获成功原子附加整文件且仅移除精确 query token；取消／失败／失效保留草稿与附件，无自动发送、持久正文索引或新加载／执行权限。[WI-084](archive/2026-10-03-wi-084-file-completion.zh.md)保留独立实际F5／安装功能及每lane18图视觉验收，本次授权下代理验收非维护者亲测。
 
-**WI-085 批准切片（2026-10-02；PI-GAP-14，REQ-002/004）：** 可绑定 native 命令选择当前工作区／runtime session 的仅内存、初始为空轮换子集，轮换上／下一个实际可用模型与思考级别。保留选择器／默认值和忙碌 next-turn 规则；取消保留集合，空／不可用／失效明确提示，以 provider/modelId 为身份，失败不伪报应用。无新持久化、provider 调用、权限或默认快捷键。[WI-085](discussions/2026-10-02-wi-085-model-cycling.zh.md)拥有 Prepare 与待完成组合／原生证据。
+**WI-085 已验收切片（2026-10-02；PI-GAP-14，REQ-002/004）：** 可绑定 native 命令选择当前工作区／runtime session 的仅内存、初始为空轮换子集，轮换上／下一个实际可用模型与思考级别。保留选择器／默认值和忙碌 next-turn 规则；取消保留集合，空／不可用／失效明确提示，以 provider/modelId 为身份，失败不伪报应用。无新持久化、provider 调用、权限或默认快捷键。[WI-085](archive/2026-10-02-wi-085-model-cycling.zh.md)保留干净检查／公开RPC及独立实际F5／安装键盘视觉，本次代理验收非维护者亲测。
 
 **WI-086 批准切片（2026-10-02；PI-GAP-24，REQ-008/009）：** 对完整批准当前项目 catalogue 的既有有界标题／名称／首条消息预览搜索后分页，支持 named-only、recent／oldest／name 排序、稳定 tie 与页 clamp。host 拥有临时已应用 criteria，显式 Search／Enter／Clear、刷新／分页一致；完整枚举限 5000 项／15 秒，超限／不确定扫描明确失败，不静默截断。无全文搜索／全局发现／持久化／自动恢复／资源扩大，保留恢复确认与顺序交接。[WI-086](discussions/2026-10-02-wi-086-session-search.zh.md)拥有待完成证据。
 
@@ -511,7 +511,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-082 | REQ-004／009 实际资源加载报告（PI-GAP-02） | 2026-10-03 依有界Goal代理委托关闭；[Prepare与验收](archive/2026-10-03-wi-082-resource-report.zh.md)。 |
 | WI-083 | REQ-004／005／009 手动上下文压缩（PI-GAP-04） | 10月3日本Goal授权下代理关闭；[Prepare与验收](archive/2026-10-03-wi-083-manual-compaction.zh.md)。 |
 | WI-084 | REQ-004／009 工作区文件补全（PI-GAP-06） | 本Goal代理关闭；[Prepare与验收](archive/2026-10-03-wi-084-file-completion.zh.md)。 |
-| WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-085-model-cycling.zh.md)。 |
+| WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 本Goal代理关闭；[Prepare与验收](archive/2026-10-02-wi-085-model-cycling.zh.md)。 |
 | WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
 | WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。 |
 | WI-088 | REQ-009 有界本地诊断导出（PI-GAP-26 本地切片） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-088-local-diagnostics.zh.md)。 |

@@ -86,3 +86,5 @@ WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collabora
 导航维护：WI-075 — [编号历史](2026-09-29-closed-wi-index.zh.md).
 
 - [File completion / 文件补全 — WI-084](2026-10-03-wi-084-file-completion.zh.md): bounded delegated actual F5/installed acceptance; four slices unfinished.
+
+- [Model cycling / 模型轮换 — WI-085](2026-10-02-wi-085-model-cycling.zh.md): actual independent native F5/installed Goal-delegated acceptance; three slices unfinished.
