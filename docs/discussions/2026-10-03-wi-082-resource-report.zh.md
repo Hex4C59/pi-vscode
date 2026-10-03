@@ -55,3 +55,6 @@ WI089／PI27已有独立实际F5及安装版本UI验收，不验收PI02。当前
 
 
 10月3日恢复：Mac已解锁，但binary-only清单确认非fixture Code9702。旧Electron-only筛选漏掉实际MacOS/Code，不存在判断已在Goal纠正。不能安全隔离绑定时不重启／选择／输入。当前最小解锁为保存关闭非fixture Code或安全macOS窗口／PID绑定，不是重置钥匙串。无新增native验收，七项未完成。
+
+
+安全绑定阻碍经三恢复turn确认：非fixture9702仍在，无自有存活测试。Goal blocked，WI082未完成；保留实际F5／安装要求，须用户保存关闭Code或安全macOS绑定。

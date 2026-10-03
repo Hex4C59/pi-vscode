@@ -51,3 +51,6 @@ Current blocker confirmed across three consecutive Goal turns: native inventory 
 
 
 Resumed October 3: Mac now unlocked, but binary-only inventory confirms non-fixture Code9702. Earlier Electron-only process filters missed actual MacOS/Code; absence claims corrected in Goal. Do not relaunch/select input while safe isolated binding is unavailable. Current minimum unlock is save/close non-fixture Code or safe macOS window/PID binding, not a keychain reset. No new native acceptance; seven slices unfinished.
+
+
+Safe-binding blocker confirmed in three resumed turns: non-fixture9702 persists, no live owned test. Goal blocked, WI082 unfinished. Keep actual F5/installed requirements; user save/close of Code or safe macOS binding is required.

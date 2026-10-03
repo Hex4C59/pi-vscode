@@ -30,7 +30,7 @@
 
 [八项Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界批准仍生效。04／06／14／21／24／26本地native验收未完成；26上传／敏感收集仍未批准。其他任务、额外平台、升级、下载／市场或公开发布不在目标内。
 
-**进度与下一步：** Goal已恢复active，Mac锁屏已解除，但非fixture Code9702仍在；旧Electron-only清单漏掉实际MacOS/Code，缺席判断已纠正。须保存关闭日常Code或安全macOS窗口／PID绑定，再复核自有进程与fixture身份完成资源英中／只读／刷新原生验收；不退出用户app、不重置钥匙串。已有检查及失败证据保留，七项native仍未完成。
+**进度与下一步：** Goal因连续三轮安全隔离绑定缺口标blocked，Mac锁屏已解除，但非fixture Code9702仍在；旧Electron-only清单漏掉实际MacOS/Code，缺席判断已纠正。须保存关闭日常Code或安全macOS窗口／PID绑定，再复核自有进程与fixture身份完成资源英中／只读／刷新原生验收；不退出用户app、不重置钥匙串。已有检查及失败证据保留，七项native仍未完成。
 
 ## 待完成
 
