@@ -9,7 +9,7 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-084 |
-| **阶段** | Prepare（已批准实现保留；恢复原生验收准备） |
+| **阶段** | Build（native Prepare／测试先行修复完成；新候选验收中） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-004／009 附件发现 |
@@ -30,7 +30,7 @@
 
 [八项Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界授权继续；不付费模型／真实账户、扩平台或发布，26上传／敏感收集未批准。日常Code只准正常退出，未保存／任务确认停手，禁止强杀／无关保存丢弃。
 
-**进度与下一步：** PI02／04／27共3/8关闭，WI083已归档78a9d2e；其F5／安装自有进程及loopback均关闭。当前仅WI084，保留fa1d18d实现及干净／模拟历史，旧隔离阻碍已解除；调查当前公开API、失败方式及独立原生fixture后测试先行。五项仍未完成，Goal未complete。
+**进度与下一步：** PI02／04／27共3/8关闭，WI083归档78a9d2e，当前仅WI084。native harness27623b4干净1279／打包通过；实际F5 seed／Cancel／no-match／安全列表／附件可操作，但成功后renderer token未移除，不验收。正常UI退出主Code SIGSEGV（exthost0）保留为失败、provider关闭0真实调用。mounted测试RED复现后修复158c95e，compile／lint／1281／docs通过，正在新干净候选重跑后独立F5／安装重试；无外部阻碍或再次批准，五项未完，Goal未complete。
 
 ## 待完成
 

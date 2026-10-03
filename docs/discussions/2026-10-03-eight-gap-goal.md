@@ -87,3 +87,6 @@ Four test-first subprocess contracts now cover isolated native lanes, installati
 ## PI04 closure and serial WI084 handoff — October 3, 2026
 
 PI04/WI083 accepted and archived78a9d2e under this Goal delegation after clean c1b4cd5 checks and independent actual macOS F5/installed ten-case English/Chinese UI review. Synthetic loopback only, zero real-model calls, normal owned-window quits and observed provider closure; exact candidate/VSIX identities and failed earlier lanes retained. **3/8 closed (PI02, PI04, PI27); five unfinished**; upload/sensitive collection unapproved. Current WIP1 WI084/file completion resumes native Prepare against existing implementationfa1d18d; old safe-binding blocker resolved, native QuickPick/attachment and inherited change-confirmation remain unverified. No goal completion or fresh approval needed.
+
+
+WI084 native continuation: harness27623b4 clean checks1279/package passed. Actual F5 exposed renderer stale-token reconciliation despite successful capture; native lane failed and retained (normal Cmd+Q main-process SIGSEGV, exthost0, provider closed0requests). Mounted regression RED then repair158c95e GREEN1281/compile/lint/docs; new clean candidate rerun underway before independent actual F5/installed retry. WIP1 stays WI084, 3/8 closed, no new external blocker or approval request.

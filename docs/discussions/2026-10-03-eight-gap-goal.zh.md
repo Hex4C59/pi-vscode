@@ -91,3 +91,6 @@ Goal已恢复ACTIVE，现重新开始blocked审计。native清单返回apps且�
 ## PI04关闭及串行WI084交接——2026年10月3日
 
 PI04／WI083经干净c1b4cd5检查、独立实际macOS F5／安装十项英中UI审阅，按本Goal代理委托通过并归档78a9d2e。仅合成loopback、真实模型0，正常退出自有窗口、provider实际关闭；准确源码／VSIX身份及早期失败保留。**PI02／04／27共3/8关闭，五项未完成**，上传／敏感收集未批准。当前WIP1 WI084文件补全，基于既有fa1d18d恢复native Prepare；旧安全绑定阻碍解除，真实QuickPick／附件／继承变化确认尚未验收。不宣称Goal完成，不需再次批准。
+
+
+WI084 native续跑：harness27623b4干净1279／打包通过；实际F5成功capture却renderer旧token未移除，失败保留（正常Cmd+Q主进程SIGSEGV、exthost0、provider关闭0请求）。mounted回归RED→修复158c95e GREEN1281／compile／lint／docs，新干净候选重跑后独立F5／安装重试。当前仍仅WI084、3/8关闭，无新外部阻碍／批准请求。
