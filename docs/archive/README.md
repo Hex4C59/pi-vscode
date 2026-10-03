@@ -42,9 +42,11 @@ WI records are historical, including old pending/open wording; current work and 
 - [Text queue product slice — WI-077](2026-10-02-wi-077-acceptance.md); F5 and installed VSIX with synthetic provider; PI-GAP-01 remainder parked.
 - [Composer command discovery — WI-078](2026-10-02-wi-078-acceptance.md); browser, genuine runtime, F5 and installed VSIX; loaded-context remainder parked.
 
-- [Installed version information — WI-089](2026-10-02-wi-089-version-information.md); bounded Goal agent acceptance, separate F5/installed UI evidence, other seven slices unfinished.
+- [Installed version information — WI-089](2026-10-02-wi-089-version-information.md); bounded Goal agent acceptance, separate F5/installed UI evidence, other seven slices unfinished at that closure.
 
-- [Verified resource loading — WI-082](2026-10-03-wi-082-resource-report.md); bounded Goal agent acceptance with actual F5/installed reports; six slices unfinished.
+- [Verified resource loading — WI-082](2026-10-03-wi-082-resource-report.md); bounded Goal agent acceptance with actual F5/installed reports; six slices unfinished at that closure.
+
+- [Manual context compaction — WI-083](2026-10-03-wi-083-manual-compaction.md); bounded Goal-delegated acceptance with independent actual F5/installed English/Chinese native review and synthetic loopback; five slices unfinished.
 
 ## Superseded proposals and investigations
 
