@@ -283,7 +283,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **验收：** test-first 挂载 production 对话→clipboard，以可区分原 Markdown、代码块回归、空／流式／错误／隐藏／截断排除、拒绝／不可用／超时和迟到／unmount 留可重复 JSON。浏览器中英、键盘／焦点、280／320／400 暗／亮／高对比；macOS 真 F5 与安装 VSIX 复制／反馈分层记录。compile／lint／npm test／docs:verify，关闭 docs:health；不新增持久化、宿主权限或外部请求。
 
-**WI-082 批准切片（2026-10-03；PI-GAP-02、REQ-004/009）：** 原生命令 `pi: Show Resource Loading Report` 打开随当前 runtime 身份更新的只读文本报告。区分登记／可发现与实际加载：公开 `get_commands` 证明模板和 skill 定义加载、扩展命令登记，不证明 skill 正文、AGENTS.md 或所有扩展文件加载；不可确认项标未知。清单登记／启用数量另列且不代表加载。无 runtime、启动中、空、不可用及失效状态明确；每类最多展示 100 名称并说明省略，不包含正文／路径／凭据，不启动 runtime 或联网。英文／中文按现有界面语言；打开失败可重试。验收覆盖身份替换、边界和不改变任务的组合验证、隔离真实 pi、macOS F5 与安装 VSIX 原生命令／只读报告及关闭恢复，按[WI-082](discussions/2026-10-03-wi-082-resource-report.zh.md)保留工件。本次有界授权下的代理验收尚待实际证据，不是维护者亲自测试。
+**WI-082 已验收切片（2026-10-03；PI-GAP-02、REQ-004/009；本次授权下代理验收）：** 原生命令 `pi: Show Resource Loading Report` 打开随当前 runtime 身份更新的只读文本报告。区分登记／可发现与实际加载：公开 `get_commands` 证明模板和 skill 定义加载、扩展命令登记，不证明 skill 正文、AGENTS.md 或所有扩展文件加载；不可确认项标未知。清单登记／启用数量另列且不代表加载。无 runtime、启动中、空、不可用及失效状态明确；每类最多展示 100 名称并说明省略，不包含正文／路径／凭据，不启动 runtime 或联网。英文／中文按现有界面语言；打开失败可重试。验收覆盖身份替换、边界和不改变任务的组合验证、隔离真实 pi、macOS F5 与安装 VSIX 原生命令／只读报告及关闭恢复，按[WI-082](archive/2026-10-03-wi-082-resource-report.zh.md)保留工件。实际macOS F5与安装VSIX英中实时报告、键盘内容不变与关闭重开证据已按本次委托审阅，不是维护者亲自测试；其余六项目标仍未完成。
 
 **WI-083 批准切片（2026-10-03；PI-GAP-04，REQ-004/005/009）：** 原生命令 `pi: Compact Context` 仅空闲准入；先确认压缩会以有损摘要替代旧上下文、可能调用当前模型产生正常费用，可选 4 KiB UTF-8 自定义指令，取消不调用 runtime。复用公开 compact；任务显示 compacting，原生进度 Cancel 和原有 Stop 都通过清队列、中止及实际结算。完成、失败／不可用及实际取消分别反馈；失效身份不覆盖新会话，超时／丢连接不重试。后续扩展活动保持忙碌到实际结算。保留草稿、既有自动压缩／重试、模型忙碌和会话交接规则；不显示摘要全文。验收／工件见 [WI-083](discussions/2026-10-03-wi-083-manual-compaction.zh.md)，代理验收尚待实际证据。
 
@@ -505,10 +505,10 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-068 | REQ-001 拒绝项目资源后的持续提示 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-068-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-068-acceptance.zh.md)。 |
 | WI-069 | REQ-002 活跃模型身份使用供应商／模型 id，不用显示名 | 2026-10-01 由代理依据完成 ACTIVE 的 `/goal` 接受；[提案](archive/2026-10-01-wi-069-approved-proposal.zh.md)；[验收](archive/2026-10-01-wi-069-acceptance.zh.md)。 |
 | WI-077 | REQ-004／005 文字 steering／follow-up、诚实队列与显式恢复（PI-GAP-01） | 2026-10-02 Agent 依据持续产品切片 goal 关闭；[验收](archive/2026-10-02-wi-077-acceptance.zh.md)。排除附件和命令／模板展开。 |
-| WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-02 Agent 依据持续 goal 关闭；[验收](archive/2026-10-02-wi-078-acceptance.zh.md)。实际加载报告仍停车。 |
+| WI-078 | REQ-004／009 作曲区 `/` 发现当前 `get_commands` 资源（PI-GAP-02） | 2026-10-02 Agent 依据持续 goal 关闭；[验收](archive/2026-10-02-wi-078-acceptance.zh.md)。实际加载报告另由WI-082交付。 |
 | WI-080 | REQ-008 当前已打开会话重命名（PI-GAP-12） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-080](archive/2026-10-02-wi-080-team.zh.md). |
 | WI-081 | REQ-004 完成 assistant 回复正文复制（PI-GAP-20） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-081](archive/2026-10-02-wi-081-team.zh.md). |
-| WI-082 | REQ-004／009 实际资源加载报告（PI-GAP-02） | 2026-10-03 有界 goal 批准；[Prepare 和待完成验收](discussions/2026-10-03-wi-082-resource-report.zh.md)。 |
+| WI-082 | REQ-004／009 实际资源加载报告（PI-GAP-02） | 2026-10-03 依有界Goal代理委托关闭；[Prepare与验收](archive/2026-10-03-wi-082-resource-report.zh.md)。 |
 | WI-083 | REQ-004／005／009 手动上下文压缩（PI-GAP-04） | 本次有界 goal 批准；[Prepare／待验收](discussions/2026-10-03-wi-083-manual-compaction.zh.md)。 |
 | WI-084 | REQ-004／009 工作区文件补全（PI-GAP-06） | 有界 goal 批准；[Prepare／待验收](discussions/2026-10-03-wi-084-file-completion.zh.md)。 |
 | WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-085-model-cycling.zh.md)。 |

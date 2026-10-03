@@ -44,6 +44,8 @@ WI records are historical, including old pending/open wording; current work and 
 
 - [Installed version information — WI-089](2026-10-02-wi-089-version-information.md); bounded Goal agent acceptance, separate F5/installed UI evidence, other seven slices unfinished.
 
+- [Verified resource loading — WI-082](2026-10-03-wi-082-resource-report.md); bounded Goal agent acceptance with actual F5/installed reports; six slices unfinished.
+
 ## Superseded proposals and investigations
 
 - [pi compatibility investigation](2026-09-22-pi-compatibility.md)

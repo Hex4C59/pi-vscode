@@ -108,6 +108,7 @@
 | WI-080 | 重命名当前空闲会话 | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-080-team.zh.md) |
 | WI-081 | 复制完整 assistant Markdown；保留代码复制 | 2026-10-03 Agent; macOS F5 + installed VSIX | [record](2026-10-02-wi-081-team.zh.md) |
 | WI-089 | PI-GAP-27实际安装版本与有界本地说明 | 2026年10月3日本次Goal授权下代理验收；macOS F5＋安装VSIX；gate／ADR不变 | [Prepare、验收与限制](2026-10-02-wi-089-version-information.zh.md) |
+| WI-082 | PI-GAP-02实际资源加载报告 | 2026年10月3日本次Goal授权下代理验收；实际macOS F5＋安装VSIX | [Prepare、验收与限制](2026-10-03-wi-082-resource-report.zh.md) |
 
 ## 不在本索引
 
