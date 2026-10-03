@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-02
 - Type: Reference
-- Status: Blocked
+- Status: Draft
 - Created: 2026-10-02
 - Authority: PI-GAP-24 有界 Prepare；不宣称交付或验收
 - Related: [ACTIVE](../../ACTIVE.md)、[Goal](2026-10-03-eight-gap-goal.zh.md)、[需求](../product-requirements.zh.md)
@@ -49,3 +49,17 @@ compile／lint／1248 检查在受限环境、隔离 HOME、空 auth、独立 PI
 /tmp/pi-resource-candidate-vQqd8G 干净源码候选：curated env／隔离 HOME／空 auth／agent／tmp 下 compile／lint／1248／docs:verify（旧 ADR 两警告）／docs:health／实际 SDK／package:vsix 通过。前后 status 空，源码 SHA／命令／版本／日志在 dist/goal-eight/wi086/candidate-evidence/verified-candidate 与 candidate-identity.json。7 个 worker 实际关闭、零推理；打包不等于安装。候选英中 280px HC／键盘焦点证实暂存控件无溢出；旧 18 图开发矩阵分开，不是提交后矩阵。preview 不处理搜索操作。
 
 本次授权下的代理验收：组合／公开 SDK 与有界候选检查支持该切片；native F5／安装搜索／筛排页／恢复确认／视觉仍未验证。不是维护者亲测，不关闭 WI。PI-GAP-24 保留阻塞待安全隔离 native app 绑定解锁；WIP=1 继续独立 Mermaid 调查。
+
+
+## 重新启动原生 Prepare — 2026-10-03
+
+旧 app 绑定阻碍已解除，WI-085 已关闭。本项是原有有界授权下唯一 WI，不增加产品范围；4bb653c 既有实现不变。公开 pi 0.86.1 SessionManager.create／appendMessage／appendSessionInfo／appendModelChange／appendThinkingLevelChange 在隔离 HOME／agent 创建 40 项自有当前项目会话及三项可辨识其他项目 sentinel。不直接编辑会话文件，不用 listAll／凭据／推理，不自动恢复；现有原生明确恢复确认是唯一同意入口。
+
+工具编码前准备 subprocess 契约：隔离 F5／安装、公开 SDK seed 收据、缺少逐项 review、安装失败、native 非零退出、零推理、provider 清理。失败方式：seed 错项目／模型、其他项目泄漏、仅当前页匹配、暂存条件误当应用条件、页／数／tie／排序错误、取消改变当前会话、确认前恢复、SDK 失败静默、无证据接受、旧 app 绑定、自有进程泄漏。普通 observer 只要求明确逐项 review，不替换 VS Code API 或批准 UI。
+
+原生可观察验收：40 项仅当前项目；跨页 literal query；named 筛选；name／recent／oldest 排序；先筛后页及刷新一致；清空／无匹配；取消保留当前会话；明确恢复合成会话且无自动恢复；英中键盘及受影响窄／主题视觉。独立 F5 与安装 VSIX 须实际源码／包身份、PNG／AX、零 loopback 推理、正常自有退出与 provider 关闭。模拟契约、实际公开 SDK、F5、安装证据分层；原生仍待执行。
+
+
+## 原生工具检查点
+
+五项编码前契约因缺工具失败（red.log）。首次实现四项合成 subprocess 失败：假仓库 ESM 标记影响假 Code 可执行文件加载；只将标记移到假 SDK 目录修复。现五契约通过，包括公开 SDK create 调用当前40／其他3、缺 review、安装失败、非零退出及清理。开发 compile／lint／1292／docs 通过；native 与提交候选仍待执行。日志 dist/goal-eight/wi086/native-harness/。

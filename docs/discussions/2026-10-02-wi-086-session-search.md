@@ -3,7 +3,7 @@
 English | [中文](2026-10-02-wi-086-session-search.zh.md)
 
 - Type: Reference
-- Status: Blocked
+- Status: Draft
 - Created: 2026-10-02
 - Authority: bounded PI-GAP-24 Prepare; no delivery or acceptance claim
 - Related: [ACTIVE](../../ACTIVE.md), [goal](2026-10-03-eight-gap-goal.md), [requirements](../product-requirements.md)
@@ -45,3 +45,17 @@ Implementation 4bb653cfc6e01676183a5183de76aec10907ae1a; full scoped staged diff
 Clean source candidate at /tmp/pi-resource-candidate-vQqd8G: compile/lint/1248 checks/docs:verify (two existing ADR warnings)/docs:health/actual SDK probe/package:vsix passed under curated isolated HOME/empty auth/agent/tmp. Status before/after empty, source SHA/commands/version/logs in dist/goal-eight/wi086/candidate-evidence/verified-candidate and candidate-identity.json. Seven workers closed, zero inference. Packaged VSIX is not installed evidence. Candidate browser en/zh 280px HC captures and keyboard focus confirm staged controls with no overflow; previous 18-image development matrix remains separately identified, not post-commit matrix. Preview does not apply the search operation.
 
 Delegated acceptance under this authorization: composition/public SDK and bounded candidate checks support the slice; native F5/installed search/filter/sort/page/restore-confirmation and native visual acceptance remain unverified. No maintainer personal test or WI closure. Retain PI-GAP-24 as blocked pending the same safe isolated native app binding unlock; continue independent Mermaid investigation with WIP=1.
+
+
+## Resumed native Prepare — 2026-10-03
+
+The old app-binding blocker is resolved; WI-085 is closed. This is the sole WI under the original bounded authorization, with no new product scope. Existing implementation 4bb653c remains unchanged. Public pi 0.86.1 SessionManager.create / appendMessage / appendSessionInfo / appendModelChange / appendThinkingLevelChange will seed 40 owned current-project sessions and three distinguishable foreign-project sentinels in isolated HOME/agent state. No direct session-file editing, listAll, credentials, inference or automatic restoration. Existing explicit native restoration confirmation remains the only consent path.
+
+Before harness code, prepare subprocess contracts for isolated F5/install launch, public SDK seed receipt, missing case review, failed installation, nonzero native exit, zero inference and provider cleanup. Failure modes: seed wrong project/model, invisible foreign leakage, only current-page matching, draft criteria mistaken for applied criteria, wrong page/count/tie/order, cancellation mutating current session, restore before confirmation, silent SDK failure, observer acceptance without evidence, stale app binding and owned job leak. Ordinary observer requires explicit per-case review; it neither replaces VS Code APIs nor approves UI.
+
+Observable native acceptance: 40-project-only catalogue; cross-page literal query; named filtering; name/recent/oldest order; filter-before-pagination and refresh consistency; clear/no-match; cancellation preserving current session; explicit synthetic restoration and no auto-restore; English/Chinese keyboard and affected narrow/theme visuals. Independent F5 and installed VSIX lanes require actual source/package identity, PNG/AX artifacts, zero loopback inference, successful owned normal exit and provider closure. Mock contracts, actual public SDK, F5 and installed evidence stay separate. Native checks remain pending.
+
+
+## Native harness checkpoint
+
+Five pre-code contracts initially fail for missing tooling (red.log). First implementation failed four synthetic subprocess cases because the fake repository ESM package marker changed the fake Code executable loading; corrected the marker to the fake SDK directory only. Five contracts now pass, including SDK create calls for 40 current/three foreign sessions, missing review, failed install and nonzero exit with cleanup. Development compile/lint/1292/docs checks pass; native and committed-candidate checks remain pending. Logs: dist/goal-eight/wi086/native-harness/.
