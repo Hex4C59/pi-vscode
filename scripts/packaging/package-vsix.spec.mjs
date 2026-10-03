@@ -207,7 +207,7 @@ test('parseArgs defaults the output and rejects unusable values', () => {
   assert.throws(() => parseArgs(['--wat'], root), PackagingError);
 });
 
-test('buildExtensionManifest pins the runtime version and rewrites entry fields', () => {
+test('buildExtensionManifest preserves the extension version and rewrites entry fields', () => {
   const manifest = {
     name: 'x',
     publisher: 'p',
@@ -217,8 +217,8 @@ test('buildExtensionManifest pins the runtime version and rewrites entry fields'
     files: ['old/**'],
     engines: { vscode: '^1.85.0' },
   };
-  const staged = buildExtensionManifest(manifest, '0.86.1');
-  assert.equal(staged.version, '0.86.1');
+  const staged = buildExtensionManifest(manifest);
+  assert.equal(staged.version, '1.2.3');
   assert.equal(staged.main, './dist/extension.js');
   assert.deepEqual(staged.files, [
     'dist/*.mjs',
@@ -292,13 +292,15 @@ test('packageVsix assembles the declared tree and excludes everything else', { s
   });
 });
 
-test('packageVsix rewrites the packaged manifest for the runtime closure', { skip: !ZIP_AVAILABLE }, async () => {
+test('packageVsix preserves extension identity independently of the runtime closure', { skip: !ZIP_AVAILABLE }, async () => {
   await withFixture({}, async ({ root, run }) => {
     const summary = await run();
     const archive = await readFile(summary.outputPath);
 
     const staged = JSON.parse(readArchiveEntry(archive, 'extension/package.json').toString('utf8'));
-    assert.equal(staged.version, '0.86.1');
+    assert.equal(staged.version, '9.9.9');
+    const runtime = JSON.parse(readArchiveEntry(archive, 'extension/node_modules/@earendil-works/pi-coding-agent/package.json').toString('utf8'));
+    assert.equal(runtime.version, '0.86.1');
     assert.equal(staged.main, './dist/extension.js');
     assert.deepEqual(staged.files, [
       'dist/*.mjs',
@@ -311,7 +313,7 @@ test('packageVsix rewrites the packaged manifest for the runtime closure', { ski
 
     const manifest = readArchiveEntry(archive, 'extension/extension.vsixmanifest').toString('utf8');
     assert.match(manifest, /Publisher="fixture-publisher"/);
-    assert.match(manifest, /Version="0\.86\.1"/);
+    assert.match(manifest, /Version="9\.9\.9"/);
     assert.match(manifest, /Path="extension\/package\.json"/);
 
     // The source manifest on disk is left untouched.

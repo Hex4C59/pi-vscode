@@ -29,8 +29,8 @@ const DEFAULT_OUT = 'dist/pi-vscode-validation.vsix';
 const STAGE_PREFIX = '.vsix-stage-';
 /** Fixed staging timestamp: the earliest instant the ZIP format can record. */
 const STAGE_TIMESTAMP_SECONDS = 315_532_800;
-/** Fields regenerated for the packaged extension, never copied verbatim. */
-const REGENERATED_MANIFEST_FIELDS = new Set(['main', 'files', 'version']);
+/** Delivery entry and extension identity must exist in the packaged manifest. */
+const REQUIRED_MANIFEST_FIELDS = ['main', 'version'];
 
 /** Dist files the delivery entry must select; unpack-run checks stay in verify-vsix. */
 export const REQUIRED_PACKAGE_FILES = Object.freeze([
@@ -378,10 +378,9 @@ function assertInsideStage(stageExtensionRoot, archivePath) {
 }
 
 /** Build the packaged extension manifest from the source manifest. */
-export function buildExtensionManifest(manifest, dependencyVersion) {
-  const staged = { ...manifest, version: dependencyVersion, main: './dist/extension.js' };
-  for (const field of REGENERATED_MANIFEST_FIELDS) {
-    if (field === 'files') continue;
+export function buildExtensionManifest(manifest) {
+  const staged = { ...manifest, main: './dist/extension.js' };
+  for (const field of REQUIRED_MANIFEST_FIELDS) {
     if (staged[field] === undefined) fail(`package.json is missing required field: ${field}`);
   }
   staged.files = ['dist/*.mjs', 'dist/*.cjs', 'dist/webview/**', 'assets/**', 'LICENSE'];
@@ -463,7 +462,7 @@ async function assembleStage(root, stage, collected) {
     await cp(source, target, { preserveTimestamps: true });
     bytes += (await stat(source)).size;
   }
-  const staged = buildExtensionManifest(collected.manifest, collected.dependencyVersion);
+  const staged = buildExtensionManifest(collected.manifest);
   const stagedManifestPath = path.join(extensionRoot, 'package.json');
   const vsixManifestPath = path.join(extensionRoot, 'extension.vsixmanifest');
   await writeFile(stagedManifestPath, `${JSON.stringify(staged, null, 2)}\n`);
