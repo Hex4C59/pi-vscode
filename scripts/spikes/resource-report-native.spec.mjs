@@ -21,8 +21,7 @@ process.exit(0);
 function assertInteractiveIsolation(args) {
   assert.ok(args.includes('--use-inmemory-secretstorage'), 'memory-only secret storage required');
   for (const id of ['vscode.github-authentication', 'vscode.microsoft-authentication']) {
-    const index = args.indexOf(id);
-    assert.ok(index > 0 && args[index - 1] === '--disable-extension', `disable builtin ${id}`);
+    assert.ok(args.includes(`--disable-extension=${id}`), `atomic disable builtin ${id}`);
   }
 }
 
@@ -57,6 +56,7 @@ for (const mode of ['f5', 'installed']) {
       if (mode === 'f5') {
         const debug = JSON.parse(await readFile(path.join(fixture.root, 'launcher/.vscode/launch.json'), 'utf8')).configurations[0];
         assertInteractiveIsolation(debug.args);
+        assert.deepEqual(debug.args.filter(arg => !arg.startsWith('--')), [path.join(fixture.root, 'project')], 'only the synthetic project is positional');
         assert.equal(debug.env.HOME, path.join(fixture.root, 'home'));
       }
     } finally {

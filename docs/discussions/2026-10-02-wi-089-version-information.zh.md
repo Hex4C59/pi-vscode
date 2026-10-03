@@ -56,3 +56,7 @@ Goal续跑确认原日常Code进程已退出，从干净d3ff0ea启动既有隔�
 编码前失败方式：任一路径遗漏flag、参数／环境传递丢失、验证driver误启动真实Code或读取用户状态、模拟检查冒充native／钥匙串修复验收。先写替代executable的子进程组合，实际运行launcher两种模式并检查生成F5参数；只证明参数接线，不证明弹窗消失。能无凭据提示地操作隔离native窗口前实际重试仍未验证；准确症状验证需要安全native观察或维护者证据。
 
 两项launcher组合先于脚本修改编写，均因缺少内存flag失败（`dist/goal-eight/native-isolation/red.log`）。修复使每次调用均内存存储，交互fixture禁用两个内置账户扩展；未改产品代码／用户配置。两组合现通过（`green.log`），脚本语法／compile／lint通过。完整标准行为首次失败于既有未改frozen-history全局last-message断言（1268/1269），保留`test.log`；第二次未改标准运行1269通过（`test-recheck.log`）。文档verify／health通过。这仅为开发／脚本证据，不是native验收、弹窗消失、根因确认或系统钥匙串修复。下一步仅审查／提交本任务launcher／测试／记录，再隔离验证提交候选后决定是否安全native重试。
+
+从干净585bd06有界重试成功绑定明确`PI-RESOURCE-f5` launcher并实际按F5启动开发宿主。观察状态没有钥匙串弹窗；仅为有界观察，不是系统修复。WI089英文实际源码插件0.0.1／pi0.86.1／宿主1.140.0及只读粘贴拒绝工件在`dist/goal-eight/wi089/native-f5/`。发现新launcher缺陷：debug宿主将分离option值变成额外workspace folder，产品正确以不支持multi-root阻止runtime。未批准资源、未宣称资源／native通过。停止本任务launcher并留工件；下次脚本修改前添加子进程组合要求自包含`--name=value`参数且debug仅一个project位置参数，然后修参数接线，不改产品workspace eligibility／用户隔离。
+
+atomic option两组合在第二次launcher修改前均失败，修改后均通过（`atomic-red.log`／`atomic-green.log`）；compile／lint通过。首次完整1269运行失败于另一未改plugin-inventory settle断言，精确focused情形通过，再次未改完整标准1269通过。失败／focused／重跑log分留；根因未确证，未改无关inventory代码／断言。文档verify／health通过。本修复仅将flag值原子化以穿过debug参数转发；native单项目确认及WI089其余验收仍待完成。
