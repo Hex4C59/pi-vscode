@@ -48,7 +48,7 @@ const settings = { 'workbench.startupEditor': 'none', 'workbench.welcomePage.wal
   'editor.wordWrap': 'on', 'window.title': `PI-COMPACTION-${mode} — \${activeEditorShort}` };
 for (const dir of ['user', 'parent-user']) await writeFile(path.join(root, dir, 'User/settings.json'), JSON.stringify(settings));
 await writeFile(path.join(root, 'driver/package.json'), JSON.stringify({ name: 'manual-compaction-verifier', publisher: 'local-fixture', version: '0.0.1', engines: { vscode: '^1.85.0' }, main: './extension.cjs', activationEvents: ['*'] }));
-await writeFile(path.join(root, 'driver/extension.cjs'), 'exports.activate = () => {};\n');
+await writeFile(path.join(root, 'driver/extension.cjs'), 'exports.activate = () => { void require("./test.cjs").run().catch(error => console.error(error)); };\n');
 await writeFile(path.join(root, 'driver/test.cjs'), await readFile(new URL('./manual-compaction-native-driver.cjs', import.meta.url)));
 // Fixture-only: never consult/persist OS credentials or start account extensions.
 const nativeSecretArgs = ['--use-inmemory-secretstorage',
@@ -56,7 +56,7 @@ const nativeSecretArgs = ['--use-inmemory-secretstorage',
   '--disable-extension=vscode.microsoft-authentication'];
 const args = [...nativeSecretArgs, `--user-data-dir=${path.join(root, 'user')}`, `--extensions-dir=${path.join(root, 'extensions')}`,
   '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust', '--password-store=basic',
-  `--extensionDevelopmentPath=${path.join(root, 'driver')}`, `--extensionTestsPath=${path.join(root, 'driver/test.cjs')}`,
+  `--extensionDevelopmentPath=${path.join(root, 'driver')}`,
   path.join(root, 'project')];
 if (mode === 'f5') {
   args.unshift(`--extensionDevelopmentPath=${repo}`);

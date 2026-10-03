@@ -37,6 +37,8 @@ for (const mode of ['f5', 'installed']) test(`compaction native ${mode} isolates
     if (mode === 'f5') args = JSON.parse(await readFile(path.join(fixture.root, 'launcher/.vscode/launch.json'), 'utf8')).configurations[0].args;
     for (const arg of ['--use-inmemory-secretstorage', '--disable-extension=vscode.github-authentication', '--disable-extension=vscode.microsoft-authentication']) assert.ok(args.includes(arg));
     assert.deepEqual(args.filter(arg => !arg.startsWith('--')), [path.join(fixture.root, 'project')]);
+    assert.ok(!args.some(arg => arg.startsWith('--extensionTestsPath')), 'VS Code test mode refuses native modal dialogs');
+    assert.match(await readFile(path.join(fixture.root, 'driver/extension.cjs'), 'utf8'), /exports\.activate.*require.*run/s, 'ordinary observer activation required');
     assert.equal(JSON.parse(await readFile(path.join(repo, 'dist/goal-eight/wi083', mode, 'provider.json'), 'utf8')).closed, true);
   } finally {
     if (fixture) await rm(fixture.root, { recursive: true, force: true });

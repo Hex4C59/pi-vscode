@@ -69,3 +69,11 @@ Native F5／安装 VSIX 交互、Cancel／Stop／键盘和视觉验收仍缺，�
 先写launcher子进程契约，因新harness缺失而失败；假executable两lane随后通过。再先写安装失败契约，复现provider实际关闭记录缺失，扩大自有资源cleanup边界后全部三个契约通过。driver不替换production API，只focus chat并要求十项明确review及工件引用；完成标为`review-complete`，不推断视觉验收。wrapper额外要求实际合成历史／摘要请求及literal自定义指令。loopback请求全部等待本地release标记，安装失败也记录自有provider关闭。仅隔离测试settings为受控验证禁用自动压缩，产品默认／自动压缩／重试不变。工件`dist/goal-eight/wi083/native-harness/{red.log,install-cleanup-red.log,green.log}`仅合成工具证据，不是F5／安装验收。
 
 审查细化：先写nonzero-exit子进程契约，用合成请求及review记录暴露wrapper可忽略退出码7。现在同时要求实际native进程退出码0及review／请求证据，四项focused契约通过。F5父窗口在已review子窗口完成后也须正常退出，发signal不算成功。初版工具源码开发compile／lint／1274测试／文档通过，早于本退出码细化；最终候选仍须重跑。
+
+### 真实F5尝试：测试模式拒绝原生modal（保留失败）
+
+干净候选`ed7744b862b29d51cbe484e121b737396f26e4a7` compile／lint／1275测试／docs:verify／docs:health／打包通过，前后clean；VSIX SHA-256 `c6878bc9bcd1f491e9b0867fe343c30752d7d9784b7f95cd464eacff5a84c91a`。较早`964c410`检查至docs:health通过，但误用不存在的`package:validation`失败；ed7744b已正确重跑打包。工件`dist/goal-eight/wi083/native-candidate-ed7744b/`。
+
+真实F5启动隔离fixture Lko3HZ，在Code1.140.0激活production扩展／pi0.86.1，查看合成项目root后仅选择该资源，模型为合成项，草稿保留。实际palette执行未展示modal，自有extension-host日志明确`DialogService: refused to show dialog in tests`并含有损提示。这证明`extensionTestsPath`开启的宿主测试模式不适合本次原生modal验收，不是产品确认通过。启动／关闭工件保留`dist/goal-eight/wi083/native-f5-ed7744b/`；从UI先正常退出子窗口再父窗口，wrapper退出1、provider实际关闭、请求0。未伪造review标记或验收。下一步先写契约拒绝test-mode参数，改为普通development扩展激活observer，保留真实window API及正常退出证据，提交／干净候选重跑后native重试。范围／公开API／数据权限不变。
+
+modal-mode回归契约在修复前因test-path参数失败，去除该参数并让verifier普通activation调用observer后四项focused通过。不替换dialog service或product API；observer写review结果后窗口继续开放，由普通UI正常关闭。合成工件`native-harness/modal-mode-{red,green}.log`；真实native重试仍待完成。
