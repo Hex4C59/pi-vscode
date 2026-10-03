@@ -84,3 +84,5 @@ WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collabora
 导航维护：WI-074 — [编号历史](2026-09-29-closed-wi-index.zh.md).
 
 导航维护：WI-075 — [编号历史](2026-09-29-closed-wi-index.zh.md).
+
+- [File completion / 文件补全 — WI-084](2026-10-03-wi-084-file-completion.zh.md): bounded delegated actual F5/installed acceptance; four slices unfinished.

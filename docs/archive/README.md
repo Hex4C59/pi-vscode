@@ -80,3 +80,5 @@ Navigation maintenance: WI-073 — [numbered history](2026-09-29-closed-wi-index
 Navigation maintenance: WI-074 — [numbered history](2026-09-29-closed-wi-index.md).
 
 Navigation maintenance: WI-075 — [numbered history](2026-09-29-closed-wi-index.md).
+
+- [File completion / 文件补全 — WI-084](2026-10-03-wi-084-file-completion.md): bounded delegated actual F5/installed acceptance; four slices unfinished.
