@@ -58,7 +58,7 @@ export class WebviewClient {
   private identity: { generation: number; viewId: string } | undefined;
   private sequence = 0;
   private pending: number | null = null;
-  private commandCompletion: { revision: number; sequence: number; before: string; after: string } | null = null;
+  private draftCompletion: { revision: number; sequence: number; before: string; after: string } | null = null;
   private submitted: { revision: number; sequence: number; text: string } | null = null;
   private queuedSubmit: { revision: number; text: string } | null = null;
   private previewCounter = 0;
@@ -144,7 +144,7 @@ export class WebviewClient {
     const catalogue = snapshot.commandCatalogue;
     const controls = availability(snapshot);
     if (!draft || catalogue?.status !== "ready" || !catalogue.rows.some(row => row.name === name)
-      || this.commandCompletion || snapshot.synchronizing || snapshot.submitting || snapshot.error
+      || this.draftCompletion || snapshot.synchronizing || snapshot.submitting || snapshot.error
       || snapshot.attachments?.preparation !== "idle" || snapshot.workspace?.runtime !== "ready"
       || controls.stopping || controls.sessionTransitioning || snapshot.workspace.busy
       || (snapshot.executionProfile && snapshot.executionProfile.phase !== "idle") || snapshot.interactions?.active) return;
@@ -152,7 +152,7 @@ export class WebviewClient {
     if (!leading) return;
     const after = `/${name}${snapshot.text.slice(leading[0].length) || " "}`;
     if (after === snapshot.text || after.length > MAX_DRAFT_CHARACTERS) return;
-    this.commandCompletion = { revision: draft.revision, sequence: this.sequence, before: snapshot.text, after };
+    this.draftCompletion = { revision: draft.revision, sequence: this.sequence, before: snapshot.text, after };
     this.action({ type: "completeCommand", draftRevision: draft.revision, name });
   };
   recallQueuedText = (): void => {
@@ -173,8 +173,12 @@ export class WebviewClient {
   };
   completeFileReference = (caret: number): void => {
     const draft = this.snapshot.attachments?.draft;
-    if (!draft || draft.attachments.length >= MAX_ATTACHMENTS || this.snapshot.synchronizing
-      || availability(this.snapshot).attachmentDisabled || !fileReferenceToken(this.snapshot.text, caret)) return;
+    const token = fileReferenceToken(this.snapshot.text, caret);
+    if (!draft || !token || this.draftCompletion || draft.attachments.length >= MAX_ATTACHMENTS || this.snapshot.synchronizing
+      || availability(this.snapshot).attachmentDisabled) return;
+    const before = this.snapshot.text;
+    this.draftCompletion = { revision: draft.revision, sequence: this.sequence, before,
+      after: before.slice(0, token.start) + before.slice(token.end) };
     this.action({ type: "completeFileReference", draftRevision: draft.revision, caret });
   };
   addAttachment = (): void => { this.beginAttachment("file"); };
@@ -346,7 +350,7 @@ export class WebviewClient {
     // Old-generation switching may still fail Stop/inspection; unrelated generations retain local text.
     const committedHandoff = message.type === "sessionState" && message.phase === "switching";
     this.pending = null;
-    this.commandCompletion = null;
+    this.draftCompletion = null;
     this.submitted = null;
     this.queuedSubmit = null;
     this.update({
@@ -371,12 +375,12 @@ export class WebviewClient {
     const previous = this.snapshot.attachments;
     if (previous && message.draft.revision < previous.draft.revision) return;
     let text = this.snapshot.text;
-    const completion = this.commandCompletion;
+    const completion = this.draftCompletion;
     if (completion && (message.draft.revision > completion.revision || message.result)) {
       if (!message.result && message.draft.revision === completion.revision + 1
         && message.draft.text === completion.after && text === completion.before
         && this.sequence === completion.sequence) text = completion.after;
-      this.commandCompletion = null;
+      this.draftCompletion = null;
     }
     if (!previous && !text) text = message.draft.text;
     else if (!text && message.draft.text && (!previous || message.draft.revision > previous.draft.revision)) {

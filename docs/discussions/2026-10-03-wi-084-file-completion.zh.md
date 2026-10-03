@@ -61,3 +61,14 @@ compile／lint／npm test／docs:verify，干净提交候选检查和打包；ma
 harness编码前四项子进程契约因缺实现失败（red.log），非native。失败方式：真实文件账户、自动picker批准Send、文件provider时间无界、旧标记／非零退出冒充、安装身份不符、确认前投递、排除敏感超大symlink绕过、取消丢token草稿／重复附件、no-match键盘未实际观察、模拟升级native。待实际验收Cancel／模糊键盘选择／no-match／原子草稿附件／排除敏感metadata／超大外部拒绝／变化拒绝及确认／英中；旧18浏览器宽主题语言预览不升级，native受影响hint280／320／400及主题单独取证。保留准确源码包环境命令／请求截图AX，全部native尚待。
 
 harness开发checkpoint：四项合成子进程契约RED→GREEN，compile／lint／1279收集测试／docs:verify通过。不宣称native；普通observer无API替换，自有合成fixture，wrapper要求实际成功退出及变化内容请求。接下来提交审阅／隔离干净候选，再真实F5／安装。
+
+
+### 实际F5缺陷及修复Prepare
+
+干净27623b4 compile／lint／1279／docs／health／打包通过，VSIX8471b178791ed0ee29b9a3020b4f946267a3a70775635edd77ddba75275d8ab0。真实F5 fixture5gIQpm／PID74693在已批准自有项目验证Tab带query、Esc保草稿、no-match0、安全列表4排除.env／excluded、键盘模糊选择／实际附件29字节。但成功后renderer仍显示KEEP_DRAFT_中 @nest，未移除精确token。不验收：截图AX及正常子父退出保留，wrapper1／provider关闭0请求。检查根因：host原子移除正确，WebviewClient completeFileReference未记录host草稿转换，applyAttachmentState仅协调commandCompletion，随后syncDraft把旧renderer文本发回。属产品协调缺陷，非keychain／harness。
+
+在既有批准范围复用command completion的身份／revision／sequence／before／after确认lease，UI token仅计算预期文本，host仍权威、renderer不发path／query。保留Cancel／error／新编辑／generation失效，防重复pending。修复前生产mounted响应场景先覆盖成功／无旧文本重发／无自动Send、取消、新编辑，保留RED→GREEN。仍须新提交候选和两真实lane，旧失败不得升级。
+
+退出精度：自有子父窗口实际使用Cmd+Q，但process-exit.json为code:null／signal:SIGSEGV，不是成功正常进程退出。保留此宿主crash及协调缺陷为失败lane，不验收或声称exit0；若重现继续诊断。
+
+修复开发结果：mounted成功场景RED复现native旧token，复用pending草稿转换lease／既有准确revision／sequence／文本guard及identity reset。成功及取消／新编辑GREEN，compile／lint／1281／docs通过；首次compile因测试findLast不属声明lib失败，测试改reverse／find未升级编译器。仍属mounted非native修复验收。exthost退出0与Code主进程SIGSEGV分别记录，crash根因未证实。

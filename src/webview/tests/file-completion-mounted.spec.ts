@@ -46,3 +46,36 @@ test("@ completion ignores unsynchronized edits, email and IME while preserving 
     assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "name@example.test");
   } finally { await h.close(); }
 });
+
+// Native F5 reproduced successful host capture with an unchanged renderer token.
+// Test the shipped client response boundary before changing reconciliation.
+test("production file completion adopts acknowledged token removal without resending obsolete draft", async () => {
+  const h = await uiHarness();
+  try {
+    const before = "KEEP_DRAFT_中 @nest"; await h.input(before); await acknowledge(h, before); await tab(h);
+    const request = h.sent.at(-1); assert.ok(request?.type === "completeFileReference");
+    const edit = [...h.sent].reverse().find(message => message.type === "updateDraft"); assert.ok(edit?.type === "updateDraft");
+    await h.receive(attachmentState({ preparation: "picking", draft: { revision: request.draftRevision, text: before, acceptedEditSequence: edit.editSequence, attachments: [] } }));
+    const marker = h.sent.length;
+    await h.receive(attachmentState({ draft: { revision: request.draftRevision + 1, text: "KEEP_DRAFT_中 ", acceptedEditSequence: edit.editSequence,
+      attachments: [{ attachmentId: "owned-file", snapshotId: "owned-snapshot", relativePath: "nested/fixture-中.txt", kind: "file", utf8Bytes: 29, unsaved: false, state: "attached" }] } }));
+    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "KEEP_DRAFT_中 ");
+    assert.equal(h.sent.slice(marker).some(message => message.type === "updateDraft" && message.text === before), false);
+    assert.equal(h.sent.some(message => message.type === "sendChat"), false);
+  } finally { await h.close(); }
+});
+
+test("production file completion retains cancelled token and never overwrites newer local edits", async () => {
+  const h = await uiHarness();
+  try {
+    await h.input("@nest"); await acknowledge(h, "@nest"); await tab(h);
+    let request = h.sent.at(-1); assert.ok(request?.type === "completeFileReference");
+    const edit = [...h.sent].reverse().find(message => message.type === "updateDraft"); assert.ok(edit?.type === "updateDraft");
+    await h.receive(attachmentState({ result: { code: "preparation-cancelled" }, draft: { revision: request.draftRevision, text: "@nest", acceptedEditSequence: edit.editSequence, attachments: [] } }));
+    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "@nest");
+    await tab(h); request = h.sent.at(-1); assert.ok(request?.type === "completeFileReference");
+    await h.input("newer owned draft");
+    await h.receive(attachmentState({ draft: { revision: request.draftRevision + 1, text: "", acceptedEditSequence: edit.editSequence, attachments: [] } }));
+    assert.equal(h.get<HTMLTextAreaElement>("textarea").value, "newer owned draft");
+  } finally { await h.close(); }
+});
