@@ -96,7 +96,11 @@ exports.run = async () => {
   }
 };
 `);
-const args = ['--user-data-dir', path.join(root, 'user'), '--extensions-dir', path.join(root, 'extensions'),
+// Fixture-only: never consult/persist OS credentials or start account extensions.
+const nativeSecretArgs = ['--use-inmemory-secretstorage',
+  '--disable-extension', 'vscode.github-authentication',
+  '--disable-extension', 'vscode.microsoft-authentication'];
+const args = [...nativeSecretArgs, '--user-data-dir', path.join(root, 'user'), '--extensions-dir', path.join(root, 'extensions'),
   '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust', '--password-store=basic',
   `--extensionDevelopmentPath=${path.join(root, 'driver')}`, `--extensionTestsPath=${path.join(root, 'driver/test.cjs')}`,
   path.join(root, 'project')];
@@ -108,12 +112,12 @@ if (mode === 'f5') {
 } else {
   assert.ok(process.argv[3], 'installed mode requires a VSIX path');
   const cli = path.join(app, 'Contents/Resources/app/out/cli.js');
-  const output = execFileSync(electron, [cli, '--user-data-dir', path.join(root, 'user'), '--extensions-dir', path.join(root, 'extensions'), '--install-extension', path.resolve(process.argv[3]), '--force'], {
+  const output = execFileSync(electron, [cli, '--use-inmemory-secretstorage', '--user-data-dir', path.join(root, 'user'), '--extensions-dir', path.join(root, 'extensions'), '--install-extension', path.resolve(process.argv[3]), '--force'], {
     env: { ...env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', windowsHide: true, timeout: 60000,
   });
   await writeFile(path.join(evidence, 'install.log'), output);
 }
-const launchArgs = mode === 'f5' ? ['--new-window', '--user-data-dir', path.join(root, 'parent-user'), '--extensions-dir', path.join(root, 'parent-extensions'), '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust', '--password-store=basic', path.join(root, 'launcher')] : args;
+const launchArgs = mode === 'f5' ? [...nativeSecretArgs, '--new-window', '--user-data-dir', path.join(root, 'parent-user'), '--extensions-dir', path.join(root, 'parent-extensions'), '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust', '--password-store=basic', path.join(root, 'launcher')] : args;
 const child = spawn(electron, launchArgs, { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 const log = [];
 for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { if (log.length < 2000) log.push(String(data)); });

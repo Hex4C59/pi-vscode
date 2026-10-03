@@ -45,3 +45,14 @@ REQ-009本地支持信息，无架构／ADR／gate或重大trust／data取舍。
 实际archive包含固定根／上游notes。生产version owner配替代native APIs验证实际插件／pi0.86.1、对应插件说明缺失（既有打包映射不变）、精确上游0.86.1、无其他版本／Unreleased回退、英中有界output。可重复probe：node dist/goal-eight/wi089/verify-version-archive.mjs <clean candidate> <output>，须curated隔离env。candidate-identity.json／candidate-evidence保留身份／log／报告，提取非安装。前端Git tree自4eb8d38相同，旧浏览器矩阵仍为模拟宿主而非native。
 
 八项native F5／安装验收仍阻塞。原用户Code存在（仅binary inventory，不读用户正文）；macOS CUA无法按PID／window安全绑定隔离实例。未退出／使用用户实例，不放宽签名／library validation。最小解锁：用户保存关闭原Code以绑定隔离签名实例，或工具增加安全PID／window绑定。未WI关闭／归档／Goal完成。
+
+
+## 原生凭据隔离修复 Prepare — 2026年10月3日
+
+Goal续跑确认原日常Code进程已退出，从干净d3ff0ea启动既有隔离F5 launcher；CUA路径及bundle-ID绑定均超时。维护者报告反复“keychain not found”；隔离日志显示内置GitHub认证读取钥匙串。弹窗准确来源／根因仍未确证。已终止本任务launcher并观察进程退出，未读取／修改用户钥匙串或配置。本轮新证据属于推进，不是native验收。
+
+有界修复仅涉及native验证launcher，不修改产品SecretStorage。实际Code bundle声明`--use-inmemory-secretstorage`，将其boolean传入NativeSecretStorageService。F5父窗口、生成调试子窗口、安装CLI及安装启动均传入；交互fixture禁用内置GitHub／Microsoft认证扩展。保留curated HOME、空凭据与既有资源／信任fixture；不替换真实HOME、不重置／删除钥匙串、不降低OS安全、不索取密码。
+
+编码前失败方式：任一路径遗漏flag、参数／环境传递丢失、验证driver误启动真实Code或读取用户状态、模拟检查冒充native／钥匙串修复验收。先写替代executable的子进程组合，实际运行launcher两种模式并检查生成F5参数；只证明参数接线，不证明弹窗消失。能无凭据提示地操作隔离native窗口前实际重试仍未验证；准确症状验证需要安全native观察或维护者证据。
+
+两项launcher组合先于脚本修改编写，均因缺少内存flag失败（`dist/goal-eight/native-isolation/red.log`）。修复使每次调用均内存存储，交互fixture禁用两个内置账户扩展；未改产品代码／用户配置。两组合现通过（`green.log`），脚本语法／compile／lint通过。完整标准行为首次失败于既有未改frozen-history全局last-message断言（1268/1269），保留`test.log`；第二次未改标准运行1269通过（`test-recheck.log`）。文档verify／health通过。这仅为开发／脚本证据，不是native验收、弹窗消失、根因确认或系统钥匙串修复。下一步仅审查／提交本任务launcher／测试／记录，再隔离验证提交候选后决定是否安全native重试。
