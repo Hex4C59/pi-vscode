@@ -42,3 +42,22 @@ setTimeout(()=>{fs.writeFileSync(path.join(evidence,'result.json'),JSON.stringif
     if (scenario === 'nonzero-review') assert.equal(JSON.parse(await readFile(path.join(evidence, 'process-exit.json'), 'utf8')).code, 7);
   } finally { if (root) await rm(root, { recursive: true, force: true }); await rm(repo, { recursive: true, force: true }); }
 });
+
+test('ordinary observer allows a bounded 31-minute explicit visual review', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const code = await readFile(new URL('file-completion-native-driver.cjs', source), 'utf8');
+  const cases = ['picker-cancel', 'no-match', 'fuzzy-keyboard-selection', 'atomic-draft-attachment', 'excluded-sensitive-paths', 'oversized-rejection', 'outside-symlink-rejection', 'changed-source-confirmation', 'english-keyboard-visual', 'chinese-keyboard-visual'];
+  let now = 0; let reads = 0; let result;
+  const fs = { async readFile(file) {
+    if (!file.endsWith('review.json')) return '{"version":"synthetic"}';
+    if (!reads++) throw Object.assign(new Error('Not reviewed yet'), { code: 'ENOENT' });
+    return JSON.stringify({ cases: Object.fromEntries(cases.map(name => [name, { result: 'passed' }])), artifacts: ['synthetic-not-native'] });
+  }, async writeFile(file, value) { if (file.endsWith('result.json')) result = JSON.parse(value); } };
+  const vscode = { version: 'synthetic', extensions: { getExtension: () => ({ extensionPath: '/owned-synthetic', packageJSON: { version: 'synthetic' } }) }, commands: { executeCommand: async () => {} } };
+  const exports = {};
+  runInNewContext(code, { exports, process: { env: { PI_FILE_COMPLETION_FIXTURE: '/owned-synthetic', PI_FILE_COMPLETION_EVIDENCE: '/owned-synthetic', PI_FILE_COMPLETION_MODE: 'f5' } },
+    require: name => name === 'vscode' ? vscode : name === 'node:fs/promises' ? fs : name === 'node:path' ? path : assert,
+    Date: { now: () => now }, setTimeout: callback => { now += 31 * 60000; callback(); } });
+  await exports.run();
+  assert.equal(result.result, 'review-complete'); assert.equal(reads, 2);
+});

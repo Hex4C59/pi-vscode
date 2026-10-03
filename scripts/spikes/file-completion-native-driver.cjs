@@ -5,7 +5,7 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const cases = ['picker-cancel', 'no-match', 'fuzzy-keyboard-selection', 'atomic-draft-attachment', 'excluded-sensitive-paths', 'oversized-rejection', 'outside-symlink-rejection', 'changed-source-confirmation', 'english-keyboard-visual', 'chinese-keyboard-visual'];
 async function waitReview(root) {
-  const deadline = Date.now() + 1500000;
+  const deadline = Date.now() + 3000000;
   while (Date.now() < deadline) {
     try { return JSON.parse(await fs.readFile(path.join(root, 'review.json'), 'utf8')); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }

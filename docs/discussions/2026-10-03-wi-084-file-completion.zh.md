@@ -72,3 +72,10 @@ harness开发checkpoint：四项合成子进程契约RED→GREEN，compile／lin
 退出精度：自有子父窗口实际使用Cmd+Q，但process-exit.json为code:null／signal:SIGSEGV，不是成功正常进程退出。保留此宿主crash及协调缺陷为失败lane，不验收或声称exit0；若重现继续诊断。
 
 修复开发结果：mounted成功场景RED复现native旧token，复用pending草稿转换lease／既有准确revision／sequence／文本guard及identity reset。成功及取消／新编辑GREEN，compile／lint／1281／docs通过；首次compile因测试findLast不属声明lib失败，测试改reverse／find未升级编译器。仍属mounted非native修复验收。exthost退出0与Code主进程SIGSEGV分别记录，crash根因未证实。
+
+
+### 原生修复候选审查超时与有界重试Prepare
+
+干净候选158c95e通过compile／lint／1281行为检查／文档与health／打包，VSIX SHA256为613a923e8aa22368cb0b3937aa65418ec8efe8c2275abca75abfd44e865a7a2d。实际F5 fixture CNajUd验证token移除、取消／no-match、安全发现、超大／外部拒绝、源变化确认及一次明确确认的合成loopback请求。英中native提示在280／320／400 CSS像素及Dark 2026／Light Modern／Dark High Contrast取得截图AX和geometry并审阅实际contact sheet。它们是**失败lane**中的观察，不是验收：普通observer的25分钟期限在最终标记前到期。主Code退出0，provider关闭，一次合成请求／零真实调用。完整工件dist/goal-eight/wi084/native-f5-158c95e/含broker结果／退出、截图AX矩阵及审阅geometry。先前SIGSEGV未重现，原因仍未证实。
+
+工具修改前失败方式：合法有界31分钟显式审查被过早拒绝；仅增加observer预算不能接受缺案、宿主非零退出、安装失败或未确认投递。实现前新增合成时钟契约，以Native review deadline exceeded失败（native-harness/review-budget-red.log），不冒充native。Prepare：仅本文件补全observer改50分钟，自有进程wrapper改60分钟，保留取消、最终退出／结果核对、凭据隔离及十案。产品发现／picker期限不变，不改API、产品、信任、资源、数据或持久化边界。重跑契约与仓库检查、审阅提交局部diff，再干净候选及独立新F5／安装lane。尚无代理验收或关闭。
