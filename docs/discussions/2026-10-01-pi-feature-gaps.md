@@ -94,3 +94,7 @@ The maintainer requested a split of the remaining ACTIVE tasks and a Goal prompt
 - A future execution prompt should explicitly approve bounded Group A delivery, delegate routine reversible choices and evidence-based agent evaluation where repository rules permit, authorize isolated local commits, and retain actual runtime/F5/installed-VSIX checks. Prior delegated acceptance is scoped historical evidence, not blanket approval of new slices. Missing prerequisites or mandatory decisions remain unfinished; do not promise fully unattended completion from static triage alone.
 
 Checks for this discussion are documentation-only; no application, API spike or real-host verification was run for the grouping.
+
+## PI-GAP-01 completion checkpoint — October 4, 2026
+
+The maintainer approved the remaining text-attachment and skill/template queue boundaries and delegated verification. WI-091 is now closed after real pi, browser, actual macOS F5 and installed-VSIX evidence; [approved scope, acceptance and limits](../archive/2026-10-03-wi-091-queued-inputs.md). The earlier grouping is a pre-approval snapshot, not a current blocker for PI-GAP-01. Images and arbitrary extension commands remain excluded; no other gap or WI-090 is closed by this result.

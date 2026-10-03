@@ -107,6 +107,7 @@ The History column keeps the original acceptance/closure link and adds standalon
 | WI-089 | PI-GAP-27 actual installed versions and bounded local notes | October 3, 2026 agent under bounded Goal; macOS F5 + installed VSIX; no gate/ADR change | [Prepare, acceptance and limits](2026-10-02-wi-089-version-information.md) |
 | WI-082 | PI-GAP-02 verified resource loading report | October 3, 2026 agent under bounded Goal; actual macOS F5 + installed VSIX | [Prepare, acceptance and limits](2026-10-03-wi-082-resource-report.md) |
 | WI-083 | PI-GAP-04 manual context compaction | October 3, 2026 agent under bounded Goal; actual macOS F5 + installed VSIX, synthetic loopback only | [Prepare, acceptance and limits](2026-10-03-wi-083-manual-compaction.md) |
+| WI-091 | PI-GAP-01 queued text attachments, skill/template expansion and original snapshot recovery | 2026-10-04 agent-delegated; real pi, browser, macOS F5 + installed VSIX | [proposal, acceptance and limits](2026-10-03-wi-091-queued-inputs.md) |
 
 ## Not in this index
 

@@ -110,6 +110,7 @@
 | WI-089 | PI-GAP-27实际安装版本与有界本地说明 | 2026年10月3日本次Goal授权下代理验收；macOS F5＋安装VSIX；gate／ADR不变 | [Prepare、验收与限制](2026-10-02-wi-089-version-information.zh.md) |
 | WI-082 | PI-GAP-02实际资源加载报告 | 2026年10月3日本次Goal授权下代理验收；实际macOS F5＋安装VSIX | [Prepare、验收与限制](2026-10-03-wi-082-resource-report.zh.md) |
 | WI-083 | PI-GAP-04手动上下文压缩 | 2026年10月3日本次Goal授权下代理验收；实际macOS F5＋安装VSIX，仅合成loopback | [Prepare、验收与限制](2026-10-03-wi-083-manual-compaction.zh.md) |
+| WI-091 | PI-GAP-01 队列文本附件、skill／模板展开及原快照恢复 | 2026-10-04 代理委托验收；真实 pi、浏览器、macOS F5＋安装 VSIX | [方案、验收及限制](2026-10-03-wi-091-queued-inputs.zh.md) |
 
 ## 不在本索引
 
