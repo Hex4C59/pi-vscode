@@ -82,3 +82,15 @@ After recording PI-GAP-01–27, two further product-surface differences were con
 Evidence: tagged README / keybindings above; [composer](../../src/webview/chat/composer/message-composer.tsx), [runtime launch](../../src/adapter/runtime/pi-rpc-runtime.ts), and Webview protocol. Static source evidence only. Shortcut bindings can be coordinated with PI-GAP-22; system-prompt configuration may be a separately approved slice under advanced settings. No new ACTIVE rows or Build approval in this discussion.
 
 Do not claim an exhaustive arbitrary-extension compatibility audit. Other remaining terminal/CLI surfaces or previously deferred environments are not automatically plugin requirements, and already recorded feature details should not be counted again.
+
+
+## Unattended execution grouping proposal (2026-10-03)
+
+The maintainer requested a split of the remaining ACTIVE tasks and a Goal prompt for independent delivery with local commits. This records the agent's recommendation, not approval of implementation, new product decisions or a started Goal. ACTIVE retains all 25 unfinished rows and their original acceptance boundaries.
+
+- Group A (eligible for one explicitly scoped authorization): PI-GAP-02, 04, 06, 14, 21, 24, 26 (reviewable local diagnostic export only), 27. These fit existing workflow boundaries without an identified new major product/trust/data decision. This is scope triage, not proven API feasibility or real-host acceptance.
+- Group B (confirm remaining scope/decisions before unattended Build): PI-GAP-01, 05, 07, 08, 09, 10, 11, 13, 15, 16, 17, 18, 19, 22, 23, 25, 28. Queue inputs, images, session exploration, configuration fields and shortcut slices need boundaries; package/model downloads, persistence, tools, shell, deletion and sensitive transfer need explicit choices. Extension UI and reload evaluation can be done by AI, but do not preapprove the resulting support matrix or restart alternative. Editor-buffer saving and recalled-input retention still need an explicit bounded product choice. This is not a claim of inherent human-only technical work.
+- Diagnostic upload and inclusion of sensitive session/source content remain separately approved optional slices, not part of Group A. Product controls requiring end-user confirmation are implementable by AI; they are not by themselves a need for maintainer intervention during development.
+- A future execution prompt should explicitly approve bounded Group A delivery, delegate routine reversible choices and evidence-based agent evaluation where repository rules permit, authorize isolated local commits, and retain actual runtime/F5/installed-VSIX checks. Prior delegated acceptance is scoped historical evidence, not blanket approval of new slices. Missing prerequisites or mandatory decisions remain unfinished; do not promise fully unattended completion from static triage alone.
+
+Checks for this discussion are documentation-only; no application, API spike or real-host verification was run for the grouping.
