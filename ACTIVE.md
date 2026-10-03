@@ -9,7 +9,7 @@
 | 字段 | 内容 |
 |---|---|
 | **ID** | WI-083 |
-| **阶段** | Build（应用Prepare完成；原生fixture Prepare调查中） |
+| **阶段** | Build（应用与原生fixture Prepare完成；候选检查／原生验收中） |
 | **Gate ID** | none |
 | **Decision** | none |
 | **PRD 判定** | 用户可见：REQ-004／005／009 手动压缩 |
@@ -30,7 +30,7 @@
 
 [八项Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界授权仍生效；不付费模型／真实账户、扩平台或发布，26上传／敏感收集未批准。日常Code仅按新增授权正常退出，禁止强杀／无关自动保存丢弃，未保存／任务确认时停手。
 
-**进度与下一步：** 安全隔离窗口已可用，自有资源测试均终止。手动压缩实现77ca3c2、干净候选／真实RPC证据仍保留；先完成native合成模型／历史／有界Cancel与Stop方案调查，再测试先行编写harness。六项native验收仍未完成，Goal未complete。
+**进度与下一步：** 安全隔离窗口已可用，自有资源测试均终止。手动压缩实现77ca3c2、干净候选／真实RPC证据仍保留；native公开模型配置／合成历史／有界Cancel与Stop方案及失败方式已记录，测试先行harness与退出码修复已提交964c410／ed7744b；四项合成契约通过，ed7744b干净候选1275／打包通过。实际F5发现Code测试模式拒绝modal，失败已保留，test-first改用普通observer扩展（去除extensionTestsPath）四项通过并提交c1b4cd5；干净候选重跑后真实F5／安装英中逐案例重试，不把review标记或模拟当验收。六项native验收仍未完成，Goal未complete。
 
 ## 待完成
 

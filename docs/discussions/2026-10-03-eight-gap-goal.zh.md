@@ -82,3 +82,7 @@ Goal已恢复ACTIVE，现重新开始blocked审计。native清单返回apps且�
 人类授权所提日常Code正常退出策略：禁止强杀、无关自动保存／丢弃、越过未保存／任务确认。实际Cmd+Q退出9702无该类提示，三个原Git修改不变。安全隔离native绑定现可用；wrong-ref误launcher及实际审查超时失败保留。有界审查时间修复9d7a3f8干净compile／lint1271／文档／打包通过；真实独立F5／安装资源driver现均passed，英中键盘内容不变／实时刷新／中文关闭重开及实际安装目录／SHA已审阅。PI02按本Goal代理委托关闭归档16e786d，不是维护者亲自测试。**仅2/8关闭（PI02、PI27），六项未完**，26上传未批准。Goal工具保存的blocked不代表当前隔离仍不可用；如实记录授权与继续执行，不假称工具状态已变。
 
 当前WIP转WI083手动压缩native验收。两资源job终止、自有Code进程无；不查询死app binding。本Goal正常退出授权继续保留，UI前存活／完整fixture窗口检查及有界审查时限保持。既有WI083 Build／公开RPC证据保留，先调查并记录native合成loopback fixture Prepare再编写harness；无付费调用／真实账户。
+
+### WI083原生工具续跑——10月3日
+
+四项test-first子进程契约覆盖隔离lane、安装cleanup、缺失review及nonzero退出诚实。本地提交`964c410`／`ed7744b`／`c1b4cd5`提供有界合成压缩observer并修复真实宿主modal被抑制问题。ed7744b干净检查／打包通过，实际F5因Code test模式拒绝modal而失败，保留非验收。普通UI退出仅关闭自有子／父窗口，未强杀或无关保存／丢弃。c1b4cd5去除test mode、保留真实native API，正重跑干净候选后重试。维持WIP1 WI083、2/8已验收，不新增批准请求、不标Goal完成或推断外部阻碍。真实native矩阵及另五个未完切片仍必须完成。
