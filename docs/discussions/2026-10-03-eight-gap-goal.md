@@ -90,3 +90,6 @@ PI04/WI083 accepted and archived78a9d2e under this Goal delegation after clean c
 
 
 WI084 native continuation: harness27623b4 clean checks1279/package passed. Actual F5 exposed renderer stale-token reconciliation despite successful capture; native lane failed and retained (normal Cmd+Q main-process SIGSEGV, exthost0, provider closed0requests). Mounted regression RED then repair158c95e GREEN1281/compile/lint/docs; new clean candidate rerun underway before independent actual F5/installed retry. WIP1 stays WI084, 3/8 closed, no new external blocker or approval request.
+
+
+WI084 closed b7f02ae under Goal delegation: clean9ec5339 and independent actual F5/installed ten-case review plus18 native geometry captures each. Earlier failures retained; unchanged full1282 candidate rerun passed. Normal UI exit/wrapper0, provider closure one synthetic request/zero real calls. 4/8 closed (PI02/04/06/27); sole WI085/model cycling native Prepare. Four unfinished, PI26upload unapproved, no owned native jobs left.

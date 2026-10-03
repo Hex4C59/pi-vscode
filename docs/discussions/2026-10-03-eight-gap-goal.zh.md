@@ -94,3 +94,6 @@ PI04／WI083经干净c1b4cd5检查、独立实际macOS F5／安装十项英中UI
 
 
 WI084 native续跑：harness27623b4干净1279／打包通过；实际F5成功capture却renderer旧token未移除，失败保留（正常Cmd+Q主进程SIGSEGV、exthost0、provider关闭0请求）。mounted回归RED→修复158c95e GREEN1281／compile／lint／docs，新干净候选重跑后独立F5／安装重试。当前仍仅WI084、3/8关闭，无新外部阻碍／批准请求。
+
+
+WI084以b7f02ae本次代理关闭：干净9ec5339及独立实际F5／安装十案与各18native geometry图；旧失败保留，未改全1282重跑通过。正常UI退出／wrapper0，provider关闭一次合成请求／零真实调用。4/8关闭（PI02／04／06／27），唯一WI085模型轮换native Prepare；四项未完、PI26上传未批准，无自有native遗留job。

@@ -4,7 +4,7 @@
 
 - 翻译状态：Machine Draft
 - 权威原文：[2026-10-03-wi-084-file-completion.md](2026-10-03-wi-084-file-completion.md)
-- 原文版本：9ec5339
+- 原文版本：Uncommitted baseline
 - 最近同步：2026-10-03
 - Type: Reference
 - Status: Superseded
