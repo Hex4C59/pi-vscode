@@ -2,33 +2,9 @@
 
 只记录正在做和待完成的工作。维护规则见[协作指南](docs/guides/agent-collaboration.zh.md#4-进行中工作项wip1)，历史记录见[归档索引](docs/archive/README.zh.md)。
 
-## 正在做（WIP=1）
+## 正在做（WIP=0）
 
-### WI-088 — PI-GAP-26 本地诊断原生验收
-
-| 字段 | 内容 |
-|---|---|
-| **ID** | WI-088 |
-| **阶段** | Prepare（既有5f2135f本地切片已实现；重新核对原生review／cancel／save工具边界） |
-| **Gate ID** | none |
-| **Decision** | none |
-| **PRD 判定** | 用户可见：REQ-009可审查、可取消、有界本地诊断 |
-
-#### 目标与范围
-
-仅本地allowlist版本／状态JSON，默认不含源码、完整会话、凭据、路径、标识符或错误正文；无上传／新增敏感收集。[Prepare记录](docs/discussions/2026-10-02-wi-088-local-diagnostics.zh.md)。
-
-#### 方案与架构核对
-
-核对实际安装manifest、只读冻结preview、显式review／save取消、单owner并发、file-only／新文件排他发布及清理。先列原生失败方式／工具契约再编码；无runtime推理、账户或真实用户数据。
-
-#### 验收
-
-干净提交compile／lint／行为／文档／打包；实际独立F5与安装版原生只读审查、review／save取消、冻结bytes相等本地导出、英中界面与自有正常退出，分层留工件。本次授权下代理验收，非维护者亲测。
-
-#### 范围外与批准边界
-
-原八项有界授权／代理验收／本地提交继续，单Agent WIP1。禁止push／发布／上游升级；PI26上传／敏感收集仍未批准未完成，不能宣称整个ACTIVE完成。日常Code只正常退出，未保存／任务确认停手；锁屏不绕过，不索取密码。Goal7/8已关闭、仅本地诊断待验收，未complete。
+无。
 
 ## 待完成
 

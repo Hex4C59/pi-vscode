@@ -5,7 +5,7 @@
 - 翻译状态：Machine Draft
 - 权威原文：[product-requirements.md](product-requirements.md)
 - 原文版本：Uncommitted baseline
-- 最近同步：2026-10-02
+- 最近同步：2026-10-03
 
 - 类型：产品需求
 - 状态：**Accepted**（自用 macOS 本机 VS Code 安装版 VSIX；standing non-goals 排除）
@@ -283,7 +283,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **验收：** test-first 挂载 production 对话→clipboard，以可区分原 Markdown、代码块回归、空／流式／错误／隐藏／截断排除、拒绝／不可用／超时和迟到／unmount 留可重复 JSON。浏览器中英、键盘／焦点、280／320／400 暗／亮／高对比；macOS 真 F5 与安装 VSIX 复制／反馈分层记录。compile／lint／npm test／docs:verify，关闭 docs:health；不新增持久化、宿主权限或外部请求。
 
-**WI-082 已验收切片（2026-10-03；PI-GAP-02、REQ-004/009；本次授权下代理验收）：** 原生命令 `pi: Show Resource Loading Report` 打开随当前 runtime 身份更新的只读文本报告。区分登记／可发现与实际加载：公开 `get_commands` 证明模板和 skill 定义加载、扩展命令登记，不证明 skill 正文、AGENTS.md 或所有扩展文件加载；不可确认项标未知。清单登记／启用数量另列且不代表加载。无 runtime、启动中、空、不可用及失效状态明确；每类最多展示 100 名称并说明省略，不包含正文／路径／凭据，不启动 runtime 或联网。英文／中文按现有界面语言；打开失败可重试。验收覆盖身份替换、边界和不改变任务的组合验证、隔离真实 pi、macOS F5 与安装 VSIX 原生命令／只读报告及关闭恢复，按[WI-082](archive/2026-10-03-wi-082-resource-report.zh.md)保留工件。实际macOS F5与安装VSIX英中实时报告、键盘内容不变与关闭重开证据已按本次委托审阅，不是维护者亲自测试；其余五项目标仍未完成。
+**WI-082 已验收切片（2026-10-03；PI-GAP-02、REQ-004/009；本次授权下代理验收）：** 原生命令 `pi: Show Resource Loading Report` 打开随当前 runtime 身份更新的只读文本报告。区分登记／可发现与实际加载：公开 `get_commands` 证明模板和 skill 定义加载、扩展命令登记，不证明 skill 正文、AGENTS.md 或所有扩展文件加载；不可确认项标未知。清单登记／启用数量另列且不代表加载。无 runtime、启动中、空、不可用及失效状态明确；每类最多展示 100 名称并说明省略，不包含正文／路径／凭据，不启动 runtime 或联网。英文／中文按现有界面语言；打开失败可重试。验收覆盖身份替换、边界和不改变任务的组合验证、隔离真实 pi、macOS F5 与安装 VSIX 原生命令／只读报告及关闭恢复，按[WI-082](archive/2026-10-03-wi-082-resource-report.zh.md)保留工件。实际macOS F5与安装VSIX英中实时报告、键盘内容不变与关闭重开证据已按本次委托审阅，不是维护者亲自测试；本切片不替其他Goal项目作验收；各项证据独立保留。
 
 **WI-083 已验收切片（2026-10-03；PI-GAP-04，REQ-004/005/009）：** 原生命令 `pi: Compact Context` 仅空闲准入；先确认压缩会以有损摘要替代旧上下文、可能调用当前模型产生正常费用，可选 4 KiB UTF-8 自定义指令，取消不调用 runtime。复用公开 compact；任务显示 compacting，原生进度 Cancel 和原有 Stop 都通过清队列、中止及实际结算。完成、失败／不可用及实际取消分别反馈；失效身份不覆盖新会话，超时／丢连接不重试。后续扩展活动保持忙碌到实际结算。保留草稿、既有自动压缩／重试、模型忙碌和会话交接规则；不显示摘要全文。验收／工件见 [WI-083](archive/2026-10-03-wi-083-manual-compaction.zh.md)，保留本Goal有界代理验收、干净源码／包身份及实际macOS F5／安装英中原生review＋本地合成响应，非维护者亲测。
 
@@ -371,9 +371,9 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 ### REQ-009 — 代表性 pi 兼容
 
-**WI-089已验收切片（2026年10月3日，本次八项Goal授权下的代理验收，不是维护者亲自测试）：** native只读实际安装插件／内置pi／宿主版本及精确有界本地说明；unknown／missing／截断／超预算明确不可用。不承诺最新、不替代Unreleased／其他版本、不隐式联网／更新。实际macOS F5与安装VSIX英中报告、键盘只读及关闭重开已观察；保留archive插件0.86.1映射并诚实提示对应插件说明缺失。[Prepare、证据与限制](archive/2026-10-02-wi-089-version-information.zh.md)。其余七项目标及诊断上传仍未完成。
+**WI-089已验收切片（2026年10月3日，本次八项Goal授权下的代理验收，不是维护者亲自测试）：** native只读实际安装插件／内置pi／宿主版本及精确有界本地说明；unknown／missing／截断／超预算明确不可用。不承诺最新、不替代Unreleased／其他版本、不隐式联网／更新。实际macOS F5与安装VSIX英中报告、键盘只读及关闭重开已观察；保留archive插件0.86.1映射并诚实提示对应插件说明缺失。[Prepare、证据与限制](archive/2026-10-02-wi-089-version-information.zh.md)。其他Goal切片各自独立验收；诊断上传／敏感收集仍未批准未完成。
 
-**WI-088 已批准 Build 切片（本轮八项 Goal，2026-10-02）：** 显式本地有界诊断仅含实际安装 package／host 版本及既有 allowlist lifecycle flags。冻结只读预览、显式审查导出／取消、本地 save取消、拒绝覆盖、失败可重试。默认排除源码、完整会话、标识／路径、凭据、env、诊断／错误正文；无后台敏感收集或上传，无新增 runtime／trust／Webview 权限。[Prepare与独立原生验收](archive/2026-10-02-wi-088-local-diagnostics.zh.md)。2026年10月3日完成本次授权下代理验收，非维护者亲自测试；仅本地切片，上传／敏感收集仍未批准未完成。
+**WI-088 已验收切片（本轮八项 Goal，2026-10-02）：** 显式本地有界诊断仅含实际安装 package／host 版本及既有 allowlist lifecycle flags。冻结只读预览、显式审查导出／取消、本地 save取消、拒绝覆盖、失败可重试。默认排除源码、完整会话、标识／路径、凭据、env、诊断／错误正文；无后台敏感收集或上传，无新增 runtime／trust／Webview 权限。[Prepare与独立原生验收](archive/2026-10-02-wi-088-local-diagnostics.zh.md)。2026年10月3日完成本次授权下代理验收，非维护者亲自测试；仅本地切片，上传／敏感收集仍未批准未完成。
 
 **WI-039 已接受切片（代理依据本会话收尾并提交要求，2026-09-30；REQ-009 交付，受影响的供应商配置属 REQ-002）：** 交付的 VSIX 必须能加载自身 bundle 会导入的运行时依赖闭包。bundle 只能把宿主提供的 `vscode` 与 pinned `@earendil-works/pi-coding-agent`（其 CLI 由 supervisor 启动子进程）留在包外；其他每个裸标识符都必须内联进该 bundle 或随包装入，组包因此必须拒绝「交付 bundle 加载了未随包发布的依赖」。解包后的归档要在解包扩展根目录真实 `import()` 每个这样的标识符来验证。本切片修复安装版在供应商配置路径上以固定错误失败的缺陷，使安装版扩展宿主的供应商设置、endpoint 添加／删除与模型目录与开发宿主一致可用。不新增用户可见行为、gate 或模块责任，不把验证串接进 `package:vsix`／CI（仍属停车场 ARCH-07），也不接受整份 Draft PRD。[验收与限制](archive/2026-09-30-wi-039-macos-acceptance.zh.md)。
 
@@ -512,7 +512,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-083 | REQ-004／005／009 手动上下文压缩（PI-GAP-04） | 10月3日本Goal授权下代理关闭；[Prepare与验收](archive/2026-10-03-wi-083-manual-compaction.zh.md)。 |
 | WI-084 | REQ-004／009 工作区文件补全（PI-GAP-06） | 本Goal代理关闭；[Prepare与验收](archive/2026-10-03-wi-084-file-completion.zh.md)。 |
 | WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 本Goal代理关闭；[Prepare与验收](archive/2026-10-02-wi-085-model-cycling.zh.md)。 |
-| WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
+| WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 本次Goal代理关闭；[独立F5／安装验收及限制](archive/2026-10-02-wi-086-session-search.zh.md)。 |
 | WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 仅批准切片本次Goal代理验收；[独立F5／安装证据及限制](archive/2026-10-02-wi-087-mermaid.zh.md)。 |
 | WI-088 | REQ-009 有界本地诊断导出（PI-GAP-26 本地切片） | 仅本地切片本次Goal代理关闭；[独立F5／安装证据及限制](archive/2026-10-02-wi-088-local-diagnostics.zh.md)；上传未批准。 |
 | WI-089 | REQ-009实际安装版本与有界本地说明（PI-GAP-27） | 2026年10月3日依本次Goal委托代理关闭；实际F5／安装英中、只读／重开分层证据。[验收](archive/2026-10-02-wi-089-version-information.zh.md)。 |

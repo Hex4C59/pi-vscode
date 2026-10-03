@@ -94,3 +94,5 @@ WI收尾或确认文档替代时，Agent按[协作§7](../guides/agent-collabora
 - [WI-087 有界 Mermaid 验收](2026-10-02-wi-087-mermaid.zh.md)：独立实际F5／安装图表、源码回退及原生视觉；仅Goal委托有界切片。
 
 - [WI-088 本地诊断验收](2026-10-02-wi-088-local-diagnostics.zh.md)：独立实际F5／安装只读review、双取消、冻结bytes相等的0600本地导出；上传未批准。
+
+- [八项有界Goal最终交接](2026-10-03-eight-gap-goal.zh.md)：批准八切片的源码／本地提交／分层实际验收及保留问题；不代表整个ACTIVE完成。

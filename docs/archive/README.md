@@ -90,3 +90,5 @@ Navigation maintenance: WI-075 — [numbered history](2026-09-29-closed-wi-index
 - [WI-087 bounded Mermaid acceptance](2026-10-02-wi-087-mermaid.md): independent actual F5/installed diagrams, source/fallback and native visual evidence; Goal-delegated bounded slice only.
 
 - [WI-088 local diagnostic acceptance](2026-10-02-wi-088-local-diagnostics.md): independent actual F5/installed read-only review, both cancels and exact frozen-byte private local exports; upload unapproved.
+
+- [Bounded eight-gap Goal final handoff](2026-10-03-eight-gap-goal.md): approved slice source/local commits, layered actual acceptance and residuals; not completion of all ACTIVE.
