@@ -100,3 +100,6 @@ WI084以b7f02ae本次代理关闭：干净9ec5339及独立实际F5／安装十�
 
 
 WI085以816654c代理关闭：干净e77135c检查1287／公开RPC／打包及独立实际F5／安装十案英中原生，applied与pending区分直到实际结算。两主／wrapper0／provider关闭一次合成零真实，无遗留job。5/8关闭PI02／04／06／14／27，唯一WI086会话metadata搜索native Prepare，三项未完，PI26上传未批准。
+
+
+WI086关闭f0d13c7：干净d654011检查1292／实际公开SDK／打包及独立实际F5／安装十案与各18native视觉。首轮未改frozen-history失败保留，聚焦完整重跑通过根因未证。main／wrapper0／provider关闭零推理，自有job已消失。6/8关闭PI02／04／06／14／24／27；仅WI087／Mermaid原生Prepare，两项未完，PI26上传未批。

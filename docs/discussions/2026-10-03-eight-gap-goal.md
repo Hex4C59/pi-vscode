@@ -96,3 +96,6 @@ WI084 closed b7f02ae under Goal delegation: clean9ec5339 and independent actual 
 
 
 WI085 closed816654c: clean e77135c checks1287/public RPC/package and independent actual F5/installed ten-case review, applied/pending distinct through actual settlement, native English/Chinese. Both main/wrapper0/provider closed one synthetic/zero real calls, no jobs remain. 5/8 closed PI02/04/06/14/27; sole current WI086/session metadata search native Prepare, three unfinished, PI26upload unapproved.
+
+
+WI086 closed f0d13c7: clean d654011 checks1292/public SDK/package plus independent actual F5/installed ten-case and18 native visuals each. First unchanged frozen-history failure retained; focused/full rerun passed, root cause unproven. Both main/wrapper0/providerclosed zero inference, owned jobs gone. 6/8 closed PI02/04/06/14/24/27; sole WI087/Mermaid native Prepare, two unfinished, PI26upload unapproved.
