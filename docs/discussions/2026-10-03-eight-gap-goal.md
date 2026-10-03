@@ -58,3 +58,10 @@ Locked-native audit2 (next automatic Goal continuation, October 3): previous tur
 
 
 Locked-native audit3 (third consecutive Goal turn, October 3): previous audit turn was no progress, not a verified wait. ACTIVE/WI082 reread, index empty, original user changes protected. Native inventory again returns the same locked-Mac error and no apps. Owned test is terminal, no live job to poll. All seven remaining approved slices require native acceptance; no independent approved work can substitute. Three consecutive turns confirm this lock condition. Set Goal blocked, not complete; manual Mac unlock is the minimum external change. Never request credentials or bypass lock. Preserve full objective, PI27 closure and remaining implementation/evidence. Resuming starts a fresh blocked audit.
+
+
+## Resumed audit and process-inventory correction — October 3, 2026
+
+Goal resumed ACTIVE; fresh blocked audit starts now. Current native inventory returns apps without a locked-Mac error, so lock is no longer the blocker. Binary-only `ps -axo pid=,comm=` shows non-fixture Code9702 at `/Applications/Visual Studio Code.app/Contents/MacOS/Code`. The earlier Electron-only filter missed the actual Code executable; previous “no pre-existing Code” statements were not valid absence evidence. Their locked-tool observations and owned fixture exits remain valid, but must not be used to claim Code exclusivity. Use the exact actual Code executable path for future inventory; do not read process arguments/user state.
+
+No owned native job is live. macOS CUA app binding cannot select an isolated window/PID while9702 exists; no selection/input/quit performed on it, no isolated launcher restarted. Minimum unlock: user saves/closes non-fixture Code, or supported safe macOS window/PID binding. Seven native acceptance requirements remain unfinished; PI27 acceptance unchanged. This turn yields corrected authoritative evidence, not new native acceptance; Goal stays active pending fresh audit.

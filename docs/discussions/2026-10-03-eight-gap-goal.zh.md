@@ -62,3 +62,10 @@ binary-only清单现无Code实例；未改已提交launcher启动自有隔离F5�
 
 
 锁屏native audit3（连续第三Goal turn，10月3日）：上一审计turn无进展，非verified wait。重读ACTIVE／WI082，index为空、原用户修改保护。native清单再次返回同一Mac锁定错误及无app；自有测试已终止，无存活job可poll。剩余七项均须native验收，无独立批准工作可替代。连续三轮确认锁屏条件，Goal标blocked非complete，最小外部变化为用户手动解锁Mac；不索取凭据、不绕过锁屏。完整目标、PI27关闭及剩余实现／证据保留；续跑后重新blocked审计。
+
+
+## 恢复审计与进程清单纠正 — 2026年10月3日
+
+Goal已恢复ACTIVE，现重新开始blocked审计。native清单返回apps且无锁屏错误，锁屏不再是当前阻碍。binary-only `ps -axo pid=,comm=`显示非fixture Code9702，实际路径`/Applications/Visual Studio Code.app/Contents/MacOS/Code`。早先仅匹配Electron的筛选漏掉实际Code程序，旧“无既有Code”不能作为不存在证据；旧锁屏工具观察与自有fixture退出仍有效，但不证明Code独占。以后清单匹配实际Code执行路径，不读进程参数／用户状态。
+
+无自有native job存活；9702存在时macOS CUA不能选隔离窗口／PID，未选择／输入／退出它，也未重启隔离launcher。最小解锁为用户保存关闭非fixture Code，或工具提供安全macOS窗口／PID绑定。七项native验收仍未完成，PI27验收不变。本轮获得纠正后的权威证据，不是新native验收；Goal保持active并重新审计。

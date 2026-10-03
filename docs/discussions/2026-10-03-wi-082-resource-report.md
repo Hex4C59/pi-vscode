@@ -48,3 +48,6 @@ October 3 retry from clean2d4b871: no pre-existing Code in binary-only inventory
 
 
 Current blocker confirmed across three consecutive Goal turns: native inventory explicitly reports locked Mac, no live owned verification job. Goal blocked pending manual unlock; WI082 remains unfinished in Build, native review/driver acceptance required. No keychain/security changes authorized.
+
+
+Resumed October 3: Mac now unlocked, but binary-only inventory confirms non-fixture Code9702. Earlier Electron-only process filters missed actual MacOS/Code; absence claims corrected in Goal. Do not relaunch/select input while safe isolated binding is unavailable. Current minimum unlock is save/close non-fixture Code or safe macOS window/PID binding, not a keychain reset. No new native acceptance; seven slices unfinished.
