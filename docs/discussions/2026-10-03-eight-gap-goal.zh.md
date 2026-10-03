@@ -49,3 +49,10 @@ atomic launcher f2b4462干净compile／lint／1269／文档／打包通过，实
 **仅PI-GAP-27／WI089依本次Goal明确委托代理验收**，不是维护者亲自测试。实际干净1011afa F5及本地安装VSIX英中版本、精确安装插件说明缺失、字面Plain Text、键盘只读及中文关闭重开已审查，按精确SHA／源码／路径／检查限制归档。源码0.0.1与安装0.86.1来自既有打包策略，不是最新版承诺。四组native截图／AX及安装来源与resource driver结果分开；F5 review marker及安装consent／catalogue超时仍失败，不关闭PI02。unknown／error／生命周期故障仍仅编码前组合证据，不编造native注入。关闭记录由archive index／PRD索引；当前WIP返回WI082资源原生专注验证，其余六个未完本地切片排队；PI26上传仍未批准。Goal仍active，**仅1/8有界关闭，未complete**。
 
 本任务native job已终止，退出后观察到非fixture Code9702／title `pi-vscode`，来源未确证；任何输入前停手，不退出／使用该窗口。以后CUA前复核本任务进程仍活着，避免死测试被解析／启动为默认app。隔离fixture被选中时安全绑定现已可用；未重置系统钥匙串／改配置，不宣称所有提示消失。本Goal turn有验证、修复提交及有界关闭推进，不因剩余native需安全窗口就标blocked；下一turn先重核外部状态。
+
+
+## 关闭提交与锁屏原生重试 — 2026年10月3日
+
+PI27验收／归档提交f67bcec，串行ACTIVE交接2d4b871，三个原用户修改文件仍未暂存。干净2d4b871 docs:verify／docs:health通过、status为空、相对1011afa可执行源码diff为空（`dist/goal-eight/native-isolation/closure-candidate/`）；完整1271仍为可执行树相同1011afa的证据，不冒充文档HEAD重新完整运行。翻译source metadata在bbb6f70修正：首次正规化1011afa被source-drift正确拒绝，最终指向实际英文关闭提交。
+
+binary-only清单现无Code实例；未改已提交launcher启动自有隔离F5父进程14301，fixture `/private/tmp/pi-resource-native-HXvFad`。CUA准确返回“The Mac is locked and automatic unlock could not unlock it.”，没有按F5、允许资源、审查报告或新增native验收。仅向自有launcher请求SIGTERM并确认session终止／process-exit code0；因无driver结果，harness自身exit1。`dist/goal-eight/wi082/native-locked-2d4b871/`保留fixture／log／exit。须用户手动解锁Mac；不索取密码、不改OS设置、不绕过锁屏。这是新的当前外部条件，不是旧非fixture进程阻碍；本轮有关闭提交及候选证据，未满足连续三轮无进展阈值。Goal仍active，七项native未完成。

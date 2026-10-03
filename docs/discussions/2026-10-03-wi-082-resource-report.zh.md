@@ -46,3 +46,6 @@ F5／安装 VSIX 未通过验收：初次启动因测试临时目录 Unix socket
 WI089／PI27已有独立实际F5及安装版本UI验收，不验收PI02。当前native launcher修复585bd06／f2b4462／1011afa有干净compile／lint1271／文档／打包证据。内存SecretStorage恢复隔离绑定且不改钥匙串，atomic option恢复单合成项目；记录native edit success boolean同时仍断言内容不变／重开。F5实际观察unavailable→ready、一个template／skill定义、registered command及unknown body／context／file，英中报告与英文键盘只读；在另行版本UI审查期间review marker超时。实际安装package激活及初始报告打开，但resource consent／catalogue超时；两失败均保留，未编造PI02验收或finish marker。
 
 本任务安装进程已退出，随后出现非fixture Code进程／title `pi-vscode`，来源未确证，不继续用户窗口操作或用户状态检查。测试进程已退出时不要调用app选择／状态：macOS工具可能解析／启动默认应用。以后每个native操作前复核本任务进程仍活着及窗口仍标识fixture，身份变化立即停手；不退出非fixture实例，不重置钥匙串／安全。最小下一步：可安全绑定的隔离实例，专注资源审查并在有界时限内完成英中／只读／关闭／刷新及实际F5／安装driver结果。其余七项目标仍未完成。上方旧阻碍段落属历史，不代表Code独占时绑定仍不可行。
+
+
+10月3日从干净2d4b871重试：binary-only清单无既有Code，隔离F5父进程14301启动，但native工具报告Mac锁定且无法自动解锁。未运行driver或UI操作；已停止自有父进程并观察终止，保留native-locked-2d4b871工件。当前最小解锁条件为用户手动解锁Mac，不是重置钥匙串或终止用户app。解锁后复核无竞争Code及新的自有存活进程／fixture身份，再专注同一有界资源F5审查。不属于PI02验收。
