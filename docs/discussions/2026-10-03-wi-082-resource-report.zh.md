@@ -40,3 +40,9 @@
 F5／安装 VSIX 未通过验收：初次启动因测试临时目录 Unix socket 过长失败，已缩短。已启动的隔离 Code 原实例无法被当前 CUA 绑定；改标识副本失败于签名／动态库校验。未改签名的本机安装副本能够启动，但 CUA 绑定仍超时。没有点击合成项目资源同意、没有报告视觉验收，也没有安装版通过结果。已结束本任务拥有的测试实例；不触碰用户 Code。不会放宽签名／执行权限来消除这个条件。
 
 最小解锁条件：能够在隔离用户目录下绑定真实 Code 窗口、执行该项目同意及原生命令，完成 F5／安装 VSIX 报告检查与视觉／键盘观察。此项不关闭、不归档、不声称代理验收。按照协作指南记录阻碍后，当前焦点切到独立 PI-GAP-04（WI-083）；后续重新尝试原生环境，八项目标仍保留全部关闭条件。
+
+## WI089关闭后的原生焦点恢复 — 2026年10月3日
+
+WI089／PI27已有独立实际F5及安装版本UI验收，不验收PI02。当前native launcher修复585bd06／f2b4462／1011afa有干净compile／lint1271／文档／打包证据。内存SecretStorage恢复隔离绑定且不改钥匙串，atomic option恢复单合成项目；记录native edit success boolean同时仍断言内容不变／重开。F5实际观察unavailable→ready、一个template／skill定义、registered command及unknown body／context／file，英中报告与英文键盘只读；在另行版本UI审查期间review marker超时。实际安装package激活及初始报告打开，但resource consent／catalogue超时；两失败均保留，未编造PI02验收或finish marker。
+
+本任务安装进程已退出，随后出现非fixture Code进程／title `pi-vscode`，来源未确证，不继续用户窗口操作或用户状态检查。测试进程已退出时不要调用app选择／状态：macOS工具可能解析／启动默认应用。以后每个native操作前复核本任务进程仍活着及窗口仍标识fixture，身份变化立即停手；不退出非fixture实例，不重置钥匙串／安全。最小下一步：可安全绑定的隔离实例，专注资源审查并在有界时限内完成英中／只读／关闭／刷新及实际F5／安装driver结果。其余七项目标仍未完成。上方旧阻碍段落属历史，不代表Code独占时绑定仍不可行。
