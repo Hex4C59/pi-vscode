@@ -214,7 +214,7 @@ WI-014 已批准的 T014-01～05 范围于 2026-09-28（Asia/Shanghai）按明�
 
 ### REQ-004 — 可观察的任务执行
 
-**WI-087 批准 Build 切片（八项有界执行请求；REQ-004，2026-10-02 UTC 记录）：** 安全 Mermaid flowchart／graph 与 sequence fence 闭合后可显式本地有界渲染，保留可选源码与 Copy。未支持／不安全／不完整／错误／过大明确保留源码，不伪称渲染成功。无消息配置／callback／HTML／image／资源／隐式联网，CSP／执行／local-resource 权限不变。取消／截止撤销展示权威，不冒充同步上游中断。[Prepare／预算／待 native 验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。这是批准而非验收／全 Mermaid parity。
+**WI-087 批准 Build 切片（八项有界执行请求；REQ-004，2026-10-02 UTC 记录）：** 安全 Mermaid flowchart／graph 与 sequence fence 闭合后可显式本地有界渲染，保留可选源码与 Copy。未支持／不安全／不完整／错误／过大明确保留源码，不伪称渲染成功。无消息配置／callback／HTML／image／资源／隐式联网，CSP／执行／local-resource 权限不变。取消／截止撤销展示权威，不冒充同步上游中断。[Prepare／预算／有界代理验收](archive/2026-10-02-wi-087-mermaid.zh.md)。2026-10-03依明确Goal委托，在独立实际F5与安装VSIX验证后接受本切片；非维护者亲测或全Mermaid parity。
 
 
 发送文本任务并展示流式回答与工具活动。适用时区分运行、等待审批、重试、压缩、完成、停止和失败状态。展示工具名称、目标及结果，限制输出体积并保护密钥。请求被接受不等于任务完成；排队续跑或自动重试尚未结束时不得显示完成。
@@ -513,7 +513,7 @@ RPC 文档提供 prompt、流式／工具事件、清队列及中止、模型选
 | WI-084 | REQ-004／009 工作区文件补全（PI-GAP-06） | 本Goal代理关闭；[Prepare与验收](archive/2026-10-03-wi-084-file-completion.zh.md)。 |
 | WI-085 | REQ-002/004 可用模型／思考轮换（PI-GAP-14） | 本Goal代理关闭；[Prepare与验收](archive/2026-10-02-wi-085-model-cycling.zh.md)。 |
 | WI-086 | REQ-008/009 当前项目 catalogue 搜索（PI-GAP-24） | 有界 Goal 已批准；[Prepare／待完成证据](discussions/2026-10-02-wi-086-session-search.zh.md)。 |
-| WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-087-mermaid.zh.md)。 |
+| WI-087 | REQ-004 安全有界 Mermaid 回复图（PI-GAP-21） | 仅批准切片本次Goal代理验收；[独立F5／安装证据及限制](archive/2026-10-02-wi-087-mermaid.zh.md)。 |
 | WI-088 | REQ-009 有界本地诊断导出（PI-GAP-26 本地切片） | 有界 Goal 已批准；[Prepare／待验收](discussions/2026-10-02-wi-088-local-diagnostics.zh.md)。 |
 | WI-089 | REQ-009实际安装版本与有界本地说明（PI-GAP-27） | 2026年10月3日依本次Goal委托代理关闭；实际F5／安装英中、只读／重开分层证据。[验收](archive/2026-10-02-wi-089-version-information.zh.md)。 |
 | WI-079 | REQ-004／009 只读当前上下文与会话累计用量（PI-GAP-03） | 2026-10-03 限定个人 macOS 验收完成，Agent 执行 F5／安装 VSIX；历史分层证据及限制见 [WI-079](archive/2026-10-02-wi-079-team.zh.md). |

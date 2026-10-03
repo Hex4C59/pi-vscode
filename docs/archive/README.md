@@ -86,3 +86,5 @@ Navigation maintenance: WI-075 — [numbered history](2026-09-29-closed-wi-index
 - [Model cycling / 模型轮换 — WI-085](2026-10-02-wi-085-model-cycling.md): actual independent native F5/installed Goal-delegated acceptance; three slices unfinished.
 
 - [Session search / 会话搜索 — WI-086](2026-10-02-wi-086-session-search.md): actual independent F5/installed ten cases and eighteen native captures per lane; Goal-delegated acceptance, two slices unfinished.
+
+- [WI-087 bounded Mermaid acceptance](2026-10-02-wi-087-mermaid.md): independent actual F5/installed diagrams, source/fallback and native visual evidence; Goal-delegated bounded slice only.
