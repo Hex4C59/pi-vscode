@@ -291,7 +291,7 @@ WI-021 于 2026-09-27 UTC 按明确委托关闭已批准的 REQ-004 切片；这
 
 **WI-085 已验收切片（2026-10-02；PI-GAP-14，REQ-002/004）：** 可绑定 native 命令选择当前工作区／runtime session 的仅内存、初始为空轮换子集，轮换上／下一个实际可用模型与思考级别。保留选择器／默认值和忙碌 next-turn 规则；取消保留集合，空／不可用／失效明确提示，以 provider/modelId 为身份，失败不伪报应用。无新持久化、provider 调用、权限或默认快捷键。[WI-085](archive/2026-10-02-wi-085-model-cycling.zh.md)保留干净检查／公开RPC及独立实际F5／安装键盘视觉，本次代理验收非维护者亲测。
 
-**WI-086 批准切片（2026-10-02；PI-GAP-24，REQ-008/009）：** 对完整批准当前项目 catalogue 的既有有界标题／名称／首条消息预览搜索后分页，支持 named-only、recent／oldest／name 排序、稳定 tie 与页 clamp。host 拥有临时已应用 criteria，显式 Search／Enter／Clear、刷新／分页一致；完整枚举限 5000 项／15 秒，超限／不确定扫描明确失败，不静默截断。无全文搜索／全局发现／持久化／自动恢复／资源扩大，保留恢复确认与顺序交接。[WI-086](discussions/2026-10-02-wi-086-session-search.zh.md)拥有待完成证据。
+**WI-086 接受切片（2026-10-02；PI-GAP-24，REQ-008/009）：** 对完整批准当前项目 catalogue 的既有有界标题／名称／首条消息预览搜索后分页，支持 named-only、recent／oldest／name 排序、稳定 tie 与页 clamp。host 拥有临时已应用 criteria，显式 Search／Enter／Clear、刷新／分页一致；完整枚举限 5000 项／15 秒，超限／不确定扫描明确失败，不静默截断。无全文搜索／全局发现／持久化／自动恢复／资源扩大，保留恢复确认与顺序交接。[WI-086](archive/2026-10-02-wi-086-session-search.zh.md)保留干净SDK检查及独立实际F5／安装十案与每lane18图本次代理验收，非维护者亲测。
 
 ### REQ-005 — 停止与恢复
 

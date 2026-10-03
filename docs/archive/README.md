@@ -84,3 +84,5 @@ Navigation maintenance: WI-075 — [numbered history](2026-09-29-closed-wi-index
 - [File completion / 文件补全 — WI-084](2026-10-03-wi-084-file-completion.md): bounded delegated actual F5/installed acceptance; four slices unfinished.
 
 - [Model cycling / 模型轮换 — WI-085](2026-10-02-wi-085-model-cycling.md): actual independent native F5/installed Goal-delegated acceptance; three slices unfinished.
+
+- [Session search / 会话搜索 — WI-086](2026-10-02-wi-086-session-search.md): actual independent F5/installed ten cases and eighteen native captures per lane; Goal-delegated acceptance, two slices unfinished.
