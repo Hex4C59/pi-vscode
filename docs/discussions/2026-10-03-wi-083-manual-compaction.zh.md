@@ -55,3 +55,15 @@ Native F5／安装 VSIX 交互、Cancel／Stop／键盘和视觉验收仍缺，�
 ## PI02关闭后的native Prepare恢复 — 10月3日
 
 资源报告native F5／安装隔离已验证，旧绑定阻碍段落属历史。人类正常退出许可仅正常退出日常Code，不无关保存／丢弃／强杀或越过确认。当前WI083 native焦点保留既有范围、公开compact／abort所有权及真实RPC证据。native fixture方案仍调查，非已验证事实：复用合成loopback／provider／session API，内存隔离Code及审查命令／进度流程。harness代码前须确认模型配置／空闲合成历史及有界Cancel／Stop／完成观察，记录失败、先测试组合与工件计划；不推导真实模型／凭据或产品变更授权。
+
+### 原生fixture Prepare——公开配置与失败方式
+
+安装的pi 0.86.1 SettingsManager读取`defaultProvider`／`defaultModel`；既有真实RPC fixture已证实`models.json`的`queue-loopback`／`queue-fixture`、合成inline key及loopback OpenAI-completions端点。仅在全新隔离agent目录使用公开配置；两个合成历史轮次从真实composer输入，不操作会话文件。复用有界loopback fixture，摘要请求等待明确的本地release标记；记录合成请求及provider实际关闭。这是验证工具，不改变产品压缩算法。
+
+工具代码前列失败方式：继承真实HOME／auth／环境、访问系统秘密存储、意外多工作区、安装验收误用开发产品、假executable冒充原生、缺失／提前review标记、请求超出既有1 MiB、未释放请求、子进程／driver失败或超时却报通过、未观察modal／progress结果、英中控件不可见、新源码与旧包身份混淆。先写F5／安装launcher子进程契约，验证内存秘密、禁用账户扩展、合成模型／默认设置及无完整review时明确失败。真实观察保留截图／AX、自有进程身份、普通UI操作、请求和逐案例review；composition仅证明隔离及失败诚实。确认关闭／输入取消不得发请求；历史过少显示失败；成功保留literal指令；hold压缩展示progress、Cancel／Stop及busy协调。还须review草稿保留与双语。不扩大真实账户、付费调用、资源授权或读取raw session。
+
+原生driver只能focus真实chat并等待本地review记录，不替换window API、发送消息、批准资源或推断视觉验收。review-complete结果本身不是代理验收；关闭前仍须候选检查／包及真实native工件。干净`2d4d591`真实RPC重跑三案例与子进程关闭通过（`dist/goal-eight/wi083/native-prepare-candidate/`），仍仅RPC证据。
+
+### 原生工具开发（非原生验收）
+
+先写launcher子进程契约，因新harness缺失而失败；假executable两lane随后通过。再先写安装失败契约，复现provider实际关闭记录缺失，扩大自有资源cleanup边界后全部三个契约通过。driver不替换production API，只focus chat并要求十项明确review及工件引用；完成标为`review-complete`，不推断视觉验收。wrapper额外要求实际合成历史／摘要请求及literal自定义指令。loopback请求全部等待本地release标记，安装失败也记录自有provider关闭。仅隔离测试settings为受控验证禁用自动压缩，产品默认／自动压缩／重试不变。工件`dist/goal-eight/wi083/native-harness/{red.log,install-cleanup-red.log,green.log}`仅合成工具证据，不是F5／安装验收。
