@@ -7,7 +7,7 @@
 - 原文版本：Uncommitted baseline
 - 最近同步：2026-10-03
 - Type: Reference
-- Status: Blocked
+- Status: Active
 - Created: 2026-10-03
 - Authority: PI-GAP-04 有界 Prepare／Build 记录
 
@@ -50,3 +50,8 @@ Adapter 复用公开 compact，独立命令占用到实际 response；manual com
 Prepare／记录提交 `2b46d72`；实现 `77ca3c22015cc731de69aca19a5cf69b6233bb2d`。Task-candidate 基线 `bc1a2d7b9c5174434036445db6c5f85624072a72`，PR head 不适用；独立干净本地 checkout 执行 compile、lint、1229 项测试、docs:verify、真实 pi 压缩 probe、既有队列 RPC 回归和打包，全部通过；wrapper 返回 0，检查前后源码状态为空。证据复制至 dist/goal-eight/wi083/candidate-evidence/，身份见 candidate-identity.json。复用 WI-082 的自有干净 checkout；此前证据保留原身份，但路径现在指向较新候选。挂载历史工件仅用于链接验证。
 
 Native F5／安装 VSIX 交互、Cancel／Stop／键盘和视觉验收仍缺，受 WI-082 记录的隔离 Code CUA 绑定阻碍影响。不宣称代理验收或关闭。最小解锁：安全操作真实隔离 Code 窗口，在无真实账户或付费调用下执行记录中的原生验收。ACTIVE 保留未完成项；串行推进独立 PI-GAP-06／WI-084，须先完整 Prepare 再 Build。
+
+
+## PI02关闭后的native Prepare恢复 — 10月3日
+
+资源报告native F5／安装隔离已验证，旧绑定阻碍段落属历史。人类正常退出许可仅正常退出日常Code，不无关保存／丢弃／强杀或越过确认。当前WI083 native焦点保留既有范围、公开compact／abort所有权及真实RPC证据。native fixture方案仍调查，非已验证事实：复用合成loopback／provider／session API，内存隔离Code及审查命令／进度流程。harness代码前须确认模型配置／空闲合成历史及有界Cancel／Stop／完成观察，记录失败、先测试组合与工件计划；不推导真实模型／凭据或产品变更授权。

@@ -3,7 +3,7 @@
 English | [中文](2026-10-03-wi-083-manual-compaction.zh.md)
 
 - Type: Reference
-- Status: Blocked
+- Status: Active
 - Created: 2026-10-03
 - Authority: bounded PI-GAP-04 Prepare/Build record
 
@@ -46,3 +46,8 @@ The first runtime probe assumed custom instructions occur in every summary reque
 Prepare/records commit `2b46d72`; implementation `77ca3c22015cc731de69aca19a5cf69b6233bb2d`. Task-candidate base `bc1a2d7b9c5174434036445db6c5f85624072a72`, PR head not applicable; an independently clean local checkout ran compile, lint, 1229 tests, docs:verify, the actual-pi compaction probe, existing queue RPC regression and packaging. All passed; wrapper exit 0 and before/after source status empty. Evidence copied to dist/goal-eight/wi083/candidate-evidence/, identity in candidate-identity.json. The owned clean checkout was reused from WI-082; that earlier snapshot's saved evidence retains its original identity, but its path now points to this newer candidate. Historical mounted artifacts are link-validation dependencies only.
 
 Native F5/installed-VSIX interaction, Cancel/Stop/keyboard and visual acceptance remain missing under the same isolated-Code CUA binding blocker recorded in WI-082. No delegated acceptance or closure is claimed. Minimum unlock: safely operate a real isolated Code window and execute the documented native acceptance without real accounts or paid calls. Preserve this unfinished item in ACTIVE; serially proceed to independent PI-GAP-06 / WI-084, with its own complete Prepare before Build.
+
+
+## Resumed native Prepare after PI02 closure — October 3
+
+Resource-report native F5/installed isolation now verified; old binding-blocker paragraphs are historical. Human normal-quit permission applies only graceful daily-Code exit with no unrelated save/discard/force-kill or passing confirmation. Current WI083 native focus preserves all existing scope, public compact/abort ownership and real-RPC evidence. Native fixture design is still being investigated, not verified: reuse synthetic loopback/provider/session APIs, memory-only isolated Code state and reviewed command/progress workflow. Before harness code, confirm model configuration/idle synthetic history setup and bounded Cancel/Stop/completion observations; record failures, test-first composition and artifact plan. No real model/credential authorization or product change inferred.

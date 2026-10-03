@@ -4,33 +4,33 @@
 
 ## 正在做（WIP=1）
 
-### WI-082 — PI-GAP-02 实际资源加载报告原生验收
+### WI-083 — PI-GAP-04 手动压缩原生验收
 
 | 字段 | 内容 |
 |---|---|
-| **ID** | WI-082 |
-| **阶段** | Build（Prepare 完成；原生验收待安全隔离窗口） |
+| **ID** | WI-083 |
+| **阶段** | Build（应用Prepare完成；原生fixture Prepare调查中） |
 | **Gate ID** | none |
 | **Decision** | none |
-| **PRD 判定** | 用户可见：REQ-004／009 加载报告 |
+| **PRD 判定** | 用户可见：REQ-004／005／009 手动压缩 |
 
 #### 目标与范围
 
-严格区分目录登记／定义加载与正文／文件实际加载，无法证实标未知；不读取源码／上下文正文，不新增加载权限。[Prepare与恢复记录](docs/discussions/2026-10-03-wi-082-resource-report.zh.md)维护现状与失败方式。
+复用公开compact，处理运行／完成／失败／取消及忙碌；提示有损、保留自动压缩与重试。[Prepare与恢复记录](docs/discussions/2026-10-03-wi-083-manual-compaction.zh.md)维护失败方式及证据。
 
 #### 方案与架构核对
 
-复用当前身份的公开get_commands快照，宿主有界原生只读报告；清单计数独立。上游runtime、信任及持久化所有权不变，不放宽签名／OS安全或访问用户钥匙串。
+既有宿主原生确认／可取消progress，adapter占用到实际响应，Stop复用clear_queue／abort及结算。原生fixture仅隔离合成loopback、空凭据／内存SecretStorage；不改上游／权限／资源／持久化。方案调查未冒充验证。
 
 #### 验收
 
-已有提交／干净候选／实际RPC；须完成实际macOS F5与安装VSIX英中、键盘只读、关闭／刷新及有界driver报告。本次授权下代理验收与维护者亲自测试分开；失败、模拟及native证据分留。
+须实际macOS F5与安装VSIX的有损提示、指令／取消、运行／完成／失败、Cancel／Stop／忙碌、英中键盘与视觉工件。本次授权下代理验收非维护者亲自测试；模拟／真实RPC／F5／安装分记。
 
 #### 范围外与批准边界
 
-[八项Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界批准仍生效。04／06／14／21／24／26本地native验收未完成；26上传／敏感收集仍未批准。其他任务、额外平台、升级、下载／市场或公开发布不在目标内。
+[八项Goal](docs/discussions/2026-10-03-eight-gap-goal.zh.md)有界授权仍生效；不付费模型／真实账户、扩平台或发布，26上传／敏感收集未批准。日常Code仅按新增授权正常退出，禁止强杀／无关自动保存丢弃，未保存／任务确认时停手。
 
-**进度与下一步：** Goal因连续三轮安全隔离绑定缺口标blocked，Mac锁屏已解除，但非fixture Code9702仍在；旧Electron-only清单漏掉实际MacOS/Code，缺席判断已纠正。须保存关闭日常Code或安全macOS窗口／PID绑定，再复核自有进程与fixture身份完成资源英中／只读／刷新原生验收；不退出用户app、不重置钥匙串。已有检查及失败证据保留，七项native仍未完成。
+**进度与下一步：** 安全隔离窗口已可用，自有资源测试均终止。手动压缩实现77ca3c2、干净候选／真实RPC证据仍保留；先完成native合成模型／历史／有界Cancel与Stop方案调查，再测试先行编写harness。六项native验收仍未完成，Goal未complete。
 
 ## 待完成
 
@@ -46,7 +46,6 @@
 | PI-GAP-21／原生验收待完成 | Mermaid 已实现并提交，F5／安装 VSIX 未验收。 | [WI-087](docs/discussions/2026-10-02-wi-087-mermaid.zh.md)：4eb8d38 干净候选1255／文档／打包、实际库严格CSP英中18图通过；须隔离 native，未代理验收或关闭。 |
 | PI-GAP-14／原生验收待完成 | 模型／思考轮换已实现并提交，F5／安装 VSIX 未验收。 | [WI-085](docs/discussions/2026-10-02-wi-085-model-cycling.zh.md)：66ba52b 干净候选 compile／lint／1242／文档／真实 pi RPC／打包通过；须隔离 native 多选／键盘／英中证据，未代理验收或关闭。 |
 | PI-GAP-06／原生验收待完成 | 文件补全已实现并提交；F5／安装 VSIX 未验收。 | [WI-084](docs/discussions/2026-10-03-wi-084-file-completion.zh.md)：干净候选 fa1d18d compile／lint／1235 检查／文档／打包通过；需可操作隔离 Code 窗口验证 native picker／键盘／附件流程，未代理验收或关闭。 |
-| PI-GAP-04／原生验收待完成 | 手动压缩已实现并提交；F5／安装 VSIX 仍未验收。 | [WI-083](docs/discussions/2026-10-03-wi-083-manual-compaction.zh.md)：干净候选 compile／lint／1229 测试／真实 pi／队列回归／打包通过，原生窗口隔离参数已修，交互待验证；须真实交互、Cancel／Stop／键盘／视觉证据后代理验收，未关闭。 |
 | PI-GAP-01／优先 | 运行中追加指令的剩余范围：附件与 slash／模板展开。 | 剩余输入方式须另定具体边界；保留 steering／follow-up 区分、取回、Stop、失败与恢复不丢失或重复发送的要求。 |
 | PI-GAP-05／后续 | 图片输入：选择／粘贴／拖入图片并发送给支持的模型。 | 批准具体输入方式与格式／数量／大小边界；预览、移除、错误恢复；不支持图片的模型不静默降级，明确历史与敏感内容范围。 |
 | PI-GAP-07／后续 | 会话探索：tree、fork、clone、书签，分片批准。 | 公开会话 API；分支可辨识，切换前处理活动任务与重新授权，失败可恢复；会话分支不是代码回滚，不隐式恢复文件或承诺并发会话。 |

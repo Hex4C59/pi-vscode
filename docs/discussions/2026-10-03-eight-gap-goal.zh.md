@@ -75,3 +75,10 @@ Goal已恢复ACTIVE，现重新开始blocked审计。native清单返回apps且�
 
 
 恢复后安全绑定audit3（10月3日）：上一turn无进展，非verified wait。重读ACTIVE／WI082／Goal与Git；精确执行路径清单仍确认非fixture Code9702，无自有native job。同一安全隔离绑定条件连续三恢复Goal turn存在，无独立批准实现可替代七项缺失native验收。Goal应标blocked而非complete；PI27关闭、全部实现提交／证据及用户修改保留。最小解锁仍为用户保存关闭非fixture Code或工具安全macOS窗口／PID绑定，不操作／退出用户实例或放宽OS安全；后续resume重新审计。
+
+
+## 正常退出授权、PI02关闭及串行WI083交接 — 10月3日
+
+人类授权所提日常Code正常退出策略：禁止强杀、无关自动保存／丢弃、越过未保存／任务确认。实际Cmd+Q退出9702无该类提示，三个原Git修改不变。安全隔离native绑定现可用；wrong-ref误launcher及实际审查超时失败保留。有界审查时间修复9d7a3f8干净compile／lint1271／文档／打包通过；真实独立F5／安装资源driver现均passed，英中键盘内容不变／实时刷新／中文关闭重开及实际安装目录／SHA已审阅。PI02按本Goal代理委托关闭归档16e786d，不是维护者亲自测试。**仅2/8关闭（PI02、PI27），六项未完**，26上传未批准。Goal工具保存的blocked不代表当前隔离仍不可用；如实记录授权与继续执行，不假称工具状态已变。
+
+当前WIP转WI083手动压缩native验收。两资源job终止、自有Code进程无；不查询死app binding。本Goal正常退出授权继续保留，UI前存活／完整fixture窗口检查及有界审查时限保持。既有WI083 Build／公开RPC证据保留，先调查并记录native合成loopback fixture Prepare再编写harness；无付费调用／真实账户。
