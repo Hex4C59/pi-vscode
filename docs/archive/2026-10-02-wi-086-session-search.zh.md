@@ -4,7 +4,7 @@
 
 - 翻译状态：Machine Draft
 - 权威原文：[2026-10-02-wi-086-session-search.md](2026-10-02-wi-086-session-search.md)
-- 原文版本：d654011
+- 原文版本：f0d13c7
 - 最近同步：2026-10-03
 - Type: Discussion
 - Status: Accepted
