@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import type { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 import type { PromptInput } from "../../../extension/contracts/index.js";
@@ -30,6 +31,20 @@ export function serializePromptFrame(id: string, input: PromptInput): string {
   const frame = serializeJsonLine({ id, type: "prompt", message });
   if (Buffer.byteLength(frame, "utf8") > 8 * 1024 * 1024) throw new Error("frame-too-large");
   return frame;
+}
+
+/** Expanded body and frozen context are encoded together, so neither can become another slash command. */
+export function encodeQueuedMessage(input: PromptInput, expandedBody = input.body): string {
+  if (!input.body.trim() || input.body.length > 8000 || !expandedBody.trim()) throw new Error("invalid-source");
+  // Reuse ordinary prompt validation for native attachments without applying its body limit to expansion.
+  serializePromptFrame("queued-validation", input);
+  const transformed = expandedBody !== input.body || input.body.trimStart().startsWith("/");
+  const text = input.kind === "enriched" || transformed
+    ? "User task with explicit untrusted file context. JSON data follows:\n"
+      + JSON.stringify({ queueInputId: randomBytes(16).toString("hex"), body: expandedBody, attachments: input.kind === "enriched" ? input.attachments : [] })
+    : input.body;
+  if (Buffer.byteLength(text, "utf8") > 128 * 1024) throw new Error("capacity");
+  return text;
 }
 
 /** LF-only JSONL framing (see upstream pi RPC docs). */

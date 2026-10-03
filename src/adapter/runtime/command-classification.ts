@@ -7,7 +7,7 @@ const COMMAND_KEYS = new Set(["name", "description", "source", "location", "path
 export type { CommandCatalogue, CommandCatalogueRow };
 
 /** Public pi SourceInfo is host-only; only its non-temporary scope is projected. */
-function commandSourceInfo(value: unknown): { path: string; location?: "user" | "project" } | undefined {
+export function commandSourceInfo(value: unknown): { path: string; location?: "user" | "project" } | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return;
   const info = value as Record<string, unknown>;
   const allowed = new Set(["path", "source", "scope", "origin", "baseDir"]);
@@ -90,4 +90,20 @@ export function dispatchedExtensionCommand(input: PromptInput, names: ReadonlySe
   const separator = text.indexOf(" ");
   const name = text.slice(1, separator < 0 ? undefined : separator);
   return names.has(name) ? name : undefined;
+}
+
+/** Host-only resource map from the same fully validated presentation catalogue. */
+export function queuedCommandResources(data: unknown): ReadonlyMap<string, { source: "prompt" | "skill"; path: string }> {
+  const resources = new Map<string, { source: "prompt" | "skill"; path: string }>();
+  if (presentCommandCatalogue(data).status !== "ready" || !data || typeof data !== "object") return resources;
+  const commands = (data as { commands: unknown[] }).commands;
+  for (const item of commands) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const metadata = commandSourceInfo(row.sourceInfo);
+    const resourcePath = metadata?.path ?? row.path;
+    if ((row.source === "prompt" || row.source === "skill") && typeof row.name === "string"
+      && typeof resourcePath === "string" && resourcePath.length <= 4096) resources.set(row.name, { source: row.source, path: resourcePath });
+  }
+  return resources;
 }

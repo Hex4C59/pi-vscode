@@ -6,6 +6,7 @@ import type { readPiStartupModelArg } from "./piStartupModel.js";
 /** Explicit process strategy; omitted startup probes use production defaults. */
 export type PiRpcRuntimeEnvironment = {
   process: RuntimeProcess;
+  queuedInputWorkerPath?: string;
   startupModel?: typeof readPiStartupModelArg;
   cliPath?: typeof resolvePiCliPath;
   gateAccess?: typeof access;

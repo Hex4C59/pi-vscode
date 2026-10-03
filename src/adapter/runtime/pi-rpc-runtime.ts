@@ -1,7 +1,8 @@
+import { expandQueuedCommand } from "./rpc/queued-input-expansion.js";
 import { sessionUsageIdentity, sessionUsageNumbers } from "./session-usage.js";
 import { renamedConversation, validRenameInput, type OpenedConversation } from "./rpc/session-rename.js";
 import { createExtensionFeedback } from "./extension-feedback.js";
-import { extensionCommandNames, dispatchedExtensionCommand, presentCommandCatalogue } from "./command-classification.js";
+import { extensionCommandNames, dispatchedExtensionCommand, presentCommandCatalogue, queuedCommandResources } from "./command-classification.js";
 import { createInteractionWriter } from "./rpc/interaction-writer.js";
 import { createRpcDialogs } from "./rpc/rpc-dialogs.js";
 import { createRpcFrames, sameGateCwd } from "./rpc-frames.js";
@@ -17,7 +18,7 @@ import { redactCredentialLikeText, type GateCall } from "../../extension/contrac
 import { sameNativePath, controlledEnvironment, CONTROLLED_TOOLS } from "../index.js";
 import type { Readable } from "node:stream";
 
-import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame } from "./rpc/jsonl.js";
+import { attachJsonlLineReader, serializeJsonLine, serializePromptFrame, encodeQueuedMessage } from "./rpc/jsonl.js";
 import { parseQueuedTextSnapshot } from "./rpc/queued-text.js";
 import { prepareQueuedTextSend } from "./rpc/queued-text-send.js";
 import { resolvePiCliPath } from "./rpc/pi-rpc-probe.js";
@@ -96,6 +97,8 @@ class RpcRuntime {
   private untouchedConversation: boolean;
   private commandNames: ReadonlySet<string>;
   private commandCatalogue: CommandCatalogue;
+  private queuedResources = new Map<string, { source: "prompt" | "skill"; path: string }>();
+  private queueExpansion: AbortController | undefined;
   private gateId: string;
   private cwd: string;
   private gateReady: boolean;
@@ -284,6 +287,7 @@ class RpcRuntime {
   };
 
   private readonly release = async (uncertain = false, failure: "disconnected" | "protocol-error" = "disconnected"): Promise<void> => {
+    this.queueExpansion?.abort(); this.queueExpansion = undefined; this.queuedResources.clear();
     const owned = this.child;
     const reason = this.occupancy.classifyRelease({ forcedUncertain: uncertain, sessionActive: this.activeSession !== 0 });
     const queuedObserver = this.queuedSend?.connection === owned ? this.queuedSend : undefined;
@@ -457,6 +461,7 @@ class RpcRuntime {
       this.commandNames = names;
     }
     this.commandCatalogue = reply.success ? presentCommandCatalogue(reply.data) : { status: "unavailable" };
+    this.queuedResources = new Map(reply.success ? queuedCommandResources(reply.data) : []);
     return true;
   };
 
@@ -749,11 +754,35 @@ class RpcRuntime {
     });
   };
 
+  private readonly encodeQueuedInput: NonNullable<PiRuntimeLifecycle["encodeQueuedInput"]> = async (input, session) => {
+    if (session !== this.activeSession || !session || !this.occupancy.agentRunning() || this.occupancy.isStopping()
+      || this.queueExpansion) return { ok: false, code: "runtime-unavailable" };
+    if (!input.body.trim() || input.body.length > 8000) return { ok: false, code: "invalid-text" };
+    let body = input.body;
+    const owned = this.child;
+    if (body.trimStart().startsWith("/")) {
+      const name = body.trimStart().slice(1).split(/\s/)[0];
+      const resource = this.queuedResources.get(name);
+      if (!resource) return { ok: false, code: "command-not-queueable" };
+      const operation = this.queueExpansion = new AbortController();
+      try {
+        const result = await expandQueuedCommand(this.environment.queuedInputWorkerPath ?? "", { ...resource, body, name }, operation.signal);
+        if (owned !== this.child || session !== this.activeSession || operation.signal.aborted) return { ok: false, code: "runtime-unavailable" };
+        if (!result.ok) return result;
+        body = result.text;
+      } finally { if (this.queueExpansion === operation) this.queueExpansion = undefined; }
+    }
+    if (owned !== this.child || session !== this.activeSession || !this.occupancy.agentRunning() || this.occupancy.isStopping()) return { ok: false, code: "runtime-unavailable" };
+    try { return { ok: true, text: encodeQueuedMessage(input, body) }; }
+    catch (error) { return { ok: false, code: error instanceof Error && error.message === "capacity" ? "capacity" : "invalid-text" }; }
+  };
+
   private readonly prepareQueuedText: NonNullable<PiRuntimeLifecycle["prepareQueuedText"]> = (text, mode, session) => {
     if (this.replies.exhausted()) throw new Error("Runtime request identifiers exhausted. Restart required.");
     const requestId = this.replies.rpcId(session);
     const command = mode === "steering" ? "steer" : "follow_up";
-    const valid = typeof text === "string" && text.trim().length > 0 && text.length <= 8000
+    const valid = typeof text === "string" && text.trim().length > 0 && Buffer.byteLength(text, "utf8") <= 128 * 1024
+      && (text.length <= 8000 || text.startsWith("User task with explicit untrusted file context. JSON data follows:\n"))
       && (mode === "steering" || mode === "follow-up");
     let owned: RuntimeLink | null = null;
     return prepareQueuedTextSend({ requestId, command,
@@ -864,6 +893,7 @@ class RpcRuntime {
   private readonly setApprovalHandler: NonNullable<PiRuntimeLifecycle["setApprovalHandler"]> = (handler) => { this.approvalHandler = handler; };
 
   private readonly abortTask: NonNullable<PiRuntimeLifecycle["abortTask"]> = async (onQueueCleared) => {
+    this.queueExpansion?.abort();
     const session = this.activeSession;
     if (!session || this.queueControlOperation?.session === session) return { ok: false, detail: this.environment.process.describeFailure("stop-unconfirmed") };
     const operation = this.queueControlOperation = { session };
@@ -941,6 +971,7 @@ class RpcRuntime {
       recoverOwnedRuntime: this.recoverOwnedRuntime,
       preparePrompt: this.preparePrompt,
       prepareQueuedText: this.prepareQueuedText,
+      encodeQueuedInput: this.encodeQueuedInput,
       recallQueuedText: this.recallQueuedText,
       invalidateInteractions: this.invalidateInteractions,
       setFeedbackHandler: this.setFeedbackHandler,

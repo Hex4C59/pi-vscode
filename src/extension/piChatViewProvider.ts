@@ -313,7 +313,9 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     return new DraftSubmission(this.api, this.runtime, refresh => {
       if (refresh && !this.disposed) this.refresh();
       return { generation: this.state.generation, session: this.runtimeSession, viewId: this.state.viewId,
-        view: this.view, cwd: this.state.folder?.path, disposed: this.disposed, ready: this.state.runtime === "ready",
+        view: this.view, queueEligible: this.profilePhase === "idle" && this.interactions.snapshot().phase === "idle" && !this.sessionTransitionBusy()
+          && this.state.status === "eligible" && this.state.runtime === "ready" && !this.state.busy && this.state.chatBusy && !this.models.snapshot.modelBusy && !this.stoppingTask,
+        cwd: this.state.folder?.path, disposed: this.disposed, ready: this.state.runtime === "ready",
         eligible: this.profilePhase === "idle" && this.interactions.snapshot().phase === "idle" && !this.sessionTransitionBusy() && this.state.status === "eligible" && this.state.runtime === "ready"
           && !this.state.busy && !this.state.chatBusy && !this.models.snapshot.modelBusy && !this.stoppingTask };
     }, message => { if (this.view && !this.disposed) this.post(this.view, message); }, {
@@ -357,7 +359,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
 
   private ensureQueueSession(): QueuedTextSession | undefined {
     const session = this.runtimeSession;
-    if (!session || this.state.runtime !== "ready") { this.queue = undefined; return undefined; }
+    if (!session || this.state.runtime !== "ready") return this.state.runtime === "error" ? this.queue : undefined;
     if (!this.queue || this.queue.runtimeSession !== session) {
       this.queue = new QueuedTextSession(this.runtime, this.draft, session);
     }
@@ -435,7 +437,6 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     this.publishSessions();
     this.tools.reset();
     this.draft.runtimeLost();
-    this.queue = undefined;
     this.stoppingTask = false;
     this.models.cancelPending();
     this.promptToken++;
@@ -1139,7 +1140,7 @@ export class PiChatViewProvider implements vscode.WebviewViewProvider, vscode.Di
     const draftOperation = this.draft.handle(view, message);
     if (draftOperation) { await draftOperation; return; }
     const queueOperation = this.ensureQueueSession()?.handle(message);
-    if (queueOperation) { await queueOperation; this.draft.publish(); this.publishQueueState(true); this.publish(); return; }
+    if (queueOperation) { this.publishQueueState(true); await queueOperation; this.draft.publish(); this.publishQueueState(true); this.publish(); return; }
     if (message.type === "searchSavedSessions") { await this.searchSavedSessions({ query: message.query, namedOnly: message.namedOnly, sort: message.sort }); return; }
     if (message.type === "getSavedSessions") { await this.listSavedSessions(message.page); return; }
     if (message.type === "newConversation" || message.type === "resumeConversation") { await this.changeConversation(view, message.type === "resumeConversation" ? message.id : undefined); return; }

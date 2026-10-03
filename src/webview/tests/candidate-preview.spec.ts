@@ -1259,13 +1259,13 @@ test("candidate Chinese context feedback translates capacity state while preserv
   assert.equal(h.get<HTMLTextAreaElement>('textarea').value, "中文原始草稿");
 });
 
-test("candidate plus menu exposes retained history during streaming without enabling attachment mutation", async t => {
+test("candidate plus menu exposes retained history during streaming with queue-safe attachment controls", async t => {
   const h = await candidateHarness(t, "long-history");
   await h.input("History menu while streaming"); await h.click(send);
   assert.equal(h.get<HTMLButtonElement>('button[aria-label="Add context"]').disabled, false);
   await h.click('button[aria-label="Add context"]');
-  assert.equal(h.get<HTMLButtonElement>('[role="menuitem"][aria-label="Add file"]').disabled, true);
-  assert.equal(h.get<HTMLButtonElement>('[role="menuitem"][aria-label="Add selection"]').disabled, true);
+  assert.equal(h.get<HTMLButtonElement>('[role="menuitem"][aria-label="Add file"]').disabled, false);
+  assert.equal(h.get<HTMLButtonElement>('[role="menuitem"][aria-label="Add selection"]').disabled, false);
   await h.click('[role="menuitem"][aria-label="Attachment history"]');
   assert.match(h.get('[aria-label="Retained attachment history"]').textContent ?? "", /Snapshots 113–128 of 128/);
   assert.equal(h.get<HTMLButtonElement>(stop).disabled, false);

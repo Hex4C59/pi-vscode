@@ -6,6 +6,8 @@ VS Code extension for the [pi](https://github.com/earendil-works/pi) coding agen
 
 This independently maintained project is open source under [MIT](LICENSE). pi is a separate upstream product.
 
+- Running-task Steer and Follow up now support existing text attachment snapshots and enabled skill/prompt-template commands with arguments. Explicit recall restores originals without sending; uncertain delivery never retries automatically. Queues retain at most 32 records / 256 KiB, with a 128 KiB encoded-input limit (smaller than ordinary draft attachment limits). Built-in/extension/unknown slash commands are not queueable. [WI-091 evidence and limits](docs/archive/2026-10-03-wi-091-queued-inputs.md).
+
 ## Current status
 
 The extension has a React/TypeScript sidebar for the existing scoped workspace setup, draft/streaming, model/thinking, activity/approval, Stop and bounded mixed attachments (up to 20 items / 1 MiB UTF-8): whole files and fixed editor selections, with explicit confirmation of latest whole-file contents or an old selection snapshot after source changes. The [PRD](docs/product-requirements.md) is **Accepted for personal-use macOS local VS Code installed VSIX**, with standing non-goals excluded. The approved implementation and remaining macOS verification are complete; [`ACTIVE.md`](ACTIVE.md) owns current work, and the [macOS verification record](docs/archive/2026-09-30-macos-verification-acceptance.md) records acceptance evidence and limits. Acceptance was agent-delegated, not personal maintainer testing.

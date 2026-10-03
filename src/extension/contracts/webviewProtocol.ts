@@ -106,12 +106,13 @@ export type AttachmentPreviewMessage = HostEnvelope & { type: "attachmentPreview
 );
 export type QueuedTextErrorCode =
   | "busy" | "stale" | "capacity" | "invalid-text" | "attachments"
+  | "source-changed" | "command-unavailable" | "command-not-queueable"
   | "runtime-unavailable" | "unconfirmed" | "unavailable" | "draft-not-empty";
 export type QueuedPendingEntry =
-  | { attribution: "local" | "external" | "unknown"; reusable: true; text: string }
+  | { attribution: "local" | "external" | "unknown"; reusable: true; text: string; attachmentCount?: number }
   | { attribution: "local" | "external" | "unknown"; reusable: false };
 export type QueuedRecoveryEntry =
-  | { id: string; mode: "steering" | "follow-up"; status: "recalled"; text: string }
+  | { id: string; mode: "steering" | "follow-up"; status: "recalled" | "uncertain"; text: string; attachmentCount?: number }
   | { id: string; mode: "steering" | "follow-up"; status: "unavailable" };
 export type QueuedTextStateMessage = HostEnvelope & {
   type: "queuedTextState";

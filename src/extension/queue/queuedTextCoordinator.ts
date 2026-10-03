@@ -1,9 +1,11 @@
+import type { QueuedDraftAdmission, QueuedDraftRetention } from "../draft/index.js";
 import type { PiRuntimeLifecycle, QueuedTextSnapshot, QueuedTextStateMessage, QueuedTextErrorCode, QueuedRecoveryEntry } from "../contracts/index.js";
 import { QueuedTextLedger, type QueuedTextSendOutcome } from "./queuedTextLedger.js";
 
 type QueueMode = "steering" | "follow-up";
 type Phase = "idle" | "submitting" | "recalling" | "stopping";
-type DraftQueueAdmission = {
+export type DraftQueueAdmission = {
+  prepareQueuedInput?(expectedRevision: number): Promise<QueuedDraftAdmission>;
   admitQueuedText(expectedRevision: number):
     | { kind: "ok"; text: string; commitAttempt: () => void }
     | { kind: "refused"; reason: "stale" | "busy" | "invalid-text" | "attachments" };
@@ -12,7 +14,7 @@ type DraftQueueAdmission = {
     | { kind: "refused"; reason: "stale" | "busy" | "draft-not-empty" | "invalid-text" };
 };
 
-export type QueueChatResult = QueuedTextSendOutcome | { kind: "refused"; reason: "busy" | "stale" | "invalid-text" | "attachments" | "capacity" | "runtime-unavailable" };
+export type QueueChatResult = QueuedTextSendOutcome | { kind: "refused"; reason: "busy" | "stale" | "invalid-text" | "attachments" | "capacity" | "runtime-unavailable" | "source-changed" | "command-unavailable" | "command-not-queueable" };
 export type QueueControlResult =
   | { kind: "recalled"; snapshot: QueuedTextSnapshot }
   | { kind: "stopped"; snapshot: QueuedTextSnapshot | null; abortOk: boolean }
@@ -37,7 +39,7 @@ export class QueuedTextCoordinator {
   stateProjection(envelope: { version: 3; generation: number; viewId: string }): QueuedTextStateMessage {
     const recovery: QueuedRecoveryEntry[] = this.ledger.recoveryProjection().map(item => (
       item.reuse === "reusable" && item.text !== undefined
-        ? { id: item.id, mode: item.mode, status: "recalled", text: item.text }
+        ? { id: item.id, mode: item.mode, status: item.uncertain ? "uncertain" : "recalled", text: item.text, ...(item.attachmentCount ? { attachmentCount: item.attachmentCount } : {}) }
         : { id: item.id, mode: item.mode, status: "unavailable" }
     ));
     return {
@@ -53,16 +55,18 @@ export class QueuedTextCoordinator {
 
   async queueChat(draftRevision: number, mode: QueueMode): Promise<QueueChatResult> {
     if (this.mutation !== "idle") return this.refuseChat("busy");
-    const admitted = this.draft.admitQueuedText(draftRevision);
-    if (admitted.kind === "refused") return this.refuseChat(admitted.reason);
     this.mutation = "submitting";
     this.lastError = null;
     try {
-      const result = await this.ledger.send(admitted.text, mode, () => admitted.commitAttempt());
+      const admitted: Extract<QueuedDraftAdmission, { kind: "refused" }> | { kind: "ok"; text: string; commitAttempt(): void; isCurrent?: () => boolean; retention?: QueuedDraftRetention } = this.draft.prepareQueuedInput ? await this.draft.prepareQueuedInput(draftRevision) : this.draft.admitQueuedText(draftRevision);
+      if (admitted.kind === "refused") return this.refuseChat(admitted.reason);
+      if (admitted.isCurrent && !admitted.isCurrent()) return this.refuseChat("stale");
+      const retention = admitted.retention;
+      const result = await this.ledger.send(admitted.text, mode, () => admitted.commitAttempt(), retention);
       if (result.kind === "refused") this.lastError = result.reason;
       return result;
     } finally {
-      this.mutation = "idle";
+      if (this.mutation === "submitting") this.mutation = "idle";
     }
   }
 
@@ -94,7 +98,7 @@ export class QueuedTextCoordinator {
   }
 
   async stopWithRecall(): Promise<QueueControlResult> {
-    if (this.mutation !== "idle") return this.refuseControl("busy");
+    if (this.mutation !== "idle" && !(this.mutation === "submitting" && this.draft.prepareQueuedInput)) return this.refuseControl("busy");
     if (!this.runtime.abortTask) return this.refuseControl("runtime-unavailable");
     const reserved = this.ledger.reserveClear(this.ledger.observedPending());
     if (!reserved.ok) return this.refuseControl("capacity");
@@ -123,7 +127,7 @@ export class QueuedTextCoordinator {
     if (this.mutation !== "idle") return this.refuseRecovered("busy");
     const peeked = this.ledger.peekRecovered(id);
     if (peeked.kind === "refused") return this.refuseRecovered(peeked.reason);
-    const applied = this.draft.applyRecoveredText(draftRevision, peeked.text);
+    const applied = peeked.retention ? peeked.retention.restore(draftRevision) : this.draft.applyRecoveredText(draftRevision, peeked.text);
     if (applied.kind === "refused") return this.refuseRecovered(applied.reason);
     this.ledger.discardRecovered(id);
     this.lastError = null;

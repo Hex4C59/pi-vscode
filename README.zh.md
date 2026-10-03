@@ -11,6 +11,8 @@
 
 本项目独立维护，按 [MIT](LICENSE) 开源。pi 是独立的上游产品。
 
+- 运行中的引导／跟进现支持既有文本附件快照及已启用的 skill／提示模板参数。显式取回恢复原输入而不发送；不确定投递不自动重试。队列至多保留 32 条／256 KiB，完整编码单条上限 128 KiB，小于普通草稿附件预算。内置／扩展／未知 slash 命令不可排队。[WI-091 证据与限制](docs/archive/2026-10-03-wi-091-queued-inputs.zh.md)。
+
 ## 当前状态
 
 扩展已有 React／TypeScript 侧栏，承载限定的工作区设置、草稿／流式、模型／thinking、活动／审批、Stop 与有界混合附件（最多 20 项／1 MiB UTF-8）：整文件和固定编辑器选区；来源变化后明确确认最新整文件内容或旧选区快照。[PRD](docs/product-requirements.zh.md) 已作为**自用 macOS 本机 VS Code 安装版 VSIX** Accepted，standing non-goals 仍排除。已批准实现与剩余 macOS 验证均已完成；[`ACTIVE.md`](ACTIVE.md) 维护当前工作，[macOS 验证记录](docs/archive/2026-09-30-macos-verification-acceptance.zh.md) 记录验收证据及限制。验收为受托代理身份，不是维护者亲自测试。

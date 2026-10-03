@@ -16,6 +16,18 @@
 
 > 连通性、工作区选择、宿主拥有的 pi RPC 子进程（WI-007）、纯文本聊天（WI-004）、模型／thinking 设置（WI-008／WI-009）及受控执行（WI-010）。不暴露密钥、Webview 内 pi SDK、文件系统访问或通用宿主操作。三项信任／会话 gates 已在 ADR0004 的明确证据与排除项内接受。
 
+## WI-091 队列附件与资源命令（Living）
+
+WI-091 交付批准的 PI-GAP-01 剩余切片，2026-10-03 已记录代理委托的 macOS F5 及安装 VSIX 验收。下方 WI-077 段落保留最初纯文本实现历史，不代表当前附件／命令限制。两种队列模式均接纳既有整文件及固定选区文本快照，以及已发现且启用的提示模板／skill 参数。内置、扩展及未知 slash 命令明确拒绝并保留草稿。不增加图片、自动保存、资源授权或持久化。
+
+host 异步准备已确认草稿，捕获不可变附件，将原始文字／快照恢复与上游编码文字分开保留。一次写入前重新检查草稿版本、源确认、runtime 身份及任务可接纳性；晚准备／投递不清除新编辑。Stop 可越过准备并取消有界 helper，仍先清公开队列再 abort，不等待无界准备。
+
+有界隔离 helper 经 pi 0.86.1 公开 SDK 展开，无 tools／extensions／默认资源，使用内存会话／设置及空凭据。仅读取当前清单中所选已启用资源，至多 128 KiB，捕获接纳时快照，不声称与上游缓存一致。skill 保留原始目录引用。展开及显式不可信附件上下文的完整编码至多 128 KiB；原始快照与 wire 共用既有会话 32 条／256 KiB 保留预算。溢出、资源不可用／变化、上下文变化时整体拒绝，不截断或扩容。
+
+`queuedTextState` 为可复用 pending／recovery 增加可选 `attachmentCount`（整数 0–20），恢复状态增加 `uncertain`。新增固定错误 `command-not-queueable`、`command-unavailable`、`context-changed`，沿用 `capacity`。Webview 仅收原始可安全显示文字／计数，不收展开模板／skill 正文或 host 资源路径。非本地、敏感、过大或转换后归属有歧义的输入仍为 unknown／unavailable。断线将本地原输入明确保留为不确定，不重试、不承诺恰好一次。runtime 丢失时保留较新的未发送草稿，并标记附件 unavailable。
+
+显式放入草稿仅向空草稿恢复原文字及不可变附件快照，不重读变化文件、不发送。确认清队列是取回而非消费；ACK、pending 移除及观察到用户消息开始仍是不同事实。视图重建重新发布保留状态；runtime 错误允许只读的本地恢复。项目／runtime 替换沿用既有丢失确认及失效规则。验收与可重复证据见 [WI-091](../archive/2026-10-03-wi-091-queued-inputs.zh.md)。
+
 ## WI-077 文字队列增补（Living；已记录 F5 与安装 VSIX）
 
 已批准 REQ-004／005 切片见 [PRD](../product-requirements.zh.md#wi-077-已批准切片--文字-steeringfollow-up-与取回pi-gap-01)。Chat-only 意图与 `queuedTextState` 已进入 Living v3 白名单（类型、宿主校验器与浏览器 host-message 解析）。Chat provider 在 runtime ready 后接线 `QueuedTextSession`。生产 UI 在任务运行中挂载 Steer／Follow-up、pending／recovery 面板与 recall／use／discard 意图。浏览器 280 px en／zh／主题／键盘，以及隔离安装 VSIX 与 macOS F5 的 Steer→Stop→Use in draft 已记录；[WI-077 验收](../archive/2026-10-02-wi-077-acceptance.zh.md)。

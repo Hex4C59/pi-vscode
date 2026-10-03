@@ -384,7 +384,7 @@ function parseCommandCatalogueStateMessage(message: DataRecord, envelope: readon
 }
 
 function parseQueuedTextStateMessage(message: DataRecord, envelope: readonly string[]): HostMessage | undefined {
-  const errors = ["busy", "stale", "capacity", "invalid-text", "attachments", "runtime-unavailable", "unconfirmed", "unavailable", "draft-not-empty"] as const;
+  const errors = ["busy", "stale", "capacity", "invalid-text", "attachments", "source-changed", "command-unavailable", "command-not-queueable", "runtime-unavailable", "unconfirmed", "unavailable", "draft-not-empty"] as const;
   if (!hasFields(message, [...envelope, "revision", "phase", "error", "pending", "recovery"])
           || !integer(message.revision)
           || !oneOf(message.phase, ["idle", "submitting", "recalling", "stopping"])
@@ -392,8 +392,8 @@ function parseQueuedTextStateMessage(message: DataRecord, envelope: readonly str
   const pending = exactRecord(message.pending, ["steering", "followUp"]);
   if (!pending) return;
   const parsePending = (value: unknown) => {
-          const reusable = exactRecord(value, ["attribution", "reusable", "text"]);
-          if (reusable && oneOf(reusable.attribution, ["local", "external", "unknown"]) && reusable.reusable === true && string(reusable.text, 8000)) return reusable;
+          const reusable = exactRecord(value, ["attribution", "reusable", "text"], ["attachmentCount"]);
+          if (reusable && oneOf(reusable.attribution, ["local", "external", "unknown"]) && reusable.reusable === true && string(reusable.text, 8000) && (reusable.attachmentCount === undefined || (integer(reusable.attachmentCount) && reusable.attachmentCount <= 20))) return reusable;
           const hidden = exactRecord(value, ["attribution", "reusable"]);
           return hidden && oneOf(hidden.attribution, ["local", "external", "unknown"]) && hidden.reusable === false ? hidden : undefined;
         };
@@ -401,8 +401,8 @@ function parseQueuedTextStateMessage(message: DataRecord, envelope: readonly str
   const followUp = list(pending.followUp, 32, parsePending);
   if (!steering || !followUp || steering.length + followUp.length > 32) return;
   const recovery = list(message.recovery, 32, item => {
-          const recalled = exactRecord(item, ["id", "mode", "status", "text"]);
-          if (recalled && id(recalled.id) && oneOf(recalled.mode, ["steering", "follow-up"]) && recalled.status === "recalled" && string(recalled.text, 8000)) return recalled;
+          const recalled = exactRecord(item, ["id", "mode", "status", "text"], ["attachmentCount"]);
+          if (recalled && id(recalled.id) && oneOf(recalled.mode, ["steering", "follow-up"]) && oneOf(recalled.status, ["recalled", "uncertain"]) && string(recalled.text, 8000) && (recalled.attachmentCount === undefined || (integer(recalled.attachmentCount) && recalled.attachmentCount <= 20))) return recalled;
           const unavailable = exactRecord(item, ["id", "mode", "status"]);
           return unavailable && id(unavailable.id) && oneOf(unavailable.mode, ["steering", "follow-up"]) && unavailable.status === "unavailable"
             ? unavailable : undefined;

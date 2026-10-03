@@ -887,19 +887,32 @@ export class PreviewBridge implements WebviewBridge {
     this.emitAttachment();
   }
 
+  private queuedSnapshots = new Map<string, DraftAttachment[][]>();
+  private recoveredSnapshots = new Map<string, DraftAttachment[]>();
+
   private queueChat(message: Extract<WebviewMessage, { type: "queueChat" }>): void {
     const draft = this.attachment.draft;
     const text = draft.text;
     if (!this.workspace.chatBusy || this.workspace.runtime !== "ready" || this.attachment.preparation !== "idle"
-      || draft.attachments.length || !text.trim() || /^\s*\//.test(text) || this.queued.phase !== "idle") {
-      this.queued = { ...this.queued, error: draft.attachments.length ? "attachments" : !text.trim() || /^\s*\//.test(text) ? "invalid-text" : "busy" };
+      || !text.trim() || this.queued.phase !== "idle") {
+      this.queued = { ...this.queued, error: !text.trim() ? "invalid-text" : "busy" };
       this.emitQueue();
       return;
     }
+    if (/^\s*\//.test(text)) {
+      const name = text.trimStart().slice(1).split(/\s/)[0];
+      if (!PREVIEW_COMMANDS.some(row => row.name === name && (row.source === "prompt" || row.source === "skill"))) {
+        this.queued = { ...this.queued, error: "command-not-queueable" }; this.emitQueue(); return;
+      }
+    }
+    const snapshotKey = `${message.mode}:${text}`;
+    const retained = this.queuedSnapshots.get(snapshotKey) ?? [];
+    retained.push(draft.attachments.map(a => ({ ...a })));
+    this.queuedSnapshots.set(snapshotKey, retained);
     const modeKey = message.mode === "steering" ? "steering" : "followUp";
     this.attachment = {
       ...this.attachment,
-      draft: { ...draft, revision: draft.revision + 1, text: "", acceptedEditSequence: draft.acceptedEditSequence },
+      draft: { ...draft, revision: draft.revision + 1, text: "", attachments: [], acceptedEditSequence: draft.acceptedEditSequence },
       result: null,
     };
     this.queued = {
@@ -943,9 +956,15 @@ export class PreviewBridge implements WebviewBridge {
     for (const mode of ["steering", "follow-up"] as const) {
       const key = mode === "steering" ? "steering" : "followUp";
       for (const item of this.queued.pending[key]) {
+        const id = `preview-recovery-${++this.snapshotSequence}`;
+        if (item.reusable) {
+          const key = `${mode}:${item.text}`;
+          const snapshots = this.queuedSnapshots.get(key)?.shift();
+          if (snapshots) this.recoveredSnapshots.set(id, snapshots);
+        }
         entries.push(item.reusable
-          ? { id: `preview-recovery-${++this.snapshotSequence}`, mode, status: "recalled", text: item.text }
-          : { id: `preview-recovery-${++this.snapshotSequence}`, mode, status: "unavailable" });
+          ? { id, mode, status: "recalled", text: item.text }
+          : { id, mode, status: "unavailable" });
       }
     }
     return entries;
@@ -961,7 +980,7 @@ export class PreviewBridge implements WebviewBridge {
     }
     this.attachment = {
       ...this.attachment,
-      draft: { ...draft, revision: draft.revision + 1, text: entry.text },
+      draft: { ...draft, revision: draft.revision + 1, text: entry.text, attachments: this.recoveredSnapshots.get(entry.id) ?? [] },
       result: null,
     };
     this.queued = {
@@ -970,6 +989,7 @@ export class PreviewBridge implements WebviewBridge {
       error: null,
       recovery: this.queued.recovery.filter(item => item.id !== message.id),
     };
+    this.recoveredSnapshots.delete(entry.id);
     this.emitAttachment();
     this.emitQueue();
   }
@@ -1313,7 +1333,7 @@ export class PreviewBridge implements WebviewBridge {
   }
 
   private addAttachment(kind: "file" | "selection"): void {
-    if (this.workspace.runtime !== "ready" || this.workspace.chatBusy || this.attachment.preparation !== "idle" || this.attachment.draft.attachments.length >= 20) return;
+    if (this.workspace.runtime !== "ready" || this.attachment.preparation !== "idle" || this.attachment.draft.attachments.length >= 20) return;
     const preparationToken = ++this.preparationToken;
     this.attachment = { ...this.attachment, preparation: "preparing", result: null };
     this.emitAttachment();
@@ -1344,7 +1364,7 @@ export class PreviewBridge implements WebviewBridge {
       || attachment.state !== "confirmation-required" || message.type !== (attachment.kind === "selection" ? "confirmSelectionAttachment" : "confirmFileAttachment")) {
       this.attachment = { ...this.attachment, result: { code: "stale" } }; this.emitAttachment(); return;
     }
-    if (this.workspace.runtime !== "ready" || this.workspace.chatBusy || this.attachment.preparation !== "idle") return;
+    if (this.workspace.runtime !== "ready" || this.attachment.preparation !== "idle") return;
     const token = ++this.preparationToken;
     this.attachment = { ...this.attachment, preparation: "preparing", result: null }; this.emitAttachment();
     this.schedule(() => {

@@ -16,6 +16,8 @@ export type PromptInput =
   | { kind: "plain"; body: string }
   | { kind: "enriched"; body: string; attachments: ({ path: string; unsaved: boolean; text: string } & AttachmentDetails)[] };
 
+export type QueuedInputEncoding = { ok: true; text: string } | { ok: false; code: "command-unavailable" | "command-not-queueable" | "source-changed" | "capacity" | "runtime-unavailable" | "invalid-text" };
+
 export type AttachmentPromptResult = { rejection?: "authentication"; delivery: "rpc-accepted" | "rpc-rejected" | "not-sent" | "unknown"; code?: "write-failed" | "ack-timeout" | "rpc-rejected" | "runtime-lost" };
 export type ManualCompactionResult = { outcome: "completed" | "cancelled" | "failed" | "unavailable"; agentRunning: boolean };
 
@@ -120,6 +122,7 @@ export interface PiRuntimeLifecycle {
   subscribe(listener: (event: RuntimeEvent) => void): () => void;
   preparePrompt(input: PromptInput, expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
   /** Host admits/reserves the plain draft first; running-only, one consumed token, no idle fallback. */
+  encodeQueuedInput?(input: PromptInput, expectedSession: number): Promise<QueuedInputEncoding>;
   prepareQueuedText?(text: string, mode: "steering" | "follow-up", expectedSession: number): { send(onAttempt: () => void): Promise<AttachmentPromptResult> };
   /** Last verified get_commands presentation snapshot for this session; unavailable when none. */
   getCommandCatalogue?(): CommandCatalogue;

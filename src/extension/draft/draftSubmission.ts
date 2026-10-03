@@ -7,7 +7,7 @@ import type { WebviewMessage, AttachmentStateMessage, AttachmentHistoryEntry, At
 import { containsCredentialLikeText } from "../contracts/index.js";
 import { AttachmentFailure, captureFile, captureSelection, revalidateFile, validateEditorSnapshot, selectionSourceRevision, sameSelectionSource, validateSelectionDocument, type SelectionSourceRevision, type AttachmentCode, type FileSnapshot } from "./fileAttachment.js";
 
-import type { DraftContext, DraftSubmissionEvents } from "./types.js";
+import type { DraftContext, DraftSubmissionEvents, QueuedDraftAdmission } from "./types.js";
 
 type DraftAttachment = { attachmentId: string; snapshotId: string; source: FileSnapshot; state: "attached" | "changed" | "confirmation-required" | "unavailable" } & (
   { kind: "file" } | { kind: "selection"; originalRange: SelectionRange; stale: boolean; authorized: SelectionSourceRevision; observed?: SelectionSourceRevision }
@@ -37,7 +37,7 @@ export class DraftSubmission implements vscode.Disposable {
   private readonly subscriptions: vscode.Disposable[];
   constructor(
     private readonly api: Pick<typeof vscode, "workspace" | "window" | "RelativePattern" | "EventEmitter">,
-    private readonly runtime: Pick<PiRuntimeLifecycle, "preparePrompt">,
+    private readonly runtime: Pick<PiRuntimeLifecycle, "preparePrompt" | "encodeQueuedInput">,
     private readonly context: (refresh?: boolean) => DraftContext,
     private readonly send: (message: unknown) => void,
     private readonly events: DraftSubmissionEvents,
@@ -59,6 +59,100 @@ export class DraftSubmission implements vscode.Disposable {
   get revision(): number { return this.draftRevision; }
   get awaitingAcknowledgement(): boolean { return this.awaitingAck; }
   get preparing(): boolean { return this.preparation !== "idle"; }
+
+  /** Freeze native snapshots and encode selected commands before one atomic queue admission. */
+  async prepareQueuedInput(expectedRevision: number): Promise<QueuedDraftAdmission> {
+    if (expectedRevision !== this.draftRevision || this.disposed) return { kind: "refused", reason: "stale" };
+    if (this.awaitingAck || this.preparation !== "idle") return { kind: "refused", reason: "busy" };
+    if (!this.draftText.trim() || this.draftText.length > 8000 || containsCredentialLikeText(this.draftText)) return { kind: "refused", reason: "invalid-text" };
+    if (!this.runtime.encodeQueuedInput) {
+      const old = this.admitQueuedText(expectedRevision);
+      return old.kind === "refused" ? old : { ...old, isCurrent: () => this.draftRevision === expectedRevision,
+        retention: { text: old.text, bytes: Buffer.byteLength(old.text), restore: revision => this.applyRecoveredText(revision, old.text) } };
+    }
+    const { generation, session, view } = this.context();
+    const token = this.attachmentToken = {};
+    const current = () => !this.disposed && token === this.attachmentToken && this.draftRevision === expectedRevision
+      && this.context().generation === generation && this.context().session === session && this.context().view === view
+      && !!this.context().queueEligible && this.attachments.every(a => a.state === "attached");
+    this.preparation = "preparing"; this.attachmentResult = null; this.publish();
+    try {
+      const snapshots = await this.captureQueuedSnapshots(() => !this.disposed && token === this.attachmentToken
+        && this.draftRevision === expectedRevision && this.context().generation === generation && this.context().session === session
+        && this.context().view === view && !!this.context().queueEligible);
+      const body = this.draftText;
+      const input = snapshots.length ? { kind: "enriched" as const, body, attachments: snapshots.map(a => ({ path: a.source.relativePath,
+        ...attachmentDetails(a), unsaved: a.source.unsaved, text: a.source.text })) } : { kind: "plain" as const, body };
+      const encoded = await this.runtime.encodeQueuedInput(input, session);
+      if (!current()) return { kind: "refused", reason: "stale" };
+      if (!encoded.ok) return { kind: "refused", reason: encoded.code };
+      await this.validateQueuedSnapshots(snapshots, current);
+      if (!current()) return { kind: "refused", reason: "stale" };
+      const bytes = Buffer.byteLength(JSON.stringify(input), "utf8");
+      return { kind: "ok", text: encoded.text, isCurrent: current,
+        retention: { text: body, bytes, attachmentCount: snapshots.length, restore: revision => this.restoreQueuedSnapshot(revision, body, snapshots, generation, session) },
+        commitAttempt: () => {
+          if (!current()) throw new Error("stale");
+          this.validateQueuedDocuments(snapshots);
+          this.draftText = ""; this.attachments = []; this.draftRevision++;
+          this.attachmentResult = null; this.publish();
+        } };
+    } catch (error) {
+      const code = error instanceof AttachmentFailure ? error.code : "source-changed";
+      if (token === this.attachmentToken) this.attachmentResult = code;
+      return { kind: "refused", reason: code === "stale" ? "stale" : "source-changed" };
+    } finally { if (token === this.attachmentToken) { this.preparation = "idle"; this.publish(); } }
+  }
+
+  private async captureQueuedSnapshots(current: () => boolean): Promise<DraftAttachment[]> {
+    const snapshots: DraftAttachment[] = [];
+    for (const a of this.attachments) {
+      if (a.kind === "file") {
+        const latest = await captureFile(this.api.workspace, this.context().cwd!, a.source.uri, current);
+        if (latest.root !== a.source.root || latest.target !== a.source.target || latest.document !== a.source.document) throw new AttachmentFailure("unavailable");
+        if (a.state !== "attached" || latest.identity !== a.source.identity || latest.version !== a.source.version
+          || latest.unsaved !== a.source.unsaved || latest.text !== a.source.text) {
+          Object.assign(a, { source: latest, snapshotId: opaqueId(), state: "confirmation-required" });
+          throw new AttachmentFailure("source-changed");
+        }
+      } else {
+        const actual = await selectionSourceRevision(a.source, this.api.workspace, this.context().cwd!, current);
+        if (a.state !== "attached" || !sameSelectionSource(actual, a.authorized)) {
+          Object.assign(a, { observed: actual, stale: true, state: "confirmation-required" });
+          throw new AttachmentFailure("source-changed");
+        }
+      }
+      if (!current()) throw new AttachmentFailure("stale");
+      snapshots.push({ ...a, source: { ...a.source } });
+    }
+    return snapshots;
+  }
+
+  private async validateQueuedSnapshots(snapshots: DraftAttachment[], current: () => boolean): Promise<void> {
+    for (const a of snapshots) {
+      if (a.kind === "file") await revalidateFile(a.source, this.api.workspace, this.context().cwd!, current);
+      else if (!sameSelectionSource(await selectionSourceRevision(a.source, this.api.workspace, this.context().cwd!, current), a.authorized)) throw new AttachmentFailure("source-changed");
+      if (!current()) throw new AttachmentFailure("stale");
+    }
+    this.validateQueuedDocuments(snapshots);
+  }
+
+  private validateQueuedDocuments(snapshots: DraftAttachment[]): void {
+    for (const a of snapshots) {
+      if (a.kind === "file") validateEditorSnapshot(a.source, this.api.workspace);
+      else validateSelectionDocument(a.source, this.api.workspace, a.authorized);
+    }
+  }
+
+  private restoreQueuedSnapshot(revision: number, text: string, snapshots: DraftAttachment[], generation: number, session: number): ReturnType<DraftSubmission["applyRecoveredText"]> {
+    if (this.disposed || revision !== this.draftRevision || this.context().generation !== generation || this.context().session !== session
+      || this.draftRevision === Number.MAX_SAFE_INTEGER) return { kind: "refused", reason: "stale" };
+    if (this.preparation !== "idle" || this.awaitingAck) return { kind: "refused", reason: "busy" };
+    if (this.draftText.trim() || this.attachments.length) return { kind: "refused", reason: "draft-not-empty" };
+    this.draftText = text; this.attachments = snapshots.map(a => ({ ...a, source: { ...a.source } }));
+    this.draftRevision++; this.attachmentResult = null; this.publish();
+    return { kind: "ok" };
+  }
 
   /**
    * Synchronous queue admission for the exact acknowledged draft revision.
@@ -117,7 +211,7 @@ export class DraftSubmission implements vscode.Disposable {
   /** Complete only a leading command token in the exact acknowledged draft; never submit. */
   completeCommand(expectedRevision: number, name: string): void {
     const context = this.context();
-    if (this.disposed || context.disposed || !context.ready || !context.eligible
+    if (this.disposed || context.disposed || !context.ready || (!context.eligible && !context.queueEligible)
       || this.draftRevision === Number.MAX_SAFE_INTEGER || expectedRevision !== this.draftRevision) {
       this.rejectStale(); return;
     }
@@ -135,7 +229,7 @@ export class DraftSubmission implements vscode.Disposable {
     this.attachmentResult = null;
     this.publish();
   }
-  private attachmentEligible(): boolean { const context = this.context(); return !this.disposed && !context.disposed && context.eligible && !!context.cwd && !this.awaitingAck; }
+  private attachmentEligible(): boolean { const context = this.context(); return !this.disposed && !context.disposed && (context.eligible || !!context.queueEligible) && !!context.cwd && !this.awaitingAck; }
   private attachmentEnvelope<T extends string>(type: T) {
     const { generation, viewId } = this.context();
     return { version: 3 as const, type, generation, viewId };
@@ -154,7 +248,7 @@ export class DraftSubmission implements vscode.Disposable {
   }
   runtimeLost(): void {
     this.submissionEpoch++;
-    this.closeView(); this.attachments = []; this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
+    this.closeView(); this.attachments = this.attachments.map(a => ({ ...a, state: "unavailable" })); this.draftRevision = Math.min(Number.MAX_SAFE_INTEGER, this.draftRevision + 1);
     this.history = []; this.retainedBytes = 0; this.awaitingAck = false; this.attachmentResult = "runtime-lost";
     if (this.lastSubmission) {
       if (!["rpc-accepted", "rpc-rejected", "not-sent"].includes(this.lastSubmission.delivery)) this.lastSubmission.delivery = "unknown";
@@ -337,7 +431,7 @@ export class DraftSubmission implements vscode.Disposable {
 
   private async submitDraft(view: vscode.WebviewView): Promise<void> {
     const submissionEpoch = this.submissionEpoch;
-    if (!this.attachmentEligible() || this.preparation !== "idle" || !this.draftText.trim()) { this.attachmentResult = "busy"; this.publish(); return; }
+    if (!this.context().eligible || !this.attachmentEligible() || this.preparation !== "idle" || !this.draftText.trim()) { this.attachmentResult = "busy"; this.publish(); return; }
     const token = this.attachmentToken = {}; const revision = this.draftRevision;
     const generation = this.context().generation; const session = this.context().session;
     const current = () => { this.context(true); return !this.disposed && this.context().view === view && token === this.attachmentToken && revision === this.draftRevision && generation === this.context().generation && session === this.context().session && this.attachmentEligible(); };

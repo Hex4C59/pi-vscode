@@ -39,6 +39,7 @@ export const REQUIRED_PACKAGE_FILES = Object.freeze([
   'dist/webview/webview.css',
   'dist/runtime-supervisor.mjs',
   'dist/session-worker.mjs',
+  'dist/queued-input-worker.mjs',
   'dist/approval-gate.mjs',
 ]);
 

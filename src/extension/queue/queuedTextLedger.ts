@@ -1,3 +1,4 @@
+import type { QueuedDraftRetention } from "../draft/index.js";
 import { randomBytes } from "node:crypto";
 import type { AttachmentPromptResult, PiRuntimeLifecycle, QueuedTextSnapshot } from "../contracts/index.js";
 import { containsCredentialLikeText } from "../contracts/index.js";
@@ -15,6 +16,7 @@ type LocalRecord = {
   attribution: Attribution;
   bytes: number;
   attempted: boolean;
+  retention?: QueuedDraftRetention;
 };
 
 type RecoveredRecord = {
@@ -23,10 +25,13 @@ type RecoveredRecord = {
   mode: QueueMode;
   reuse: Reuse;
   bytes: number;
+  retention?: QueuedDraftRetention;
+  wire?: string;
+  uncertain?: boolean;
 };
 
 type PendingEntry =
-  | { attribution: Attribution; reusable: true; text: string }
+  | { attribution: Attribution; reusable: true; text: string; attachmentCount?: number }
   | { attribution: Attribution; reusable: false };
 
 export type QueuedTextSendOutcome =
@@ -57,18 +62,18 @@ export class QueuedTextLedger {
 
   get revision(): number { return this.queueRevision; }
 
-  async send(text: string, mode: QueueMode, onAttempt: () => void): Promise<QueuedTextSendOutcome> {
+  async send(text: string, mode: QueueMode, onAttempt: () => void, retention?: QueuedDraftRetention): Promise<QueuedTextSendOutcome> {
     if (!this.session || this.runtime.getSession() !== this.session || !this.runtime.prepareQueuedText) {
       return { kind: "refused", reason: "runtime-unavailable" };
     }
-    if (typeof text !== "string" || !text.trim() || text.length > 8000 || text.trimStart().startsWith("/")
+    if (typeof text !== "string" || !text.trim() || text.length > (retention ? 128 * 1024 : 8000) || text.trimStart().startsWith("/")
       || containsCredentialLikeText(text) || (mode !== "steering" && mode !== "follow-up")) {
       return { kind: "refused", reason: "invalid-text" };
     }
-    const bytes = Buffer.byteLength(text, "utf8");
+    const bytes = Buffer.byteLength(text, "utf8") + (retention?.bytes ?? 0);
     if (!this.canReserve(1, bytes)) return { kind: "refused", reason: "capacity" };
     const record: LocalRecord = {
-      id: randomBytes(16).toString("hex"), text, mode, bytes, delivery: "pending", attribution: "local", attempted: false,
+      id: randomBytes(16).toString("hex"), text, mode, bytes, delivery: "pending", attribution: retention && retention.text !== text ? "unknown" : "local", attempted: false, retention,
     };
     this.locals.set(record.id, record); this.bytes += bytes; this.bumpRevision();
     try {
@@ -76,14 +81,55 @@ export class QueuedTextLedger {
       const result = await token.send(() => { record.attempted = true; onAttempt(); });
       if (!record.attempted && result.delivery === "not-sent") return this.refuseUnattempted(record);
       record.delivery = result.delivery;
+      if (retention && ["rpc-rejected", "unknown"].includes(result.delivery)) this.retainFailed(record, result.delivery === "unknown");
       this.bumpRevision();
       return { kind: "observed", id: record.id, result };
     } catch {
       if (!record.attempted) return this.refuseUnattempted(record);
       record.delivery = "unknown";
+      if (retention) this.retainFailed(record, true);
       this.bumpRevision();
       return { kind: "observed", id: record.id, result: { delivery: "unknown", code: "runtime-lost" } };
     }
+  }
+
+  private retainFailed(record: LocalRecord, uncertain: boolean): void {
+    if (!record.retention) return;
+    if (!this.locals.has(record.id)) {
+      const existing = this.recovered.find(r => r.id === record.id);
+      if (existing && uncertain) existing.uncertain = true;
+      return;
+    }
+    this.locals.delete(record.id);
+    this.recovered.push({ id: record.id, text: record.retention.text, mode: record.mode,
+      reuse: "reusable", bytes: record.bytes, retention: record.retention, wire: record.text, uncertain });
+  }
+
+  interrupted(): void {
+    for (const record of [...this.locals.values()]) if (record.retention) this.retainFailed(record, true);
+    this.pending = { steering: [], followUp: [] };
+    this.bumpRevision();
+  }
+
+  private retainedMatch(text: string, mode: QueueMode): LocalRecord | undefined {
+    const matches = [...this.locals.values()].filter(r => r.retention && r.text === text && r.mode === mode);
+    return matches.length === 1 ? matches[0] : undefined;
+  }
+
+  private recoverCleared(text: string, mode: QueueMode): void {
+    const already = this.recovered.find(r => r.wire === text && r.mode === mode);
+    if (already) { already.uncertain = false; return; }
+    const local = this.retainedMatch(text, mode);
+    if (local?.retention) {
+      this.locals.delete(local.id);
+      this.recovered.push({ id: local.id, text: local.retention.text, mode, reuse: "reusable", bytes: local.bytes,
+        retention: local.retention, wire: text });
+      return;
+    }
+    const bytes = Buffer.byteLength(text, "utf8");
+    this.recovered.push({ id: randomBytes(16).toString("hex"), text, mode,
+      reuse: text.length <= 8000 && !containsCredentialLikeText(text) ? "reusable" : "unavailable", bytes });
+    this.bytes += bytes;
   }
 
   observeQueueUpdated(session: number, snapshot: QueuedTextSnapshot): void {
@@ -118,18 +164,11 @@ export class QueuedTextLedger {
 
   commitClear(snapshot: QueuedTextSnapshot): void {
     this.clearReservation = undefined;
+    const needed = this.clearCapacityNeed(snapshot);
+    if (!this.canReserve(needed.count, needed.bytes)) throw new Error("capacity");
     for (const [mode, texts] of [["steering", snapshot.steering], ["follow-up", snapshot.followUp]] as const) {
       for (const text of texts) {
-        const bytes = Buffer.byteLength(text, "utf8");
-        const sensitive = containsCredentialLikeText(text);
-        this.recovered.push({
-          id: randomBytes(16).toString("hex"),
-          text,
-          mode,
-          reuse: sensitive ? "unavailable" : "reusable",
-          bytes,
-        });
-        this.bytes += bytes;
+        this.recoverCleared(text, mode);
       }
     }
     this.pending = { steering: [], followUp: [] };
@@ -140,7 +179,7 @@ export class QueuedTextLedger {
     this.clearReservation = undefined;
   }
 
-  takeRecovered(id: string): { kind: "ok"; text: string; mode: QueueMode } | { kind: "refused"; reason: "stale" | "unavailable" } {
+  takeRecovered(id: string): { kind: "ok"; text: string; mode: QueueMode; retention?: QueuedDraftRetention } | { kind: "refused"; reason: "stale" | "unavailable" } {
     const peeked = this.peekRecovered(id);
     if (peeked.kind === "refused") return peeked;
     return this.discardRecovered(id).kind === "ok"
@@ -148,11 +187,11 @@ export class QueuedTextLedger {
       : { kind: "refused", reason: "stale" };
   }
 
-  peekRecovered(id: string): { kind: "ok"; text: string; mode: QueueMode } | { kind: "refused"; reason: "stale" | "unavailable" } {
+  peekRecovered(id: string): { kind: "ok"; text: string; mode: QueueMode; retention?: QueuedDraftRetention } | { kind: "refused"; reason: "stale" | "unavailable" } {
     const record = this.recovered.find(item => item.id === id);
     if (!record) return { kind: "refused", reason: "stale" };
     if (record.reuse !== "reusable") return { kind: "refused", reason: "unavailable" };
-    return { kind: "ok", text: record.text, mode: record.mode };
+    return { kind: "ok", text: record.text, mode: record.mode, ...(record.retention ? { retention: record.retention } : {}) };
   }
 
   discardRecovered(id: string): { kind: "ok" } | { kind: "refused"; reason: "stale" } {
@@ -190,16 +229,18 @@ export class QueuedTextLedger {
     return { steering: [...this.pending.steering], followUp: [...this.pending.followUp] };
   }
 
-  recoveryProjection(): ReadonlyArray<{ id: string; mode: QueueMode; reuse: Reuse; text?: string }> {
-    return this.recovered.map(({ id, mode, reuse, text }) => (
-      reuse === "reusable" ? { id, mode, reuse, text } : { id, mode, reuse }
+  recoveryProjection(): ReadonlyArray<{ id: string; mode: QueueMode; reuse: Reuse; text?: string; uncertain?: boolean; attachmentCount?: number }> {
+    return this.recovered.map(({ id, mode, reuse, text, uncertain, retention }) => (
+      reuse === "reusable" ? { id, mode, reuse, text, ...(retention?.attachmentCount ? { attachmentCount: retention.attachmentCount } : {}), ...(uncertain ? { uncertain: true } : {}) } : { id, mode, reuse }
     ));
   }
 
   private projectPending(text: string, mode: QueueMode): PendingEntry {
-    const reusable = !containsCredentialLikeText(text);
+    const match = this.retainedMatch(text, mode);
+    const shown = match?.retention?.text ?? text;
+    const reusable = shown.length <= 8000 && !containsCredentialLikeText(shown) && !containsCredentialLikeText(text);
     const attribution = this.pendingAttribution(text, mode);
-    return reusable ? { attribution, reusable: true, text } : { attribution, reusable: false };
+    return reusable ? { attribution, reusable: true, text: shown, ...(match?.retention?.attachmentCount ? { attachmentCount: match.retention.attachmentCount } : {}) } : { attribution, reusable: false };
   }
 
   private pendingAttribution(text: string, mode: QueueMode): Attribution {
@@ -212,9 +253,11 @@ export class QueuedTextLedger {
   private clearCapacityNeed(snapshot: QueuedTextSnapshot): { count: number; bytes: number } {
     let count = 0;
     let bytes = 0;
-    for (const text of [...snapshot.steering, ...snapshot.followUp]) {
-      count += 1;
-      bytes += Buffer.byteLength(text, "utf8");
+    for (const [mode, texts] of [["steering", snapshot.steering], ["follow-up", snapshot.followUp]] as const) {
+      for (const text of texts) {
+        if (this.retainedMatch(text, mode) || this.recovered.some(r => r.wire === text && r.mode === mode)) continue;
+        count += 1; bytes += Buffer.byteLength(text, "utf8");
+      }
     }
     return { count, bytes };
   }

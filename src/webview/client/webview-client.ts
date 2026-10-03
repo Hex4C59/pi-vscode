@@ -163,7 +163,7 @@ export class WebviewClient {
   useRecoveredText = (id: string): void => {
     const draft = this.snapshot.attachments?.draft;
     const entry = this.snapshot.queuedText?.recovery.find(item => item.id === id);
-    if (!draft || !entry || entry.status !== "recalled" || this.snapshot.text.trim() || draft.attachments.length
+    if (!draft || !entry || entry.status === "unavailable" || this.snapshot.text.trim() || draft.attachments.length
       || availability(this.snapshot).sessionTransitioning || this.snapshot.error) return;
     this.action({ type: "useRecoveredText", id, draftRevision: draft.revision });
   };

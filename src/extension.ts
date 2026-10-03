@@ -30,7 +30,7 @@ export function activate(context: vscode.ExtensionContext): void {
     currentWindowId: windowId,
     workerPath,
   }));
-  const runtime = createPiRpcRuntime({ process });
+  const runtime = createPiRpcRuntime({ process, queuedInputWorkerPath: path.join(extensionPath, "dist/queued-input-worker.mjs") });
   const sessionBackend = createPiSessionBackend(path.join(extensionPath, SESSION_WORKER_BUNDLE));
   const provider = new PiChatViewProvider(
     vscode, runtime, context.extensionUri, sessionBackend, {},
