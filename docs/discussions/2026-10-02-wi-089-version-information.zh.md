@@ -60,3 +60,7 @@ Goal续跑确认原日常Code进程已退出，从干净d3ff0ea启动既有隔�
 从干净585bd06有界重试成功绑定明确`PI-RESOURCE-f5` launcher并实际按F5启动开发宿主。观察状态没有钥匙串弹窗；仅为有界观察，不是系统修复。WI089英文实际源码插件0.0.1／pi0.86.1／宿主1.140.0及只读粘贴拒绝工件在`dist/goal-eight/wi089/native-f5/`。发现新launcher缺陷：debug宿主将分离option值变成额外workspace folder，产品正确以不支持multi-root阻止runtime。未批准资源、未宣称资源／native通过。停止本任务launcher并留工件；下次脚本修改前添加子进程组合要求自包含`--name=value`参数且debug仅一个project位置参数，然后修参数接线，不改产品workspace eligibility／用户隔离。
 
 atomic option两组合在第二次launcher修改前均失败，修改后均通过（`atomic-red.log`／`atomic-green.log`）；compile／lint通过。首次完整1269运行失败于另一未改plugin-inventory settle断言，精确focused情形通过，再次未改完整标准1269通过。失败／focused／重跑log分留；根因未确证，未改无关inventory代码／断言。文档verify／health通过。本修复仅将flag值原子化以穿过debug参数转发；native单项目确认及WI089其余验收仍待完成。
+
+f2b4462实际atomic F5确认单一合成项目，经Add context→Add file显式许可（未发送消息），真实runtime目录有一个template／skill及unknown context-body／extension-file。driver随后因`editor.edit`boolean预期false失败。实际Code1.140.0源码中MainThreadTextEditor.applyEdits在executeEdits后返回true，而editor executeEdits会拒绝readonly状态。因此success boolean不证明内容变更；仍要求编辑后内容不变及实际键盘拒绝。保留native失败结果，不宣称发生修改或native通过。仅纠正return值假设前，先加生成driver组合：替代native edit返回true但保留bytes，对应观察／源码行为。不放宽产品只读／安全标准。
+
+生成driver组合在return值纠正前为red；同时覆盖bytes保留及故意变更两情形，前者通过而后者仍失败。native脚本仅记录API boolean，不将其当只读证明；保留内容不变／reopen断言，finish marker前仍须代理实际视觉／键盘审查。四项launcher／driver组合、compile／lint、完整标准1271、文档verify／health通过（`readonly-*.log`）。未改应用代码或只读规则。提交候选检查后重跑实际native；此前native失败工件仍是失败。
