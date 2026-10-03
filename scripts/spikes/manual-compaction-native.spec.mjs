@@ -65,3 +65,31 @@ test('failed installation closes the owned loopback provider without opening Cod
     await rm(repo, { recursive: true, force: true });
   }
 });
+
+test('nonzero owned Code exit cannot be masked by a completed review record', { skip: process.platform !== 'darwin' }, async () => {
+  const repo = await realpath(await mkdtemp('/tmp/pi-compact-exit-contract-'));
+  let fixture;
+  try {
+    const scripts = path.join(repo, 'scripts/spikes'); const app = path.join(repo, 'Fake Code.app');
+    await mkdir(scripts, { recursive: true }); await mkdir(path.join(app, 'Contents/MacOS'), { recursive: true });
+    for (const file of ['manual-compaction-native.mjs', 'manual-compaction-native-driver.cjs', 'queued-input-fixture.mjs']) await copyFile(path.join(source, file), path.join(scripts, file));
+    await writeFile(path.join(app, 'Contents/MacOS/Code'), `#!${process.execPath}
+const fs = require('node:fs'); const path = require('node:path'); const http = require('node:http');
+const root = process.env.PI_COMPACTION_FIXTURE; const evidence = process.env.PI_COMPACTION_EVIDENCE;
+const model = JSON.parse(fs.readFileSync(path.join(root, 'agent/models.json'))).providers['queue-loopback'];
+for (let i = 0; i < 3; i++) { const req = http.request(model.baseUrl + '/chat/completions', { method: 'POST' }); req.on('error', () => {}); req.end(JSON.stringify({ messages: [{ role: 'user', content: 'LITERAL_CUSTOM_中' }] })); }
+const timer = setInterval(() => { try { if (JSON.parse(fs.readFileSync(path.join(evidence, 'provider-live.json'))).requests.length < 3) return; } catch { return; }
+clearInterval(timer); fs.writeFileSync(path.join(evidence, 'result.json'), JSON.stringify({ result: 'review-complete' })); process.exit(7); }, 50);
+`, { mode: 0o700 });
+    const result = spawnSync(process.execPath, [path.join(scripts, 'manual-compaction-native.mjs'), 'f5'], {
+      env: { PATH: path.dirname(process.execPath), PI_COMPACTION_CODE_APP: app }, timeout: 5000, encoding: 'utf8', windowsHide: true,
+    });
+    assert.ifError(result.error);
+    fixture = JSON.parse(await readFile(path.join(repo, 'dist/goal-eight/wi083/f5/fixture.json'), 'utf8')).root;
+    assert.equal(result.status, 1, 'a failed native process must not pass');
+    assert.equal(JSON.parse(await readFile(path.join(repo, 'dist/goal-eight/wi083/f5/process-exit.json'), 'utf8')).code, 7);
+  } finally {
+    if (fixture) await rm(fixture, { recursive: true, force: true });
+    await rm(repo, { recursive: true, force: true });
+  }
+});

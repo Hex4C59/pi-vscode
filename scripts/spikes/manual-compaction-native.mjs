@@ -101,6 +101,7 @@ await writeFile(path.join(evidence, 'process-exit.json'), JSON.stringify(exit));
 
 try {
   const result = JSON.parse(await readFile(path.join(evidence, 'result.json'), 'utf8'));
+  assert.equal(exit.code, 0, 'Owned native process must exit successfully');
   assert.equal(result.result, 'review-complete');
   assert.ok(provider.requests.length >= 3, 'Real synthetic history/summary requests required');
   assert.ok(provider.requests.some(request => JSON.stringify(request.messages).includes('LITERAL_CUSTOM_中')), 'Actual summary custom instructions must be observed');

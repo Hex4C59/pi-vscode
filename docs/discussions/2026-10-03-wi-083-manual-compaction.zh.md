@@ -67,3 +67,5 @@ Native F5／安装 VSIX 交互、Cancel／Stop／键盘和视觉验收仍缺，�
 ### 原生工具开发（非原生验收）
 
 先写launcher子进程契约，因新harness缺失而失败；假executable两lane随后通过。再先写安装失败契约，复现provider实际关闭记录缺失，扩大自有资源cleanup边界后全部三个契约通过。driver不替换production API，只focus chat并要求十项明确review及工件引用；完成标为`review-complete`，不推断视觉验收。wrapper额外要求实际合成历史／摘要请求及literal自定义指令。loopback请求全部等待本地release标记，安装失败也记录自有provider关闭。仅隔离测试settings为受控验证禁用自动压缩，产品默认／自动压缩／重试不变。工件`dist/goal-eight/wi083/native-harness/{red.log,install-cleanup-red.log,green.log}`仅合成工具证据，不是F5／安装验收。
+
+审查细化：先写nonzero-exit子进程契约，用合成请求及review记录暴露wrapper可忽略退出码7。现在同时要求实际native进程退出码0及review／请求证据，四项focused契约通过。F5父窗口在已review子窗口完成后也须正常退出，发signal不算成功。初版工具源码开发compile／lint／1274测试／文档通过，早于本退出码细化；最终候选仍须重跑。
