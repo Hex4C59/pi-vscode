@@ -77,3 +77,11 @@ Native F5／安装 VSIX 交互、Cancel／Stop／键盘和视觉验收仍缺，�
 真实F5启动隔离fixture Lko3HZ，在Code1.140.0激活production扩展／pi0.86.1，查看合成项目root后仅选择该资源，模型为合成项，草稿保留。实际palette执行未展示modal，自有extension-host日志明确`DialogService: refused to show dialog in tests`并含有损提示。这证明`extensionTestsPath`开启的宿主测试模式不适合本次原生modal验收，不是产品确认通过。启动／关闭工件保留`dist/goal-eight/wi083/native-f5-ed7744b/`；从UI先正常退出子窗口再父窗口，wrapper退出1、provider实际关闭、请求0。未伪造review标记或验收。下一步先写契约拒绝test-mode参数，改为普通development扩展激活observer，保留真实window API及正常退出证据，提交／干净候选重跑后native重试。范围／公开API／数据权限不变。
 
 modal-mode回归契约在修复前因test-path参数失败，去除该参数并让verifier普通activation调用observer后四项focused通过。不替换dialog service或product API；observer写review结果后窗口继续开放，由普通UI正常关闭。合成工件`native-harness/modal-mode-{red,green}.log`；真实native重试仍待完成。
+
+### 真实F5审阅完成——干净c1b4cd5
+
+候选`c1b4cd52d425c91132ae05a93976b4c7d3c9b002` compile／lint／1275测试／docs:verify／docs:health／打包通过，前后clean；VSIX SHA-256 `cc7064817a9a81334f5f9ada5cf86cab12511f6abed2ab17cd2866f1fdab4263`，工件`dist/goal-eight/wi083/native-candidate-c1b4cd5/`。真实F5键在fixture x0kC3D启动production扩展与普通observer，无extensionTestsPath或API替换。资源仅批准已查看合成项目；Code1.140.0、扩展0.0.1／pi0.86.1及准确development root有记录。英语有损／费用modal及可选4 KiB指令可见，Esc取消请求0。空历史压缩明确失败并保留草稿。两个真实composer轮次到达held loopback1／2；busy压缩拒绝不新增请求。摘要3原生Cancel结算cancelled，摘要4现有Stop结算stopped。literal指令实际到摘要5，释放5／6后上游ordinary／prefix摘要完成。真实语言设置切中文，审阅有损modal／指令Esc、progress9取消、摘要10／11成功完成。截图及AX支持真实状态，压缩结果前后`DRAFT_MUST_REMAIN_中`精确保留。
+
+最初AX Stop点击被宿主toast遮挡，未计为停止；扩大侧栏并打开／隐藏通知中心（不清通知／数据）后Stop可见，实际无遮挡控件停止held操作。英语Code的原生Cancel／键盘帮助仍英语，产品拥有的中文文案已审阅。最初select-all未替换合成草稿，所以合成第1轮含该草稿；随后用真实输入框setValue，全部压缩草稿比较以准确恢复值为准。保留这些UI操作细节与截图，不推广为所有主题／视口验证。
+
+十项明确review均先于标记，observer随后写含源码身份的review-complete；UI正常退出子及父窗口，wrapper退出0，provider实际关闭，11个合成请求／真实模型调用0，自有fixture进程无。工件`dist/goal-eight/wi083/native-f5-c1b4cd5/`（review.json、截图／AX、broker result／provider／process-exit）。这是本Goal授权下代理F5审阅，非维护者亲测、安装验收或整个WI关闭。下一步独立安装准确候选VSIX并重复native矩阵，保留安装root及install log后才能验收／归档。
