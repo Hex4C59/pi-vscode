@@ -3,7 +3,7 @@
 English | [中文](2026-10-02-wi-085-model-cycling.zh.md)
 
 - Type: Discussion
-- Status: Blocked
+- Status: Draft
 - Created: 2026-10-02
 - Authority: bounded PI-GAP-14 Prepare and pending evidence
 - Related: [ACTIVE](../../ACTIVE.md), [bounded goal](2026-10-03-eight-gap-goal.md), [requirements](../product-requirements.md)
@@ -37,3 +37,12 @@ Actual pi 0.86.1 public RPC in isolated HOME/agent/project verified synthetic du
 ## Clean candidate and retained blocker
 
 Commit `66ba52b0112bbbf72e98f5db55c6e6ff36c0055b` passed isolated clean compile/lint/1242 checks/docs:verify/docs:health, actual pi public-RPC probe and VSIX packaging. Before/after source status empty. Evidence: dist/goal-eight/wi085/candidate-evidence/ and candidate-identity.json; the checkout may later be reused, so saved identity governs this run. Native multi-select/keyboard/English-Chinese F5 and installed VSIX remain unverified under the existing isolated-Code binding blocker. No delegated acceptance or closure. Retain PI-GAP-14 unfinished; next independent focus WI-086 / PI-GAP-24.
+
+
+## Resumed native Prepare — October 3 / 恢复原生Prepare
+
+WI084 closed; this is the sole WI. Prior binding blocker is historical/resolved. Reviewed NativeModelCycling public native multi-select, 2-minute identity/pending/catalogue lease; memory subset and actual models/levels, ModelSettings sole mutation owner and busy next-turn anchor. pi0.86.1 synthetic public RPC fixture provides two duplicate-name reasoning models with exact IDs queue-fixture/cycle-second; no provider implementation or upstream upgrade. / WI084关闭，仅本WI；旧绑定阻碍已解。核对native多选／2分钟身份pending catalogue lease／仅内存集合及实际模型级别／ModelSettings忙碌next-turn所有权。pi0.86.1既有合成公开RPC两重名推理模型，以ID区分，不升级上游。
+
+Routine bounded native tool will reuse proven ordinary observer/owned loopback launcher (no extensionTestsPath or API replacement). Fresh empty auth/HOME/agent/user/extension roots, memory SecretStorage and disabled account extensions; only explicit fixture resource consent and actual UI composer seed/release. Ten cases: initial empty notice, native subset multi-select, Escape preserves subset, model previous/next wrap, thinking cycle, busy pending/settlement, explicit empty clear, existing selector retained, English and Chinese native keyboard/visual. Existing composition/RPC empty-unavailable/stale/failure cases remain separate; not falsely native all adversarial cases. / 普通observer与自有loopback，不用testmode或替换API，独立空凭据状态／内存secret／禁账户；明确fixture资源及实际UI输入release。十案为空提示、多选、取消保集合、模型首尾、thinking、busy pending结算、清空、既有选择器、英中键盘视觉。组合RPC失效失败不冒充native。
+
+Failure modes before new tooling: wrong development product in installed lane, duplicate names hiding identity, automatic subset/Send/resource approval, real credentials/account/inference, missing review/cases, nonzero exit or install failure claimed pass, provider/listener leak, pending requested model shown applied, custom catalogue unavailable misclaimed, source/VSIX mismatch. Prewrite subprocess contracts and ordinary observer missing-case contract RED, then Build this verification-only slice under existing Goal authorization. Require clean checks/package, source/identity/request/exit records plus actual independent F5/installed observations before delegated acceptance. No API, architecture, collection/resource/persistence tradeoff changed. / 工具编码前失败方式：安装误用开发产品、重名身份混淆、自动选择Send授权、真实账户凭据调用、缺review案、非零退出安装失败伪通过、provider泄漏、pending伪应用、不可用误报、源码包错。先契约RED后Build，干净候选及两实际lane前不验收；不改API架构收集资源持久化取舍。
