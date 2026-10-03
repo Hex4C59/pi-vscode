@@ -54,3 +54,15 @@ Resumed October 3: Mac now unlocked, but binary-only inventory confirms non-fixt
 
 
 Safe-binding blocker confirmed in three resumed turns: non-fixture9702 persists, no live owned test. Goal blocked, WI082 unfinished. Keep actual F5/installed requirements; user save/close of Code or safe macOS binding is required.
+
+
+## Authorized normal quit and native review deadline Prepare — October 3
+
+The human explicitly authorized normal quit of daily Code, never force-kill, auto-save/discard unrelated work, and stop at unsaved/running-task confirmation. Actual Cmd+Q exited9702 with no intervening confirmation; binary-only inventory empty and original three Git changes unchanged. No user source/credentials were inspected or saved. Fresh safe-binding blocker is removed; Goal engine may retain its blocked flag until user resumes it, but authorized verification can proceed.
+
+A wrong shell cwd caused a candidate self-fetch of its stale master d03d7c4 and an unintended old launcher invocation32087. It exited1 before native binding; no UI actions/consent or acceptance. Preserve this failure; correct by absolute root fetch, confirm57eac54 clean and executable tree identical1011afa, docs checks pass before new launcher32359. Actual F5 reaches ready catalogue, API unchanged bytes/reopen, English native keyboard replacement leaves text intact, English/Chinese readable report screenshots. Review-marker240s expired before full Chinese keyboard/reopen; preserve failed result and ended owned parent, no finish fabricated.
+
+Bounded verification-only repair: leave resource-consent deadline240s, permit review900s and overall owned process1800s (then existing TERM/KILL cleanup). No product/permissions/runtime changes. Failure modes before code: review expires during safe per-action liveness/AX round trips; infinite wait/orphan; marker accepted without agent review; delayed-review composition mislabeled native. Prewrite generated-driver composition with virtual time and review marker only available after300s, retaining mutation rejection; observe old240s red before edit. Test proves deadline behavior only; repeat actual UI before acceptance.
+
+
+Delayed-marker composition goes red against240s and green after900s, mutation still fails. Four focused cases, script syntax, compile/lint, full standard1271, docs verify/health pass; review-deadline logs preserve commands/results. This changes only bounded verification time, not acceptance criteria. Next reviewed tooling commit and clean committed candidate checks, then actual F5/installed resource-only review.

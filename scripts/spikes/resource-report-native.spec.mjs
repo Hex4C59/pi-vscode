@@ -66,6 +66,15 @@ for (const mode of ['f5', 'installed']) {
   });
 }
 
+// Virtual review latency: no sleep, GUI, real credentials or native pass.
+const delayedReviewClock = `
+let reviewClock = 0; Date.now = () => reviewClock;
+global.setTimeout = callback => { reviewClock += 150001; callback(); };
+require('node:fs/promises').access = async () => {
+  if (reviewClock < 300000) throw new Error('review not complete yet');
+};
+`;
+
 // Exercise the generated entry, not Code: MainThreadTextEditor may report true
 // even when its readonly code editor rejects the edit. Bytes must stay unchanged.
 for (const mutates of [false, true]) test(`generated native driver checks readonly bytes independently of edit return value: mutation=${mutates}`, {
@@ -100,7 +109,7 @@ exports.window = { activeTextEditor: editor, showTextDocument: async () => edito
 exports.commands = { executeCommand: async name => { if (name === 'pi-vscode.focusChat') live = true; } };
 `);
     await writeFile(path.join(fixture.root, 'finish'), 'synthetic driver review only, not native evidence\n');
-    const result = spawnSync(process.execPath, ['--eval', `require(${JSON.stringify(path.join(driver, 'test.cjs'))}).run().catch(e => { console.error(e); process.exitCode = 1; });`], {
+    const result = spawnSync(process.execPath, ['--eval', `${mutates ? '' : delayedReviewClock}require(${JSON.stringify(path.join(driver, 'test.cjs'))}).run().catch(e => { console.error(e); process.exitCode = 1; });`], {
       env: { PATH: path.dirname(process.execPath), HOME: path.join(fixture.root, 'home'), PI_REPORT_FIXTURE: fixture.root, PI_REPORT_EVIDENCE: evidence, PI_REPORT_MODE: 'f5' },
       timeout: 15000, encoding: 'utf8', windowsHide: true,
     });

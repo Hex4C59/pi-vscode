@@ -87,7 +87,7 @@ exports.run = async () => {
     assert.equal(vscode.window.activeTextEditor.document.getText(), record.loaded);
     record.reopen = true;
     await fs.writeFile(path.join(evidence, 'observed.json'), JSON.stringify(record, null, 2));
-    await waitFor('agent native visual/keyboard review', async () => { try { await fs.access(path.join(root, 'finish')); return true; } catch { return false; } });
+    await waitFor('agent native visual/keyboard review', async () => { try { await fs.access(path.join(root, 'finish')); return true; } catch { return false; } }, 900000);
     record.result = 'passed';
     await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify(record, null, 2));
   } catch (error) {
@@ -124,7 +124,7 @@ for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { i
 await writeFile(path.join(evidence, 'fixture.json'), JSON.stringify({ root, mode, repo, pid: child.pid, launchArgs, agentDir: env.PI_CODING_AGENT_DIR }, null, 2));
 console.log(JSON.stringify({ mode, root, evidence, pid: child.pid, next: mode === 'f5' ? 'Start Resource report F5 via actual F5/debug UI, then allow synthetic project resources' : 'Allow synthetic project resources' }));
 let killTimer;
-const deadline = setTimeout(() => { child.kill('SIGTERM'); killTimer = setTimeout(() => child.kill('SIGKILL'), 5000); }, 600000);
+const deadline = setTimeout(() => { child.kill('SIGTERM'); killTimer = setTimeout(() => child.kill('SIGKILL'), 5000); }, 1800000);
 child.once('error', error => { console.error(error); process.exitCode = 1; });
 const exit = await new Promise(resolve => child.once('close', (code, signal) => resolve({ code, signal })));
 clearTimeout(deadline); clearTimeout(killTimer);
