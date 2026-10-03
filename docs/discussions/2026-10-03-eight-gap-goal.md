@@ -99,3 +99,6 @@ WI085 closed816654c: clean e77135c checks1287/public RPC/package and independent
 
 
 WI086 closed f0d13c7: clean d654011 checks1292/public SDK/package plus independent actual F5/installed ten-case and18 native visuals each. First unchanged frozen-history failure retained; focused/full rerun passed, root cause unproven. Both main/wrapper0/providerclosed zero inference, owned jobs gone. 6/8 closed PI02/04/06/14/24/27; sole WI087/Mermaid native Prepare, two unfinished, PI26upload unapproved.
+
+
+WI087 closed35fefec under original bounded delegation: clean60cb899 checks1299/package and independent actual F5/installed ten-case review plus18 exact native visual captures each. Temporary lock resumed on same confirmed-live process; artifact staging-location correction audited against actual lane titles and preserved original F5 snapshot. Normal main/wrapper0/providerclosed one synthetic/zero real calls. 7/8 closed PI02/04/06/14/21/24/27; sole WI088/local diagnostics native Prepare. PI26upload unapproved; Goal not complete.
